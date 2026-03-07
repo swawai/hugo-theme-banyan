@@ -1,0 +1,32 @@
+[menu_about]
+other = "关于"
+[menu_dir]
+other = "目录"
+[menu_tags]
+other = "标签"
+[menu_udc]
+other = "学科"
+[menu_all]
+other = "总览"
+
+ 
+
+[label_theme]
+other = "主题"
+[theme_auto]
+other = "自动"
+[theme_light]
+other = "明亮"
+[theme_dark]
+other = "深色"
+
+[label_published]
+other = "发布于"
+[label_updated]
+other = "更新于"
+
+[label_account]
+other = "账号"
+
+[no_trans_msg]
+other = "当前页面尚未提供 [{lang}] 翻译。\n是否跳转至该语言的主页？"

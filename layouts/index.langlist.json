@@ -1,0 +1,11 @@
+{{- $list := slice -}}
+{{- range .Sites -}}
+  {{- $item := dict
+      "code" .Language.Lang
+      "name" .Language.LanguageName
+      "url"  .Home.RelPermalink
+  -}}
+  {{- $list = $list | append $item -}}
+{{- end -}}
+{{- $list | jsonify -}}
+

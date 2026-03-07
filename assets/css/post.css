@@ -1,0 +1,151 @@
+/* === 文章页排版 === */
+
+/* ---- 文章容器 ---- */
+.post {
+    max-width: 65ch;
+    /* 限制阅读宽度，约 65 个字符，防止单行过长影响阅读 */
+}
+
+/* ---- 文章元信息 ---- */
+.post h1 {
+    font-size: 1.75em;
+    margin: 0.8em 0 0.4em;
+    line-height: 1.3;
+}
+
+.post-meta-time {
+    /* font-size: 0.875rem; */
+    opacity: 0.3;
+    margin-bottom: 0;
+}
+
+/* ---- 正文排版基础 ---- */
+.post-content {
+    /* 移除特定限制，使正文字体大小随 body 默认值伸降 */
+    line-height: 1.65;
+    /* 中文推荐行距 1.6~1.8，正文取偏宽松值 */
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+/* ---- 段落 ---- */
+.post-content p {
+    margin: 0 0 1em;
+}
+
+/* ---- 标题层级 ---- */
+.post-content h2 {
+    font-size: 1.5em;
+    margin: 1.4em 0 0.7em;
+    line-height: 1.3;
+}
+
+.post-content h3 {
+    font-size: 1.25em;
+    margin: 1.2em 0 0.6em;
+    line-height: 1.3;
+}
+
+.post-content h4 {
+    font-size: 1.1em;
+    margin: 1em 0 0.5em;
+    line-height: 1.35;
+}
+
+.post-content h5,
+.post-content h6 {
+    font-size: 1em;
+    margin: 1em 0 0.5em;
+    line-height: 1.4;
+}
+
+/* ---- 列表 ---- */
+.post-content ul,
+.post-content ol {
+    margin: 0 0 1em;
+    padding-left: 1.5em;
+}
+
+.post-content li+li {
+    margin-top: 0.25em;
+}
+
+/* 嵌套列表不额外加底部间距 */
+.post-content li>ul,
+.post-content li>ol {
+    margin-bottom: 0;
+}
+
+/* ---- 引用 ---- */
+.post-content blockquote {
+    margin: 1em 0;
+    padding: 0.5em 1em;
+    border-left: 3px solid var(--border);
+    color: var(--fg);
+    opacity: 0.85;
+}
+
+.post-content blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+/* ---- 行内代码 ---- */
+.post-content code {
+    font-family: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+    font-size: 0.9em;
+    padding: 0.15em 0.35em;
+    background: var(--border-subtle);
+    border-radius: 3px;
+}
+
+/* ---- 代码块 ---- */
+.post-content pre {
+    margin: 1em 0;
+    padding: 1em;
+    overflow-x: auto;
+    background: var(--border-subtle);
+    border-radius: 4px;
+}
+
+/* pre 内的 code 复位行内样式 */
+.post-content pre code {
+    padding: 0;
+    background: transparent;
+    font-size: 0.85em;
+    border-radius: 0;
+}
+
+/* ---- 表格 ---- */
+.post-content table {
+    width: 100%;
+    margin: 1em 0;
+    border-collapse: collapse;
+    font-size: 0.95em;
+}
+
+.post-content th,
+.post-content td {
+    padding: 0.5em 0.75em;
+    border: 1px solid var(--border);
+    text-align: left;
+}
+
+.post-content th {
+    background: var(--border-subtle);
+    font-weight: 600;
+}
+
+/* ---- 图片 ---- */
+.post-content img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1em 0;
+}
+
+/* ---- 水平线 ---- */
+.post-content hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2em 0;
+}

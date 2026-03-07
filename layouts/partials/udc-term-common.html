@@ -1,0 +1,18 @@
+{{/* 通用：UDC term 列表渲染（子分类 + 页面合并）
+参数：
+  ctx: 页面上下文 (.)
+  mode: bynameasc | byname | bydate | bydateasc | bycountasc | bycount
+*/}}
+{{ $ctx := .ctx }}
+
+{{/* 内联面包屑 */}}
+
+{{/*  {{ partial "list-header.html" $ctx }}  */}}
+
+{{ $items := partial "udc-data-items.html" (dict "kind" "term" "ctx" $ctx "mode" .mode) }}
+
+<div class="grid-list">
+  {{ partial "udc-list-view.html" (dict "ctx" $ctx "mode" .mode "items" $items) }}
+</div>
+
+

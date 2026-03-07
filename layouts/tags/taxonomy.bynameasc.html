@@ -1,0 +1,9 @@
+{{ define "breadcrumb" }}
+{{ partial "tags-breadcrumb.html" (dict "ctx" . "mode" "bynameasc") }}
+{{ end }}
+
+{{ define "main" }}
+{{ partial "tags-taxonomy-common.html" (dict "ctx" . "mode" "bynameasc") }}
+{{ end }}
+
+

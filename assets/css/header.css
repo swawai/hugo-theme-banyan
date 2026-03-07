@@ -1,0 +1,40 @@
+/* === 页头与版权信息 === */
+.copyright {
+    display: flex;
+    flex-wrap: nowrap; /* 拒绝换行，让内容自然撑宽页面 */
+    column-gap: 0.3rem; /* 项目之间的水平间隔 */
+    row-gap: 0;         /* 取消垂直间隙 */
+    white-space: nowrap; /* 防止容器内文字折行 */
+    margin-bottom: -0.25rem;
+    opacity: 0.3;
+}
+
+/* 阻止所有 flex 子项被压缩 */
+.copyright>* {
+    flex-shrink: 0;
+}
+
+/* 如果你的模板内使用了 <small> 等 HTML5 原生表示副文本的标签来包裹版权信息，重置浏览器的默认缩小 (smaller) 行为 */
+/* .copyright, 
+.copyright small {
+    font-size: inherit;
+} */
+ 
+/* 强制让内部的链接（包括由于记录访问过的）跟文字主色一致，不再"抢眼" */
+.copyright a,
+.copyright a:visited {
+    color: inherit;
+    text-decoration: underline;
+}
+
+.copyright a:hover {
+    opacity: 0.8;
+}
+
+/* 保证小图标正常大小和对齐文字基线 */
+.copyright .social-links img {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.05em;
+    border-bottom: 1px solid currentColor;
+}

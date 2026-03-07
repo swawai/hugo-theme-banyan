@@ -1,0 +1,22 @@
+{{- $entries := .entries | default (slice) -}}
+{{- if gt (len $entries) 0 -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "itemListElement": [
+    {{- range $i, $e := $entries -}}
+    {
+      "@type": "ListItem",
+      "position": {{ add $i 1 }},
+      "url": {{ $e.url | jsonify }},
+      "name": {{ $e.name | jsonify }}
+    }{{ if lt (add $i 1) (len $entries) }},{{ end }}
+    {{- end -}}
+  ]
+}
+</script>
+{{- end -}}
+
+
+

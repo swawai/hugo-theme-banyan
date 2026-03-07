@@ -1,0 +1,9 @@
+{{/* 构建 UDC term 的链接，保留当前 by-* 模式段 */}}
+{{- $ctx := .ctx -}}
+{{- $mode := .mode -}}
+{{- $of := $ctx.OutputFormats.Get $mode -}}
+{{- $curr := cond $of $of.RelPermalink (printf "/%s/" $ctx.Data.Plural | relLangURL) -}}
+{{- $root := replaceRE (printf "(/%s/).*$" $ctx.Data.Plural) (printf "/%s/" $ctx.Data.Plural) $curr -}}
+{{- return (printf "%s%s/" $root (urlize .value)) -}}
+
+

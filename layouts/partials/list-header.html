@@ -1,0 +1,30 @@
+{{/* 统一集合页 H1 + 引言渲染 */}}
+{{- $ctx := . -}}
+
+{{- /* 计算 H1 */ -}}
+{{- $h1 := $ctx.Title -}}
+{{- if eq $ctx.Kind "taxonomy" -}}
+  {{/* taxonomy 根页：用 i18n 或回退到标题 */}}
+  {{- $tax := or $ctx.Data.Plural $ctx.Title -}}
+  {{- $key := printf "menu_%s" $tax -}}
+  {{- $h1 = (i18n $key | default $ctx.Title) -}}
+{{- else if eq $ctx.Kind "term" -}}
+  {{/* term 页：只取最后一段 */}}
+  {{- $term := printf "%v" $ctx.Data.Term -}}
+  {{- $parts := split $term "/" -}}
+  {{- $h1 = index $parts (sub (len $parts) 1) -}}
+{{- end -}}
+
+<header class="list-header">
+  <h1>{{ $h1 }}</h1>
+  {{- /* 引言：优先 Params.description，其次 Description */ -}}
+  {{- $intro := "" -}}
+  {{- if $ctx.Params.description -}}
+    {{- $intro = $ctx.Params.description -}}
+  {{- else if $ctx.Description -}}
+    {{- $intro = $ctx.Description -}}
+  {{- end -}}
+  {{- with $intro }}<p class="list-intro">{{ . }}</p>{{ end -}}
+</header>
+
+

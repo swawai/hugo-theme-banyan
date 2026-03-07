@@ -1,0 +1,25 @@
+{{/* TAGS 分类通用面包屑导航：保持当前排序模式（by-*）前缀；不使用 Site.GetPage 以兼容性生成链接 */}}
+{{ $ctx := .ctx | default . }}
+{{ $mode := (.mode | default "byname") }}
+<nav aria-label="Breadcrumb">
+{{ $of := $ctx.OutputFormats.Get $mode }}
+{{ $curr := cond $of $of.RelPermalink (printf "/%s/" $ctx.Data.Plural | relLangURL) }}
+{{ $root := $curr | replaceRE (printf "(/%s/).*$" $ctx.Data.Plural) (printf "/%s/" $ctx.Data.Plural) }}
+<a href="{{ $root }}">{{ i18n "menu_tags" }}</a>
+
+{{ if eq $ctx.Kind "term" }}
+  {{ $segments := split $ctx.Data.Term "/" }}
+  {{ $path := slice }}
+  {{ range $i, $seg := $segments }}
+    {{ if ne $seg "" }}
+      {{ $path = $path | append $seg }}
+      {{ $disp := $seg }}
+      {{ if eq (lower $seg) "misc" }}{{ $disp = "untagged..." }}{{ end }}
+      {{ $href := printf "%s%s/" $root (urlize (delimit $path "/")) }}
+      ﹥ <a href="{{ $href }}">{{ $disp }}</a>
+    {{ end }}
+  {{ end }}
+{{ end }}
+</nav>
+
+

@@ -1,0 +1,89 @@
+/* 0. 同源 MPA 页面切换过渡（Chrome 126+ / Safari 18.2+，不支持的浏览器自动忽略） */
+@view-transition {
+    navigation: auto;
+}
+
+/* 1. 主题变量：默认 light，通过 [data-theme] 切换，避免首屏闪烁 */
+:root {
+    --bg: #fff;
+    --fg: #333;
+    --link: #333;
+    --link-visited: #777;
+    --border: #ddd;
+    --border-subtle: #e6e6e6;
+    --focus: #07c160;
+}
+
+[data-theme="dark"] {
+    --bg: #1a1a1a;
+    --fg: #d0d0d0;
+    --link: #d0d0d0;
+    --link-visited: #777;
+    --border: #444;
+    --border-subtle: #2b2b2b;
+}
+
+/* 2. 真正生效：页面背景/前景从变量里来 */
+.page {
+    min-height: 100vh;
+    /* 拉满视口高度 */
+    width: max-content;
+    min-width: 100%;
+    /* 宽度跟随最宽子元素，但最小不窄于视口 */
+    /* box-sizing: border-box; */
+    background: var(--bg);
+    color: var(--fg);
+    transition: background .3s, color .3s;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    
+    line-height: 1.7;
+    /* 全局行距：中文阅读推荐 1.6~1.8，浏览器默认 normal≈1.2 偏紧 */
+}
+
+/* 链接样式：与正文同色，仅靠下划线标识 */
+a {
+    color: var(--link);
+    text-decoration: underline;
+    transition: color .3s;
+}
+
+a:visited {
+    color: var(--link-visited);
+}
+
+/* 可访问性：键盘导航可见焦点（使用主题绿色，确保聚焦框醒目可辨） */
+a:focus-visible {
+    outline: 2px dashed var(--focus);
+    outline-offset: 2px;
+}
+
+html,
+body {
+    height: 100%;
+    /* 确保 body 撑满整个视口 */
+    margin: 0;
+    /* 去掉默认的 margin */
+    padding: 0;
+    font-size: 15px; 
+    /* 默认通常是 16px, 若想更改只需改这里 (如 18px 或 112.5%) 则全部基于 rem 设定的间距和由于继承产生的字体都会变化 */
+    overscroll-behavior-x: none; /* 允许全局横滑，但防止弹性过拽回弹 */
+    -webkit-overflow-scrolling: touch;
+    /* iOS 惯性滚动 */
+    background: var(--bg);
+    /* 横向滚动时，未被 .page 覆盖的区域也跟随主题 */
+    color: var(--fg);
+    transition: background .3s, color .3s;
+}
+
+
+
+/* === 主题图标切换：浅色/暗黑模式显示对应 SVG === */
+.icon-dark { display: none; }
+[data-theme="dark"] .icon-light { display: none; }
+[data-theme="dark"] .icon-dark { display: inline; }
+
+/* === 面包屑导航 === */
+nav[aria-label="Breadcrumb"] {
+    white-space: nowrap; /* 拒绝换行，让内容自然撑宽页面 */
+    margin-bottom: 0rem;
+}

@@ -1,0 +1,25 @@
+{{- $desc := "" -}}
+{{- if .Params.description -}}
+  {{- $desc = .Params.description -}}
+{{- else if .Summary -}}
+  {{- $desc = (.Summary | plainify | truncate 160) -}}
+{{- else -}}
+  {{- $desc = site.Params.description -}}
+{{- end -}}
+{{- $author := or site.Params.author "ipzu" -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": {{ .Title | jsonify }},
+  "description": {{ $desc | jsonify }},
+  "author": { "@type": "Person", "name": {{ $author | jsonify }} },
+  "inLanguage": "{{ .Language.Lang }}",
+  "datePublished": "{{ .PublishDate }}",
+  "dateModified": "{{ .Lastmod }}",
+  "mainEntityOfPage": "{{ .Permalink }}"
+}
+</script>
+
+
+

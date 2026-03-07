@@ -1,0 +1,7 @@
+{{ define "breadcrumb" }}
+{{ partial "udc-breadcrumb.html" (dict "ctx" . "mode" "bydate") }}
+{{ end }}
+
+{{ define "main" }}
+{{ partial "udc-term-common.html" (dict "ctx" . "mode" "bydate") }}
+{{ end }}

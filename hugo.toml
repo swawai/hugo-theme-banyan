@@ -1,0 +1,72 @@
+# themes/banyan/hugo.toml
+# -------------------------------------------------------------------
+# Theme Default Configuration
+# -------------------------------------------------------------------
+# This file provides the baseline properties for the Banyan theme.
+# Note: Structural configurations like [outputs], [outputFormats], 
+# [taxonomies], and [permalinks] are INTENTIONALLY OMITTED here 
+# because Hugo does not inherit them from theme configurations. 
+# Users MUST define those in their root hugo.toml.
+
+baseURL = "http://localhost:1313/"
+languageCode = "en-us"
+title = "Banyan Theme"
+
+
+preserveTaxonomyNames = true
+defaultContentLanguage = "en"
+defaultContentLanguageInSubdir = true
+enableRobotsTXT = true
+timeZone = "Asia/Shanghai"
+
+enableGitInfo = true
+panicOnWarning = true
+
+[frontmatter]
+lastmod = ["lastmod", ":git", ":fileModTime", ":default"]
+
+[menu]
+[[menu.main]]
+identifier = "about"
+url = "/about"
+weight = 5
+[[menu.main]]
+identifier = "dir"
+url = "/"
+weight = 1
+[[menu.main]]
+identifier = "tags"
+url = "/tags/"
+weight = 2
+[[menu.main]]
+identifier = "udc"
+url = "/udc/"
+weight = 3
+[[menu.main]]
+identifier = "all"
+url = "/all-by-date"
+weight = 4
+
+
+
+[languages]
+[languages.en]
+languageName = "English"
+weight = 1
+[languages.en.params]
+description = "A minimalist theme for Hugo."
+locale = "en_US"
+
+[languages.zh]
+languageName = "中文"
+weight = 2
+[languages.zh.params]
+description = "极简风格的 Hugo 主题。"
+locale = "zh_CN"
+
+[languages.zh-tw]
+languageName = "繁體"
+weight = 3
+[languages.zh-tw.params]
+description = "極簡風格的 Hugo 主題。"
+locale = "zh_TW"

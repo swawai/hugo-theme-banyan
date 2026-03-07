@@ -1,0 +1,123 @@
+{{/* 通用：_default list.all* 列表渲染
+参数：
+  ctx: 页面上下文 (.)
+  mode: allbynameasc | allbyname | allbydate | allbydateasc | allbypathasc | allbypath
+*/}}
+{{ $ctx := .ctx }}
+{{ $mode := .mode }}
+
+{{/* 面包屑 - 使用指定 format 的链接（首段统一 i18n: menu_all） */}}
+<nav aria-label="Breadcrumb">
+{{ with $ctx.OutputFormats.Get $mode }}<a href="{{ .RelPermalink }}">{{ i18n "menu_all" }}</a>{{ end }}
+{{ range (where $ctx.Ancestors.Reverse "IsHome" "ne" true) }}
+  {{ $p := . }}
+  {{ with $p.OutputFormats.Get $mode }} ﹥ <a href="{{ .RelPermalink }}">{{ $p.LinkTitle }}</a>{{ end }}
+{{ end }}
+{{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ <a href="{{ .RelPermalink }}">{{ $ctx.Title }}</a>{{ end }}{{ end }}
+</nav>
+
+{{/*  {{ partial "list-header.html" $ctx }}  */}}
+
+<div class="grid-list cols-4">
+  {{/* 模式配置集中管理：排序字段/方向 + 切换控件 */}}
+  {{ $config := dict
+    "allbynameasc" (dict "sortField" "Title"   "sortOrder" "asc"  "controls" (dict "name" "allbyname"    "nameText" "<b>↓</b>" "date" "allbydateasc" "dateText" "↨" "size" "allbysize" "sizeText" "↨" "path" "allbypath" "pathText" "↨"))
+    "allbyname"    (dict "sortField" "Title"   "sortOrder" "desc" "controls" (dict "name" "allbynameasc" "nameText" "<b>↑</b>" "date" "allbydateasc" "dateText" "↨" "size" "allbysize" "sizeText" "↨" "path" "allbypath" "pathText" "↨"))
+    "allbydate"    (dict "sortField" "Date"    "sortOrder" "desc" "controls" (dict "name" "allbyname"    "nameText" "↨"      "date" "allbydateasc" "dateText" "<b>↑</b>" "size" "allbysize"    "sizeText" "↨" "path" "allbypath" "pathText" "↨"))
+    "allbydateasc" (dict "sortField" "Date"    "sortOrder" "asc"  "controls" (dict "name" "allbyname"    "nameText" "↨"      "date" "allbydate"    "dateText" "<b>↓</b>" "size" "allbysize"    "sizeText" "↨" "path" "allbypath" "pathText" "↨"))
+    "allbypathasc" (dict "sortField" "File.Dir" "sortOrder" "asc"  "controls" (dict "name" "allbyname"    "nameText" "↨"      "date" "allbydateasc" "dateText" "↨"      "size" "allbysize" "sizeText" "↨" "path" "allbypath" "pathText" "<b>↓</b>"))
+    "allbypath"    (dict "sortField" "File.Dir" "sortOrder" "desc" "controls" (dict "name" "allbyname"    "nameText" "↨"      "date" "allbydateasc" "dateText" "↨"      "size" "allbysize" "sizeText" "↨" "path" "allbypathasc" "pathText" "<b>↑</b>"))
+    "allbysize"    (dict "sortField" "_size"  "sortOrder" "desc" "controls" (dict "name" "allbyname"    "nameText" "↨"      "date" "allbydateasc" "dateText" "↨"      "size" "allbysizeasc" "sizeText" "<b>↑</b>" "path" "allbypath" "pathText" "↨"))
+    "allbysizeasc" (dict "sortField" "_size"  "sortOrder" "asc"  "controls" (dict "name" "allbyname"    "nameText" "↨"      "date" "allbydateasc" "dateText" "↨"      "size" "allbysize"    "sizeText" "<b>↓</b>" "path" "allbypath" "pathText" "↨"))
+  }}
+  {{ $cfg := index $config $mode }}
+  {{ if not $cfg }}{{ $cfg = index $config "allbynameasc" }}{{ end }}
+
+  {{ $ctrl := index $cfg "controls" }}
+  {{ $sf := index $cfg "sortField" }}
+  {{ $so := index $cfg "sortOrder" }}
+  {{/* 表头：按列放置并与 main.css 对齐 → 标题/日期/大小/目录（增强 a11y） */}}
+  {{ with $ctx.OutputFormats.Get (index $ctrl "name") }}
+  <span class="cell-title header click-full" role="columnheader" aria-sort="{{ if eq $sf "Title" }}{{ if eq $so "asc" }}ascending{{ else }}descending{{ end }}{{ else }}none{{ end }}">
+    <a href="{{ .RelPermalink }}"
+       title="{{ if and (eq $sf "Title") (eq $so "asc") }}Sort by name descending{{ else }}Sort by name ascending{{ end }}"
+       aria-label="{{ if and (eq $sf "Title") (eq $so "asc") }}Sort by name descending{{ else }}Sort by name ascending{{ end }}">{{ (index $ctrl "nameText") | safeHTML }}</a>
+  </span>
+  {{ end }}
+  {{ with $ctx.OutputFormats.Get (index $ctrl "date") }}
+  <span class="cell-date header click-full" role="columnheader" aria-sort="{{ if eq $sf "Date" }}{{ if eq $so "asc" }}ascending{{ else }}descending{{ end }}{{ else }}none{{ end }}">
+    <a href="{{ .RelPermalink }}"
+       title="{{ if and (eq $sf "Date") (eq $so "asc") }}Sort by date descending{{ else }}Sort by date ascending{{ end }}"
+       aria-label="{{ if and (eq $sf "Date") (eq $so "asc") }}Sort by date descending{{ else }}Sort by date ascending{{ end }}">{{ (index $ctrl "dateText") | safeHTML }}</a>
+  </span>
+  {{ end }}
+  {{ with $ctx.OutputFormats.Get (index $ctrl "size") }}
+  <span class="cell-count header click-full" role="columnheader" aria-sort="{{ if eq $sf "_size" }}{{ if eq $so "asc" }}ascending{{ else }}descending{{ end }}{{ else }}none{{ end }}">
+    <a href="{{ .RelPermalink }}"
+       title="{{ if and (eq $sf "_size") (eq $so "asc") }}Sort by size descending{{ else }}Sort by size ascending{{ end }}"
+       aria-label="{{ if and (eq $sf "_size") (eq $so "asc") }}Sort by size descending{{ else }}Sort by size ascending{{ end }}">{{ (index $ctrl "sizeText") | safeHTML }}</a>
+  </span>
+  {{ end }}
+  {{ with $ctx.OutputFormats.Get (index $ctrl "path") }}
+  <span class="cell-path header click-full" role="columnheader" aria-sort="{{ if eq $sf "File.Dir" }}{{ if eq $so "asc" }}ascending{{ else }}descending{{ end }}{{ else }}none{{ end }}">
+    <a href="{{ .RelPermalink }}"
+       title="{{ if and (eq $sf "File.Dir") (eq $so "asc") }}Sort by path descending{{ else }}Sort by path ascending{{ end }}"
+       aria-label="{{ if and (eq $sf "File.Dir") (eq $so "asc") }}Sort by path descending{{ else }}Sort by path ascending{{ end }}">{{ (index $ctrl "pathText") | safeHTML }}</a>
+  </span>
+  {{ end }}
+
+  {{/* 集合选择：递归；首页使用全站 RegularPages */}}
+  {{ $pagesToShow := $ctx.RegularPagesRecursive }}
+  {{ if eq $ctx.Kind "home" }}
+    {{ $pagesToShow = $ctx.Site.RegularPages }}
+  {{ end }}
+
+  {{/* 统一排序与渲染：列顺序 → 标题 / 日期 / 大小 / 目录 */}}
+  {{ $sortedPages := $pagesToShow }}
+  {{ if ne (index $cfg "sortField") "_size" }}
+    {{ $sortedPages = sort $pagesToShow (index $cfg "sortField") (index $cfg "sortOrder") }}
+  {{ end }}
+  {{ if eq (index $cfg "sortField") "_size" }}
+    {{/* 当按 Size 排序时，构建带 _size 的切片并按 _size 排序，然后还原为页面切片 */}}
+    {{ $aug := slice }}
+    {{ range $pagesToShow }}
+      {{ $aug = $aug | append (dict "p" . "_size" (len .RawContent)) }}
+    {{ end }}
+    {{ $aug = sort $aug "_size" (index $cfg "sortOrder") }}
+    {{ $sortedPages = slice }}
+    {{ range $aug }}{{ $sortedPages = $sortedPages | append .p }}{{ end }}
+  {{ end }}
+  {{ range $sortedPages }}
+    {{/* 第一列：标题 + 统一文件图标（ALL 中只有 RegularPages） */}}
+    <span class="cell-title">
+      <a class="icon-link" href="{{ .RelPermalink }}">{{ partial "icon" (dict "name" "file") }}</a>
+      <a class="title-text" href="{{ .RelPermalink }}">{{ .Title }}</a>
+    </span>
+    {{/* 第二列：日期（按语言输出 ISO，避免歧义） */}}
+    <span class="cell-date">
+      {{ if eq $ctx.Site.Language.Lang "en" }}
+        {{ .Date.Format "2006-01-02" }}
+      {{ else if or (eq $ctx.Site.Language.Lang "zh") (eq $ctx.Site.Language.Lang "zh-tw") }}
+        {{ .Date.Format "2006-01-02" }}
+      {{ else }}
+        {{ .Date.Format "2006-01-02" }}
+      {{ end }}
+    </span>
+    {{/* 第三列：大小（KB） */}}
+    {{ $bytes := len .RawContent }}
+    {{ $kb := div (add $bytes 1023) 1024 }}
+    <span class="cell-count"><span class="num">{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>
+    {{/* 第四列：目录路径（链接到所属 section） */}}
+    {{ $d := (path.Clean .File.Dir) }}
+    <span class="cell-path">{{ with .CurrentSection }}{{ with .OutputFormats.Get "allbynameasc" }}<a href="{{ .RelPermalink }}">/{{ $d }}</a>{{ end }}{{ end }}</span>
+  {{ end }}
+
+</div>
+
+{{/* ItemList JSON-LD：按展示顺序构造 entries 并输出 */}}
+{{- $entries := slice -}}
+{{- range $sortedPages -}}
+  {{- $entries = $entries | append (dict "url" .RelPermalink "name" .Title) -}}
+{{- end -}}
+{{ partial "schema-itemlist.html" (dict "entries" $entries) }}
+

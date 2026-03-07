@@ -1,0 +1,19 @@
+{{- $items := slice (dict "@type" "ListItem" "position" 1 "name" .Site.Title "item" .Site.Home.Permalink) -}}
+{{- $pos := 2 -}}
+{{- range .Ancestors.Reverse -}}
+  {{- if not .IsHome -}}
+    {{- $items = $items | append (dict "@type" "ListItem" "position" $pos "name" .LinkTitle "item" .Permalink) -}}
+    {{- $pos = add $pos 1 -}}
+  {{- end -}}
+{{- end -}}
+{{- $items = $items | append (dict "@type" "ListItem" "position" $pos "name" .Title "item" .Permalink) -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": {{ $items | jsonify }}
+}
+</script>
+
+
+

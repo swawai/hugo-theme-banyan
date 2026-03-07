@@ -1,0 +1,98 @@
+{{ define "main" }}
+<article class="post">
+    <h1>404</h1>
+    <p>{{ i18n "notFoundTitle" | default "页面不存在" }}</p>
+    <p>{{ i18n "notFoundDesc" | default "当前语言可能没有该页面的翻译。您可以：" }}</p>
+    <ul>
+        <li><a href="{{ .Site.Home.RelPermalink }}">{{ i18n "goHome" | default "返回本语言首页" }}</a></li>
+        <li id="try-others" class="hidden">
+            {{ i18n "tryOtherLangs" | default "尝试其他语言版本：" }}
+            <span id="alt-lang-links"></span>
+        </li>
+    </ul>
+
+    <script>
+    (function(){
+      try {
+        // ── 站点支持的所有语言（Hugo 构建时注入）──
+        var siteLangs = [{{ range .Site.Languages }}'{{ .Lang }}',{{ end }}];
+        var defaultLang = '{{ .Site.Language.Lang }}';
+
+        var path = location.pathname;
+
+        // ── 方言归并（与 main.js normalizeLang 一致）──
+        var normalize = function (code) {
+          code = code.toLowerCase();
+          if (code === 'zh-hk' || code === 'zh-mo') return 'zh-tw';
+          return code;
+        };
+
+        // ── 检测路径是否已带语言前缀 ──
+        var langPrefix = null;
+        for (var i = 0; i < siteLangs.length; i++) {
+          if (path === '/' + siteLangs[i] || path.indexOf('/' + siteLangs[i] + '/') === 0) {
+            langPrefix = siteLangs[i];
+            break;
+          }
+        }
+
+        if (!langPrefix) {
+          // ── 路径没有语言前缀（如 /tags/、/by-name/）→ 自动补上语言前缀跳转 ──
+          var target = null;
+
+          // 1) 优先使用 localStorage 中的用户偏好
+          try {
+            var pref = localStorage.getItem('preferred_lang');
+            if (pref && siteLangs.indexOf(pref) !== -1) target = pref;
+          } catch (e) {}
+
+          // 2) 匹配浏览器语言
+          if (!target) {
+            var bLangs = (navigator.languages && navigator.languages.length)
+              ? navigator.languages
+              : [navigator.language || navigator.userLanguage || ''];
+            for (var j = 0; j < bLangs.length; j++) {
+              var code = normalize(bLangs[j].toLowerCase());
+              if (siteLangs.indexOf(code) !== -1) { target = code; break; }
+              var prefix = code.split('-')[0];
+              if (siteLangs.indexOf(prefix) !== -1) { target = prefix; break; }
+            }
+          }
+
+          // 3) 兜底
+          if (!target) target = defaultLang;
+
+          // 去掉开头的 / 以避免 //
+          var rest = path.replace(/^\//, '');
+          window.location.replace('/' + target + '/' + rest);
+          return;
+        }
+
+        // ── 路径已有语言前缀，但页面不存在 → 探测其他语言版本并显示链接 ──
+        var rest = path.slice(('/' + langPrefix).length);
+        if (rest.charAt(0) === '/') rest = rest.slice(1);
+        if (rest === '') { return; }
+
+        var links = document.getElementById('alt-lang-links');
+        var box = document.getElementById('try-others');
+        var shown = false;
+        siteLangs.forEach(function(lang){
+          var url = '/' + lang + '/' + rest;
+          fetch(url, { method: 'HEAD', credentials: 'same-origin' })
+            .then(function(res){
+              if (res && res.ok) {
+                var a = document.createElement('a');
+                a.href = url;
+                a.textContent = lang;
+                a.style.marginRight = '0.5rem';
+                links.appendChild(a);
+                if (!shown) { box.style.display = ''; shown = true; }
+              }
+            })
+            .catch(function(){});
+        });
+      } catch (e) {}
+    })();
+    </script>
+</article>
+{{ end }}

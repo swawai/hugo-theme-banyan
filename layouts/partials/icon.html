@@ -1,0 +1,10 @@
+{{- /* 参数: name (如 "folder" / "file") */ -}}
+{{- $name := .name -}}
+{{- $svg := resources.Get (printf "icon/%s.svg" $name) -}}
+{{- if $svg -}}
+  <img class="icon" src="{{ $svg.RelPermalink }}" alt="" aria-hidden="true" />
+{{- else if fileExists (printf "assets/icon/%s.svg.html" $name) -}}
+  <span class="icon">{{ readFile (printf "assets/icon/%s.svg.html" $name) | safeHTML }}</span>
+{{- end -}}
+
+

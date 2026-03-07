@@ -1,0 +1,122 @@
+{{/*
+输入:
+  ctx: 页面上下文 (通常用 .Site)
+  level: 1 | 2 | 3 | "facet"
+  sel: dict{"t1":"...","t2":"...","t3":"..."} 当前已选路径
+输出:
+  items: 切片，元素为 dict { kind, title, latest, cnt, bytes, url, id }
+说明:
+  - 仅使用每篇文章的前三个 tags 位置，分别作为 t1/t2/t3。
+  - kind: "cat" 为目录项；"page" 为文章项；"facet" 为第四层筛选标签（也用 cat 展示时可设为 "cat"）。
+*/}}
+{{ $ctx := .ctx }}
+{{ $level := .level }}
+{{ $sel := .sel | default (dict) }}
+
+{{/* 使用站点级 RegularPages，以确保聚合完整 */}}
+{{ $site := $ctx.Site }}
+{{ $pages := $site.RegularPages }}
+
+{{/* 根据选择过滤：仅检查前三个 tag 的位置是否匹配 */}}
+{{ $filtered := slice }}
+{{ range $p := $pages }}
+  {{ $tags := $p.Params.tags | default (slice) }}
+  {{ $ok := true }}
+  {{ if $sel.t1 }}{{ $ok = and $ok (and (ge (len $tags) 1) (eq (index $tags 0) $sel.t1)) }}{{ end }}
+  {{ if $sel.t2 }}{{ $ok = and $ok (and (ge (len $tags) 2) (eq (index $tags 1) $sel.t2)) }}{{ end }}
+  {{ if $sel.t3 }}{{ $ok = and $ok (and (ge (len $tags) 3) (eq (index $tags 2) $sel.t3)) }}{{ end }}
+  {{ if $ok }}{{ $filtered = $filtered | append $p }}{{ end }}
+{{ end }}
+
+{{ $items := slice }}
+
+{{ if eq $level 1 }}
+  {{/* 顶层 t1 */}}
+  {{ $m := dict }}
+  {{ range $pages }}
+    {{ $tags := .Params.tags | default (slice) }}
+    {{ if ge (len $tags) 1 }}
+      {{ $t1 := index $tags 0 }}
+      {{ $arr := slice }}
+      {{ with (index $m $t1) }}{{ $arr = . }}{{ end }}
+      {{ $arr = $arr | append . }}
+      {{ $m = merge $m (dict $t1 $arr) }}
+    {{ end }}
+  {{ end }}
+  {{ range $k, $arr := $m }}
+    {{ $latest := "" }}
+    {{ if gt (len $arr) 0 }}
+      {{ $p := index (sort $arr "Date" "desc") 0 }}
+      {{ $latest = $p.Date.Format "2006-01-02" }}
+    {{ end }}
+    {{ $id := printf "tags-%s" (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $k)) }}
+    {{ $items = $items | append (dict "kind" "cat" "title" $k "latest" $latest "cnt" (len $arr) "url" (printf "#%s" $id) "id" $id) }}
+  {{ end }}
+{{ else if eq $level 2 }}
+  {{ $m := dict }}
+  {{ range $filtered }}
+    {{ $tags := .Params.tags | default (slice) }}
+    {{ if ge (len $tags) 2 }}
+      {{ $t2 := index $tags 1 }}
+      {{ $arr := slice }}
+      {{ with (index $m $t2) }}{{ $arr = . }}{{ end }}
+      {{ $arr = $arr | append . }}
+      {{ $m = merge $m (dict $t2 $arr) }}
+    {{ end }}
+  {{ end }}
+  {{ range $k, $arr := $m }}
+    {{ $latest := "" }}
+    {{ if gt (len $arr) 0 }}
+      {{ $p := index (sort $arr "Date" "desc") 0 }}
+      {{ $latest = $p.Date.Format "2006-01-02" }}
+    {{ end }}
+    {{ $id := printf "tags-%s-%s" (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $sel.t1)) (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $k)) }}
+    {{ $items = $items | append (dict "kind" "cat" "title" $k "latest" $latest "cnt" (len $arr) "url" (printf "#%s" $id) "id" $id) }}
+  {{ end }}
+{{ else if eq $level 3 }}
+  {{ $m := dict }}
+  {{ range $filtered }}
+    {{ $tags := .Params.tags | default (slice) }}
+    {{ if ge (len $tags) 3 }}
+      {{ $t3 := index $tags 2 }}
+      {{ $arr := slice }}
+      {{ with (index $m $t3) }}{{ $arr = . }}{{ end }}
+      {{ $arr = $arr | append . }}
+      {{ $m = merge $m (dict $t3 $arr) }}
+    {{ end }}
+  {{ end }}
+  {{ range $k, $arr := $m }}
+    {{ $latest := "" }}
+    {{ if gt (len $arr) 0 }}
+      {{ $p := index (sort $arr "Date" "desc") 0 }}
+      {{ $latest = $p.Date.Format "2006-01-02" }}
+    {{ end }}
+    {{ $id := printf "tags-%s-%s-%s" (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $sel.t1)) (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $sel.t2)) (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $k)) }}
+    {{ $items = $items | append (dict "kind" "cat" "title" $k "latest" $latest "cnt" (len $arr) "url" (printf "#%s" $id) "id" $id) }}
+  {{ end }}
+  {{/* 该路径下的文章 */}}
+  {{ range $filtered }}
+    {{ $bytes := len .RawContent }}
+    {{ $items = $items | append (dict "kind" "page" "title" .Title "latest" (.Date.Format "2006-01-02") "cnt" 1 "bytes" $bytes "url" .RelPermalink) }}
+  {{ end }}
+{{ else if eq $level "facet" }}
+  {{ $set := dict }}
+  {{ range $filtered }}
+    {{ $tags := .Params.tags | default (slice) }}
+    {{ $used := slice $sel.t1 $sel.t2 $sel.t3 }}
+    {{ range $t := $tags }}
+      {{ if and $t (not (in $used $t)) }}
+        {{ $n := add (cond (isset $set $t) (index $set $t) 0) 1 }}
+        {{ $set = merge $set (dict $t $n) }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+  {{ range $k, $v := $set }}
+    {{ $id := printf "tags-facet-%s-%s-%s-%s" (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $sel.t1)) (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $sel.t2)) (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $sel.t3)) (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $k)) }}
+    {{ $items = $items | append (dict "kind" "cat" "title" $k "latest" "" "cnt" $v "url" (printf "#%s" $id) "id" $id) }}
+  {{ end }}
+{{ end }}
+
+{{ return $items }}
+
+

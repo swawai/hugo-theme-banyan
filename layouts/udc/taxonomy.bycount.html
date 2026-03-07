@@ -1,0 +1,7 @@
+{{ define "breadcrumb" }}
+{{ partial "udc-breadcrumb.html" (dict "ctx" . "mode" "bycount") }}
+{{ end }}
+
+{{ define "main" }}
+{{ partial "udc-taxonomy-common.html" (dict "ctx" . "mode" "bycount") }}
+{{ end }}

@@ -1,0 +1,56 @@
+{{/* 收集给定 prefix 的 UDC 子树页面；带页面级缓存。
+参数：
+  ctx: 页面上下文 (.)，用于获取语言与页面级 Scratch
+  prefix: 要收集的 term 前缀（如 "100"、"100/110" 等）
+返回：页面切片 */}}
+{{ $page := .ctx }}
+{{ $prefix := .prefix }}
+{{ $mode := cond (isset . "mode") .mode "subtree" }}
+{{ $lang := $page.Site.Language.Lang }}
+{{ $key := printf "udc:%s:%s:%s" $mode $prefix $lang }}
+{{ $scr := $page.Scratch }}
+{{ $res := newScratch }}
+{{ $cached := $scr.Get $key }}
+{{ if $cached }}
+  {{ $res.Set "v" $cached }}
+{{ else }}
+  {{ $pagesAll := slice }}
+  {{ if eq $mode "subtree" }}
+    {{ range $t, $pages := site.Taxonomies.udc }}
+      {{ if or (eq $t $prefix) (hasPrefix $t (printf "%s/" $prefix)) }}
+        {{ $pagesAll = $pagesAll | append $pages }}
+      {{ end }}
+    {{ end }}
+  {{ else if eq $mode "exact" }}
+    {{ $exact := index site.Taxonomies.udc $prefix }}
+    {{ with $exact }}
+      {{ range . }}
+        {{ $arr := .Params.udc }}
+        {{ $hit := false }}
+        {{ if $arr }}
+          {{ range $arr }}
+            {{ if eq (printf "%v" .) $prefix }}{{ $hit = true }}{{ end }}
+          {{ end }}
+        {{ end }}
+        {{ if $hit }}
+          {{ $pagesAll = $pagesAll | append . }}
+        {{ end }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+  {{/* 统一去重（按 RelPermalink）再缓存 */}}
+  {{ $seen := dict }}
+  {{ $uniq := slice }}
+  {{ range $pagesAll }}
+    {{ $k := .RelPermalink }}
+    {{ if not (isset $seen $k) }}
+      {{ $seen = merge $seen (dict $k true) }}
+      {{ $uniq = $uniq | append . }}
+    {{ end }}
+  {{ end }}
+  {{ $scr.Set $key $uniq }}
+  {{ $res.Set "v" $uniq }}
+{{ end }}
+{{ return ($res.Get "v") }}
+
+

@@ -1,0 +1,69 @@
+{{/* 参数：ctx(.Site), mode(bynameasc|byname|bydate|bydateasc|bycountasc|bycount), level(1|2|3|"facet"), sel(dict) */}}
+{{ $ctx := .ctx }}
+{{ $mode := .mode | default "bynameasc" }}
+{{ $sel := .sel | default (dict) }}
+{{ $level := .level }}
+
+{{/* 控制条配置与 DIR 一致 */}}
+{{ $config := dict
+  "bynameasc"  (dict "sortField" "title"  "sortOrder" "asc"  "controls" (dict "name" "byname"    "nameText" "<b>↓</b>"  "date" "bydateasc"  "dateText" "↨"         "count" "bycount"    "countText" "↨"))
+  "byname"     (dict "sortField" "title"  "sortOrder" "desc" "controls" (dict "name" "bynameasc" "nameText" "<b>↑</b>"  "date" "bydateasc"  "dateText" "↨"         "count" "bycount"    "countText" "↨"))
+  "bydate"     (dict "sortField" "latest" "sortOrder" "desc" "controls" (dict "name" "byname"    "nameText" "↨"        "date" "bydateasc"  "dateText" "<b>↑</b>"   "count" "bycount"    "countText" "↨"))
+  "bydateasc"  (dict "sortField" "latest" "sortOrder" "asc"  "controls" (dict "name" "byname"    "nameText" "↨"        "date" "bydate"     "dateText" "<b>↓</b>"   "count" "bycount"    "countText" "↨"))
+  "bycountasc" (dict "sortField" "cnt"    "sortOrder" "asc"  "controls" (dict "name" "byname"    "nameText" "↨"        "date" "bydateasc"  "dateText" "↨"         "count" "bycount"    "countText" "<b>↓</b>"))
+  "bycount"    (dict "sortField" "cnt"    "sortOrder" "desc" "controls" (dict "name" "byname"    "nameText" "↨"        "date" "bydateasc"  "dateText" "↨"         "count" "bycountasc" "countText" "<b>↑</b>"))
+}}
+{{ $cfg := index $config $mode }}
+{{ if not $cfg }}{{ $cfg = index $config "bynameasc" }}{{ end }}
+
+{{/* 数据与排序 */}}
+{{ $items := partial "tags-data-collect.html" (dict "ctx" $ctx "sel" $sel "level" $level) }}
+{{ $sorted := sort $items (index $cfg "sortField") (index $cfg "sortOrder") }}
+
+<div class="grid-list">
+  {{/* 控件置于同一 grid 容器，保证与列对齐 */}}
+  {{ $ctrl := index $cfg "controls" }}
+  {{ $sf := index $cfg "sortField" }}
+  {{ $so := index $cfg "sortOrder" }}
+  {{ with $ctx.OutputFormats.Get (index $ctrl "name") }}
+  <span class="cell-title header click-full" role="columnheader" aria-sort="{{ if eq $sf "title" }}{{ if eq $so "asc" }}ascending{{ else }}descending{{ end }}{{ else }}none{{ end }}">
+    <a href="{{ .RelPermalink }}#{{ $.level }}" title="{{ if and (eq $sf "title") (eq $so "asc") }}Sort by name descending{{ else }}Sort by name ascending{{ end }}" aria-label="{{ if and (eq $sf "title") (eq $so "asc") }}Sort by name descending{{ else }}Sort by name ascending{{ end }}">{{ (index $ctrl "nameText") | safeHTML }}</a>
+  </span>
+  {{ end }}
+  {{ with $ctx.OutputFormats.Get (index $ctrl "date") }}
+  <span class="cell-date header click-full" role="columnheader" aria-sort="{{ if eq $sf "latest" }}{{ if eq $so "asc" }}ascending{{ else }}descending{{ end }}{{ else }}none{{ end }}">
+    <a href="{{ .RelPermalink }}#{{ $.level }}" title="{{ if and (eq $sf "latest") (eq $so "asc") }}Sort by date descending{{ else }}Sort by date ascending{{ end }}" aria-label="{{ if and (eq $sf "latest") (eq $so "asc") }}Sort by date descending{{ else }}Sort by date ascending{{ end }}">{{ (index $ctrl "dateText") | safeHTML }}</a>
+  </span>
+  {{ end }}
+  {{ with $ctx.OutputFormats.Get (index $ctrl "count") }}
+  <span class="cell-count header click-full" role="columnheader" aria-sort="{{ if eq $sf "cnt" }}{{ if eq $so "asc" }}ascending{{ else }}descending{{ end }}{{ else }}none{{ end }}">
+    <a href="{{ .RelPermalink }}#{{ $.level }}" title="{{ if and (eq $sf "cnt") (eq $so "asc") }}Sort by count descending{{ else }}Sort by count ascending{{ end }}" aria-label="{{ if and (eq $sf "cnt") (eq $so "asc") }}Sort by count descending{{ else }}Sort by count ascending{{ end }}">{{ (index $ctrl "countText") | safeHTML }}</a>
+  </span>
+  {{ end }}
+
+  {{ range $sorted }}
+    {{ if eq .kind "cat" }}
+      {{/* 目录项链接：按层构造真实路由 */}}
+      {{ $href := .url }}
+      {{ if eq $level 1 }}
+        {{ $href = (relLangURL (printf "/tags/%s/" (urlize .title))) }}
+      {{ else if eq $level 2 }}
+        {{ $href = (relLangURL (printf "/tags/%s/%s/" (urlize $sel.t1) (urlize .title))) }}
+      {{ else if eq $level 3 }}
+        {{ $href = (relLangURL (printf "/tags/%s/%s/%s/" (urlize $sel.t1) (urlize $sel.t2) (urlize .title))) }}
+      {{ end }}
+      <span class="cell-title"><a class="icon-link" href="{{ $href }}">{{ partial "icon" (dict "name" "folder") }}</a><a class="title-text" href="{{ $href }}">{{ .title }}/</a></span>
+      <span class="cell-date">{{ .latest }}</span>
+      <span class="cell-count"><span class="num">{{ .cnt }}</span><span class="unit"></span></span>
+    {{ else if eq .kind "page" }}
+      <span class="cell-title"><a class="icon-link" href="{{ .url }}">{{ partial "icon" (dict "name" "file") }}</a><a class="title-text" href="{{ .url }}">{{ .title }}</a></span>
+      <span class="cell-date">{{ .latest }}</span>
+      {{ $kb := div (add .bytes 1023) 1024 }}
+      <span class="cell-count"><span class="num">{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>
+    {{ end }}
+  {{ end }}
+</div>
+
+{{/* 非递归：每页只渲染当前层的数据；更深层由路由/模板决定 */}}
+
+

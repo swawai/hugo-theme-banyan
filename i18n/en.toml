@@ -1,0 +1,32 @@
+[menu_about]
+other = "ABOUT"
+[menu_dir]
+other = "DIR"
+[menu_tags]
+other = "TAG"
+[menu_udc]
+other = "UDC"
+[menu_all]
+other = "ALL"
+
+ 
+
+[label_theme]
+other = "Theme"
+[theme_auto]
+other = "Auto"
+[theme_light]
+other = "Light"
+[theme_dark]
+other = "Dark"
+
+[label_published]
+other = "Published"
+[label_updated]
+other = "Updated"
+
+[label_account]
+other = "Account"
+
+[no_trans_msg]
+other = "This page is not available in [{lang}].\nRedirect to the homepage?"

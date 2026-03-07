@@ -1,0 +1,86 @@
+{{/* 统一生成 items：kind=term/root；参考 UDC 版本 */}}
+{{ $kind := .kind }}
+{{ $ctx := .ctx }}
+{{ $mode := (.mode | default "byname") }}
+{{ $dateFmt := "2006-01-02" }}
+{{ $items := slice }}
+{{ if eq $kind "term" }}
+  {{ $term := printf "%v" $ctx.Data.Term }}
+  {{ $termDepth := len (split $term "/") }}
+  {{ $root := index (split $term "/") 0 }}
+  {{ $children := slice }}
+  {{ range $t, $pages := site.Taxonomies.tags }}
+    {{ if and (hasPrefix $t (printf "%s/" $term)) (ne $t $term) }}
+      {{ $parts := split $t "/" }}
+      {{ $child := index $parts (len (split $term "/")) }}
+      {{ if not (collections.In $children $child) }}
+        {{ $children = collections.Append $child $children }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+  {{ $scratch := newScratch }}
+  {{ $scratch.Set "cats" (slice) }}
+  {{ range $children }}
+    {{ $full := printf "%s/%s" $term . }}
+    {{ $pagesAll := partial "tags-data-collect-subtree.html" (dict "ctx" $ctx "prefix" $full "mode" "subtree") }}
+    {{ $agg := partial "tags-data-pages-dedup-latest.html" (dict "pages" $pagesAll) }}
+    {{ $scratch.Set "cats" ( $scratch.Get "cats" | append (dict "name" . "full" $full "cnt" (index $agg "cnt") "latest" (index $agg "latest") "latestKey" (index $agg "latestKey")) ) }}
+  {{ end }}
+  {{ $cats := $scratch.Get "cats" }}
+  {{ range $cats }}
+    {{ $items = $items | append (dict "kind" "cat" "title" .name "latest" .latest "latestKey" .latestKey "cnt" .cnt "url" (partial "tags-url.html" (dict "ctx" $ctx "mode" $mode "value" .full))) }}
+  {{ end }}
+  {{/* 精确项下文章 */}}
+  {{ $exactPages := partial "tags-data-collect-subtree.html" (dict "ctx" $ctx "prefix" $term "mode" "exact") }}
+  {{ with $exactPages }}
+    {{ range . }}
+      {{/* 仅基于与当前 term 同根的 tags 计算分支最大深度 */}}
+      {{ $branchMax := 0 }}
+      {{ range $v := (.Params.tags | default (slice)) }}
+        {{ $sv := printf "%v" $v }}
+        {{ $first := index (split $sv "/") 0 }}
+        {{ if eq $first $root }}
+          {{ $d := len (split $sv "/") }}
+          {{ if gt $d $branchMax }}{{ $branchMax = $d }}{{ end }}
+        {{ end }}
+      {{ end }}
+      {{ if eq $branchMax $termDepth }}
+        {{ $bytes := len .RawContent }}
+        {{ $d := .Lastmod }}
+        {{ if eq ($d.Format "2006") "0001" }}{{ $d = .Date }}{{ end }}
+        {{ $items = $items | append (dict "kind" "page" "title" .Title "latest" ($d.Format $dateFmt) "latestKey" ($d.Format "20060102") "cnt" 1 "bytes" $bytes "url" .RelPermalink) }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+{{ else }}
+  {{/* root */}}
+  {{ $roots := slice }}
+  {{ range $term, $pages := site.Taxonomies.tags }}
+    {{ $root := index (split $term "/") 0 }}
+    {{ if not (collections.In $roots $root) }}
+      {{ $roots = collections.Append $root $roots }}
+    {{ end }}
+  {{ end }}
+  {{ $roots = sort $roots }}
+  {{ range $roots }}
+    {{ $root := . }}
+    {{ $pagesAll := partial "tags-data-collect-subtree.html" (dict "ctx" $ctx "prefix" $root "mode" "subtree") }}
+    {{ $agg := partial "tags-data-pages-dedup-latest.html" (dict "pages" $pagesAll) }}
+    {{ $items = $items | append (dict "kind" "cat" "title" $root "latest" (index $agg "latest") "latestKey" (index $agg "latestKey") "cnt" (index $agg "cnt") "url" (partial "tags-url.html" (dict "ctx" $ctx "mode" $mode "value" $root))) }}
+  {{ end }}
+{{ end }}
+
+{{/* 去重 */}}
+{{ $seen := dict }}
+{{ $dedup := slice }}
+{{ range $items }}
+  {{ $k := printf "%s" .url }}
+  {{ if not (isset $seen $k) }}
+    {{ $seen = merge $seen (dict $k true) }}
+    {{ $dedup = $dedup | append . }}
+  {{ end }}
+{{ end }}
+{{ $items = $dedup }}
+{{ return $items }}
+
+

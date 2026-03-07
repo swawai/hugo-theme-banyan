@@ -1,0 +1,1 @@
+{{ dict "no_trans_msg" (i18n "no_trans_msg" | default "This page is not available in [{lang}]. Redirect to the homepage?") | jsonify }}

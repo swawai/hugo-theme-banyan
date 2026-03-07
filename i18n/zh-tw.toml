@@ -1,0 +1,29 @@
+[menu_about]
+other = "關於"
+[menu_dir]
+other = "目錄"
+[menu_tags]
+other = "標籤"
+[menu_udc]
+other = "學科"
+[menu_all]
+other = "總覽"
+[label_theme]
+other = "主題"
+[theme_auto]
+other = "自動"
+[theme_light]
+other = "亮色"
+[theme_dark]
+other = "深色"
+ 
+[label_published]
+other = "發布於"
+[label_updated]
+other = "更新於"
+
+[label_account]
+other = "帳號"
+
+[no_trans_msg]
+other = "此頁面尚未提供 [{lang}] 翻譯。\n是否跳轉至該語言的首頁？"
