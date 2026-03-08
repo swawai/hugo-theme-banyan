@@ -21,9 +21,9 @@
         return code;
       };
 
-      // 通过 Hugo 生成的 /en/lang-list.json 获取真实支持语言列表
+      // 通过 Hugo 生成的 /lang-list.json 获取真实支持语言列表
       function detectAvailableLangs() {
-        return fetch('/en/lang-list.json', { credentials: 'same-origin' })
+        return fetch('/lang-list.json', { credentials: 'same-origin' })
           .then(function (res) { return res && res.ok ? res.json() : []; })
           .then(function (list) {
             if (!Array.isArray(list)) return [];
@@ -128,3 +128,4 @@
   Redirecting...
 </body>
 </html>
+

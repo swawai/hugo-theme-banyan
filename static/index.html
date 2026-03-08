@@ -30,8 +30,8 @@
       // layouts/index.langlist.json -> /{lang}/lang-list.json
       //
       // 由于本项目 defaultContentLanguage = "en"，且 defaultContentLanguageInSubdir = true，
-      // 根入口可以固定从 /en/lang-list.json 读取一次权威语言列表。
-      fetch(base + 'en/lang-list.json', { credentials: 'same-origin' })
+      // 根入口可以固定从 /lang-list.json 读取一次权威语言列表。
+      fetch(base + 'lang-list.json', { credentials: 'same-origin' })
         .then(function (res) { return res && res.ok ? res.json() : []; })
         .then(function (list) {
           var available = Array.isArray(list)
@@ -86,3 +86,5 @@
   Redirecting…
 </body>
 </html>
+
+
