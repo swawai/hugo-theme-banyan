@@ -1,5 +1,5 @@
 {{- $list := slice -}}
-{{- range .Sites -}}
+{{- range sort .Sites "Language.Weight" -}}
   {{- $item := dict
       "code" .Language.Lang
       "name" .Language.LanguageName
@@ -8,4 +8,3 @@
   {{- $list = $list | append $item -}}
 {{- end -}}
 {{- $list | jsonify -}}
-

@@ -35,6 +35,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (code === 'zh-hk' || code === 'zh-mo') return 'zh-tw';
             return code;
         };
+        const normalizePath = (path) => {
+            if (!path) return '/';
+            return path.startsWith('/') ? path : '/' + path;
+        };
+        const normalizeHomeUrl = (url, code) => {
+            let home = url || '/' + code + '/';
+            try {
+                home = new URL(home, window.location.origin).pathname || '/';
+            } catch (e) {
+                home = normalizePath(home);
+            }
+            home = normalizePath(home);
+            if (home !== '/' && !home.endsWith('/')) home += '/';
+            return home;
+        };
 
         // 当前页面已有翻译的语言列表（由 Hugo 在 baseof.html 上以 data-trans-langs 注入）
         const curLang = (langSelect.dataset.curLang || document.documentElement.lang || '').toLowerCase();
@@ -45,10 +60,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 懒加载 i18n JSON（仅在需要时请求，内存缓存）
         const _i18nCache = {};
-        async function getNoTransMsg(lang) {
+        async function getNoTransMsg(lang, homeUrl) {
             if (!_i18nCache[lang]) {
                 try {
-                    const res = await fetch('/' + lang + '/i18n.json');
+                    const res = await fetch(homeUrl === '/' ? '/i18n.json' : homeUrl + 'i18n.json');
                     if (res.ok) {
                         const data = await res.json();
                         _i18nCache[lang] = data.no_trans_msg;
@@ -65,11 +80,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!Array.isArray(list) || !list.length) return;
 
                 const supportedLangs = [];
+                const langHomes = {};
                 list.forEach(item => {
                     const code = (item.code || '').toLowerCase();
                     const name = item.name || code;
                     if (!code) return;
+                    const homeUrl = normalizeHomeUrl(item.url, code);
                     supportedLangs.push(code);
+                    langHomes[code] = homeUrl;
 
                     const opt = document.createElement('option');
                     opt.value = code;
@@ -82,6 +100,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!langSelect.options.length) return;
                 updateFit(langSelect);
 
+                const defaultLang = supportedLangs.find(code => langHomes[code] === '/') || supportedLangs[0] || 'en';
+                const getHomeUrl = (lang) => langHomes[lang] || (lang === defaultLang ? '/' : '/' + lang + '/');
+                const toRelativePath = (pathname) => {
+                    const path = normalizePath(pathname);
+                    const currentHome = getHomeUrl(curLang);
+                    if (currentHome !== '/') {
+                        const currentRoot = currentHome.slice(0, -1);
+                        if (path === currentRoot || path === currentHome) return '/';
+                        if (path.startsWith(currentHome)) {
+                            const rest = path.slice(currentHome.length);
+                            return rest ? '/' + rest : '/';
+                        }
+                    }
+                    return path;
+                };
+                const buildTargetUrl = (lang, relativePath) => {
+                    const home = getHomeUrl(lang);
+                    if (!relativePath || relativePath === '/') return home;
+                    const rest = relativePath.replace(/^\/+/, '');
+                    return home === '/' ? '/' + rest : home + rest;
+                };
+
                 langSelect.addEventListener('change', async () => {
                     try {
                         const option = langSelect.options[langSelect.selectedIndex];
@@ -89,8 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!targetLang) return;
 
                         const hasTrans = option.getAttribute('data-has-trans') === 'true';
+                        const targetHome = getHomeUrl(targetLang);
                         if (!hasTrans) {
-                            const tpl = await getNoTransMsg(targetLang);
+                            const tpl = await getNoTransMsg(targetLang, targetHome);
                             const msg = tpl.replace('{lang}', option.text.trim());
                             if (!window.confirm(msg)) {
                                 // 用户取消：恢复为当前语言
@@ -108,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (supportedLangs.includes(code)) {
                                 localStorage.setItem('preferred_lang', code);
                             }
-                            window.location.href = '/' + targetLang + '/';
+                            window.location.href = targetHome;
                             return;
                         }
 
@@ -118,18 +159,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         }
 
                         const curUrl = new URL(window.location.href);
-                        const curSegs = curUrl.pathname.split('/').filter(Boolean);
-
-                        if (curSegs.length > 0 && supportedLangs.includes(curSegs[0].toLowerCase())) {
-                            curSegs[0] = targetLang;
-                            curUrl.pathname = '/' + curSegs.join('/') + (curUrl.pathname.endsWith('/') ? '/' : '');
-                            window.location.href = curUrl.href;
-                        } else {
-                            window.location.href = '/' + targetLang + '/';
-                        }
+                        const relativePath = toRelativePath(curUrl.pathname);
+                        curUrl.pathname = buildTargetUrl(targetLang, relativePath);
+                        window.location.href = curUrl.href;
                     } catch (e) {
                         const fallback = langSelect.options[langSelect.selectedIndex]?.value || 'en';
-                        window.location.href = '/' + fallback + '/';
+                        window.location.href = normalizeHomeUrl(langHomes[fallback], fallback);
                     }
                 });
             })
@@ -159,3 +194,4 @@ document.addEventListener('DOMContentLoaded', () => {
         updateFit(themeSelect);
     });
 });
+

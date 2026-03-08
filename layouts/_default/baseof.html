@@ -18,26 +18,7 @@
             text-size-adjust: 100% !important;
         }
     </style>
-    <!-- 针对微信安卓版：通过 WeixinJSBridge 强制覆盖字体大小并禁止用户修改，已移出至 main.js 中执行 -->
-    {{- $canonical := .Permalink -}}
-    {{- if .IsNode -}}
-        {{- with .OutputFormats.Get "bydate" -}}
-            {{- $defaultRel := .RelPermalink -}}
-            {{- if $.Paginator -}}
-                {{- if gt $.Paginator.PageNumber 1 -}}
-                    {{- $pagedPart := replaceRE "^.*(/page/[0-9]+/?)$" "$1" $.RelPermalink -}}
-                    {{- if ne $pagedPart $.RelPermalink -}}
-                         {{- $canonical = printf "%s%s" (strings.TrimSuffix "/" .Permalink) $pagedPart -}}
-                    {{- end -}}
-                {{- else -}}
-                     {{- $canonical = .Permalink -}}
-                {{- end -}}
-            {{- else -}}
-                 {{- $canonical = .Permalink -}}
-            {{- end -}}
-        {{- end -}}
-    {{- end -}}
-    <link rel="canonical" href="{{ $canonical }}">
+    <link rel="canonical" href="{{ .Permalink }}">
     <script>(function () { try { var pref = localStorage.getItem('theme-preference'); var media = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)'); var theme; if (!pref || pref === 'auto') { theme = (media && media.matches) ? 'dark' : 'light'; } else { theme = pref; } document.documentElement.setAttribute('data-theme', theme); } catch (e) { } })();</script>
     {{ $base := resources.Get "css/base.css" }}
     {{ $header := resources.Get "css/header.css" }}
@@ -49,20 +30,17 @@
     <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
 
     {{ hugo.Generator }}
-    {{/* 集中在 seo.html 输出 description/hreflang/OG/Twitter/RSS/robots 等 */}}
     {{ partial "seo.html" . }}
     {{ $js := resources.Get "js/main.js" | js.Build | minify | fingerprint }}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
 </head>
 
 <body>
-    {{/* 强制要求所有 Page 必须配置 slug */}}
     {{ if and .IsPage (not .Params.slug) }}
         {{ errorf "编译失败: 页面 %q (标题: %q) 未配置 slug 字段。" .File.Path .Title }}
     {{ end }}
     <div class="page">
         <a class="skip" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
-        <!-- 移动到最开头的版权与社交媒体信息，使用 header 或 div 更加符合排版逻辑 -->
         <header class="site-header">
             <div class="copyright">
                 {{ with site.Params.copyright }}
@@ -84,10 +62,7 @@
             </div>
         </header>
 
-
         <nav aria-label="Primary">
-
-            <!-- 账号登录 (图标形态) -->
             {{ $account_link := site.Params.account_url }}
             {{ $has_account := true }}
             {{ if not $account_link }}
@@ -99,11 +74,9 @@
                 <span>{{ i18n "label_account" | default "Account" }}</span>
                 {{ end }}
                 <img src="/favicon.svg?v=20260307" alt="Logo" class="default-avatar" />
-                <!-- 预留动态用户头像：当网页判定已登录并给 html/body 挂上特定 class 时由此接管显示 -->
                 <img src="" alt="User Avatar" class="user-avatar" style="display:none;" />
             </a>
 
-            <!-- 语言切换 (图标形态) -->
             {{ $cur := .Language.Lang }}
             {{- $transLangs := slice $cur -}}
             {{- range .AllTranslations -}}
@@ -125,7 +98,6 @@
                 </select>
             </span>
 
-            <!-- 主题切换 (图标形态) -->
             <span class="icon-select-wrapper" title="{{ i18n `label_theme` | default `Theme` }}">
                 <span class="sr-only">{{ i18n "label_theme" | default "Theme" }}</span>
                 {{ $theme_svg := resources.Get "icon/theme.svg" }}
@@ -139,16 +111,10 @@
                 </select>
             </span>
 
-
-
-            <!-- 菜单 -->
             {{ range .Site.Menus.main }}
             {{ $key := printf "menu_%s" .Identifier }}
             <a href="{{ .URL | relLangURL }}" {{ if eq .Identifier "udc" }} title="Universal Decimal Classification" {{ end }}>{{ i18n $key | default .Name }}</a>
             {{ end }}
-
-
-
         </nav>
 
         {{ block "breadcrumb" . }}{{ end }}

@@ -3,13 +3,9 @@
   - description 优先级：.Params.description > .Summary(plainify,160) > site.Params.description
   - OpenGraph / Twitter 卡片
   - hreflang：当前语言 + .AllTranslations + x-default（指向默认语言版本）
-  - 分页 prev/next（仅 list/node 且存在 Paginator 时）
-  - robots：深分页 noindex,follow（示例）
   - RSS 暴露
- 说明：canonical 已在 baseof.html 中输出，避免重复
 */}}
 
-{{- /* description */ -}}
 {{- $desc := "" -}}
 {{- if .Params.description -}}
   {{- $desc = .Params.description -}}
@@ -20,11 +16,22 @@
 {{- end -}}
 {{- with $desc -}}<meta name="description" content="{{ . }}">{{ end }}
 
-{{- /* Open Graph / Twitter */ -}}
+{{- $pageUrl := .Permalink -}}
+{{- $defaultSite := index (sort site.Sites "Language.Weight") 0 -}}
+{{- $defaultLang := $defaultSite.Language.Lang -}}
+{{- $xDefault := $pageUrl -}}
+{{- if ne .Language.Lang $defaultLang -}}
+  {{- range .AllTranslations -}}
+    {{- if eq .Language.Lang $defaultLang -}}
+      {{- $xDefault = .Permalink -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
 <meta property="og:title" content="{{ .Title }}">
 <meta property="og:description" content="{{ $desc }}">
 <meta property="og:type" content="{{ if .IsPage }}article{{ else }}website{{ end }}">
-<meta property="og:url" content="{{ .Permalink }}">
+<meta property="og:url" content="{{ $pageUrl }}">
 {{- $img := "" -}}
 {{- with .Params.images -}}
   {{- $img = index . 0 -}}
@@ -39,27 +46,14 @@
 <meta name="twitter:description" content="{{ $desc }}">
 {{ with $img }}<meta name="twitter:image" content="{{ . }}">{{ end }}
 
-{{- /* hreflang: 当前语言 + 所有翻译；x-default 回退当前页 */ -}}
-<link rel="alternate" hreflang="{{ .Language.Lang }}" href="{{ .Permalink }}">
+<link rel="alternate" hreflang="{{ .Language.Lang }}" href="{{ $pageUrl }}">
 {{- range .AllTranslations -}}
+  {{- if ne .Language.Lang $.Language.Lang -}}
   <link rel="alternate" hreflang="{{ .Language.Lang }}" href="{{ .Permalink }}">
+  {{- end -}}
 {{- end -}}
-<link rel="alternate" hreflang="x-default" href="{{ .Permalink }}">
+<link rel="alternate" hreflang="x-default" href="{{ $xDefault }}">
 
-{{- /* 分页 prev/next（仅 Node 且存在 Paginator） */ -}}
-{{- if and .IsNode (.Paginator) -}}
-  {{- with .Paginator.Prev -}}<link rel="prev" href="{{ .URL }}">{{ end -}}
-  {{- with .Paginator.Next -}}<link rel="next" href="{{ .URL }}">{{ end -}}
-{{- end -}}
-
-{{- /* robots：示例地对深分页 noindex */ -}}
-{{- if and .IsNode .Paginator (gt .Paginator.PageNumber 10) -}}
-  <meta name="robots" content="noindex,follow">
-{{- end -}}
-
-{{- /* RSS 暴露 */ -}}
 {{ with .OutputFormats.Get "RSS" }}
 <link rel="alternate" type="application/rss+xml" title="{{ site.Title }}" href="{{ .RelPermalink }}">
 {{ end }}
-
-
