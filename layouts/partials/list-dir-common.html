@@ -37,7 +37,7 @@
   {{ $so := index $cfg "sortOrder" }}
 
   {{ with $ctx.OutputFormats.Get (index $ctrl "name") }}
-  <span class="cell-title header click-full" role="columnheader" aria-sort="{{ if eq $sf "node.Title" }}{{ if eq $so "asc" }}ascending{{ else }}descending{{ end }}{{ else }}none{{ end }}">
+  <span class="cell-title header click-full">
     <a href="{{ .RelPermalink }}"
        title="{{ if and (eq $sf "node.Title") (eq $so "asc") }}Sort by name descending{{ else }}Sort by name ascending{{ end }}"
        aria-label="{{ if and (eq $sf "node.Title") (eq $so "asc") }}Sort by name descending{{ else }}Sort by name ascending{{ end }}">
@@ -47,7 +47,7 @@
   {{ end }}
 
   {{ with $ctx.OutputFormats.Get (index $ctrl "date") }}
-  <span class="cell-date header click-full" role="columnheader" aria-sort="{{ if eq $sf "node.Date" }}{{ if eq $so "asc" }}ascending{{ else }}descending{{ end }}{{ else }}none{{ end }}">
+  <span class="cell-date header click-full">
     <a href="{{ .RelPermalink }}"
        title="{{ if and (eq $sf "node.Date") (eq $so "asc") }}Sort by date descending{{ else }}Sort by date ascending{{ end }}"
        aria-label="{{ if and (eq $sf "node.Date") (eq $so "asc") }}Sort by date descending{{ else }}Sort by date ascending{{ end }}">
@@ -57,7 +57,7 @@
   {{ end }}
 
   {{ with $ctx.OutputFormats.Get (index $ctrl "count") }}
-  <span class="cell-count header click-full" role="columnheader" aria-sort="{{ if eq $sf "cnt" }}{{ if eq $so "asc" }}ascending{{ else }}descending{{ end }}{{ else }}none{{ end }}">
+  <span class="cell-count header click-full">
     <a href="{{ .RelPermalink }}"
        title="{{ if and (eq $sf "cnt") (eq $so "asc") }}Sort by count descending{{ else }}Sort by count ascending{{ end }}"
        aria-label="{{ if and (eq $sf "cnt") (eq $so "asc") }}Sort by count descending{{ else }}Sort by count ascending{{ end }}">
@@ -100,7 +100,7 @@
       {{ $child := $n }}
       <span class="cell-title">
         {{ with $child.OutputFormats.Get $mode }}
-          <a class="icon-link" href="{{ .RelPermalink }}">{{ partial "icon" (dict "name" $iconName) }}</a>
+          <a class="icon-link" href="{{ .RelPermalink }}" aria-label="Open {{ $child.Title }}">{{ partial "icon" (dict "name" $iconName) }}</a>
           <a class="title-text" href="{{ .RelPermalink }}">{{ $child.Title }}</a>
         {{ end }}
       </span>
@@ -121,7 +121,7 @@
       <span class="cell-count"><span class="num">{{ .cnt }}</span><span class="unit"></span></span>
     {{ else }}
       <span class="cell-title">
-        <a class="icon-link" href="{{ $n.RelPermalink }}">{{ partial "icon" (dict "name" $iconName) }}</a>
+        <a class="icon-link" href="{{ $n.RelPermalink }}" aria-label="Open {{ $n.Title }}">{{ partial "icon" (dict "name" $iconName) }}</a>
         <a class="title-text" href="{{ $n.RelPermalink }}">{{ $n.Title }}</a>
       </span>
       <span class="cell-date">
@@ -152,4 +152,5 @@
   {{- end -}}
 {{- end -}}
 {{ partial "schema-itemlist.html" (dict "entries" $entries) }}
+
 

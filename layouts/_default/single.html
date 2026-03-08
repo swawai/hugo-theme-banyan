@@ -1,3 +1,8 @@
+{{ define "head-extra" }}
+{{ $post := resources.Get "css/post.css" | minify | fingerprint }}
+<link rel="stylesheet" href="{{ $post.RelPermalink }}" integrity="{{ $post.Data.Integrity }}">
+{{ end }}
+
 {{ define "breadcrumb" }}
 {{ $page := . }}
 <nav class="post-dir" aria-label="Breadcrumb"><span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "dir") 0) }}<a href="{{ .URL | relLangURL }}">{{ i18n (printf "menu_%s" .Identifier) | default .Name }}</a>{{ else }}{{ (i18n "menu_dir") | default "DIR" }}{{ end }}</span> <span class="sep">/</span>{{ range (where .Ancestors.Reverse "IsHome" "ne" true) }}<a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a><span class="sep">/</span>{{ end }}<a href="{{ .RelPermalink }}">{{ .Title }}</a></nav>

@@ -1,15 +1,9 @@
-/* === 列表通用网格布局 === */
-
 .grid-list {
-    /* 网格布局局部变量：实现高度内聚 */
     --title-icon-gap: 0.15em;
     --icon-size: 1.2rem;
-
     --title-header-offset: 0.8rem;
-    --date-header-offset: 0rem;
-    --count-header-offset: 0rem;
-    
-    /* grid 列宽参数 */
+    --date-header-offset: 0;
+    --count-header-offset: 0;
     --col-title: 15em;
     --col-date-min: 5em;
     --col-count-min: 3em;
@@ -17,6 +11,7 @@
     --col-path-min: 8em;
     --size-unit-min-width: 3ch;
 
+    position: relative;
     display: grid;
     width: max-content;
     grid-template-columns: minmax(var(--col-title), var(--col-title)) minmax(var(--col-date-min), max-content) minmax(var(--col-count-min), max-content);
@@ -28,29 +23,36 @@
     grid-template-columns: minmax(var(--col-title), var(--col-title)) minmax(var(--col-date-min), max-content) minmax(var(--col-size-min), max-content) minmax(var(--col-path-min), max-content);
 }
 
-.grid-list>* {
+.grid-list > * {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* 左列标题单元：图标与文字并排（拆分为两个链接） */
+.grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path) {
+    pointer-events: none;
+}
+
+.grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path) a,
+.grid-list .cell-title .icon {
+    pointer-events: auto;
+}
+
 .grid-list .cell-title {
-    display: flex; /* 改为 flex 撑满格 */
+    display: flex;
     align-items: center;
     gap: var(--title-icon-gap);
-    width: 100%; /* 确保占用整个给定的 grid 列宽 */
+    width: 100%;
 }
 
 .grid-list .icon-link {
     display: inline-flex;
     align-items: center;
-    flex-shrink: 0; /* 图标不缩放 */
+    flex-shrink: 0;
 }
 
-/* 占据剩余空间，配合 a 标签 block 全宽，令鼠标悬停整格有反应 */
 .grid-list .title-text {
-    flex-grow: 1;
+    flex: 1;
     display: block;
     width: 100%;
     overflow: hidden;
@@ -58,33 +60,27 @@
     text-overflow: ellipsis;
 }
 
-/* 文件/目录图标尺寸与对齐：统一容器/内联/外链 SVG 尺寸 */
 .grid-list .icon {
     display: inline-block;
+}
+
+.grid-list :is(.icon, img.icon) {
     width: var(--icon-size);
     height: var(--icon-size);
     vertical-align: -0.15em;
 }
 
 .grid-list .icon svg {
+    display: block;
     width: 100%;
     height: 100%;
-    display: block;
 }
 
-.grid-list img.icon {
-    width: var(--icon-size);
-    height: var(--icon-size);
-    vertical-align: -0.15em;
-}
-
-/* 右列计数左对齐，便于与排序箭头对齐 */
 .grid-list .cell-count {
     justify-self: end;
     text-align: right;
 }
 
-/* 数字与单位分离对齐：数字靠右，单位固定占位，避免影响箭头与数字对齐 */
 .grid-list .cell-count .num {
     display: inline-block;
     text-align: right;
@@ -96,93 +92,29 @@
     text-align: left;
 }
 
-/* 表头的计数列需要撑满列宽，保证整列可点 */
 .grid-list .cell-count.header {
     justify-self: stretch;
     text-align: right;
 }
 
-/* 弱化非标题列（时间、数据数量、路径等），避免与标题抢夺视觉焦点 */
-/* 并且强制让表头的文本（包含箭头）不再显示蓝色的链接色，而是使用前景色（普通文本颜色），搭配 0.6 透明度 */
-.grid-list .cell-date:not(.header),
-.grid-list .cell-count:not(.header),
-.grid-list .cell-path:not(.header) {
+.grid-list :is(.cell-date, .cell-count, .cell-path):not(.header),
+.grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path).header {
     opacity: 0.3;
 }
 
-.grid-list .cell-title.header,
-.grid-list .cell-date.header,
-.grid-list .cell-count.header,
-.grid-list .cell-path.header {
-    /* 表头，排序箭头，统一为绿色 rgba */
-    /* color: rgba(7, 193, 96, 0.6); */
-    opacity: 0.3;
-}
-
-
-
-/* 仅文本/图标可点击：单元格禁用指针事件，子元素的链接/图标恢复 */
-.grid-list .cell-title,
-.grid-list .cell-date,
-.grid-list .cell-count,
-.grid-list .cell-path {
-    pointer-events: none;
-}
-
-.grid-list .cell-title a,
-.grid-list .cell-date a,
-.grid-list .cell-count a,
-.grid-list .cell-path a,
-.grid-list .cell-title .icon {
-    pointer-events: auto;
-}
-
-/* 解决 grid 单元格 overflow: hidden 导致 outline-offset: 2px 被裁切不可见的问题，改为内部偏移 */
 .grid-list a:focus-visible {
     outline-offset: -2px;
 }
 
-/* 整列/整行单元格可点：让链接占满整列宽度 */
-/* 对于普通的 cell-path 以及所有列的表头，直接让其中的 a 标签变成 block 即可撑满整格宽度 */
 .grid-list .cell-path a,
-.grid-list .cell-title.header a,
-.grid-list .cell-date.header a,
-.grid-list .cell-count.header a,
-.grid-list .cell-path.header a {
+.grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path).header a {
     display: block;
-    color: inherit; /* 继承父级强行赋予的前景色，而不是默认的 --link 链接蓝 */
     width: 100%;
+    color: inherit;
 }
 
-/* 针对非表头的 cell-title，因其包含独立图标容器(.icon-link)与文字标题容器(.title-text)。我们把它的父级直接设置宽 100%。*/
-/* 其实 .cell-title 已经是 inline-flex，我们只需将其改为 flex 即可铺满由 grid 分配的列区域 */
-.grid-list .cell-title:not(.header) {
-    display: flex; /* 取代之前的 inline-flex，充满整格 */
-    align-items: center;
-    gap: var(--title-icon-gap);
-}
-
-/* .title-text 链接占据除了图标以外所有的剩余空间，实现整格可点 */
-.grid-list .cell-title .title-text {
-    flex-grow: 1; /* 占据剩余宽度 */
-    display: block; /* 使 a 标签本身变成块级 */
-    width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-/* 表头与数据行分隔：缩小表头行与数据行之间的间距 */
-/* 注意：padding 不允许负值（会被浏览器忽略），改用 margin-bottom 负值来"上拉"后续行 */
-.grid-list .cell-title.header a,
-.grid-list .cell-date.header a,
-.grid-list .cell-count.header a,
-.grid-list .cell-path.header a {
+.grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path).header a {
     margin-bottom: -0.1rem;
-}
-
-/* 让分隔线覆盖整个网格宽度（不受列间距影响） */
-.grid-list {
-    position: relative;
 }
 
 .grid-list::after {
@@ -196,12 +128,10 @@
     pointer-events: none;
 }
 
-/* 标题表头箭头右移到标题文字起点 */
 .grid-list .cell-title.header a {
     padding-left: var(--title-header-offset);
 }
 
-/* 日期与计数表头可独立偏移 */
 .grid-list .cell-date.header a {
     padding-left: var(--date-header-offset);
 }
@@ -210,7 +140,6 @@
     padding-left: var(--count-header-offset);
 }
 
-/* 为表头第三列在右侧预留与单位等宽的占位，使箭头与数字右边缘对齐 */
 .grid-list .cell-count.header a::after {
     content: "";
     display: inline-block;

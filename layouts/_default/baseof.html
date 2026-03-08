@@ -24,14 +24,15 @@
     {{ $header := resources.Get "css/header.css" }}
     {{ $nav := resources.Get "css/nav.css" }}
     {{ $grid := resources.Get "css/grid-list.css" }}
-    {{ $post := resources.Get "css/post.css" }}
     {{ $utils := resources.Get "css/utilities.css" }}
-    {{ $css := slice $base $header $nav $grid $post $utils | resources.Concat "css/bundle.css" | minify | fingerprint }}
+    {{ $css := slice $base $header $nav $grid $utils | resources.Concat "css/bundle.css" | minify | fingerprint }}
     <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
+    {{ block "head-extra" . }}{{ end }}
 
     {{ hugo.Generator }}
     {{ partial "seo.html" . }}
     {{ $js := resources.Get "js/main.js" | js.Build | minify | fingerprint }}
+    {{ $instant := resources.Get "js/instant.page.5.2.0.js" | fingerprint }}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
 </head>
 
@@ -123,7 +124,17 @@
             {{ block "main" . }}{{ end }}
         </main>
     </div>
-    <script src="https://instant.page/5.2.0" type="module" integrity="sha384-jnZyxPjiipYXnSU0ygqeac2q7CVYMbh84q0uHVRRxEtvFPiQYbXWUorga2aqZJ0z"></script>
+
+    <script>
+        window.addEventListener('load', function () {
+            var script = document.createElement('script');
+            script.type = 'module';
+            script.src = '{{ $instant.RelPermalink }}';
+            script.integrity = '{{ $instant.Data.Integrity }}';
+            script.crossOrigin = 'anonymous';
+            document.body.appendChild(script);
+        }, { once: true });
+    </script>
 </body>
 
 </html>
