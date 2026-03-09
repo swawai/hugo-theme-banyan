@@ -30,3 +30,6 @@ other = "账号"
 
 [no_trans_msg]
 other = "当前页面尚未提供 [{lang}] 翻译。\n是否跳转至该语言的主页？"
+
+[lang_suggest_msg]
+other = "为您推荐本页的 [{target}] 版本，确认前往吗？"

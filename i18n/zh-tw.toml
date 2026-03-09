@@ -27,3 +27,6 @@ other = "帳號"
 
 [no_trans_msg]
 other = "此頁面尚未提供 [{lang}] 翻譯。\n是否跳轉至該語言的首頁？"
+
+[lang_suggest_msg]
+other = "為您推薦本頁的 [{target}] 版本，確認前往嗎？"

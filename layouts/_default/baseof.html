@@ -21,13 +21,16 @@
     <link rel="canonical" href="{{ .Permalink }}">
     <script>(function () { try { var pref = localStorage.getItem('theme-preference'); var media = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)'); var theme; if (!pref || pref === 'auto') { theme = (media && media.matches) ? 'dark' : 'light'; } else { theme = pref; } document.documentElement.setAttribute('data-theme', theme); } catch (e) { } })();</script>
     <script>(function () { try { if (window.matchMedia && window.matchMedia('(pointer: fine) and (hover: hover)').matches && sessionStorage.getItem('nav-progress-pending') === '1') { document.documentElement.setAttribute('data-nav-progress', 'active'); document.documentElement.style.setProperty('--nav-progress-scale', '0.82'); document.documentElement.classList.add('is-nav-pending'); } } catch (e) { } })();</script>
+    {{ block "styles" . }}
     {{ $base := resources.Get "css/base.css" }}
     {{ $header := resources.Get "css/header.css" }}
     {{ $nav := resources.Get "css/nav.css" }}
     {{ $grid := resources.Get "css/grid-list.css" }}
     {{ $utils := resources.Get "css/utilities.css" }}
-    {{ $css := slice $base $header $nav $grid $utils | resources.Concat "css/bundle.css" | minify | fingerprint }}
+    {{ $cssBundle := slice $base $header $nav $grid $utils | resources.Concat "css/bundle.css" | minify }}
+    {{ $css := $cssBundle | fingerprint }}
     <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
+    {{ end }}
     {{ block "head-extra" . }}{{ end }}
 
     {{ hugo.Generator }}

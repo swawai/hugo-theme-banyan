@@ -30,3 +30,6 @@ other = "Account"
 
 [no_trans_msg]
 other = "This page is not available in [{lang}].\nRedirect to the homepage?"
+
+[lang_suggest_msg]
+other = "We recommend the [{target}] version of this page.\nContinue?"

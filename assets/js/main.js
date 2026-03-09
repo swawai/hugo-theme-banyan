@@ -21,6 +21,8 @@
 })();
 
 const NAV_PROGRESS_KEY = 'nav-progress-pending';
+const PREFERRED_LANG_KEY = 'preferred_lang';
+const LANG_SUGGEST_HANDLED_KEY = 'lang-suggest-handled-v1';
 const html = document.documentElement;
 const desktopNavMedia = window.matchMedia ? window.matchMedia('(pointer: fine) and (hover: hover)') : null;
 let navProgressTimer = null;
@@ -102,6 +104,57 @@ function navigateWithProgress(url) {
     window.location.href = url;
 }
 
+function readStorage(key) {
+    try {
+        return window.localStorage.getItem(key);
+    } catch (e) {
+        return null;
+    }
+}
+
+function writeStorage(key, value) {
+    try {
+        window.localStorage.setItem(key, value);
+    } catch (e) { }
+}
+
+function runAfterPageSettles(callback, delayMs) {
+    let cancelled = false;
+    let cleaned = false;
+
+    const cleanup = () => {
+        if (cleaned) return;
+        cleaned = true;
+        window.removeEventListener('click', cancelOnInteract, true);
+        window.removeEventListener('scroll', cancelOnInteract, true);
+        window.removeEventListener('keydown', cancelOnInteract, true);
+        window.removeEventListener('touchstart', cancelOnInteract, true);
+    };
+    const cancelOnInteract = () => {
+        cancelled = true;
+        cleanup();
+    };
+    const run = () => {
+        window.setTimeout(() => {
+            if (cancelled) return;
+            cleanup();
+            callback();
+        }, delayMs);
+    };
+
+    window.addEventListener('click', cancelOnInteract, true);
+    window.addEventListener('scroll', cancelOnInteract, true);
+    window.addEventListener('keydown', cancelOnInteract, true);
+    window.addEventListener('touchstart', cancelOnInteract, true);
+
+    if (document.readyState === 'complete') {
+        run();
+        return;
+    }
+
+    window.addEventListener('load', run, { once: true });
+}
+
 function shouldTrackNavigation(anchor, event) {
     if (!canUseNavProgress() || !anchor || event.defaultPrevented) return false;
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false;
@@ -181,17 +234,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 懒加载 i18n JSON（仅在需要时请求，内存缓存）
         const _i18nCache = {};
-        async function getNoTransMsg(lang, homeUrl) {
+        async function getI18nMessages(lang, homeUrl) {
             if (!_i18nCache[lang]) {
                 try {
                     const res = await fetch(homeUrl === '/' ? '/i18n.json' : homeUrl + 'i18n.json');
                     if (res.ok) {
-                        const data = await res.json();
-                        _i18nCache[lang] = data.no_trans_msg;
+                        _i18nCache[lang] = await res.json();
                     }
                 } catch (e) { /* 静默降级 */ }
             }
-            return _i18nCache[lang] || 'This page is not available in [{lang}]. Redirect to the homepage?';
+            return _i18nCache[lang] || {};
+        }
+        async function getI18nMessage(lang, homeUrl, key, fallback) {
+            const messages = await getI18nMessages(lang, homeUrl);
+            return messages[key] || fallback;
+        }
+        function formatMessage(template, replacements) {
+            return template
+                .replace(/\[\{(\w+)\}\]/g, (match, key) => (key in replacements ? replacements[key] : match))
+                .replace(/\{(\w+)\}/g, (match, key) => (key in replacements ? replacements[key] : match));
+        }
+        function detectBrowserLang(supportedLangs) {
+            const candidates = Array.isArray(navigator.languages) && navigator.languages.length
+                ? navigator.languages
+                : [navigator.language || navigator.userLanguage || ''];
+
+            for (const candidate of candidates) {
+                const code = normalizeLang((candidate || '').toLowerCase());
+                if (!code) continue;
+                if (supportedLangs.includes(code)) return code;
+
+                const prefix = code.split('-')[0];
+                if (prefix && supportedLangs.includes(prefix)) return prefix;
+            }
+
+            return '';
         }
 
         // 从 Hugo 生成的 /lang-list.json 读取站点支持语言列表，并动态构建下拉选项
@@ -202,6 +279,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const supportedLangs = [];
                 const langHomes = {};
+                const langNames = {};
                 list.forEach(item => {
                     const code = (item.code || '').toLowerCase();
                     const name = item.name || code;
@@ -209,6 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const homeUrl = normalizeHomeUrl(item.url, code);
                     supportedLangs.push(code);
                     langHomes[code] = homeUrl;
+                    langNames[code] = name;
 
                     const opt = document.createElement('option');
                     opt.value = code;
@@ -242,6 +321,39 @@ document.addEventListener('DOMContentLoaded', () => {
                     const rest = relativePath.replace(/^\/+/, '');
                     return home === '/' ? '/' + rest : home + rest;
                 };
+                const suggestBrowserLanguage = async () => {
+                    if (readStorage(PREFERRED_LANG_KEY) || readStorage(LANG_SUGGEST_HANDLED_KEY)) return;
+
+                    const targetLang = detectBrowserLang(supportedLangs);
+                    if (!targetLang || targetLang === curLang) return;
+                    if (!transLangs.includes(targetLang)) return;
+
+                    const targetHome = getHomeUrl(targetLang);
+                    const currentName = langNames[curLang] || curLang;
+                    const targetName = langNames[targetLang] || targetLang;
+                    const template = await getI18nMessage(
+                        targetLang,
+                        targetHome,
+                        'lang_suggest_msg',
+                        'This page is currently in [{current}]. Your browser language appears to be [{target}]. Switch to [{target}]?'
+                    );
+                    const message = formatMessage(template, {
+                        current: currentName,
+                        target: targetName
+                    });
+
+                    runAfterPageSettles(() => {
+                        const shouldSwitch = window.confirm(message);
+                        writeStorage(LANG_SUGGEST_HANDLED_KEY, '1');
+                        if (!shouldSwitch) return;
+
+                        writeStorage(PREFERRED_LANG_KEY, targetLang);
+                        const curUrl = new URL(window.location.href);
+                        const relativePath = toRelativePath(curUrl.pathname);
+                        curUrl.pathname = buildTargetUrl(targetLang, relativePath);
+                        navigateWithProgress(curUrl.href);
+                    }, 800);
+                };
 
                 langSelect.addEventListener('change', async () => {
                     try {
@@ -252,8 +364,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         const hasTrans = option.getAttribute('data-has-trans') === 'true';
                         const targetHome = getHomeUrl(targetLang);
                         if (!hasTrans) {
-                            const tpl = await getNoTransMsg(targetLang, targetHome);
-                            const msg = tpl.replace('{lang}', option.text.trim());
+                            const tpl = await getI18nMessage(
+                                targetLang,
+                                targetHome,
+                                'no_trans_msg',
+                                'This page is not available in [{lang}]. Redirect to the homepage?'
+                            );
+                            const msg = formatMessage(tpl, { lang: option.text.trim() });
                             if (!window.confirm(msg)) {
                                 // 用户取消：恢复为当前语言
                                 for (let i = 0; i < langSelect.options.length; i++) {
@@ -268,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             // 确认后直接跳转目标语言首页
                             const code = normalizeLang(targetLang);
                             if (supportedLangs.includes(code)) {
-                                localStorage.setItem('preferred_lang', code);
+                                writeStorage(PREFERRED_LANG_KEY, code);
                             }
                             navigateWithProgress(targetHome);
                             return;
@@ -276,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         const code = normalizeLang(targetLang);
                         if (supportedLangs.includes(code)) {
-                            localStorage.setItem('preferred_lang', code);
+                            writeStorage(PREFERRED_LANG_KEY, code);
                         }
 
                         const curUrl = new URL(window.location.href);
@@ -288,6 +405,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         navigateWithProgress(normalizeHomeUrl(langHomes[fallback], fallback));
                     }
                 });
+
+                suggestBrowserLanguage();
             })
             .catch(() => { /* 如果语言列表加载失败，则语言切换器保持空白，静默降级 */ });
     }
