@@ -117,22 +117,9 @@ mediaType = "text/html"
 isHTML    = true
 baseName  = "index"
 path      = "all-by-size-asc"
-[outputFormats.i18njson]
-mediaType = "application/json"
-baseName  = "i18n"
-isPlainText = true
-notAlternative = true
-# 站点支持语言列表（JSON），供前端语言跳转 / 404 等逻辑统一使用
-[outputFormats.langlist]
-mediaType = "application/json"
-baseName  = "lang-list"
-isPlainText = true
-notAlternative = true
-root = true
-
 [outputs]
 section  = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
-home     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss","i18njson"]
+home     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
 taxonomy = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
 term     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
 
@@ -142,7 +129,7 @@ languageName = "English"
 weight = 1
 [languages.en.outputs]
 section  = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
-home     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss","i18njson","langlist"]
+home     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
 taxonomy = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
 term     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
 [languages.en.params]

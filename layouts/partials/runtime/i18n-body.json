@@ -1,0 +1,40 @@
+{{- $lang := .Language.Lang -}}
+{{- $path := "" -}}
+{{- $format := "" -}}
+{{- $bases := slice "i18n" "themes/banyan/i18n" -}}
+{{- $formats := slice "toml" "yaml" "yml" "json" -}}
+{{- range $base := $bases -}}
+  {{- range $ext := $formats -}}
+    {{- if not $path -}}
+      {{- $candidate := printf "%s/%s.%s" $base $lang $ext -}}
+      {{- if fileExists $candidate -}}
+        {{- $path = $candidate -}}
+        {{- $format = $ext -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $translations := dict -}}
+{{- if $path -}}
+  {{- $translations = transform.Unmarshal (dict "format" $format) (readFile $path) -}}
+{{- end -}}
+
+{{- $noTrans := "This page is not available in [{lang}].\nRedirect to the homepage?" -}}
+{{- with index $translations "no_trans_msg" -}}
+  {{- with index . "other" -}}
+    {{- $noTrans = printf "%v" . -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $langSuggest := "We recommend the [{target}] version of this page.\nContinue?" -}}
+{{- with index $translations "lang_suggest_msg" -}}
+  {{- with index . "other" -}}
+    {{- $langSuggest = printf "%v" . -}}
+  {{- end -}}
+{{- end -}}
+
+{{- dict
+  "no_trans_msg" $noTrans
+  "lang_suggest_msg" $langSuggest
+| jsonify -}}

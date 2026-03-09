@@ -13,11 +13,29 @@
     {{ $appleTouchIcon = $appleTouchIcon | fingerprint }}
     {{ $manifest := .Site.Home.OutputFormats.Get "webmanifest" }}
     {{ if not $manifest }}{{ errorf "编译失败: 缺少输出格式 %q。" "webmanifest" }}{{ end }}
+    {{ $serviceWorkerConfig := site.Params.service_worker | default dict }}
+    {{ $serviceWorkerEnabled := eq (index $serviceWorkerConfig "enabled") true }}
+    {{ $runtimeI18n := dict }}
+    {{ range sort .Sites "Language.Weight" }}
+        {{ $langCode := .Language.Lang }}
+        {{ $i18nBody := partial "runtime/i18n-body.json" . }}
+        {{ $i18nResource := resources.FromString (printf "runtime/i18n.%s.%s.json" $langCode (md5 $i18nBody)) $i18nBody | fingerprint }}
+        {{ $runtimeI18n = merge $runtimeI18n (dict $langCode $i18nResource.RelPermalink) }}
+    {{ end }}
+    {{ $langListBody := partial "runtime/lang-list-body.json" . }}
+    {{ $langListResource := resources.FromString (printf "runtime/lang-list.%s.json" (md5 $langListBody)) $langListBody | fingerprint }}
+    {{ $assetManifestBody := dict
+        "sw" (dict "enabled" $serviceWorkerEnabled "url" "/sw.js")
+        "langList" $langListResource.RelPermalink
+        "i18n" $runtimeI18n
+      | jsonify }}
+    {{ $assetManifest := resources.FromString (printf "runtime/asset-manifest.%s.json" (md5 $assetManifestBody)) $assetManifestBody | fingerprint }}
     <meta charset="utf-8">
     <link rel="icon" href="{{ $faviconSvg.RelPermalink }}" type="image/svg+xml">
     <link rel="icon" href="{{ $faviconIco.RelPermalink }}" sizes="any">
     <link rel="apple-touch-icon" href="{{ $appleTouchIcon.RelPermalink }}">
     {{ with $manifest }}<link rel="manifest" href="{{ .RelPermalink }}">{{ end }}
+    <link rel="preload" href="{{ $assetManifest.RelPermalink }}" as="fetch" type="application/json" crossorigin="use-credentials">
     <title>{{ if .Title }}{{ .Title }} - {{ end }}{{ .Site.Title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="wap-font-scale" content="no">
@@ -53,8 +71,6 @@
 </head>
 
 {{ $prefetchConfig := site.Params.link_prefetch | default dict }}
-{{ $serviceWorkerConfig := site.Params.service_worker | default dict }}
-{{ $serviceWorkerEnabled := eq (index $serviceWorkerConfig "enabled") true }}
 {{ $prefetchModes := dict
     "sort" (index $prefetchConfig "sort_siblings")
     "desc" (index $prefetchConfig "descendants")
@@ -67,6 +83,7 @@
     {{ end }}
 {{ end }}
 <body
+    data-asset-manifest-url="{{ $assetManifest.RelPermalink }}"
     data-sw-enabled="{{ if $serviceWorkerEnabled }}true{{ else }}false{{ end }}"
     {{ with index $prefetchModes "sort" }} data-prefetch-sort="{{ . }}"{{ end }}
     {{ with index $prefetchModes "desc" }} data-prefetch-desc="{{ . }}"{{ end }}

@@ -27,6 +27,61 @@ const html = document.documentElement;
 const desktopNavMedia = window.matchMedia ? window.matchMedia('(pointer: fine) and (hover: hover)') : null;
 let navProgressTimer = null;
 let navProgressValue = 0;
+let runtimeManifestPromise = null;
+let runtimeManifestCache = null;
+
+function readRuntimeManifestUrl() {
+    return document.body?.dataset.assetManifestUrl || '';
+}
+
+function getRuntimeManifest() {
+    if (runtimeManifestCache) {
+        return Promise.resolve(runtimeManifestCache);
+    }
+
+    if (!runtimeManifestPromise) {
+        const manifestUrl = readRuntimeManifestUrl();
+        if (!manifestUrl) {
+            runtimeManifestCache = {};
+            return Promise.resolve(runtimeManifestCache);
+        }
+
+        runtimeManifestPromise = fetch(manifestUrl, { credentials: 'include' })
+            .then((res) => (res && res.ok ? res.json() : {}))
+            .catch(() => ({}))
+            .then((manifest) => {
+                runtimeManifestCache = manifest && typeof manifest === 'object' ? manifest : {};
+                return runtimeManifestCache;
+            });
+    }
+
+    return runtimeManifestPromise;
+}
+
+function getRuntimeSwConfig(manifest) {
+    const sw = manifest && typeof manifest.sw === 'object' ? manifest.sw : {};
+    return {
+        enabled: typeof sw.enabled === 'boolean' ? sw.enabled : document.body?.dataset.swEnabled === 'true',
+        url: typeof sw.url === 'string' && sw.url ? sw.url : '/sw.js'
+    };
+}
+
+function getRuntimeLangListUrl(manifest) {
+    return typeof manifest?.langList === 'string' && manifest.langList ? manifest.langList : '';
+}
+
+function getRuntimeI18nUrl(manifest, lang, homeUrl) {
+    const normalized = typeof lang === 'string' ? lang.toLowerCase() : '';
+    const i18nMap = manifest && typeof manifest.i18n === 'object' ? manifest.i18n : null;
+    if (i18nMap) {
+        if (typeof i18nMap[normalized] === 'string' && i18nMap[normalized]) return i18nMap[normalized];
+        if (normalized === 'zh-hk' || normalized === 'zh-mo') {
+            if (typeof i18nMap['zh-tw'] === 'string' && i18nMap['zh-tw']) return i18nMap['zh-tw'];
+        }
+    }
+
+    return '';
+}
 
 function canUseNavProgress() {
     return !!desktopNavMedia?.matches;
@@ -104,9 +159,11 @@ function navigateWithProgress(url) {
     window.location.href = url;
 }
 
-function registerNavigationServiceWorker() {
+async function registerNavigationServiceWorker() {
     if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
-    const serviceWorkerEnabled = document.body?.dataset.swEnabled === 'true';
+    const manifest = await getRuntimeManifest();
+    const swConfig = getRuntimeSwConfig(manifest);
+    const serviceWorkerEnabled = swConfig.enabled;
 
     const cleanup = () => {
         navigator.serviceWorker.getRegistrations()
@@ -129,7 +186,7 @@ function registerNavigationServiceWorker() {
     }
 
     const register = () => {
-        navigator.serviceWorker.register('/sw.js', {
+        navigator.serviceWorker.register(swConfig.url, {
             scope: '/',
             updateViaCache: 'none',
         }).catch(() => { });
@@ -224,6 +281,7 @@ if (canUseNavProgress() && sessionStorage.getItem(NAV_PROGRESS_KEY) === '1') {
     startNavProgress(0.82);
 }
 
+void getRuntimeManifest();
 registerNavigationServiceWorker();
 
 document.addEventListener('click', (event) => {
@@ -278,7 +336,13 @@ document.addEventListener('DOMContentLoaded', () => {
         async function getI18nMessages(lang, homeUrl) {
             if (!_i18nCache[lang]) {
                 try {
-                    const res = await fetch(homeUrl === '/' ? '/i18n.json' : homeUrl + 'i18n.json');
+                    const manifest = await getRuntimeManifest();
+                    const url = getRuntimeI18nUrl(manifest, lang, homeUrl);
+                    if (!url) {
+                        _i18nCache[lang] = {};
+                        return _i18nCache[lang];
+                    }
+                    const res = await fetch(url, { credentials: 'same-origin' });
                     if (res.ok) {
                         _i18nCache[lang] = await res.json();
                     }
@@ -312,9 +376,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return '';
         }
 
-        // 从 Hugo 生成的 /lang-list.json 读取站点支持语言列表，并动态构建下拉选项
-        fetch('/lang-list.json', { credentials: 'same-origin' })
-            .then(res => res && res.ok ? res.json() : [])
+        // 通过运行时 manifest 读取站点支持语言列表，并动态构建下拉选项
+        getRuntimeManifest()
+            .then((manifest) => {
+                const url = getRuntimeLangListUrl(manifest);
+                if (!url) return [];
+                return fetch(url, { credentials: 'same-origin' })
+                    .then((res) => (res && res.ok ? res.json() : []))
+                    .catch(() => []);
+            })
             .then(list => {
                 if (!Array.isArray(list) || !list.length) return;
 

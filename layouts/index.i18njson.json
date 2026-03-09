@@ -1,4 +1,0 @@
-{{ dict
-  "no_trans_msg" (i18n "no_trans_msg" | default "This page is not available in [{lang}]. Redirect to the homepage?")
-  "lang_suggest_msg" (i18n "lang_suggest_msg" | default "This page is currently in [{current}]. Your browser language appears to be [{target}]. Switch to [{target}]?")
-| jsonify }}
