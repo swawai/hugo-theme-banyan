@@ -5,8 +5,8 @@
     column-gap: 0.3rem; /* 项目之间的水平间隔 */
     row-gap: 0;         /* 取消垂直间隙 */
     white-space: nowrap; /* 防止容器内文字折行 */
-    margin-bottom: -0.25rem;
-    opacity: 0.3;
+    margin-bottom: 0rem;
+    color: var(--link-visited);
 }
 
 /* 阻止所有 flex 子项被压缩 */

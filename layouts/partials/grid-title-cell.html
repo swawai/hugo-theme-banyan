@@ -4,6 +4,8 @@
 {{ $icon := .icon | default "file" }}
 {{ $label := .label | default (printf "Open %s" $title) }}
 <span class="cell-title">
-  <a class="icon-link" href="{{ $href }}" aria-label="{{ $label }}">{{ partial "icon" (dict "name" $icon) }}</a>
-  <a class="title-text" href="{{ $href }}">{{ $text }}</a>
+  <a class="title-link" href="{{ $href }}" aria-label="{{ $label }}">
+    <span class="title-icon">{{ partial "icon" (dict "name" $icon) }}</span>
+    <span class="title-text">{{ $text }}</span>
+  </a>
 </span>
