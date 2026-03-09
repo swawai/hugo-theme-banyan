@@ -101,7 +101,7 @@
 
 .grid-list :is(.cell-date, .cell-count, .cell-path):not(.header),
 .grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path).header {
-    color: var(--link-visited);
+    color: var(--link);
 
 }
 

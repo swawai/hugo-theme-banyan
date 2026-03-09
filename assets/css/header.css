@@ -6,7 +6,7 @@
     row-gap: 0;         /* 取消垂直间隙 */
     white-space: nowrap; /* 防止容器内文字折行 */
     margin-bottom: 0rem;
-    color: var(--link-visited);
+    color: var(--link);
 }
 
 /* 阻止所有 flex 子项被压缩 */
