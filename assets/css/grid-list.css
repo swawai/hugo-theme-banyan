@@ -40,13 +40,19 @@
 }
 
 .grid-list .cell-title {
-    display: flex;
-    align-items: center;
-    gap: var(--title-icon-gap);
     min-width: 0;
 }
 
-.grid-list .icon-link {
+.grid-list .title-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--title-icon-gap);
+    min-width: 0;
+    max-width: 100%;
+    color: inherit;
+}
+
+.grid-list .title-icon {
     display: inline-flex;
     align-items: center;
     flex: none;
@@ -54,6 +60,7 @@
 
 .grid-list .title-text {
     flex: 1 1 auto;
+    display: inline-block;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -94,7 +101,8 @@
 
 .grid-list :is(.cell-date, .cell-count, .cell-path):not(.header),
 .grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path).header {
-    opacity: 0.3;
+    color: var(--link-visited);
+
 }
 
 .grid-list a:focus-visible {
