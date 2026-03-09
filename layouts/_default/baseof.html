@@ -2,11 +2,22 @@
 <html lang="{{ .Site.Language.Lang }}">
 
 <head>
+    {{ $faviconSvg := resources.Get "site/favicon.svg" }}
+    {{ if not $faviconSvg }}{{ errorf "编译失败: 缺少资源 %q。" "site/favicon.svg" }}{{ end }}
+    {{ $faviconSvg = $faviconSvg | fingerprint }}
+    {{ $faviconIco := resources.Get "site/favicon.ico" }}
+    {{ if not $faviconIco }}{{ errorf "编译失败: 缺少资源 %q。" "site/favicon.ico" }}{{ end }}
+    {{ $faviconIco = $faviconIco | fingerprint }}
+    {{ $appleTouchIcon := resources.Get "site/apple-touch-icon.png" }}
+    {{ if not $appleTouchIcon }}{{ errorf "编译失败: 缺少资源 %q。" "site/apple-touch-icon.png" }}{{ end }}
+    {{ $appleTouchIcon = $appleTouchIcon | fingerprint }}
+    {{ $manifest := .Site.Home.OutputFormats.Get "webmanifest" }}
+    {{ if not $manifest }}{{ errorf "编译失败: 缺少输出格式 %q。" "webmanifest" }}{{ end }}
     <meta charset="utf-8">
-    <link rel="icon" href="/favicon.svg?v=20260307" type="image/svg+xml">
-    <link rel="icon" href="/favicon.ico?v=20260307" sizes="any">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=20260307">
-    <link rel="manifest" href="/site.webmanifest?v=20260307">
+    <link rel="icon" href="{{ $faviconSvg.RelPermalink }}" type="image/svg+xml">
+    <link rel="icon" href="{{ $faviconIco.RelPermalink }}" sizes="any">
+    <link rel="apple-touch-icon" href="{{ $appleTouchIcon.RelPermalink }}">
+    {{ with $manifest }}<link rel="manifest" href="{{ .RelPermalink }}">{{ end }}
     <title>{{ if .Title }}{{ .Title }} - {{ end }}{{ .Site.Title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="wap-font-scale" content="no">
@@ -36,11 +47,31 @@
     {{ hugo.Generator }}
     {{ partial "seo.html" . }}
     {{ $js := resources.Get "js/main.js" | js.Build | minify | fingerprint }}
-    {{ $instant := resources.Get "js/instant.page.5.2.0.js" | fingerprint }}
+    {{ $prefetch := resources.Get "js/prefetch.js" | js.Build | minify | fingerprint }}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+    <script type="module" src="{{ $prefetch.RelPermalink }}" integrity="{{ $prefetch.Data.Integrity }}" crossorigin="anonymous"></script>
 </head>
 
-<body>
+{{ $prefetchConfig := site.Params.link_prefetch | default dict }}
+{{ $serviceWorkerConfig := site.Params.service_worker | default dict }}
+{{ $serviceWorkerEnabled := eq (index $serviceWorkerConfig "enabled") true }}
+{{ $prefetchModes := dict
+    "sort" (index $prefetchConfig "sort_siblings")
+    "desc" (index $prefetchConfig "descendants")
+    "post" (index $prefetchConfig "post")
+    "nav" (index $prefetchConfig "nav")
+}}
+{{ range $label, $mode := $prefetchModes }}
+    {{ if and $mode (not (or (eq $mode "") (eq $mode "off") (eq $mode "hover") (eq $mode "viewport") (eq $mode "viewport-all"))) }}
+        {{ errorf "编译失败: params.link_prefetch.%s 仅支持空值/off/hover/viewport/viewport-all，当前值为 %q。" $label $mode }}
+    {{ end }}
+{{ end }}
+<body
+    data-sw-enabled="{{ if $serviceWorkerEnabled }}true{{ else }}false{{ end }}"
+    {{ with index $prefetchModes "sort" }} data-prefetch-sort="{{ . }}"{{ end }}
+    {{ with index $prefetchModes "desc" }} data-prefetch-desc="{{ . }}"{{ end }}
+    {{ with index $prefetchModes "post" }} data-prefetch-post="{{ . }}"{{ end }}
+    {{ with index $prefetchModes "nav" }} data-prefetch-nav="{{ . }}"{{ end }}>
     {{ if and .IsPage (not .Params.slug) }}
         {{ errorf "编译失败: 页面 %q (标题: %q) 未配置 slug 字段。" .File.Path .Title }}
     {{ end }}
@@ -56,7 +87,11 @@
                 {{ end }}
                 <small class="social-links">
                     {{ $github_svg := resources.Get "icon/github.svg" }}
+                    {{ if not $github_svg }}{{ errorf "编译失败: 缺少资源 %q。" "icon/github.svg" }}{{ end }}
+                    {{ $github_svg = $github_svg | fingerprint }}
                     {{ $github_dark := resources.Get "icon/github-dark.svg" }}
+                    {{ if not $github_dark }}{{ errorf "编译失败: 缺少资源 %q。" "icon/github-dark.svg" }}{{ end }}
+                    {{ $github_dark = $github_dark | fingerprint }}
                     {{ with site.Params.social.github }}
                     <a href="{{ . }}" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
                         <img src="{{ $github_svg.RelPermalink }}" alt="GitHub" class="icon-light" />
@@ -74,11 +109,11 @@
                 {{ $account_link = "https://github.com/swawai/hugo-theme-banyan" }}
                 {{ $has_account = false }}
             {{ end }}
-            <a href="{{ $account_link }}" target="_blank" rel="noopener noreferrer" aria-label="{{ if $has_account }}{{ i18n `label_account` | default `Account` }}{{ else }}Banyan Theme GitHub{{ end }}" class="nav-login-btn">
+            <a href="{{ $account_link }}" target="_blank" rel="noopener noreferrer" aria-label="{{ if $has_account }}{{ i18n `label_account` | default `Account` }}{{ else }}Banyan Theme GitHub{{ end }}" class="nav-login-btn" data-prefetch-kind="nav">
                 {{ if $has_account }}
                 <span>{{ i18n "label_account" | default "Account" }}</span>
                 {{ end }}
-                <img src="/favicon.svg?v=20260307" alt="Logo" class="default-avatar" />
+                <img src="{{ $faviconSvg.RelPermalink }}" alt="Logo" class="default-avatar" />
                 <img src="" alt="User Avatar" class="user-avatar" style="display:none;" />
             </a>
 
@@ -91,7 +126,11 @@
             <span class="icon-select-wrapper" title="{{ i18n `label_language` | default `Language` }}">
                 <span class="sr-only">{{ i18n "label_language" | default "Language" }}</span>
                 {{ $lang_svg := resources.Get "icon/language.svg" }}
+                {{ if not $lang_svg }}{{ errorf "编译失败: 缺少资源 %q。" "icon/language.svg" }}{{ end }}
+                {{ $lang_svg = $lang_svg | fingerprint }}
                 {{ $lang_dark := resources.Get "icon/language-dark.svg" }}
+                {{ if not $lang_dark }}{{ errorf "编译失败: 缺少资源 %q。" "icon/language-dark.svg" }}{{ end }}
+                {{ $lang_dark = $lang_dark | fingerprint }}
                 <img src="{{ $lang_svg.RelPermalink }}" alt="Language" class="icon-light" />
                 <img src="{{ $lang_dark.RelPermalink }}" alt="Language" class="icon-dark" />
                 <select
@@ -106,7 +145,11 @@
             <span class="icon-select-wrapper" title="{{ i18n `label_theme` | default `Theme` }}">
                 <span class="sr-only">{{ i18n "label_theme" | default "Theme" }}</span>
                 {{ $theme_svg := resources.Get "icon/theme.svg" }}
+                {{ if not $theme_svg }}{{ errorf "编译失败: 缺少资源 %q。" "icon/theme.svg" }}{{ end }}
+                {{ $theme_svg = $theme_svg | fingerprint }}
                 {{ $theme_dark := resources.Get "icon/theme-dark.svg" }}
+                {{ if not $theme_dark }}{{ errorf "编译失败: 缺少资源 %q。" "icon/theme-dark.svg" }}{{ end }}
+                {{ $theme_dark = $theme_dark | fingerprint }}
                 <img src="{{ $theme_svg.RelPermalink }}" alt="Theme" class="icon-light" />
                 <img src="{{ $theme_dark.RelPermalink }}" alt="Theme" class="icon-dark" />
                 <select id="theme-select" class="icon-select" aria-label="{{ i18n `label_theme` | default `Theme` }}">
@@ -118,7 +161,7 @@
 
             {{ range .Site.Menus.main }}
             {{ $key := printf "menu_%s" .Identifier }}
-            <a href="{{ .URL | relLangURL }}" {{ if eq .Identifier "udc" }} title="Universal Decimal Classification" {{ end }}>{{ i18n $key | default .Name }}</a>
+            <a href="{{ .URL | relLangURL }}" data-prefetch-kind="nav" {{ if eq .Identifier "udc" }} title="Universal Decimal Classification" {{ end }}>{{ i18n $key | default .Name }}</a>
             {{ end }}
         </nav>
 
@@ -129,16 +172,6 @@
         </main>
     </div>
 
-    <script>
-        window.addEventListener('load', function () {
-            var script = document.createElement('script');
-            script.type = 'module';
-            script.src = '{{ $instant.RelPermalink }}';
-            script.integrity = '{{ $instant.Data.Integrity }}';
-            script.crossOrigin = 'anonymous';
-            document.body.appendChild(script);
-        }, { once: true });
-    </script>
 </body>
 
 </html>

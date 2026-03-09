@@ -56,7 +56,7 @@
 {{ range $ordered }}
   {{ $isCat := eq .kind "cat" }}
   {{ $icon := cond $isCat "folder" "file" }}
-  {{ partial "grid-title-cell.html" (dict "href" .url "title" (or .display .title) "icon" $icon) }}
+  {{ partial "grid-title-cell.html" (dict "href" .url "title" (or .display .title) "icon" $icon "prefetchKind" (cond $isCat "desc" "post")) }}
   <span class="cell-date">{{ cond (ne .latest "") .latest "." }}</span>
   {{ if $isCat }}
   <span class="cell-count"><span class="num">{{ cond (ne .cnt "") .cnt "." }}</span><span class="unit"></span></span>

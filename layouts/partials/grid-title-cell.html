@@ -3,8 +3,9 @@
 {{ $text := .text | default $title }}
 {{ $icon := .icon | default "file" }}
 {{ $label := .label | default (printf "Open %s" $title) }}
+{{ $prefetchKind := .prefetchKind | default "" }}
 <span class="cell-title">
-  <a class="title-link" href="{{ $href }}" aria-label="{{ $label }}">
+  <a class="title-link" href="{{ $href }}" aria-label="{{ $label }}"{{ with $prefetchKind }} data-prefetch-kind="{{ . }}"{{ end }}>
     <span class="title-icon">{{ partial "icon" (dict "name" $icon) }}</span>
     <span class="title-text">{{ $text }}</span>
   </a>

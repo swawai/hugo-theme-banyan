@@ -104,6 +104,45 @@ function navigateWithProgress(url) {
     window.location.href = url;
 }
 
+function registerNavigationServiceWorker() {
+    if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
+    const serviceWorkerEnabled = document.body?.dataset.swEnabled === 'true';
+
+    const cleanup = () => {
+        navigator.serviceWorker.getRegistrations()
+            .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+            .catch(() => { });
+
+        if (!('caches' in window)) return;
+        caches.keys()
+            .then((keys) => Promise.all(
+                keys
+                    .filter((key) => key.startsWith('nav-html-') || key.startsWith('asset-static-'))
+                    .map((key) => caches.delete(key))
+            ))
+            .catch(() => { });
+    };
+
+    if (!serviceWorkerEnabled) {
+        cleanup();
+        return;
+    }
+
+    const register = () => {
+        navigator.serviceWorker.register('/sw.js', {
+            scope: '/',
+            updateViaCache: 'none',
+        }).catch(() => { });
+    };
+
+    if (document.readyState === 'complete') {
+        window.setTimeout(register, 0);
+        return;
+    }
+
+    window.addEventListener('load', register, { once: true });
+}
+
 function readStorage(key) {
     try {
         return window.localStorage.getItem(key);
@@ -184,6 +223,8 @@ function shouldTrackNavigation(anchor, event) {
 if (canUseNavProgress() && sessionStorage.getItem(NAV_PROGRESS_KEY) === '1') {
     startNavProgress(0.82);
 }
+
+registerNavigationServiceWorker();
 
 document.addEventListener('click', (event) => {
     const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;

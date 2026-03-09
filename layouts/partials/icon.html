@@ -1,10 +1,14 @@
 {{- /* 参数: name (如 "folder" / "file") */ -}}
 {{- $name := .name -}}
-{{- $svg := resources.Get (printf "icon/%s.svg" $name) -}}
+{{- $svgPath := printf "icon/%s.svg" $name -}}
+{{- $svg := resources.Get $svgPath -}}
 {{- if $svg -}}
+  {{- $svg = $svg | fingerprint -}}
   <img class="icon" src="{{ $svg.RelPermalink }}" alt="" aria-hidden="true" />
 {{- else if fileExists (printf "assets/icon/%s.svg.html" $name) -}}
   <span class="icon">{{ readFile (printf "assets/icon/%s.svg.html" $name) | safeHTML }}</span>
+{{- else -}}
+  {{- errorf "编译失败: 缺少图标资源 %q。" $svgPath -}}
 {{- end -}}
 
 

@@ -49,11 +49,11 @@
       {{ else if eq $level 3 }}
         {{ $href = relLangURL (printf "/tags/%s/%s/%s/" (urlize $sel.t1) (urlize $sel.t2) (urlize .title)) }}
       {{ end }}
-      {{ partial "grid-title-cell.html" (dict "href" $href "title" .title "text" (printf "%s/" .title) "icon" "folder") }}
+      {{ partial "grid-title-cell.html" (dict "href" $href "title" .title "text" (printf "%s/" .title) "icon" "folder" "prefetchKind" "desc") }}
       <span class="cell-date">{{ .latest }}</span>
       <span class="cell-count"><span class="num">{{ .cnt }}</span><span class="unit"></span></span>
     {{ else if eq .kind "page" }}
-      {{ partial "grid-title-cell.html" (dict "href" .url "title" .title "icon" "file") }}
+      {{ partial "grid-title-cell.html" (dict "href" .url "title" .title "icon" "file" "prefetchKind" "post") }}
       <span class="cell-date">{{ .latest }}</span>
       {{ $kb := div (add .bytes 1023) 1024 }}
       <span class="cell-count"><span class="num">{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>

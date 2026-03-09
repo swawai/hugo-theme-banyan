@@ -8,12 +8,12 @@
 
 {{/* 面包屑 - 使用指定 format 的链接（首段统一 i18n: menu_dir） */}}
 <nav aria-label="Breadcrumb">
-{{ with $ctx.Site.Home.OutputFormats.Get $mode }}<a href="{{ .RelPermalink }}">{{ i18n "menu_dir" }}</a>{{ end }}
+{{ with $ctx.Site.Home.OutputFormats.Get $mode }}<a href="{{ .RelPermalink }}" data-prefetch-kind="nav">{{ i18n "menu_dir" }}</a>{{ end }}
 {{ range (where $ctx.Ancestors.Reverse "IsHome" "ne" true) }}
   {{ $p := . }}
-  {{ with $p.OutputFormats.Get $mode }} ﹥ <a href="{{ .RelPermalink }}">{{ $p.LinkTitle }}</a>{{ end }}
+  {{ with $p.OutputFormats.Get $mode }} ﹥ <a href="{{ .RelPermalink }}" data-prefetch-kind="nav">{{ $p.LinkTitle }}</a>{{ end }}
 {{ end }}
-{{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ <a href="{{ .RelPermalink }}">{{ $ctx.Title }}</a>{{ end }}{{ end }}
+{{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ <a href="{{ .RelPermalink }}" data-prefetch-kind="nav">{{ $ctx.Title }}</a>{{ end }}{{ end }}
 </nav>
 
 <div class="grid-list">
@@ -82,7 +82,7 @@
     {{ if $isSection }}
       {{ $child := $n }}
       {{ with $child.OutputFormats.Get $mode }}
-        {{ partial "grid-title-cell.html" (dict "href" .RelPermalink "title" $child.Title "icon" $iconName) }}
+        {{ partial "grid-title-cell.html" (dict "href" .RelPermalink "title" $child.Title "icon" $iconName "prefetchKind" "desc") }}
       {{ end }}
       <span class="cell-date">
         {{ $displayDate := $n.Lastmod }}
@@ -99,7 +99,7 @@
       </span>
       <span class="cell-count"><span class="num">{{ .cnt }}</span><span class="unit"></span></span>
     {{ else }}
-      {{ partial "grid-title-cell.html" (dict "href" $n.RelPermalink "title" $n.Title "icon" $iconName) }}
+      {{ partial "grid-title-cell.html" (dict "href" $n.RelPermalink "title" $n.Title "icon" $iconName "prefetchKind" "post") }}
       <span class="cell-date">
         {{ $d := $n.Lastmod }}
         {{ if eq ($d.Format "2006") "0001" }}{{ $d = $n.Date }}{{ end }}

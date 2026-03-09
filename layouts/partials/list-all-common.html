@@ -7,12 +7,12 @@
 {{ $mode := .mode }}
 
 <nav aria-label="Breadcrumb">
-{{ with $ctx.OutputFormats.Get $mode }}<a href="{{ .RelPermalink }}">{{ i18n "menu_all" }}</a>{{ end }}
+{{ with $ctx.OutputFormats.Get $mode }}<a href="{{ .RelPermalink }}" data-prefetch-kind="nav">{{ i18n "menu_all" }}</a>{{ end }}
 {{ range (where $ctx.Ancestors.Reverse "IsHome" "ne" true) }}
   {{ $p := . }}
-  {{ with $p.OutputFormats.Get $mode }} ﹥ <a href="{{ .RelPermalink }}">{{ $p.LinkTitle }}</a>{{ end }}
+  {{ with $p.OutputFormats.Get $mode }} ﹥ <a href="{{ .RelPermalink }}" data-prefetch-kind="nav">{{ $p.LinkTitle }}</a>{{ end }}
 {{ end }}
-{{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ <a href="{{ .RelPermalink }}">{{ $ctx.Title }}</a>{{ end }}{{ end }}
+{{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ <a href="{{ .RelPermalink }}" data-prefetch-kind="nav">{{ $ctx.Title }}</a>{{ end }}{{ end }}
 </nav>
 
 <div class="grid-list cols-4">
@@ -75,7 +75,7 @@
   {{ end }}
 
   {{ range $sortedPages }}
-    {{ partial "grid-title-cell.html" (dict "href" .RelPermalink "title" .Title "icon" "file") }}
+    {{ partial "grid-title-cell.html" (dict "href" .RelPermalink "title" .Title "icon" "file" "prefetchKind" "post") }}
     <span class="cell-date">{{ .Date.Format "2006-01-02" }}</span>
     {{ $bytes := len .RawContent }}
     {{ $kb := div (add $bytes 1023) 1024 }}

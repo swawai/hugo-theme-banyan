@@ -5,7 +5,7 @@
 {{ $of := $ctx.OutputFormats.Get $mode }}
 {{ $curr := cond $of $of.RelPermalink (printf "/%s/" $ctx.Data.Plural | relLangURL) }}
 {{ $root := $curr | replaceRE (printf "(/%s/).*$" $ctx.Data.Plural) (printf "/%s/" $ctx.Data.Plural) }}
-<a href="{{ $root }}">{{ i18n "menu_udc" }}</a>
+<a href="{{ $root }}" data-prefetch-kind="nav">{{ i18n "menu_udc" }}</a>
 
 {{ if eq $ctx.Kind "term" }}
   {{ $segments := split $ctx.Title "/" }}
@@ -19,7 +19,7 @@
         {{ $crumbPath = printf "%s/%s" $crumbPath $seg }}
       {{ end }}
       {{ $href := printf "%s%s/" $root (urlize $crumbPath) }}
-      ﹥ <a href="{{ $href }}">{{ $seg }}</a>
+      ﹥ <a href="{{ $href }}" data-prefetch-kind="nav">{{ $seg }}</a>
     {{ end }}
   {{ end }}
 {{ end }}  

@@ -5,6 +5,6 @@
 {{ $text := .text }}
 {{ with $href }}
 <span class="{{ $class }} header click-full">
-  <a href="{{ . }}" title="{{ $title }}" aria-label="{{ $label }}">{{ $text | safeHTML }}</a>
+  <a href="{{ . }}" title="{{ $title }}" aria-label="{{ $label }}" data-prefetch-kind="sort">{{ $text | safeHTML }}</a>
 </span>
 {{ end }}
