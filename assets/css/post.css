@@ -15,7 +15,8 @@
 
 .post-meta-time {
     /* font-size: 0.875rem; */
-    opacity: 0.3;
+    /* opacity: 0.3; */
+    color: var(--link-visited);
     margin-bottom: 0;
 }
 

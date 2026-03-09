@@ -99,11 +99,11 @@
     text-align: left;
 }
 
-.grid-list :is(.cell-date, .cell-count, .cell-path):not(.header),
+/* .grid-list :is(.cell-date, .cell-count, .cell-path):not(.header),
 .grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path).header {
     color: var(--link);
 
-}
+} */
 
 .grid-list a:focus-visible {
     outline-offset: -2px;
@@ -116,7 +116,7 @@
 }
 
 .grid-list .header a {
-    margin-bottom: -0.1rem;
+    margin-bottom: -0.3rem;
 }
 
 .grid-list::after {
@@ -124,7 +124,7 @@
     position: absolute;
     left: 0;
     right: 0;
-    top: 1.65rem;
+    top: 1.45rem;
     border-bottom: 1px solid currentColor;
     opacity: 0.05;
     pointer-events: none;

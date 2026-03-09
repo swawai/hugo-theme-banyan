@@ -5,8 +5,8 @@
     column-gap: 0.3rem; /* 项目之间的水平间隔 */
     row-gap: 0;         /* 取消垂直间隙 */
     white-space: nowrap; /* 防止容器内文字折行 */
-    margin-bottom: 0rem;
-    color: var(--link);
+    margin-bottom: 0.05rem;
+    /* color: var(--link); */
 }
 
 /* 阻止所有 flex 子项被压缩 */
@@ -24,7 +24,7 @@
 .copyright a,
 .copyright a:visited {
     color: inherit;
-    text-decoration: underline;
+    text-decoration: none;
 }
 
 .copyright a:hover {
@@ -36,5 +36,5 @@
     width: 1em;
     height: 1em;
     vertical-align: -0.05em;
-    border-bottom: 1px solid currentColor;
+    /* border-bottom: 1px solid currentColor; */
 }
