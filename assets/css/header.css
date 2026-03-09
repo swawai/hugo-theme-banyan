@@ -24,7 +24,7 @@
 .copyright a,
 .copyright a:visited {
     color: inherit;
-    text-decoration: none;
+    text-decoration: underline;
 }
 
 .copyright a:hover {
@@ -35,6 +35,6 @@
 .copyright .social-links img {
     width: 1em;
     height: 1em;
-    vertical-align: -0.05em;
-    /* border-bottom: 1px solid currentColor; */
+    vertical-align: -0.15em;
+    border-bottom: 1px solid currentColor;
 }
