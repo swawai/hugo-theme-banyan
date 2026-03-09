@@ -9,44 +9,35 @@
 {{ $mode := .mode }}
 {{ $items := .items }}
 
-{{/* 模式配置（内联） */}}
-{{ $config := dict
-  "bynameasc"  (dict "sortField" "title"     "sortOrder" "asc"  "timeFmt" "bydateasc" "timeText" "↨"         "countFmt" "bycount"    "countText" "↨"        "nameFmt" "byname"    "nameText" "<b>↓</b>")
-  "byname"     (dict "sortField" "title"     "sortOrder" "desc" "timeFmt" "bydate"    "timeText" "↨"         "countFmt" "bycountasc" "countText" "↨"        "nameFmt" "bynameasc" "nameText" "<b>↑</b>")
-  "bydateasc"  (dict "sortField" "latestKey" "sortOrder" "asc"  "timeFmt" "bydate"    "timeText" "<b>↓</b>"  "countFmt" "bycountasc" "countText" "↨"        "nameFmt" "byname"    "nameText" "↨")
-  "bydate"     (dict "sortField" "latestKey" "sortOrder" "desc" "timeFmt" "bydateasc" "timeText" "<b>↑</b>"  "countFmt" "bycount"    "countText" "↨"        "nameFmt" "byname"    "nameText" "↨")
-  "bycountasc" (dict "sortField" "cnt"       "sortOrder" "asc"  "timeFmt" "bydateasc" "timeText" "↨"         "countFmt" "bycount"    "countText" "<b>↓</b>" "nameFmt" "byname"    "nameText" "↨")
-  "bycount"    (dict "sortField" "cnt"       "sortOrder" "desc" "timeFmt" "bydate"    "timeText" "↨"         "countFmt" "bycountasc" "countText" "<b>↑</b>" "nameFmt" "byname"    "nameText" "↨")
-}}
-{{ $cfg := index $config $mode }}
-{{ if not $cfg }}{{ $cfg = index $config "bynameasc" }}{{ end }}
+{{ $cfg := partial "grid-sort-config.html" (dict "variant" "udc" "mode" $mode) }}
 
-{{/* 表头：按列放置并与 main.css 对齐 → 分类号/日期/计数（增强 a11y） */}}
 {{ $sf := index $cfg "sortField" }}
 {{ $so := index $cfg "sortOrder" }}
 {{ with $ctx.OutputFormats.Get (index $cfg "nameFmt") }}
-<span class="cell-title header click-full" role="columnheader" aria-sort="{{ if eq $sf "title" }}{{ if eq $so "asc" }}ascending{{ else }}descending{{ end }}{{ else }}none{{ end }}">
-  <a href="{{ .RelPermalink }}"
-     title="{{ if and (eq $sf "title") (eq $so "asc") }}Sort by name descending{{ else }}Sort by name ascending{{ end }}"
-     aria-label="{{ if and (eq $sf "title") (eq $so "asc") }}Sort by name descending{{ else }}Sort by name ascending{{ end }}">{{ (index $cfg "nameText") | safeHTML }}</a>
-</span>
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-title"
+    "href" .RelPermalink
+    "title" (cond (and (eq $sf "title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
+    "label" (cond (and (eq $sf "title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
+    "text" (index $cfg "nameText")) }}
 {{ end }}
 {{ with $ctx.OutputFormats.Get (index $cfg "timeFmt") }}
-<span class="cell-date header click-full" role="columnheader" aria-sort="{{ if eq $sf "latestKey" }}{{ if eq $so "asc" }}ascending{{ else }}descending{{ end }}{{ else }}none{{ end }}">
-  <a href="{{ .RelPermalink }}"
-     title="{{ if and (eq $sf "latestKey") (eq $so "asc") }}Sort by date descending{{ else }}Sort by date ascending{{ end }}"
-     aria-label="{{ if and (eq $sf "latestKey") (eq $so "asc") }}Sort by date descending{{ else }}Sort by date ascending{{ end }}">{{ (index $cfg "timeText") | safeHTML }}</a>
-</span>
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-date"
+    "href" .RelPermalink
+    "title" (cond (and (eq $sf "latestKey") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
+    "label" (cond (and (eq $sf "latestKey") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
+    "text" (index $cfg "timeText")) }}
 {{ end }}
 {{ with $ctx.OutputFormats.Get (index $cfg "countFmt") }}
-<span class="cell-count header click-full" role="columnheader" aria-sort="{{ if eq $sf "cnt" }}{{ if eq $so "asc" }}ascending{{ else }}descending{{ end }}{{ else }}none{{ end }}">
-  <a href="{{ .RelPermalink }}"
-     title="{{ if and (eq $sf "cnt") (eq $so "asc") }}Sort by count descending{{ else }}Sort by count ascending{{ end }}"
-     aria-label="{{ if and (eq $sf "cnt") (eq $so "asc") }}Sort by count descending{{ else }}Sort by count ascending{{ end }}">{{ (index $cfg "countText") | safeHTML }}</a>
-</span>
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-count"
+    "href" .RelPermalink
+    "title" (cond (and (eq $sf "cnt") (eq $so "asc")) "Sort by count descending" "Sort by count ascending")
+    "label" (cond (and (eq $sf "cnt") (eq $so "asc")) "Sort by count descending" "Sort by count ascending")
+    "text" (index $cfg "countText")) }}
 {{ end }}
 
-{{/* 目录/文章分组，升序目录在前，降序目录在后 */}}
 {{ $sortField := index $cfg "sortField" }}
 {{ $sortOrder := index $cfg "sortOrder" }}
 {{ $cats := where $items "kind" "==" "cat" }}
@@ -65,10 +56,7 @@
 {{ range $ordered }}
   {{ $isCat := eq .kind "cat" }}
   {{ $icon := cond $isCat "folder" "file" }}
-  <span class="cell-title">
-    <a class="icon-link" href="{{ .url }}">{{ partial "icon" (dict "name" $icon) }}</a>
-    <a class="title-text" href="{{ .url }}">{{ or .display .title }}</a>
-  </span>
+  {{ partial "grid-title-cell.html" (dict "href" .url "title" (or .display .title) "icon" $icon) }}
   <span class="cell-date">{{ cond (ne .latest "") .latest "." }}</span>
   {{ if $isCat }}
   <span class="cell-count"><span class="num">{{ cond (ne .cnt "") .cnt "." }}</span><span class="unit"></span></span>
@@ -79,11 +67,10 @@
   {{ end }}
 {{ end }}
 
-
-{{/* ItemList JSON-LD：根据当前 items 顺序输出（用于 UDC 与 TAGS 复用） */}}
 {{- $entries := slice -}}
 {{- range $ordered -}}
   {{- $name := or .display .title -}}
   {{- $entries = $entries | append (dict "url" .url "name" $name) -}}
 {{- end -}}
 {{ partial "schema-itemlist.html" (dict "entries" $entries) }}
+

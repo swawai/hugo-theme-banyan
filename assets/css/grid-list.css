@@ -10,31 +10,32 @@
     --col-size-min: 3em;
     --col-path-min: 8em;
     --size-unit-min-width: 3ch;
+    --grid-columns: minmax(var(--col-title), var(--col-title)) minmax(var(--col-date-min), max-content) minmax(var(--col-count-min), max-content);
 
     position: relative;
     display: grid;
     width: max-content;
-    grid-template-columns: minmax(var(--col-title), var(--col-title)) minmax(var(--col-date-min), max-content) minmax(var(--col-count-min), max-content);
+    grid-template-columns: var(--grid-columns);
     justify-content: start;
     column-gap: 1em;
 }
 
 .grid-list.cols-4 {
-    grid-template-columns: minmax(var(--col-title), var(--col-title)) minmax(var(--col-date-min), max-content) minmax(var(--col-size-min), max-content) minmax(var(--col-path-min), max-content);
+    --grid-columns: minmax(var(--col-title), var(--col-title)) minmax(var(--col-date-min), max-content) minmax(var(--col-size-min), max-content) minmax(var(--col-path-min), max-content);
 }
 
 .grid-list > * {
-    white-space: nowrap;
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path) {
     pointer-events: none;
 }
 
-.grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path) a,
-.grid-list .cell-title .icon {
+.grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path) a {
     pointer-events: auto;
 }
 
@@ -42,29 +43,24 @@
     display: flex;
     align-items: center;
     gap: var(--title-icon-gap);
-    width: 100%;
+    min-width: 0;
 }
 
 .grid-list .icon-link {
     display: inline-flex;
     align-items: center;
-    flex-shrink: 0;
+    flex: none;
 }
 
 .grid-list .title-text {
-    flex: 1;
-    display: block;
-    width: 100%;
+    flex: 1 1 auto;
+    min-width: 0;
     overflow: hidden;
-    white-space: nowrap;
     text-overflow: ellipsis;
 }
 
-.grid-list .icon {
-    display: inline-block;
-}
-
 .grid-list :is(.icon, img.icon) {
+    display: inline-block;
     width: var(--icon-size);
     height: var(--icon-size);
     vertical-align: -0.15em;
@@ -81,20 +77,19 @@
     text-align: right;
 }
 
-.grid-list .cell-count .num {
+.grid-list .cell-count.header {
+    justify-self: stretch;
+}
+
+.grid-list .num {
     display: inline-block;
     text-align: right;
 }
 
-.grid-list .cell-count .unit {
+.grid-list .unit {
     display: inline-block;
     min-width: var(--size-unit-min-width);
     text-align: left;
-}
-
-.grid-list .cell-count.header {
-    justify-self: stretch;
-    text-align: right;
 }
 
 .grid-list :is(.cell-date, .cell-count, .cell-path):not(.header),
@@ -106,14 +101,13 @@
     outline-offset: -2px;
 }
 
-.grid-list .cell-path a,
-.grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path).header a {
+.grid-list :is(.cell-path a, .header a) {
     display: block;
     width: 100%;
     color: inherit;
 }
 
-.grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path).header a {
+.grid-list .header a {
     margin-bottom: -0.1rem;
 }
 

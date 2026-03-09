@@ -6,6 +6,7 @@
 返回：页面切片 */}}
 {{ $page := .ctx }}
 {{ $prefix := .prefix }}
+{{ $prefixNorm := partial "tags-normalize-term.html" $prefix }}
 {{ $mode := cond (isset . "mode") .mode "subtree" }}
 {{ $lang := $page.Site.Language.Lang }}
 {{ $key := printf "tags:%s:%s:%s" $mode $prefix $lang }}
@@ -18,23 +19,25 @@
   {{ $pagesAll := slice }}
   {{ if eq $mode "subtree" }}
     {{ range $t, $pages := site.Taxonomies.tags }}
-      {{ if or (eq $t $prefix) (hasPrefix $t (printf "%s/" $prefix)) }}
+      {{ $tNorm := partial "tags-normalize-term.html" $t }}
+      {{ if or (eq $tNorm $prefixNorm) (hasPrefix $tNorm (printf "%s/" $prefixNorm)) }}
         {{ $pagesAll = $pagesAll | append $pages }}
       {{ end }}
     {{ end }}
   {{ else if eq $mode "exact" }}
-    {{ $exact := index site.Taxonomies.tags $prefix }}
-    {{ with $exact }}
-      {{ range . }}
-        {{ $arr := .Params.tags }}
-        {{ $hit := false }}
-        {{ if $arr }}
-          {{ range $arr }}
-            {{ if eq (printf "%v" .) $prefix }}{{ $hit = true }}{{ end }}
+    {{ range $t, $pages := site.Taxonomies.tags }}
+      {{ if eq (partial "tags-normalize-term.html" $t) $prefixNorm }}
+        {{ range $pages }}
+          {{ $arr := .Params.tags }}
+          {{ $hit := false }}
+          {{ if $arr }}
+            {{ range $arr }}
+              {{ if eq (partial "tags-normalize-term.html" .) $prefixNorm }}{{ $hit = true }}{{ end }}
+            {{ end }}
           {{ end }}
-        {{ end }}
-        {{ if $hit }}
-          {{ $pagesAll = $pagesAll | append . }}
+          {{ if $hit }}
+            {{ $pagesAll = $pagesAll | append . }}
+          {{ end }}
         {{ end }}
       {{ end }}
     {{ end }}

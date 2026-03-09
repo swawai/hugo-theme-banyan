@@ -16,57 +16,40 @@
 {{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ <a href="{{ .RelPermalink }}">{{ $ctx.Title }}</a>{{ end }}{{ end }}
 </nav>
 
-{{/*  {{ partial "list-header.html" $ctx }}  */}}
-
 <div class="grid-list">
-  {{/* 模式配置统一：排序字段/方向 + 控件 */}}
-  {{ $config := dict
-    "bynameasc"  (dict "sortField" "node.Title" "sortOrder" "asc"  "controls" (dict "name" "byname"    "nameText" "<b>↓</b>"   "date" "bydateasc" "dateText" "↨"        "count" "bycount"    "countText" "↨"))
-    "byname"     (dict "sortField" "node.Title" "sortOrder" "desc" "controls" (dict "name" "bynameasc" "nameText" "<b>↑</b>"   "date" "bydateasc" "dateText" "↨"        "count" "bycount"    "countText" "↨"))
-    "bydate"     (dict "sortField" "node.Date"  "sortOrder" "desc" "controls" (dict "name" "byname"    "nameText" "↨"          "date" "bydateasc" "dateText" "<b>↑</b>" "count" "bycount"    "countText" "↨"))
-    "bydateasc"  (dict "sortField" "node.Date"  "sortOrder" "asc"  "controls" (dict "name" "byname"    "nameText" "↨"          "date" "bydate"    "dateText" "<b>↓</b>" "count" "bycount"    "countText" "↨"))
-    "bycountasc" (dict "sortField" "cnt"        "sortOrder" "asc"  "controls" (dict "name" "byname"    "nameText" "↨"          "date" "bydateasc" "dateText" "↨"        "count" "bycount"    "countText" "<b>↓</b>"))
-    "bycount"    (dict "sortField" "cnt"        "sortOrder" "desc" "controls" (dict "name" "byname"    "nameText" "↨"          "date" "bydateasc" "dateText" "↨"        "count" "bycountasc" "countText" "<b>↑</b>"))
-  }}
-  {{ $cfg := index $config $mode }}
-  {{ if not $cfg }}{{ $cfg = index $config "bynameasc" }}{{ end }}
+  {{ $cfg := partial "grid-sort-config.html" (dict "variant" "dir" "mode" $mode) }}
 
   {{ $ctrl := index $cfg "controls" }}
-  {{/* 顶部控制：按列放置，便于与内容列对齐（增强 a11y） */}}
   {{ $sf := index $cfg "sortField" }}
   {{ $so := index $cfg "sortOrder" }}
 
   {{ with $ctx.OutputFormats.Get (index $ctrl "name") }}
-  <span class="cell-title header click-full">
-    <a href="{{ .RelPermalink }}"
-       title="{{ if and (eq $sf "node.Title") (eq $so "asc") }}Sort by name descending{{ else }}Sort by name ascending{{ end }}"
-       aria-label="{{ if and (eq $sf "node.Title") (eq $so "asc") }}Sort by name descending{{ else }}Sort by name ascending{{ end }}">
-      {{ (index $ctrl "nameText") | safeHTML }}
-    </a>
-  </span>
+    {{ partial "grid-sort-cell.html" (dict
+      "class" "cell-title"
+      "href" .RelPermalink
+      "title" (cond (and (eq $sf "node.Title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
+      "label" (cond (and (eq $sf "node.Title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
+      "text" (index $ctrl "nameText")) }}
   {{ end }}
 
   {{ with $ctx.OutputFormats.Get (index $ctrl "date") }}
-  <span class="cell-date header click-full">
-    <a href="{{ .RelPermalink }}"
-       title="{{ if and (eq $sf "node.Date") (eq $so "asc") }}Sort by date descending{{ else }}Sort by date ascending{{ end }}"
-       aria-label="{{ if and (eq $sf "node.Date") (eq $so "asc") }}Sort by date descending{{ else }}Sort by date ascending{{ end }}">
-      {{ (index $ctrl "dateText") | safeHTML }}
-    </a>
-  </span>
+    {{ partial "grid-sort-cell.html" (dict
+      "class" "cell-date"
+      "href" .RelPermalink
+      "title" (cond (and (eq $sf "node.Date") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
+      "label" (cond (and (eq $sf "node.Date") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
+      "text" (index $ctrl "dateText")) }}
   {{ end }}
 
   {{ with $ctx.OutputFormats.Get (index $ctrl "count") }}
-  <span class="cell-count header click-full">
-    <a href="{{ .RelPermalink }}"
-       title="{{ if and (eq $sf "cnt") (eq $so "asc") }}Sort by count descending{{ else }}Sort by count ascending{{ end }}"
-       aria-label="{{ if and (eq $sf "cnt") (eq $so "asc") }}Sort by count descending{{ else }}Sort by count ascending{{ end }}">
-      {{ (index $ctrl "countText") | safeHTML }}
-    </a>
-  </span>
+    {{ partial "grid-sort-cell.html" (dict
+      "class" "cell-count"
+      "href" .RelPermalink
+      "title" (cond (and (eq $sf "cnt") (eq $so "asc")) "Sort by count descending" "Sort by count ascending")
+      "label" (cond (and (eq $sf "cnt") (eq $so "asc")) "Sort by count descending" "Sort by count ascending")
+      "text" (index $ctrl "countText")) }}
   {{ end }}
 
-  {{/* 分组构建：目录/文件分开，目录的 cnt=递归文章数；文件的 cnt=字节数（用于 size/排序） */}}
   {{ $secEntries := slice }}
   {{ $fileEntries := slice }}
   {{ range $ctx.Sections }}
@@ -78,7 +61,6 @@
     {{ $fileEntries = $fileEntries | append (dict "node" . "cnt" $bytes) }}
   {{ end }}
 
-  {{/* 统一排序与渲染：目录优先，再跟文件（两组内按当前模式排序） */}}
   {{ $sortField := index $cfg "sortField" }}
   {{ $sortOrder := index $cfg "sortOrder" }}
   {{ $secSorted := sort $secEntries $sortField $sortOrder }}
@@ -91,6 +73,7 @@
     {{ range $fileSorted }}{{ $sorted = $sorted | append . }}{{ end }}
     {{ range $secSorted }}{{ $sorted = $sorted | append . }}{{ end }}
   {{ end }}
+
   {{ range $sorted }}
     {{ $n := .node }}
     {{ $isSection := eq $n.Kind "section" }}
@@ -98,14 +81,10 @@
 
     {{ if $isSection }}
       {{ $child := $n }}
-      <span class="cell-title">
-        {{ with $child.OutputFormats.Get $mode }}
-          <a class="icon-link" href="{{ .RelPermalink }}" aria-label="Open {{ $child.Title }}">{{ partial "icon" (dict "name" $iconName) }}</a>
-          <a class="title-text" href="{{ .RelPermalink }}">{{ $child.Title }}</a>
-        {{ end }}
-      </span>
+      {{ with $child.OutputFormats.Get $mode }}
+        {{ partial "grid-title-cell.html" (dict "href" .RelPermalink "title" $child.Title "icon" $iconName) }}
+      {{ end }}
       <span class="cell-date">
-        {{/* 目录日期：仅从子页面取最新 Lastmod，其次 Date；若无子页面再退到自身 Lastmod */}}
         {{ $displayDate := $n.Lastmod }}
         {{ with first 1 ($n.RegularPagesRecursive.ByLastmod.Reverse) }}
           {{ $p := index . 0 }}
@@ -120,26 +99,19 @@
       </span>
       <span class="cell-count"><span class="num">{{ .cnt }}</span><span class="unit"></span></span>
     {{ else }}
-      <span class="cell-title">
-        <a class="icon-link" href="{{ $n.RelPermalink }}" aria-label="Open {{ $n.Title }}">{{ partial "icon" (dict "name" $iconName) }}</a>
-        <a class="title-text" href="{{ $n.RelPermalink }}">{{ $n.Title }}</a>
-      </span>
+      {{ partial "grid-title-cell.html" (dict "href" $n.RelPermalink "title" $n.Title "icon" $iconName) }}
       <span class="cell-date">
-        {{/* 文件日期：Lastmod 优先，Date 兜底 */}}
         {{ $d := $n.Lastmod }}
         {{ if eq ($d.Format "2006") "0001" }}{{ $d = $n.Date }}{{ end }}
         {{ $d.Format "2006-01-02" }}
       </span>
-      {{/* 文件显示大小（KB，向上取整） */}}
       {{ $bytes := .cnt }}
       {{ $kb := div (add $bytes 1023) 1024 }}
       <span class="cell-count"><span class="num">{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>
     {{ end }}
   {{ end }}
-
 </div>
 
-{{/* ItemList JSON-LD：从已渲染顺序构造 entries 并输出 */}}
 {{- $entries := slice -}}
 {{- range $sorted -}}
   {{- $n := .node -}}
@@ -152,5 +124,4 @@
   {{- end -}}
 {{- end -}}
 {{ partial "schema-itemlist.html" (dict "entries" $entries) }}
-
 

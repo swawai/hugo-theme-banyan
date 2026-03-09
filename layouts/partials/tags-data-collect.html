@@ -12,6 +12,9 @@
 {{ $ctx := .ctx }}
 {{ $level := .level }}
 {{ $sel := .sel | default (dict) }}
+{{ $selT1Norm := partial "tags-normalize-term.html" $sel.t1 }}
+{{ $selT2Norm := partial "tags-normalize-term.html" $sel.t2 }}
+{{ $selT3Norm := partial "tags-normalize-term.html" $sel.t3 }}
 
 {{/* 使用站点级 RegularPages，以确保聚合完整 */}}
 {{ $site := $ctx.Site }}
@@ -22,9 +25,9 @@
 {{ range $p := $pages }}
   {{ $tags := $p.Params.tags | default (slice) }}
   {{ $ok := true }}
-  {{ if $sel.t1 }}{{ $ok = and $ok (and (ge (len $tags) 1) (eq (index $tags 0) $sel.t1)) }}{{ end }}
-  {{ if $sel.t2 }}{{ $ok = and $ok (and (ge (len $tags) 2) (eq (index $tags 1) $sel.t2)) }}{{ end }}
-  {{ if $sel.t3 }}{{ $ok = and $ok (and (ge (len $tags) 3) (eq (index $tags 2) $sel.t3)) }}{{ end }}
+  {{ if $sel.t1 }}{{ $ok = and $ok (and (ge (len $tags) 1) (eq (partial "tags-normalize-term.html" (index $tags 0)) $selT1Norm)) }}{{ end }}
+  {{ if $sel.t2 }}{{ $ok = and $ok (and (ge (len $tags) 2) (eq (partial "tags-normalize-term.html" (index $tags 1)) $selT2Norm)) }}{{ end }}
+  {{ if $sel.t3 }}{{ $ok = and $ok (and (ge (len $tags) 3) (eq (partial "tags-normalize-term.html" (index $tags 2)) $selT3Norm)) }}{{ end }}
   {{ if $ok }}{{ $filtered = $filtered | append $p }}{{ end }}
 {{ end }}
 
@@ -33,66 +36,78 @@
 {{ if eq $level 1 }}
   {{/* 顶层 t1 */}}
   {{ $m := dict }}
+  {{ $labels := dict }}
   {{ range $pages }}
     {{ $tags := .Params.tags | default (slice) }}
     {{ if ge (len $tags) 1 }}
       {{ $t1 := index $tags 0 }}
+      {{ $k1 := partial "tags-normalize-term.html" $t1 }}
       {{ $arr := slice }}
-      {{ with (index $m $t1) }}{{ $arr = . }}{{ end }}
+      {{ with (index $m $k1) }}{{ $arr = . }}{{ end }}
       {{ $arr = $arr | append . }}
-      {{ $m = merge $m (dict $t1 $arr) }}
+      {{ $m = merge $m (dict $k1 $arr) }}
+      {{ if not (isset $labels $k1) }}{{ $labels = merge $labels (dict $k1 $t1) }}{{ end }}
     {{ end }}
   {{ end }}
   {{ range $k, $arr := $m }}
+    {{ $label := index $labels $k | default $k }}
     {{ $latest := "" }}
     {{ if gt (len $arr) 0 }}
       {{ $p := index (sort $arr "Date" "desc") 0 }}
       {{ $latest = $p.Date.Format "2006-01-02" }}
     {{ end }}
-    {{ $id := printf "tags-%s" (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $k)) }}
-    {{ $items = $items | append (dict "kind" "cat" "title" $k "latest" $latest "cnt" (len $arr) "url" (printf "#%s" $id) "id" $id) }}
+    {{ $id := printf "tags-%s" (replaceRE "[^a-zA-Z0-9_-]+" "-" $k) }}
+    {{ $items = $items | append (dict "kind" "cat" "title" $label "latest" $latest "cnt" (len $arr) "url" (printf "#%s" $id) "id" $id) }}
   {{ end }}
 {{ else if eq $level 2 }}
   {{ $m := dict }}
+  {{ $labels := dict }}
   {{ range $filtered }}
     {{ $tags := .Params.tags | default (slice) }}
     {{ if ge (len $tags) 2 }}
       {{ $t2 := index $tags 1 }}
+      {{ $k2 := partial "tags-normalize-term.html" $t2 }}
       {{ $arr := slice }}
-      {{ with (index $m $t2) }}{{ $arr = . }}{{ end }}
+      {{ with (index $m $k2) }}{{ $arr = . }}{{ end }}
       {{ $arr = $arr | append . }}
-      {{ $m = merge $m (dict $t2 $arr) }}
+      {{ $m = merge $m (dict $k2 $arr) }}
+      {{ if not (isset $labels $k2) }}{{ $labels = merge $labels (dict $k2 $t2) }}{{ end }}
     {{ end }}
   {{ end }}
   {{ range $k, $arr := $m }}
+    {{ $label := index $labels $k | default $k }}
     {{ $latest := "" }}
     {{ if gt (len $arr) 0 }}
       {{ $p := index (sort $arr "Date" "desc") 0 }}
       {{ $latest = $p.Date.Format "2006-01-02" }}
     {{ end }}
-    {{ $id := printf "tags-%s-%s" (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $sel.t1)) (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $k)) }}
-    {{ $items = $items | append (dict "kind" "cat" "title" $k "latest" $latest "cnt" (len $arr) "url" (printf "#%s" $id) "id" $id) }}
+    {{ $id := printf "tags-%s-%s" (replaceRE "[^a-zA-Z0-9_-]+" "-" $selT1Norm) (replaceRE "[^a-zA-Z0-9_-]+" "-" $k) }}
+    {{ $items = $items | append (dict "kind" "cat" "title" $label "latest" $latest "cnt" (len $arr) "url" (printf "#%s" $id) "id" $id) }}
   {{ end }}
 {{ else if eq $level 3 }}
   {{ $m := dict }}
+  {{ $labels := dict }}
   {{ range $filtered }}
     {{ $tags := .Params.tags | default (slice) }}
     {{ if ge (len $tags) 3 }}
       {{ $t3 := index $tags 2 }}
+      {{ $k3 := partial "tags-normalize-term.html" $t3 }}
       {{ $arr := slice }}
-      {{ with (index $m $t3) }}{{ $arr = . }}{{ end }}
+      {{ with (index $m $k3) }}{{ $arr = . }}{{ end }}
       {{ $arr = $arr | append . }}
-      {{ $m = merge $m (dict $t3 $arr) }}
+      {{ $m = merge $m (dict $k3 $arr) }}
+      {{ if not (isset $labels $k3) }}{{ $labels = merge $labels (dict $k3 $t3) }}{{ end }}
     {{ end }}
   {{ end }}
   {{ range $k, $arr := $m }}
+    {{ $label := index $labels $k | default $k }}
     {{ $latest := "" }}
     {{ if gt (len $arr) 0 }}
       {{ $p := index (sort $arr "Date" "desc") 0 }}
       {{ $latest = $p.Date.Format "2006-01-02" }}
     {{ end }}
-    {{ $id := printf "tags-%s-%s-%s" (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $sel.t1)) (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $sel.t2)) (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $k)) }}
-    {{ $items = $items | append (dict "kind" "cat" "title" $k "latest" $latest "cnt" (len $arr) "url" (printf "#%s" $id) "id" $id) }}
+    {{ $id := printf "tags-%s-%s-%s" (replaceRE "[^a-zA-Z0-9_-]+" "-" $selT1Norm) (replaceRE "[^a-zA-Z0-9_-]+" "-" $selT2Norm) (replaceRE "[^a-zA-Z0-9_-]+" "-" $k) }}
+    {{ $items = $items | append (dict "kind" "cat" "title" $label "latest" $latest "cnt" (len $arr) "url" (printf "#%s" $id) "id" $id) }}
   {{ end }}
   {{/* 该路径下的文章 */}}
   {{ range $filtered }}
@@ -101,19 +116,23 @@
   {{ end }}
 {{ else if eq $level "facet" }}
   {{ $set := dict }}
+  {{ $labels := dict }}
   {{ range $filtered }}
     {{ $tags := .Params.tags | default (slice) }}
-    {{ $used := slice $sel.t1 $sel.t2 $sel.t3 }}
+    {{ $used := slice $selT1Norm $selT2Norm $selT3Norm }}
     {{ range $t := $tags }}
-      {{ if and $t (not (in $used $t)) }}
-        {{ $n := add (cond (isset $set $t) (index $set $t) 0) 1 }}
-        {{ $set = merge $set (dict $t $n) }}
+      {{ $tNorm := partial "tags-normalize-term.html" $t }}
+      {{ if and $t (not (in $used $tNorm)) }}
+        {{ $n := add (cond (isset $set $tNorm) (index $set $tNorm) 0) 1 }}
+        {{ $set = merge $set (dict $tNorm $n) }}
+        {{ if not (isset $labels $tNorm) }}{{ $labels = merge $labels (dict $tNorm $t) }}{{ end }}
       {{ end }}
     {{ end }}
   {{ end }}
   {{ range $k, $v := $set }}
-    {{ $id := printf "tags-facet-%s-%s-%s-%s" (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $sel.t1)) (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $sel.t2)) (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $sel.t3)) (replaceRE "[^a-zA-Z0-9_-]+" "-" (lower $k)) }}
-    {{ $items = $items | append (dict "kind" "cat" "title" $k "latest" "" "cnt" $v "url" (printf "#%s" $id) "id" $id) }}
+    {{ $label := index $labels $k | default $k }}
+    {{ $id := printf "tags-facet-%s-%s-%s-%s" (replaceRE "[^a-zA-Z0-9_-]+" "-" $selT1Norm) (replaceRE "[^a-zA-Z0-9_-]+" "-" $selT2Norm) (replaceRE "[^a-zA-Z0-9_-]+" "-" $selT3Norm) (replaceRE "[^a-zA-Z0-9_-]+" "-" $k) }}
+    {{ $items = $items | append (dict "kind" "cat" "title" $label "latest" "" "cnt" $v "url" (printf "#%s" $id) "id" $id) }}
   {{ end }}
 {{ end }}
 

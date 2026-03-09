@@ -1,0 +1,9 @@
+{{ $href := .href }}
+{{ $title := .title }}
+{{ $text := .text | default $title }}
+{{ $icon := .icon | default "file" }}
+{{ $label := .label | default (printf "Open %s" $title) }}
+<span class="cell-title">
+  <a class="icon-link" href="{{ $href }}" aria-label="{{ $label }}">{{ partial "icon" (dict "name" $icon) }}</a>
+  <a class="title-text" href="{{ $href }}">{{ $text }}</a>
+</span>

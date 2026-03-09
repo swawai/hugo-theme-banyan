@@ -2,7 +2,8 @@
 {{- $ctx := .ctx -}}
 {{- $mode := .mode -}}
 {{- $v := printf "%v" .value -}}
-{{- $slug := cond (eq (lower $v) "untagged") "untagged" (urlize $v) -}}
+{{- $vNorm := partial "tags-normalize-term.html" $v -}}
+{{- $slug := cond (eq $vNorm "untagged") "untagged" (urlize $v) -}}
 {{- $of := $ctx.OutputFormats.Get $mode -}}
 {{- $curr := cond $of $of.RelPermalink (printf "/%s/" $ctx.Data.Plural | relLangURL) -}}
 {{- $root := replaceRE (printf "(/%s/).*$" $ctx.Data.Plural) (printf "/%s/" $ctx.Data.Plural) $curr -}}

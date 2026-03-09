@@ -6,11 +6,14 @@
 {{ $items := slice }}
 {{ if eq $kind "term" }}
   {{ $term := printf "%v" $ctx.Data.Term }}
+  {{ $termNorm := partial "tags-normalize-term.html" $term }}
   {{ $termDepth := len (split $term "/") }}
   {{ $root := index (split $term "/") 0 }}
+  {{ $rootNorm := partial "tags-normalize-term.html" $root }}
   {{ $children := slice }}
   {{ range $t, $pages := site.Taxonomies.tags }}
-    {{ if and (hasPrefix $t (printf "%s/" $term)) (ne $t $term) }}
+    {{ $tNorm := partial "tags-normalize-term.html" $t }}
+    {{ if and (hasPrefix $tNorm (printf "%s/" $termNorm)) (ne $tNorm $termNorm) }}
       {{ $parts := split $t "/" }}
       {{ $child := index $parts (len (split $term "/")) }}
       {{ if not (collections.In $children $child) }}
@@ -39,7 +42,7 @@
       {{ range $v := (.Params.tags | default (slice)) }}
         {{ $sv := printf "%v" $v }}
         {{ $first := index (split $sv "/") 0 }}
-        {{ if eq $first $root }}
+        {{ if eq (partial "tags-normalize-term.html" $first) $rootNorm }}
           {{ $d := len (split $sv "/") }}
           {{ if gt $d $branchMax }}{{ $branchMax = $d }}{{ end }}
         {{ end }}

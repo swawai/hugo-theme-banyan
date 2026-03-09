@@ -1,0 +1,10 @@
+{{ $class := .class }}
+{{ $href := .href }}
+{{ $title := .title }}
+{{ $label := .label }}
+{{ $text := .text }}
+{{ with $href }}
+<span class="{{ $class }} header click-full">
+  <a href="{{ . }}" title="{{ $title }}" aria-label="{{ $label }}">{{ $text | safeHTML }}</a>
+</span>
+{{ end }}
