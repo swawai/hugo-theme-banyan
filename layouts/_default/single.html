@@ -9,7 +9,7 @@
 
 {{ define "breadcrumb" }}
 {{ $page := . }}
-<nav class="post-dir" aria-label="Breadcrumb"><span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "dir") 0) }}{{ partial "link.html" (dict "href" (.URL | relLangURL) "text" (i18n (printf "menu_%s" .Identifier) | default .Name)) }}{{ else }}{{ (i18n "menu_dir") | default "DIR" }}{{ end }}</span> <span class="sep">/</span>{{ range (where .Ancestors.Reverse "IsHome" "ne" true) }}{{ partial "link.html" (dict "href" .RelPermalink "text" .LinkTitle) }}<span class="sep">/</span>{{ end }}{{ partial "link.html" (dict "href" .RelPermalink "text" .Title) }}</nav>
+<nav class="post-dir breadcrumb-nav" aria-label="Breadcrumb"><span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "dir") 0) }}{{ partial "link.html" (dict "href" (.URL | relLangURL) "text" (i18n (printf "menu_%s" .Identifier) | default .Name) "textClass" "breadcrumb-current-text") }}{{ else }}{{ (i18n "menu_dir") | default "DIR" }}{{ end }}</span> <span class="sep">/</span>{{ range (where .Ancestors.Reverse "IsHome" "ne" true) }}{{ partial "link.html" (dict "href" .RelPermalink "text" .LinkTitle "textClass" "breadcrumb-current-text") }}<span class="sep">/</span>{{ end }}{{ partial "link.html" (dict "href" .RelPermalink "text" .Title "textClass" "breadcrumb-current-text") }}</nav>
 
 {{/* UDC 精简显示：按分支只显示最深层 term */}}
 {{ with .Params.udc }}

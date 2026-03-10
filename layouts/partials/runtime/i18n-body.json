@@ -34,7 +34,31 @@
   {{- end -}}
 {{- end -}}
 
+{{- $siteUpdatePrompt := "A new version is ready. Refresh now?" -}}
+{{- with index $translations "site_update_prompt" -}}
+  {{- with index . "other" -}}
+    {{- $siteUpdatePrompt = printf "%v" . -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $siteUpdateConfirm := "Refresh" -}}
+{{- with index $translations "site_update_confirm" -}}
+  {{- with index . "other" -}}
+    {{- $siteUpdateConfirm = printf "%v" . -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $siteUpdateLater := "Later" -}}
+{{- with index $translations "site_update_later" -}}
+  {{- with index . "other" -}}
+    {{- $siteUpdateLater = printf "%v" . -}}
+  {{- end -}}
+{{- end -}}
+
 {{- dict
   "no_trans_msg" $noTrans
   "lang_suggest_msg" $langSuggest
+  "site_update_prompt" $siteUpdatePrompt
+  "site_update_confirm" $siteUpdateConfirm
+  "site_update_later" $siteUpdateLater
 | jsonify -}}

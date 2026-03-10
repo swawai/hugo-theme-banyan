@@ -7,13 +7,13 @@
 {{ $mode := .mode }}
 
 {{/* 面包屑 - 使用指定 format 的链接（首段统一 i18n: menu_dir） */}}
-<nav aria-label="Breadcrumb">
-{{ with $ctx.Site.Home.OutputFormats.Get $mode }}{{ partial "link.html" (dict "href" .RelPermalink "text" (i18n "menu_dir")) }}{{ end }}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+{{ with $ctx.Site.Home.OutputFormats.Get $mode }}{{ partial "link.html" (dict "href" .RelPermalink "text" (i18n "menu_dir") "textClass" "breadcrumb-current-text") }}{{ end }}
 {{ range (where $ctx.Ancestors.Reverse "IsHome" "ne" true) }}
   {{ $p := . }}
-  {{ with $p.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "href" .RelPermalink "text" $p.LinkTitle) }}{{ end }}
+  {{ with $p.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "href" .RelPermalink "text" $p.LinkTitle "textClass" "breadcrumb-current-text") }}{{ end }}
 {{ end }}
-{{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "href" .RelPermalink "text" $ctx.Title) }}{{ end }}{{ end }}
+{{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "href" .RelPermalink "text" $ctx.Title "textClass" "breadcrumb-current-text") }}{{ end }}{{ end }}
 </nav>
 
 <div class="grid-list">

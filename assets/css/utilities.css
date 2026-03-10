@@ -47,6 +47,11 @@
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
     }
+
+    html[data-site-update="ready"] .breadcrumb-nav > a:last-of-type .breadcrumb-current-text {
+        animation-duration: 1.5s !important;
+        animation-iteration-count: infinite !important;
+    }
 }
 
 /* 跳到正文的跳转链接：仅聚焦时可见（屏幕阅读器/键盘操作无障碍特性） */

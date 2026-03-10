@@ -30,3 +30,12 @@ other = "本頁尚未提供 [{lang}] 版本。\n前往該語言首頁嗎？"
 
 [lang_suggest_msg]
 other = "為您推薦本頁的 [{target}] 版本，確認前往嗎？"
+
+[site_update_prompt]
+other = "已有新版本可用，立即重新整理？"
+
+[site_update_confirm]
+other = "立即重新整理"
+
+[site_update_later]
+other = "稍後"

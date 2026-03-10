@@ -1,5 +1,5 @@
 {{- $swConfig := site.Params.service_worker | default dict -}}
-{{- $enabled := eq (index $swConfig "enabled") true -}}
+{{- $mode := lower (printf "%v" (index $swConfig "mode" | default "off")) -}}
 {{- $cacheFirstExtensions := slice -}}
 {{- with index $swConfig "cache_first_extensions" -}}
   {{- range . -}}
@@ -10,10 +10,12 @@
   {{- end -}}
 {{- end -}}
 {{- $cacheFirstExtensions = $cacheFirstExtensions | uniq -}}
-{{- $buildVersion := now.Format "20060102150405" -}}
-const SW_ENABLED = {{ if $enabled }}true{{ else }}false{{ end }};
-const NAVIGATION_CACHE = 'nav-html-{{ $buildVersion }}';
-const ASSET_CACHE = 'asset-static-{{ $buildVersion }}';
+{{- $buildVersion := printf "%v" (index $swConfig "version" | default (now.Format "20060102150405")) -}}
+const SW_MODE = '{{ $mode }}';
+const NAVIGATION_CACHE_PREFIX = 'nav-html-';
+const ASSET_CACHE_PREFIX = 'asset-static-';
+const NAVIGATION_CACHE = NAVIGATION_CACHE_PREFIX + '{{ $buildVersion }}';
+const ASSET_CACHE = ASSET_CACHE_PREFIX + '{{ $buildVersion }}';
 const CACHE_FIRST_EXTENSIONS = {{ $cacheFirstExtensions | jsonify }};
 
 function isNavigationRequest(request) {
@@ -47,11 +49,15 @@ function getRequestExtension(request) {
 }
 
 function shouldHandleAssetRequest(request) {
-    if (!SW_ENABLED || !CACHE_FIRST_EXTENSIONS.length) return false;
+    if (SW_MODE !== 'enable' || !CACHE_FIRST_EXTENSIONS.length) return false;
     if (request.method !== 'GET' || request.mode === 'navigate') return false;
     if (!isSameOriginRequest(request)) return false;
 
     return CACHE_FIRST_EXTENSIONS.includes(getRequestExtension(request));
+}
+
+function isManagedCacheKey(key) {
+    return key.startsWith(NAVIGATION_CACHE_PREFIX) || key.startsWith(ASSET_CACHE_PREFIX);
 }
 
 async function updateNavigationCache(request, cache) {
@@ -96,7 +102,9 @@ async function handleAssetRequest(request) {
 }
 
 self.addEventListener('install', () => {
-    self.skipWaiting();
+    if (SW_MODE !== 'enable') {
+        self.skipWaiting();
+    }
 });
 
 self.addEventListener('activate', (event) => {
@@ -104,15 +112,25 @@ self.addEventListener('activate', (event) => {
         const keys = await caches.keys();
         await Promise.all(
             keys
-                .filter((key) => (key.startsWith('nav-html-') && key !== NAVIGATION_CACHE) || (key.startsWith('asset-static-') && key !== ASSET_CACHE))
+                .filter((key) => {
+                    if (!isManagedCacheKey(key)) return false;
+                    if (SW_MODE !== 'enable') return true;
+                    return key !== NAVIGATION_CACHE && key !== ASSET_CACHE;
+                })
                 .map((key) => caches.delete(key))
         );
         await self.clients.claim();
     })());
 });
 
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+});
+
 self.addEventListener('fetch', (event) => {
-    if (!SW_ENABLED) return;
+    if (SW_MODE !== 'enable') return;
 
     const { request } = event;
     if (isNavigationRequest(request) && isSameOriginRequest(request)) {

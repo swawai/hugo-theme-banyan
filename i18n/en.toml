@@ -33,3 +33,12 @@ other = "This page does not yet have a [{lang}] version.\nGo to the [{lang}] hom
 
 [lang_suggest_msg]
 other = "We recommend the [{target}] version of this page.\nContinue?"
+
+[site_update_prompt]
+other = "A new version is ready. Refresh now?"
+
+[site_update_confirm]
+other = "Refresh"
+
+[site_update_later]
+other = "Later"

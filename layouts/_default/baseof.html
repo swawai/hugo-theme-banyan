@@ -1,5 +1,13 @@
+{{ $swConfig := site.Params.service_worker | default dict }}
+{{ $swModeRaw := index $swConfig "mode" | default "off" }}
+{{ $swMode := lower (printf "%v" $swModeRaw) }}
+{{ $allowedSwModes := slice "enable" "disable" "off" }}
+{{ if not (in $allowedSwModes $swMode) }}
+    {{ errorf "编译失败: params.service_worker.mode 仅支持 enable/disable/off，当前值为 %q。" $swModeRaw }}
+{{ end }}
+{{ $swVersion := printf "%v" (index $swConfig "version" | default (now.Format "20060102150405")) }}
 <!DOCTYPE html>
-<html lang="{{ .Site.Language.Lang }}">
+<html lang="{{ .Site.Language.Lang }}"{{ if ne $swMode "off" }} data-sw-mode="{{ $swMode }}" data-sw-version="{{ $swVersion }}"{{ end }}>
 
 <head>
     {{ $faviconSvg := resources.Get "site/favicon.svg" }}
@@ -11,6 +19,8 @@
     {{ $appleTouchIcon := resources.Get "site/apple-touch-icon.png" }}
     {{ if not $appleTouchIcon }}{{ errorf "编译失败: 缺少资源 %q。" "site/apple-touch-icon.png" }}{{ end }}
     {{ $appleTouchIcon = $appleTouchIcon | fingerprint }}
+    {{ $defaultSite := index (sort .Sites "Language.Weight") 0 }}
+    {{ $manifest := cond $defaultSite ($defaultSite.Home.OutputFormats.Get "webmanifest") nil }}
     {{ $runtimeI18n := dict }}
     {{ range sort .Sites "Language.Weight" }}
         {{ $langCode := .Language.Lang }}
@@ -29,6 +39,7 @@
     <link rel="icon" href="{{ $faviconSvg.RelPermalink }}" type="image/svg+xml">
     <link rel="icon" href="{{ $faviconIco.RelPermalink }}" sizes="any">
     <link rel="apple-touch-icon" href="{{ $appleTouchIcon.RelPermalink }}">
+    {{ with $manifest }}<link rel="manifest" href="{{ .RelPermalink }}">{{ end }}
     <link rel="preload" href="{{ $assetManifest.RelPermalink }}" as="fetch" type="application/json" crossorigin="use-credentials">
     <title>{{ if .Title }}{{ .Title }} - {{ end }}{{ .Site.Title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -42,7 +53,9 @@
         }
     </style>
     <link rel="canonical" href="{{ .Permalink }}">
+    {{/* 首屏前同步设置主题，避免先亮后暗/先暗后亮的闪烁。 */}}
     <script>(function () { try { var pref = localStorage.getItem('theme-preference'); var media = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)'); var theme; if (!pref || pref === 'auto') { theme = (media && media.matches) ? 'dark' : 'light'; } else { theme = pref; } document.documentElement.setAttribute('data-theme', theme); } catch (e) { } })();</script>
+    {{/* 恢复跨页导航进度条状态，让 MPA 跳转前后的加载提示连续。 */}}
     <script>(function () { try { if (window.matchMedia && window.matchMedia('(pointer: fine) and (hover: hover)').matches && sessionStorage.getItem('nav-progress-pending') === '1') { document.documentElement.setAttribute('data-nav-progress', 'active'); document.documentElement.style.setProperty('--nav-progress-scale', '0.82'); document.documentElement.classList.add('is-nav-pending'); } } catch (e) { } })();</script>
     {{ block "styles" . }}
     {{ $base := resources.Get "css/base.css" }}
@@ -74,8 +87,14 @@
 
     {{ hugo.Generator }}
     {{ partial "seo.html" . }}
+    {{/* 主站通用前端逻辑，defer 下载与执行，不阻塞 HTML 解析。 */}}
     {{ $js := resources.Get "js/main.js" | js.Build | minify | fingerprint }}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+    {{ if ne $swMode "off" }}
+        {{/* 独立的 SW 管理脚本：注册/注销、更新检测、弱提醒 UI。 */}}
+        {{ $swManager := resources.Get "js/sw-manager.js" | js.Build | minify | fingerprint }}
+        <script src="{{ $swManager.RelPermalink }}" integrity="{{ $swManager.Data.Integrity }}" defer></script>
+    {{ end }}
 </head>
 <body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}">
     {{ if and .IsPage (not .Params.slug) }}

@@ -33,3 +33,12 @@ other = "本页尚未提供 [{lang}] 版本。\n前往该语言首页吗？"
 
 [lang_suggest_msg]
 other = "为您推荐本页的 [{target}] 版本，确认前往吗？"
+
+[site_update_prompt]
+other = "已有新版本可用，立即刷新？"
+
+[site_update_confirm]
+other = "立即刷新"
+
+[site_update_later]
+other = "稍后"
