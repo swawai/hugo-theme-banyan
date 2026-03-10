@@ -1,3 +1,7 @@
+{{ define "prefetch-context" }}
+{{ .Scratch.Set "prefetchCandidates" (partial "prefetch-candidates-all.html" (dict "ctx" . "mode" "allbypath")) }}
+{{ end }}
+
 {{ define "main" }}
 
 {{ partial "list-all-common.html" (dict "ctx" . "mode" "allbypath") }}

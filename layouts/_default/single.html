@@ -3,15 +3,19 @@
 <link rel="stylesheet" href="{{ $post.RelPermalink }}" integrity="{{ $post.Data.Integrity }}">
 {{ end }}
 
+{{ define "prefetch-context" }}
+{{ .Scratch.Set "prefetchCandidates" (partial "prefetch-candidates-single.html" (dict "ctx" .)) }}
+{{ end }}
+
 {{ define "breadcrumb" }}
 {{ $page := . }}
-<nav class="post-dir" aria-label="Breadcrumb"><span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "dir") 0) }}<a href="{{ .URL | relLangURL }}" data-prefetch-kind="nav">{{ i18n (printf "menu_%s" .Identifier) | default .Name }}</a>{{ else }}{{ (i18n "menu_dir") | default "DIR" }}{{ end }}</span> <span class="sep">/</span>{{ range (where .Ancestors.Reverse "IsHome" "ne" true) }}<a href="{{ .RelPermalink }}" data-prefetch-kind="nav">{{ .LinkTitle }}</a><span class="sep">/</span>{{ end }}<a href="{{ .RelPermalink }}" data-prefetch-kind="nav">{{ .Title }}</a></nav>
+<nav class="post-dir" aria-label="Breadcrumb"><span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "dir") 0) }}{{ partial "link.html" (dict "href" (.URL | relLangURL) "text" (i18n (printf "menu_%s" .Identifier) | default .Name)) }}{{ else }}{{ (i18n "menu_dir") | default "DIR" }}{{ end }}</span> <span class="sep">/</span>{{ range (where .Ancestors.Reverse "IsHome" "ne" true) }}{{ partial "link.html" (dict "href" .RelPermalink "text" .LinkTitle) }}<span class="sep">/</span>{{ end }}{{ partial "link.html" (dict "href" .RelPermalink "text" .Title) }}</nav>
 
 {{/* UDC 精简显示：按分支只显示最深层 term */}}
 {{ with .Params.udc }}
 <nav class="post-udc" aria-label="UDC">
   {{ $udcLabel := (i18n "menu_udc") | default "UDC" }}
-  <span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "udc") 0) }}<a href="{{ .URL | relLangURL }}" title="Universal Decimal Classification" data-prefetch-kind="nav">{{ i18n (printf "menu_%s" .Identifier) | default .Name }}</a>{{ else }}{{ $udcLabel }}{{ end }}</span>
+  <span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "udc") 0) }}{{ partial "link.html" (dict "href" (.URL | relLangURL) "title" "Universal Decimal Classification" "text" (i18n (printf "menu_%s" .Identifier) | default .Name)) }}{{ else }}{{ $udcLabel }}{{ end }}</span>
   {{ $terms := . }}
   {{ if not (reflect.IsSlice $terms) }}{{ $terms = slice $terms }}{{ end }}
   {{/* 以根前缀选择最深 term（用 map 存字符串避免 append 类型问题） */}}
@@ -27,7 +31,7 @@
     {{ end }}
   {{ end }}
   {{ range $root, $deep := $deepest }}
-    <a href="{{ "/udc/" | relLangURL }}{{ $deep | urlize }}" data-prefetch-kind="nav">{{ $deep }}</a>
+    {{ partial "link.html" (dict "href" (printf "%s%s/" ("/udc/" | relLangURL) ($deep | urlize)) "text" $deep) }}
   {{ end }}
 </nav>
 {{ end }}
@@ -35,7 +39,7 @@
 {{/* TAGS 精简显示：按分支只显示最深层 term；显示名对 untagged 做映射 */}}
 {{ with .Params.tags }}
 <nav class="post-tags" aria-label="Tags">
-  <span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "tags") 0) }}<a href="{{ .URL | relLangURL }}" data-prefetch-kind="nav">{{ i18n (printf "menu_%s" .Identifier) | default .Name }}</a>{{ else }}{{ (i18n "menu_tags") | default "TAGS" }}{{ end }}</span>
+  <span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "tags") 0) }}{{ partial "link.html" (dict "href" (.URL | relLangURL) "text" (i18n (printf "menu_%s" .Identifier) | default .Name)) }}{{ else }}{{ (i18n "menu_tags") | default "TAGS" }}{{ end }}</span>
   {{ $terms := . }}
   {{ if not (reflect.IsSlice $terms) }}{{ $terms = slice $terms }}{{ end }}
   {{ $deepest := dict }}
@@ -52,7 +56,7 @@
   {{ range $root, $deep := $deepest }}
     {{ $disp := $deep }}
     {{ if eq (lower $deep) "untagged" }}{{ $disp = "--untagged--" }}{{ end }}
-    <a rel="tag" href="{{ "/tags/" | relLangURL }}{{ $deep | urlize }}" data-prefetch-kind="nav">{{ $disp }}</a>
+    {{ partial "link.html" (dict "href" (printf "%s%s/" ("/tags/" | relLangURL) ($deep | urlize)) "rel" "tag" "text" $disp) }}
   {{ end }}
 </nav>
 {{ end }}

@@ -1,0 +1,5 @@
+{{ $href := .href }}
+{{ $text := .text | default "" }}
+{{ if $href }}
+<a href="{{ $href }}"{{ with .class }} class="{{ . }}"{{ end }}{{ with .title }} title="{{ . }}"{{ end }}{{ with .label }} aria-label="{{ . }}"{{ end }}{{ with .target }} target="{{ . }}"{{ end }}{{ with .rel }} rel="{{ . }}"{{ end }}>{{ if .safeHTML }}{{ $text | safeHTML }}{{ else }}{{ $text }}{{ end }}</a>
+{{ end }}

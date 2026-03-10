@@ -1,3 +1,7 @@
+{{ define "prefetch-context" }}
+{{ .Scratch.Set "prefetchCandidates" (partial "prefetch-candidates-dir.html" (dict "ctx" . "mode" "bycountasc")) }}
+{{ end }}
+
 {{ define "main" }}
 
 {{ partial "list-dir-common.html" (dict "ctx" . "mode" "bycountasc") }}

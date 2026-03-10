@@ -1,0 +1,13 @@
+{{- $raw := lower (printf "%v" .) -}}
+{{- $result := dict "kind" "invalid" "value" $raw -}}
+{{- if or (eq $raw "") (eq $raw "off") -}}
+  {{- $result = dict "kind" "" -}}
+{{- else if eq $raw "rel-prefetch" -}}
+  {{- $result = dict "kind" "rel-prefetch" -}}
+{{- else -}}
+  {{- $parts := split $raw "-" -}}
+  {{- if and (eq (len $parts) 2) (in (slice "eager" "moderate" "conservative") (index $parts 0)) (in (slice "prefetch" "prerender") (index $parts 1)) -}}
+    {{- $result = dict "kind" (index $parts 1) "eagerness" (index $parts 0) -}}
+  {{- end -}}
+{{- end -}}
+{{- return $result -}}

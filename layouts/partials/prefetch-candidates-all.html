@@ -1,0 +1,34 @@
+{{ $ctx := .ctx }}
+{{ $mode := .mode }}
+{{ $current := partial "prefetch-normalize-url.html" $ctx.RelPermalink }}
+{{ $nav := slice }}
+{{ $sort := slice }}
+{{ $post := slice }}
+
+{{ range $ctx.Site.Menus.main }}
+  {{ $nav = partial "prefetch-append-url.html" (dict "urls" $nav "url" (.URL | relLangURL) "current" $current) }}
+{{ end }}
+{{ range (where $ctx.Ancestors.Reverse "IsHome" "ne" true) }}
+  {{ with .OutputFormats.Get $mode }}
+    {{ $nav = partial "prefetch-append-url.html" (dict "urls" $nav "url" .RelPermalink "current" $current) }}
+  {{ end }}
+{{ end }}
+
+{{ $cfg := partial "grid-sort-config.html" (dict "variant" "all" "mode" $mode) }}
+{{ $controls := index $cfg "controls" }}
+{{ range slice "name" "date" "size" "path" }}
+  {{ $fmtName := index $controls . }}
+  {{ with $ctx.OutputFormats.Get $fmtName }}
+    {{ $sort = partial "prefetch-append-url.html" (dict "urls" $sort "url" .RelPermalink "current" $current) }}
+  {{ end }}
+{{ end }}
+
+{{ $pagesToShow := $ctx.RegularPagesRecursive }}
+{{ if eq $ctx.Kind "home" }}
+  {{ $pagesToShow = $ctx.Site.RegularPages }}
+{{ end }}
+{{ range $pagesToShow }}
+  {{ $post = partial "prefetch-append-url.html" (dict "urls" $post "url" .RelPermalink "current" $current) }}
+{{ end }}
+
+{{ return (dict "nav" $nav "sort" $sort "desc" (slice) "post" $post) }}

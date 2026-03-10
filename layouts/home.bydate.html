@@ -8,6 +8,10 @@
 <style>{{ $cssBundle.Content | safeCSS }}</style>
 {{ end }}
 
+{{ define "prefetch-context" }}
+{{ .Scratch.Set "prefetchCandidates" (partial "prefetch-candidates-dir.html" (dict "ctx" . "mode" "bydate")) }}
+{{ end }}
+
 {{ define "main" }}
 {{ partial "list-dir-common.html" (dict "ctx" . "mode" "bydate") }}
 {{ end }}

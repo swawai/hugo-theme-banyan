@@ -151,23 +151,6 @@ function navigateWithProgress(url) {
     window.location.href = url;
 }
 
-function cleanupLegacyServiceWorkers() {
-    if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
-
-    navigator.serviceWorker.getRegistrations()
-        .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
-        .catch(() => { });
-
-    if (!('caches' in window)) return;
-    caches.keys()
-        .then((keys) => Promise.all(
-            keys
-                .filter((key) => key.startsWith('nav-html-') || key.startsWith('asset-static-'))
-                .map((key) => caches.delete(key))
-        ))
-        .catch(() => { });
-}
-
 function readStorage(key) {
     try {
         return window.localStorage.getItem(key);
@@ -250,7 +233,6 @@ if (canUseNavProgress() && sessionStorage.getItem(NAV_PROGRESS_KEY) === '1') {
 }
 
 void getRuntimeManifest();
-cleanupLegacyServiceWorkers();
 
 document.addEventListener('click', (event) => {
     const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;

@@ -1,0 +1,43 @@
+{{ $prefetchConfig := site.Params.link_prefetch | default dict }}
+{{ $prefetchModes := dict
+  "sort" (partial "prefetch-mode.html" (index $prefetchConfig "sort_siblings"))
+  "desc" (partial "prefetch-mode.html" (index $prefetchConfig "descendants"))
+  "post" (partial "prefetch-mode.html" (index $prefetchConfig "post"))
+  "nav" (partial "prefetch-mode.html" (index $prefetchConfig "nav"))
+}}
+{{ $candidates := .Scratch.Get "prefetchCandidates" | default (dict "nav" (slice) "sort" (slice) "desc" (slice) "post" (slice)) }}
+{{ $relPrefetch := slice }}
+{{ $prefetchRules := slice }}
+{{ $prerenderRules := slice }}
+
+{{ range $kind, $mode := $prefetchModes }}
+  {{ $urls := index $candidates $kind | default (slice) }}
+  {{ if and $urls (gt (len $urls) 0) }}
+    {{ if eq (index $mode "kind") "rel-prefetch" }}
+      {{ range $urls }}
+        {{ if not (in $relPrefetch .) }}
+          {{ $relPrefetch = $relPrefetch | append . }}
+        {{ end }}
+      {{ end }}
+    {{ else if eq (index $mode "kind") "prefetch" }}
+      {{ $prefetchRules = $prefetchRules | append (dict "urls" $urls "eagerness" (index $mode "eagerness")) }}
+    {{ else if eq (index $mode "kind") "prerender" }}
+      {{ $prerenderRules = $prerenderRules | append (dict "urls" $urls "eagerness" (index $mode "eagerness")) }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ range $relPrefetch }}
+<link rel="prefetch" href="{{ . }}" as="document">
+{{ end }}
+
+{{ $speculationRules := dict }}
+{{ if gt (len $prefetchRules) 0 }}
+  {{ $speculationRules = merge $speculationRules (dict "prefetch" $prefetchRules) }}
+{{ end }}
+{{ if gt (len $prerenderRules) 0 }}
+  {{ $speculationRules = merge $speculationRules (dict "prerender" $prerenderRules) }}
+{{ end }}
+{{ if gt (len $speculationRules) 0 }}
+<script type="speculationrules">{{ $speculationRules | jsonify }}</script>
+{{ end }}

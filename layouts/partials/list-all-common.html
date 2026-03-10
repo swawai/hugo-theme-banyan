@@ -7,12 +7,12 @@
 {{ $mode := .mode }}
 
 <nav aria-label="Breadcrumb">
-{{ with $ctx.OutputFormats.Get $mode }}<a href="{{ .RelPermalink }}" data-prefetch-kind="nav">{{ i18n "menu_all" }}</a>{{ end }}
+{{ with $ctx.OutputFormats.Get $mode }}{{ partial "link.html" (dict "href" .RelPermalink "text" (i18n "menu_all")) }}{{ end }}
 {{ range (where $ctx.Ancestors.Reverse "IsHome" "ne" true) }}
   {{ $p := . }}
-  {{ with $p.OutputFormats.Get $mode }} ﹥ <a href="{{ .RelPermalink }}" data-prefetch-kind="nav">{{ $p.LinkTitle }}</a>{{ end }}
+  {{ with $p.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "href" .RelPermalink "text" $p.LinkTitle) }}{{ end }}
 {{ end }}
-{{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ <a href="{{ .RelPermalink }}" data-prefetch-kind="nav">{{ $ctx.Title }}</a>{{ end }}{{ end }}
+{{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "href" .RelPermalink "text" $ctx.Title) }}{{ end }}{{ end }}
 </nav>
 
 <div class="grid-list cols-4">
@@ -81,7 +81,7 @@
     {{ $kb := div (add $bytes 1023) 1024 }}
     <span class="cell-count"><span class="num">{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>
     {{ $d := path.Clean .File.Dir }}
-    <span class="cell-path">{{ with .CurrentSection }}{{ with .OutputFormats.Get "allbynameasc" }}<a href="{{ .RelPermalink }}">/{{ $d }}</a>{{ end }}{{ end }}</span>
+    <span class="cell-path">{{ with .CurrentSection }}{{ with .OutputFormats.Get "allbynameasc" }}{{ partial "link.html" (dict "href" .RelPermalink "text" (printf "/%s" $d)) }}{{ end }}{{ end }}</span>
   {{ end }}
 </div>
 

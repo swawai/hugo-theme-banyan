@@ -11,8 +11,6 @@
     {{ $appleTouchIcon := resources.Get "site/apple-touch-icon.png" }}
     {{ if not $appleTouchIcon }}{{ errorf "编译失败: 缺少资源 %q。" "site/apple-touch-icon.png" }}{{ end }}
     {{ $appleTouchIcon = $appleTouchIcon | fingerprint }}
-    {{ $manifest := .Site.Home.OutputFormats.Get "webmanifest" }}
-    {{ if not $manifest }}{{ errorf "编译失败: 缺少输出格式 %q。" "webmanifest" }}{{ end }}
     {{ $runtimeI18n := dict }}
     {{ range sort .Sites "Language.Weight" }}
         {{ $langCode := .Language.Lang }}
@@ -31,7 +29,6 @@
     <link rel="icon" href="{{ $faviconSvg.RelPermalink }}" type="image/svg+xml">
     <link rel="icon" href="{{ $faviconIco.RelPermalink }}" sizes="any">
     <link rel="apple-touch-icon" href="{{ $appleTouchIcon.RelPermalink }}">
-    {{ with $manifest }}<link rel="manifest" href="{{ .RelPermalink }}">{{ end }}
     <link rel="preload" href="{{ $assetManifest.RelPermalink }}" as="fetch" type="application/json" crossorigin="use-credentials">
     <title>{{ if .Title }}{{ .Title }} - {{ end }}{{ .Site.Title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -58,32 +55,29 @@
     <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
     {{ end }}
     {{ block "head-extra" . }}{{ end }}
+    {{ $prefetchConfig := site.Params.link_prefetch | default dict }}
+    {{ $prefetchModes := dict
+        "sort" (index $prefetchConfig "sort_siblings")
+        "desc" (index $prefetchConfig "descendants")
+        "post" (index $prefetchConfig "post")
+        "nav" (index $prefetchConfig "nav")
+    }}
+    {{ $allowedPrefetchModes := slice "" "off" "rel-prefetch" "conservative-prefetch" "moderate-prefetch" "eager-prefetch" "conservative-prerender" "moderate-prerender" "eager-prerender" }}
+    {{ range $label, $mode := $prefetchModes }}
+        {{ $normalized := lower (printf "%v" $mode) }}
+        {{ if and $normalized (not (in $allowedPrefetchModes $normalized)) }}
+            {{ errorf "编译失败: params.link_prefetch.%s 仅支持空值/off/rel-prefetch/conservative-prefetch/moderate-prefetch/eager-prefetch/conservative-prerender/moderate-prerender/eager-prerender，当前值为 %q。" $label $mode }}
+        {{ end }}
+    {{ end }}
+    {{ block "prefetch-context" . }}{{ end }}
+    {{ partial "prefetch-head.html" . }}
 
     {{ hugo.Generator }}
     {{ partial "seo.html" . }}
     {{ $js := resources.Get "js/main.js" | js.Build | minify | fingerprint }}
-    {{ $prefetch := resources.Get "js/prefetch.js" | js.Build | minify | fingerprint }}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
 </head>
-
-{{ $prefetchConfig := site.Params.link_prefetch | default dict }}
-{{ $prefetchModes := dict
-    "sort" (index $prefetchConfig "sort_siblings")
-    "desc" (index $prefetchConfig "descendants")
-    "post" (index $prefetchConfig "post")
-    "nav" (index $prefetchConfig "nav")
-}}
-{{ range $label, $mode := $prefetchModes }}
-    {{ if and $mode (not (or (eq $mode "") (eq $mode "off") (eq $mode "hover") (eq $mode "idle") (eq $mode "viewport") (eq $mode "viewport-all"))) }}
-        {{ errorf "编译失败: params.link_prefetch.%s 仅支持空值/off/hover/idle/viewport/viewport-all，当前值为 %q。" $label $mode }}
-    {{ end }}
-{{ end }}
-<body
-    data-asset-manifest-url="{{ $assetManifest.RelPermalink }}"
-    {{ with index $prefetchModes "sort" }} data-prefetch-sort="{{ . }}"{{ end }}
-    {{ with index $prefetchModes "desc" }} data-prefetch-desc="{{ . }}"{{ end }}
-    {{ with index $prefetchModes "post" }} data-prefetch-post="{{ . }}"{{ end }}
-    {{ with index $prefetchModes "nav" }} data-prefetch-nav="{{ . }}"{{ end }}>
+<body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}">
     {{ if and .IsPage (not .Params.slug) }}
         {{ errorf "编译失败: 页面 %q (标题: %q) 未配置 slug 字段。" .File.Path .Title }}
     {{ end }}
@@ -121,7 +115,7 @@
                 {{ $account_link = "https://github.com/swawai/hugo-theme-banyan" }}
                 {{ $has_account = false }}
             {{ end }}
-            <a href="{{ $account_link }}" target="_blank" rel="noopener noreferrer" aria-label="{{ if $has_account }}{{ i18n `label_account` | default `Account` }}{{ else }}Banyan Theme GitHub{{ end }}" class="nav-login-btn" data-prefetch-kind="nav">
+            <a href="{{ $account_link }}" target="_blank" rel="noopener noreferrer" aria-label="{{ if $has_account }}{{ i18n `label_account` | default `Account` }}{{ else }}Banyan Theme GitHub{{ end }}" class="nav-login-btn">
                 {{ if $has_account }}
                 <span>{{ i18n "label_account" | default "Account" }}</span>
                 {{ end }}
@@ -173,18 +167,17 @@
 
             {{ range .Site.Menus.main }}
             {{ $key := printf "menu_%s" .Identifier }}
-            <a href="{{ .URL | relLangURL }}" data-prefetch-kind="nav" {{ if eq .Identifier "udc" }} title="Universal Decimal Classification" {{ end }}>{{ i18n $key | default .Name }}</a>
+            {{ partial "link.html" (dict "href" (.URL | relLangURL) "title" (cond (eq .Identifier "udc") "Universal Decimal Classification" "") "text" (i18n $key | default .Name)) }}
             {{ end }}
         </nav>
 
         {{ block "breadcrumb" . }}{{ end }}
-        <script type="module" src="{{ $prefetch.RelPermalink }}" integrity="{{ $prefetch.Data.Integrity }}" crossorigin="anonymous"></script>
+        
 
         <main id="main">
             {{ block "main" . }}{{ end }}
         </main>
     </div>
-
 </body>
 
 </html>
