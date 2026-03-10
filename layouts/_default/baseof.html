@@ -13,8 +13,6 @@
     {{ $appleTouchIcon = $appleTouchIcon | fingerprint }}
     {{ $manifest := .Site.Home.OutputFormats.Get "webmanifest" }}
     {{ if not $manifest }}{{ errorf "编译失败: 缺少输出格式 %q。" "webmanifest" }}{{ end }}
-    {{ $serviceWorkerConfig := site.Params.service_worker | default dict }}
-    {{ $serviceWorkerEnabled := eq (index $serviceWorkerConfig "enabled") true }}
     {{ $runtimeI18n := dict }}
     {{ range sort .Sites "Language.Weight" }}
         {{ $langCode := .Language.Lang }}
@@ -25,7 +23,6 @@
     {{ $langListBody := partial "runtime/lang-list-body.json" . }}
     {{ $langListResource := resources.FromString (printf "runtime/lang-list.%s.json" (md5 $langListBody)) $langListBody | fingerprint }}
     {{ $assetManifestBody := dict
-        "sw" (dict "enabled" $serviceWorkerEnabled "url" "/sw.js")
         "langList" $langListResource.RelPermalink
         "i18n" $runtimeI18n
       | jsonify }}
@@ -67,7 +64,6 @@
     {{ $js := resources.Get "js/main.js" | js.Build | minify | fingerprint }}
     {{ $prefetch := resources.Get "js/prefetch.js" | js.Build | minify | fingerprint }}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
-    <script type="module" src="{{ $prefetch.RelPermalink }}" integrity="{{ $prefetch.Data.Integrity }}" crossorigin="anonymous"></script>
 </head>
 
 {{ $prefetchConfig := site.Params.link_prefetch | default dict }}
@@ -78,13 +74,12 @@
     "nav" (index $prefetchConfig "nav")
 }}
 {{ range $label, $mode := $prefetchModes }}
-    {{ if and $mode (not (or (eq $mode "") (eq $mode "off") (eq $mode "hover") (eq $mode "viewport") (eq $mode "viewport-all"))) }}
-        {{ errorf "编译失败: params.link_prefetch.%s 仅支持空值/off/hover/viewport/viewport-all，当前值为 %q。" $label $mode }}
+    {{ if and $mode (not (or (eq $mode "") (eq $mode "off") (eq $mode "hover") (eq $mode "idle") (eq $mode "viewport") (eq $mode "viewport-all"))) }}
+        {{ errorf "编译失败: params.link_prefetch.%s 仅支持空值/off/hover/idle/viewport/viewport-all，当前值为 %q。" $label $mode }}
     {{ end }}
 {{ end }}
 <body
     data-asset-manifest-url="{{ $assetManifest.RelPermalink }}"
-    data-sw-enabled="{{ if $serviceWorkerEnabled }}true{{ else }}false{{ end }}"
     {{ with index $prefetchModes "sort" }} data-prefetch-sort="{{ . }}"{{ end }}
     {{ with index $prefetchModes "desc" }} data-prefetch-desc="{{ . }}"{{ end }}
     {{ with index $prefetchModes "post" }} data-prefetch-post="{{ . }}"{{ end }}
@@ -183,6 +178,7 @@
         </nav>
 
         {{ block "breadcrumb" . }}{{ end }}
+        <script type="module" src="{{ $prefetch.RelPermalink }}" integrity="{{ $prefetch.Data.Integrity }}" crossorigin="anonymous"></script>
 
         <main id="main">
             {{ block "main" . }}{{ end }}

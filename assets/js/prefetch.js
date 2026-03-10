@@ -82,6 +82,15 @@ function prefetchDocument(href, priority = 'auto') {
     PREFETCHED_URLS.add(href);
 }
 
+function scheduleIdleWork(callback) {
+    if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(callback, { timeout: PREFETCH_IDLE_TIMEOUT_MS });
+        return;
+    }
+
+    window.setTimeout(callback, 0);
+}
+
 function initHoverPrefetch() {
     let hoverTimer = null;
     let hoverAnchor = null;
@@ -122,6 +131,19 @@ function initHoverPrefetch() {
     }, { capture: true, passive: true });
 }
 
+function initIdlePrefetch() {
+    if (!supportsDocumentPrefetch()) return;
+
+    const idleAnchors = Array.from(document.querySelectorAll('a[data-prefetch-kind]')).filter((anchor) => {
+        return modeForAnchor(anchor) === 'idle' && canPrefetchAnchor(anchor);
+    });
+    if (!idleAnchors.length) return;
+
+    scheduleIdleWork(() => {
+        idleAnchors.forEach((anchor) => prefetchDocument(anchor.href));
+    });
+}
+
 function initViewportPrefetch() {
     if (!('IntersectionObserver' in window) || !supportsDocumentPrefetch()) return;
 
@@ -132,6 +154,18 @@ function initViewportPrefetch() {
     if (!viewportAnchors.length) return;
 
     const startObserving = () => {
+        const deferredAnchors = [];
+
+        for (const anchor of viewportAnchors) {
+            if (anchor.dataset.prefetchKind === 'sort') {
+                prefetchDocument(anchor.href);
+                continue;
+            }
+            deferredAnchors.push(anchor);
+        }
+
+        if (!deferredAnchors.length) return;
+
         const observer = new IntersectionObserver((entries) => {
             for (const entry of entries) {
                 if (!entry.isIntersecting) continue;
@@ -141,21 +175,17 @@ function initViewportPrefetch() {
             }
         });
 
-        viewportAnchors.forEach((anchor) => observer.observe(anchor));
+        deferredAnchors.forEach((anchor) => observer.observe(anchor));
     };
 
-    if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(startObserving, { timeout: PREFETCH_IDLE_TIMEOUT_MS });
-        return;
-    }
-
-    window.setTimeout(startObserving, 0);
+    scheduleIdleWork(startObserving);
 }
 
 function initPrefetch() {
     if (shouldDisableAllPrefetch()) return;
     if (!document.querySelector('a[data-prefetch-kind]')) return;
     initHoverPrefetch();
+    initIdlePrefetch();
     initViewportPrefetch();
 }
 

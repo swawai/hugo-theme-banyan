@@ -58,14 +58,6 @@ function getRuntimeManifest() {
     return runtimeManifestPromise;
 }
 
-function getRuntimeSwConfig(manifest) {
-    const sw = manifest && typeof manifest.sw === 'object' ? manifest.sw : {};
-    return {
-        enabled: typeof sw.enabled === 'boolean' ? sw.enabled : document.body?.dataset.swEnabled === 'true',
-        url: typeof sw.url === 'string' && sw.url ? sw.url : '/sw.js'
-    };
-}
-
 function getRuntimeLangListUrl(manifest) {
     return typeof manifest?.langList === 'string' && manifest.langList ? manifest.langList : '';
 }
@@ -159,45 +151,21 @@ function navigateWithProgress(url) {
     window.location.href = url;
 }
 
-async function registerNavigationServiceWorker() {
+function cleanupLegacyServiceWorkers() {
     if (!('serviceWorker' in navigator) || !window.isSecureContext) return;
-    const manifest = await getRuntimeManifest();
-    const swConfig = getRuntimeSwConfig(manifest);
-    const serviceWorkerEnabled = swConfig.enabled;
 
-    const cleanup = () => {
-        navigator.serviceWorker.getRegistrations()
-            .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
-            .catch(() => { });
+    navigator.serviceWorker.getRegistrations()
+        .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+        .catch(() => { });
 
-        if (!('caches' in window)) return;
-        caches.keys()
-            .then((keys) => Promise.all(
-                keys
-                    .filter((key) => key.startsWith('nav-html-') || key.startsWith('asset-static-'))
-                    .map((key) => caches.delete(key))
-            ))
-            .catch(() => { });
-    };
-
-    if (!serviceWorkerEnabled) {
-        cleanup();
-        return;
-    }
-
-    const register = () => {
-        navigator.serviceWorker.register(swConfig.url, {
-            scope: '/',
-            updateViaCache: 'none',
-        }).catch(() => { });
-    };
-
-    if (document.readyState === 'complete') {
-        window.setTimeout(register, 0);
-        return;
-    }
-
-    window.addEventListener('load', register, { once: true });
+    if (!('caches' in window)) return;
+    caches.keys()
+        .then((keys) => Promise.all(
+            keys
+                .filter((key) => key.startsWith('nav-html-') || key.startsWith('asset-static-'))
+                .map((key) => caches.delete(key))
+        ))
+        .catch(() => { });
 }
 
 function readStorage(key) {
@@ -282,7 +250,7 @@ if (canUseNavProgress() && sessionStorage.getItem(NAV_PROGRESS_KEY) === '1') {
 }
 
 void getRuntimeManifest();
-registerNavigationServiceWorker();
+cleanupLegacyServiceWorkers();
 
 document.addEventListener('click', (event) => {
     const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
