@@ -2,7 +2,7 @@
 .copyright {
     display: flex;
     flex-wrap: nowrap; /* 拒绝换行，让内容自然撑宽页面 */
-    column-gap: 0.3rem; /* 项目之间的水平间隔 */
+    column-gap: 0.4rem; /* 项目之间的水平间隔 */
     row-gap: 0;         /* 取消垂直间隙 */
     white-space: nowrap; /* 防止容器内文字折行 */
     margin-bottom: 0.05rem;

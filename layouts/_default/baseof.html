@@ -5,9 +5,19 @@
 {{ if not (in $allowedSwModes $swMode) }}
     {{ errorf "编译失败: params.service_worker.mode 仅支持 enable/disable/off，当前值为 %q。" $swModeRaw }}
 {{ end }}
-{{ $swVersion := printf "%v" (index $swConfig "version" | default (now.Format "20060102150405")) }}
+{{ $swVersion := partialCached "service-worker-version.html" . "service-worker-version" }}
+{{ $cacheFirstExtensions := slice }}
+{{ with index $swConfig "cache_first_extensions" }}
+    {{ range . }}
+        {{ $ext := lower (printf "%v" .) | replaceRE "^\\." "" }}
+        {{ if $ext }}
+            {{ $cacheFirstExtensions = $cacheFirstExtensions | append $ext }}
+        {{ end }}
+    {{ end }}
+{{ end }}
+{{ $cacheFirstExtensions = $cacheFirstExtensions | uniq }}
 <!DOCTYPE html>
-<html lang="{{ .Site.Language.Lang }}"{{ if ne $swMode "off" }} data-sw-mode="{{ $swMode }}" data-sw-version="{{ $swVersion }}"{{ end }}>
+<html lang="{{ .Site.Language.Lang }}">
 
 <head>
     {{ $faviconSvg := resources.Get "site/favicon.svg" }}
@@ -91,8 +101,24 @@
     {{ $js := resources.Get "js/main.js" | js.Build | minify | fingerprint }}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
     {{ if ne $swMode "off" }}
-        {{/* 独立的 SW 管理脚本：注册/注销、更新检测、弱提醒 UI。 */}}
-        {{ $swManager := resources.Get "js/sw-manager.js" | js.Build | minify | fingerprint }}
+        {{/* 按当前 mode 直接渲染 SW 本体；off 时完全不发布 /sw.js。 */}}
+        {{ $swScriptTemplate := resources.Get "js/sw.js.tmpl" }}
+        {{ if not $swScriptTemplate }}{{ errorf "编译失败: 缺少资源 %q。" "js/sw.js.tmpl" }}{{ end }}
+        {{ $swScriptContext := dict
+            "mode" $swMode
+            "build_version" $swVersion
+            "cache_first_extensions" $cacheFirstExtensions
+        }}
+        {{ $swScript := $swScriptTemplate | resources.ExecuteAsTemplate "sw.js" $swScriptContext }}
+        {{ $swUrl := $swScript.RelPermalink }}
+        {{/* 独立的 SW 管理脚本：按 mode 只输出 enable/disable 所需代码。 */}}
+        {{ $swManagerTemplate := resources.Get "js/sw-manager.js.tmpl" }}
+        {{ if not $swManagerTemplate }}{{ errorf "编译失败: 缺少资源 %q。" "js/sw-manager.js.tmpl" }}{{ end }}
+        {{ $swManagerContext := dict
+            "mode" $swMode
+            "sw_url" $swUrl
+        }}
+        {{ $swManager := $swManagerTemplate | resources.ExecuteAsTemplate (printf "js/sw-manager.%s.js" $swMode) $swManagerContext | fingerprint }}
         <script src="{{ $swManager.RelPermalink }}" integrity="{{ $swManager.Data.Integrity }}" defer></script>
     {{ end }}
 </head>

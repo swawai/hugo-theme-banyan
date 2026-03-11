@@ -1,10 +1,14 @@
 {{- $icon192 := resources.Get "site/swaw192x192.png" -}}
 {{- if not $icon192 }}{{ errorf "编译失败: 缺少资源 %q。" "site/swaw192x192.png" }}{{ end -}}
 {{- $icon192 = $icon192 | fingerprint -}}
+{{- $icon256 := resources.Get "site/swaw256x256.png" -}}
+{{- if not $icon256 }}{{ errorf "编译失败: 缺少资源 %q。" "site/swaw256x256.png" }}{{ end -}}
+{{- $icon256 = $icon256 | fingerprint -}}
 {{- $icon512 := resources.Get "site/swaw512x512.png" -}}
 {{- if not $icon512 }}{{ errorf "编译失败: 缺少资源 %q。" "site/swaw512x512.png" }}{{ end -}}
 {{- $icon512 = $icon512 | fingerprint -}}
 {{- dict
+  "id" "/"
   "name" .Site.Title
   "short_name" .Site.Title
   "start_url" "/"
@@ -19,9 +23,15 @@
       "type" "image/png"
     )
     (dict
+      "src" $icon256.RelPermalink
+      "sizes" "256x256"
+      "type" "image/png"
+    )
+    (dict
       "src" $icon512.RelPermalink
       "sizes" "512x512"
       "type" "image/png"
+      "purpose" "any maskable"
     )
   )
 | jsonify -}}
