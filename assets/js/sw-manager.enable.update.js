@@ -1,53 +1,9 @@
-const SW_URL = '{{ .sw_url }}';
-const SW_SCOPE = '/';
-const NAVIGATION_CACHE_PREFIX = 'nav-html-';
-const ASSET_CACHE_PREFIX = 'asset-static-';
-
-function supportsServiceWorker() {
-    return 'serviceWorker' in navigator;
-}
-
-function isManagedCacheKey(key) {
-    return key.startsWith(NAVIGATION_CACHE_PREFIX) || key.startsWith(ASSET_CACHE_PREFIX);
-}
-
-async function clearManagedCaches() {
-    if (!('caches' in window)) return;
-
-    try {
-        const keys = await caches.keys();
-        await Promise.all(keys.filter(isManagedCacheKey).map((key) => caches.delete(key)));
-    } catch (error) { }
-}
-
-function isRootScopedRegistration(registration) {
-    try {
-        const scope = new URL(registration.scope);
-        return scope.origin === window.location.origin && scope.pathname === SW_SCOPE;
-    } catch (error) {
-        return false;
-    }
-}
-
-async function unregisterManagedWorkers() {
-    try {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(
-            registrations
-                .filter(isRootScopedRegistration)
-                .map((registration) => registration.unregister())
-        );
-    } catch (error) { }
-}
-
-{{- if eq .mode "enable" }}
 const UPDATE_STATE_ATTR = 'data-site-update';
 const UPDATE_STATE_READY = 'ready';
 const UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 
 const root = document.documentElement;
 
-let activeRegistration = null;
 let waitingWorker = null;
 let reloadOnControllerChange = false;
 let updateCheckTimer = null;
@@ -323,6 +279,7 @@ async function handleEnableMode() {
             updateViaCache: 'none'
         });
         activeRegistration = registration;
+        installNavigationWarmupFallback();
 
         const hasWaitingWorker = bindWaitingWorker(registration);
         if (hasWaitingWorker && isReloadNavigation()) {
@@ -342,6 +299,11 @@ async function handleEnableMode() {
         });
 
         scheduleRegistrationUpdates(registration);
+        navigator.serviceWorker.ready.then((readyRegistration) => {
+            if (readyRegistration?.active) {
+                activeRegistration = readyRegistration;
+            }
+        }).catch(() => { });
     } catch (error) { }
 }
 
@@ -393,13 +355,3 @@ if (supportsServiceWorker()) {
         }, { once: true });
     }
 }
-{{- else if eq .mode "disable" }}
-async function handleDisableMode() {
-    await unregisterManagedWorkers();
-    await clearManagedCaches();
-}
-
-if (supportsServiceWorker()) {
-    void handleDisableMode();
-}
-{{- end }}

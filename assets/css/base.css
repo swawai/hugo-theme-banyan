@@ -107,7 +107,7 @@ a:focus-visible {
 
 nav[aria-label="Breadcrumb"] {
     white-space: nowrap;
-    margin-bottom: 0;
+    margin-bottom: 0.8rem;
 }
 
 /* Service worker update hint binds only to the explicit breadcrumb anchor. */

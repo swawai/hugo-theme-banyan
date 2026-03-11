@@ -85,11 +85,11 @@
         "post" (index $prefetchConfig "post")
         "nav" (index $prefetchConfig "nav")
     }}
-    {{ $allowedPrefetchModes := slice "" "off" "rel-prefetch" "conservative-prefetch" "moderate-prefetch" "eager-prefetch" "conservative-prerender" "moderate-prerender" "eager-prerender" }}
+    {{ $allowedPrefetchModes := slice "" "off" "conservative-prefetch" "moderate-prefetch" "eager-prefetch" "conservative-prerender" "moderate-prerender" "eager-prerender" }}
     {{ range $label, $mode := $prefetchModes }}
         {{ $normalized := lower (printf "%v" $mode) }}
         {{ if and $normalized (not (in $allowedPrefetchModes $normalized)) }}
-            {{ errorf "编译失败: params.link_prefetch.%s 仅支持空值/off/rel-prefetch/conservative-prefetch/moderate-prefetch/eager-prefetch/conservative-prerender/moderate-prerender/eager-prerender，当前值为 %q。" $label $mode }}
+            {{ errorf "编译失败: params.link_prefetch.%s 仅支持空值/off/conservative-prefetch/moderate-prefetch/eager-prefetch/conservative-prerender/moderate-prerender/eager-prerender，当前值为 %q。" $label $mode }}
         {{ end }}
     {{ end }}
     {{ block "prefetch-context" . }}{{ end }}
@@ -101,25 +101,43 @@
     {{ $js := resources.Get "js/main.js" | js.Build | minify | fingerprint }}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
     {{ if ne $swMode "off" }}
-        {{/* 按当前 mode 直接渲染 SW 本体；off 时完全不发布 /sw.js。 */}}
-        {{ $swScriptTemplate := resources.Get "js/sw.js.tmpl" }}
-        {{ if not $swScriptTemplate }}{{ errorf "编译失败: 缺少资源 %q。" "js/sw.js.tmpl" }}{{ end }}
-        {{ $swScriptContext := dict
-            "mode" $swMode
-            "build_version" $swVersion
-            "cache_first_extensions" $cacheFirstExtensions
-        }}
-        {{ $swScript := $swScriptTemplate | resources.ExecuteAsTemplate "sw.js" $swScriptContext }}
-        {{ $swUrl := $swScript.RelPermalink }}
-        {{/* 独立的 SW 管理脚本：按 mode 只输出 enable/disable 所需代码。 */}}
-        {{ $swManagerTemplate := resources.Get "js/sw-manager.js.tmpl" }}
-        {{ if not $swManagerTemplate }}{{ errorf "编译失败: 缺少资源 %q。" "js/sw-manager.js.tmpl" }}{{ end }}
-        {{ $swManagerContext := dict
-            "mode" $swMode
-            "sw_url" $swUrl
-        }}
-        {{ $swManager := $swManagerTemplate | resources.ExecuteAsTemplate (printf "js/sw-manager.%s.js" $swMode) $swManagerContext | fingerprint }}
-        <script src="{{ $swManager.RelPermalink }}" integrity="{{ $swManager.Data.Integrity }}" defer></script>
+        {{/* 源文件命名约定：含模板语法的资源用 .tmpl，纯 JS 用 .js。 */}}
+        {{ if eq $swMode "enable" }}
+            {{ $swScriptTemplatePath := "js/sw.enable.js.tmpl" }}
+            {{ $swScriptTemplate := resources.Get $swScriptTemplatePath }}
+            {{ if not $swScriptTemplate }}{{ errorf "编译失败: 缺少资源 %q。" $swScriptTemplatePath }}{{ end }}
+            {{ $swScriptContext := dict
+                "build_version" $swVersion
+                "cache_first_extensions" $cacheFirstExtensions
+            }}
+            {{ $swScript := $swScriptTemplate | resources.ExecuteAsTemplate "sw.js" $swScriptContext }}
+            {{ $swUrl := $swScript.RelPermalink }}
+            {{ $swManagerBasePath := "js/sw-manager.enable.base.js.tmpl" }}
+            {{ $swManagerBaseTemplate := resources.Get $swManagerBasePath }}
+            {{ if not $swManagerBaseTemplate }}{{ errorf "编译失败: 缺少资源 %q。" $swManagerBasePath }}{{ end }}
+            {{ $swManagerBaseRendered := $swManagerBaseTemplate | resources.ExecuteAsTemplate "js/sw-manager.enable.base.rendered" (dict "sw_url" $swUrl) }}
+            {{ $swManagerBase := resources.FromString "js/sw-manager.enable.base.js" $swManagerBaseRendered.Content }}
+            {{ $swManagerPrefetchPath := "js/sw-manager.enable.prefetch.js" }}
+            {{ $swManagerPrefetch := resources.Get $swManagerPrefetchPath }}
+            {{ if not $swManagerPrefetch }}{{ errorf "编译失败: 缺少资源 %q。" $swManagerPrefetchPath }}{{ end }}
+            {{ $swManagerUpdatePath := "js/sw-manager.enable.update.js" }}
+            {{ $swManagerUpdate := resources.Get $swManagerUpdatePath }}
+            {{ if not $swManagerUpdate }}{{ errorf "编译失败: 缺少资源 %q。" $swManagerUpdatePath }}{{ end }}
+            {{ $swManagerBundle := slice $swManagerBase $swManagerPrefetch $swManagerUpdate | resources.Concat "js/sw-manager.enable.bundle.js" }}
+            {{ $swManager := $swManagerBundle | fingerprint }}
+            <script src="{{ $swManager.RelPermalink }}" integrity="{{ $swManager.Data.Integrity }}" defer></script>
+        {{ else }}
+            {{ $swScriptPath := "js/sw.disable.js" }}
+            {{ $swScriptSource := resources.Get $swScriptPath }}
+            {{ if not $swScriptSource }}{{ errorf "编译失败: 缺少资源 %q。" $swScriptPath }}{{ end }}
+            {{ $swScript := $swScriptSource | resources.Copy "sw.js" }}
+            {{ $swUrl := $swScript.RelPermalink }}
+            {{ $swManagerPath := "js/sw-manager.disable.js" }}
+            {{ $swManagerSource := resources.Get $swManagerPath }}
+            {{ if not $swManagerSource }}{{ errorf "编译失败: 缺少资源 %q。" $swManagerPath }}{{ end }}
+            {{ $swManager := $swManagerSource | fingerprint }}
+            <script src="{{ $swManager.RelPermalink }}" integrity="{{ $swManager.Data.Integrity }}" defer></script>
+        {{ end }}
     {{ end }}
 </head>
 <body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}">

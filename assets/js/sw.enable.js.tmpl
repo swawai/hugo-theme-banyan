@@ -1,9 +1,9 @@
 const NAVIGATION_CACHE_PREFIX = 'nav-html-';
 const ASSET_CACHE_PREFIX = 'asset-static-';
-{{- if eq .mode "enable" }}
 const NAVIGATION_CACHE = NAVIGATION_CACHE_PREFIX + '{{ .build_version }}';
 const ASSET_CACHE = ASSET_CACHE_PREFIX + '{{ .build_version }}';
 const CACHE_FIRST_EXTENSIONS = {{ .cache_first_extensions | jsonify }};
+const navigationWarmupTasks = new Map();
 
 function isSameOriginRequest(request) {
     try {
@@ -61,9 +61,31 @@ function isManagedCacheKey(key) {
     return key.startsWith(NAVIGATION_CACHE_PREFIX) || key.startsWith(ASSET_CACHE_PREFIX);
 }
 
-async function updateNavigationCache(request, cache) {
+async function fetchNavigationResponse(request, preloadResponsePromise) {
+    if (preloadResponsePromise) {
+        try {
+            const preloadResponse = await preloadResponsePromise;
+            if (preloadResponse) return preloadResponse;
+        } catch (error) { }
+    }
+
+    return fetch(request);
+}
+
+function normalizeWarmNavigationUrl(urlValue) {
     try {
-        let response = await fetch(request);
+        const url = new URL(urlValue, self.location.origin);
+        if (url.origin !== self.location.origin) return '';
+        url.hash = '';
+        return url.toString();
+    } catch (error) {
+        return '';
+    }
+}
+
+async function updateNavigationCache(request, cache, preloadResponsePromise) {
+    try {
+        let response = await fetchNavigationResponse(request, preloadResponsePromise);
         if (response && response.status === 304) {
             // Browser-level prefetch often revalidates from HTTP cache and returns 304.
             // SW cache needs a full body, so retry by bypassing the browser cache layer.
@@ -78,10 +100,44 @@ async function updateNavigationCache(request, cache) {
     }
 }
 
-async function handleNavigationRequest(request) {
+async function warmNavigationUrl(urlValue) {
+    const href = normalizeWarmNavigationUrl(urlValue);
+    if (!href) return;
+
+    if (navigationWarmupTasks.has(href)) {
+        await navigationWarmupTasks.get(href);
+        return;
+    }
+
+    const task = (async () => {
+        const cache = await caches.open(NAVIGATION_CACHE);
+        const request = new Request(href, {
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'text/html'
+            }
+        });
+        await updateNavigationCache(request, cache, null);
+    })();
+
+    navigationWarmupTasks.set(href, task);
+    try {
+        await task;
+    } finally {
+        navigationWarmupTasks.delete(href);
+    }
+}
+
+async function warmNavigationUrls(urlValues) {
+    for (const urlValue of urlValues) {
+        await warmNavigationUrl(urlValue);
+    }
+}
+
+async function handleNavigationRequest(request, preloadResponsePromise) {
     const cache = await caches.open(NAVIGATION_CACHE);
     const cachedResponse = await cache.match(request);
-    const networkResponsePromise = updateNavigationCache(request, cache);
+    const networkResponsePromise = updateNavigationCache(request, cache, preloadResponsePromise);
 
     if (cachedResponse) {
         return { response: cachedResponse, background: networkResponsePromise };
@@ -109,6 +165,9 @@ async function handleAssetRequest(request) {
 
 self.addEventListener('activate', (event) => {
     event.waitUntil((async () => {
+        if (self.registration.navigationPreload) {
+            await self.registration.navigationPreload.enable();
+        }
         const keys = await caches.keys();
         await Promise.all(
             keys
@@ -123,6 +182,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('message', (event) => {
     if (event.data && event.data.type === 'SKIP_WAITING') {
         self.skipWaiting();
+        return;
+    }
+
+    if (event.data && event.data.type === 'WARM_NAV_BATCH' && Array.isArray(event.data.urls)) {
+        event.waitUntil(warmNavigationUrls(event.data.urls));
     }
 });
 
@@ -130,7 +194,8 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     if (isHtmlDocumentRequest(request)) {
         event.respondWith((async () => {
-            const result = await handleNavigationRequest(request);
+            const preloadResponsePromise = request.mode === 'navigate' ? event.preloadResponse : null;
+            const result = await handleNavigationRequest(request, preloadResponsePromise);
             if (result.background) {
                 event.waitUntil(result.background);
             }
@@ -143,26 +208,3 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(handleAssetRequest(request));
     }
 });
-{{- else if eq .mode "disable" }}
-function isManagedCacheKey(key) {
-    return key.startsWith(NAVIGATION_CACHE_PREFIX) || key.startsWith(ASSET_CACHE_PREFIX);
-}
-
-self.addEventListener('install', () => {
-    self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-    event.waitUntil((async () => {
-        const keys = await caches.keys();
-        await Promise.all(keys.filter(isManagedCacheKey).map((key) => caches.delete(key)));
-        await self.clients.claim();
-    })());
-});
-
-self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'SKIP_WAITING') {
-        self.skipWaiting();
-    }
-});
-{{- end }}
