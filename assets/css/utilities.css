@@ -48,7 +48,7 @@
         scroll-behavior: auto !important;
     }
 
-    html[data-site-update="ready"] .breadcrumb-nav > a:last-of-type .breadcrumb-current-text {
+    html[data-site-update="ready"] [data-site-update-anchor] .breadcrumb-current-text {
         animation-duration: 1.5s !important;
         animation-iteration-count: infinite !important;
     }

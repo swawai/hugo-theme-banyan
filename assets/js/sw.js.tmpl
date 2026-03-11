@@ -5,16 +5,29 @@ const NAVIGATION_CACHE = NAVIGATION_CACHE_PREFIX + '{{ .build_version }}';
 const ASSET_CACHE = ASSET_CACHE_PREFIX + '{{ .build_version }}';
 const CACHE_FIRST_EXTENSIONS = {{ .cache_first_extensions | jsonify }};
 
-function isNavigationRequest(request) {
-    return request.method === 'GET' && request.mode === 'navigate';
-}
-
 function isSameOriginRequest(request) {
     try {
         return new URL(request.url).origin === self.location.origin;
     } catch (error) {
         return false;
     }
+}
+
+function acceptsHtmlDocument(request) {
+    try {
+        const accept = request.headers.get('accept') || '';
+        return accept.includes('text/html');
+    } catch (error) {
+        return false;
+    }
+}
+
+function isHtmlDocumentRequest(request) {
+    if (request.method !== 'GET') return false;
+    if (!isSameOriginRequest(request)) return false;
+    if (request.mode === 'navigate') return true;
+    if (request.destination === 'document') return true;
+    return acceptsHtmlDocument(request);
 }
 
 function isCacheableHtmlResponse(response) {
@@ -37,8 +50,9 @@ function getRequestExtension(request) {
 
 function shouldHandleAssetRequest(request) {
     if (!CACHE_FIRST_EXTENSIONS.length) return false;
-    if (request.method !== 'GET' || request.mode === 'navigate') return false;
+    if (request.method !== 'GET') return false;
     if (!isSameOriginRequest(request)) return false;
+    if (isHtmlDocumentRequest(request)) return false;
 
     return CACHE_FIRST_EXTENSIONS.includes(getRequestExtension(request));
 }
@@ -49,7 +63,12 @@ function isManagedCacheKey(key) {
 
 async function updateNavigationCache(request, cache) {
     try {
-        const response = await fetch(request);
+        let response = await fetch(request);
+        if (response && response.status === 304) {
+            // Browser-level prefetch often revalidates from HTTP cache and returns 304.
+            // SW cache needs a full body, so retry by bypassing the browser cache layer.
+            response = await fetch(new Request(request, { cache: 'reload' }));
+        }
         if (isCacheableHtmlResponse(response)) {
             await cache.put(request, response.clone());
         }
@@ -109,7 +128,7 @@ self.addEventListener('message', (event) => {
 
 self.addEventListener('fetch', (event) => {
     const { request } = event;
-    if (isNavigationRequest(request) && isSameOriginRequest(request)) {
+    if (isHtmlDocumentRequest(request)) {
         event.respondWith((async () => {
             const result = await handleNavigationRequest(request);
             if (result.background) {

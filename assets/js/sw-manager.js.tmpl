@@ -56,20 +56,30 @@ let updatePopover = null;
 let updatePopoverAnchor = null;
 let updateCopyPromise = null;
 let updateCopyCache = null;
+let updateFallbackPrompted = false;
 
 function setUpdateReadyState(ready) {
     if (ready) {
         root.setAttribute(UPDATE_STATE_ATTR, UPDATE_STATE_READY);
+        void maybePromptUpdateFallback();
         return;
     }
 
     root.removeAttribute(UPDATE_STATE_ATTR);
+    updateFallbackPrompted = false;
     hideUpdatePopover();
 }
 
 function getBreadcrumbCurrentLink() {
-    const breadcrumb = document.querySelector('.breadcrumb-nav');
-    return breadcrumb ? breadcrumb.querySelector(':scope > a:last-of-type') : null;
+    return document.querySelector('[data-site-update-anchor]');
+}
+
+function isUsableUpdateAnchor(anchor) {
+    if (!(anchor instanceof HTMLElement)) return false;
+
+    const style = window.getComputedStyle(anchor);
+    if (style.display === 'none' || style.visibility === 'hidden') return false;
+    return anchor.getClientRects().length > 0;
 }
 
 function getFallbackUpdateCopy() {
@@ -149,6 +159,19 @@ async function hydrateUpdateCopy() {
     }
 
     return updateCopyPromise;
+}
+
+async function maybePromptUpdateFallback() {
+    if (updateFallbackPrompted) return;
+
+    const anchor = getBreadcrumbCurrentLink();
+    if (isUsableUpdateAnchor(anchor)) return;
+
+    updateFallbackPrompted = true;
+    const copy = await hydrateUpdateCopy();
+    if (window.confirm(copy.message)) {
+        void applyWaitingWorker();
+    }
 }
 
 async function ensureUpdatePopover() {
@@ -327,7 +350,7 @@ document.addEventListener('click', (event) => {
 
     const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
     const breadcrumbLink = getBreadcrumbCurrentLink();
-    if (!breadcrumbLink) return;
+    if (!isUsableUpdateAnchor(breadcrumbLink)) return;
 
     if (anchor === breadcrumbLink) {
         event.preventDefault();

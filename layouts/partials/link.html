@@ -2,5 +2,5 @@
 {{ $text := .text | default "" }}
 {{ $textClass := .textClass | default "" }}
 {{ if $href }}
-<a href="{{ $href }}"{{ with .class }} class="{{ . }}"{{ end }}{{ with .title }} title="{{ . }}"{{ end }}{{ with .label }} aria-label="{{ . }}"{{ end }}{{ with .target }} target="{{ . }}"{{ end }}{{ with .rel }} rel="{{ . }}"{{ end }}>{{ if $textClass }}<span class="{{ $textClass }}">{{ if .safeHTML }}{{ $text | safeHTML }}{{ else }}{{ $text }}{{ end }}</span>{{ else }}{{ if .safeHTML }}{{ $text | safeHTML }}{{ else }}{{ $text }}{{ end }}{{ end }}</a>
+<a href="{{ $href }}"{{ with .class }} class="{{ . }}"{{ end }}{{ with .title }} title="{{ . }}"{{ end }}{{ with .label }} aria-label="{{ . }}"{{ end }}{{ with .target }} target="{{ . }}"{{ end }}{{ with .rel }} rel="{{ . }}"{{ end }}{{ with .dataAttrs }}{{ range $name, $value := . }} {{ printf "data-%s=%q" $name $value | safeHTMLAttr }}{{ end }}{{ end }}>{{ if $textClass }}<span class="{{ $textClass }}">{{ if .safeHTML }}{{ $text | safeHTML }}{{ else }}{{ $text }}{{ end }}</span>{{ else }}{{ if .safeHTML }}{{ $text | safeHTML }}{{ else }}{{ $text }}{{ end }}{{ end }}</a>
 {{ end }}

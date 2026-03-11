@@ -110,13 +110,14 @@ nav[aria-label="Breadcrumb"] {
     margin-bottom: 0;
 }
 
-html[data-site-update="ready"] .breadcrumb-nav > a:last-of-type {
+/* Service worker update hint binds only to the explicit breadcrumb anchor. */
+html[data-site-update="ready"] [data-site-update-anchor] {
     color: var(--focus);
     text-decoration-color: currentColor;
     text-decoration-thickness: 0.12em;
 }
 
-html[data-site-update="ready"] .breadcrumb-nav > a:last-of-type .breadcrumb-current-text {
+html[data-site-update="ready"] [data-site-update-anchor] .breadcrumb-current-text {
     display: inline-block;
     transform-origin: 0 50%;
     will-change: transform, opacity;
