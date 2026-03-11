@@ -26,8 +26,8 @@
     {{ $faviconIco := resources.Get "site/favicon.ico" }}
     {{ if not $faviconIco }}{{ errorf "编译失败: 缺少资源 %q。" "site/favicon.ico" }}{{ end }}
     {{ $faviconIco = $faviconIco | fingerprint }}
-    {{ $appleTouchIcon := resources.Get "site/apple-touch-icon.png" }}
-    {{ if not $appleTouchIcon }}{{ errorf "编译失败: 缺少资源 %q。" "site/apple-touch-icon.png" }}{{ end }}
+    {{ $appleTouchIcon := resources.Get "site/swaw180x180.png" }}
+    {{ if not $appleTouchIcon }}{{ errorf "编译失败: 缺少资源 %q。" "site/swaw180x180.png" }}{{ end }}
     {{ $appleTouchIcon = $appleTouchIcon | fingerprint }}
     {{ $defaultSite := index (sort .Sites "Language.Weight") 0 }}
     {{ $manifest := cond $defaultSite ($defaultSite.Home.OutputFormats.Get "webmanifest") nil }}
