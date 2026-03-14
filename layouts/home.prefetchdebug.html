@@ -1,4 +1,4 @@
-{{ define "head-extra" }}
+{{ define "styles" }}
 {{ $post := resources.Get "css/post.css" }}
 {{ if not hugo.IsServer }}{{ $post = $post | minify }}{{ end }}
 {{ $post = $post | fingerprint }}
@@ -44,18 +44,11 @@
 </style>
 {{ end }}
 
-{{ define "breadcrumb" }}
-<nav class="post-dir breadcrumb-nav" aria-label="Breadcrumb">
-  <span class="label">{{ partial "link.html" (dict "ctx" . "href" .Site.Home.RelPermalink "text" (.Site.Title | default "Home") "textClass" "breadcrumb-current-text" "linkSlot" "nav") }}</span>
-  <span class="sep">/</span>
-  <span class="label">{{ partial "link.html" (dict "ctx" . "href" .RelPermalink "text" .Title "textClass" "breadcrumb-current-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}</span>
-</nav>
-{{ end }}
-
 {{ define "main" }}
 <article class="post prefetch-debug">
   <div class="post-content">
-    {{ .Content }}
+    <h1>Prefetch Debug</h1>
+    <p>Use this page to inspect browser capability detection, current prefetch payload, and the resources actually injected into the page.</p>
   </div>
 
   <section class="prefetch-debug-panel">

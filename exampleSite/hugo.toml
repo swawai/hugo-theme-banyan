@@ -94,6 +94,11 @@ panicOnWarning = true
 #[params.social]
 # github = "https://github.com/your-github"
 
+[outputFormats.prefetchdebug]
+mediaType = "text/html"
+isHTML    = true
+baseName  = "prefetch-debug"
+
 [frontmatter]
 lastmod = ["lastmod", ":git", ":fileModTime", ":default"]
 
@@ -183,7 +188,7 @@ baseName  = "index"
 path      = "all-by-size-asc"
 [outputs]
 section  = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
-home     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
+home     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","prefetchdebug","rss"]
 taxonomy = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
 term     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
 
@@ -193,7 +198,7 @@ languageName = "English"
 weight = 1
 [languages.en.outputs]
 section  = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
-home     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
+home     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","prefetchdebug","rss"]
 taxonomy = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
 term     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
 [languages.en.params]
