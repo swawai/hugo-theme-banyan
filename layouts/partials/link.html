@@ -1,6 +1,9 @@
 {{ $href := .href }}
 {{ $text := .text | default "" }}
 {{ $textClass := .textClass | default "" }}
+{{ $ctx := .ctx }}
+{{ $prefetchSlot := .prefetchSlot | default "" }}
 {{ if $href }}
+{{ if and $ctx $prefetchSlot }}{{ partial "prefetch-collect-url.html" (dict "ctx" $ctx "slot" $prefetchSlot "url" $href) }}{{ end }}
 <a href="{{ $href }}"{{ with .class }} class="{{ . }}"{{ end }}{{ with .title }} title="{{ . }}"{{ end }}{{ with .label }} aria-label="{{ . }}"{{ end }}{{ with .target }} target="{{ . }}"{{ end }}{{ with .rel }} rel="{{ . }}"{{ end }}{{ with .dataAttrs }}{{ range $name, $value := . }} {{ printf "data-%s=%q" $name $value | safeHTMLAttr }}{{ end }}{{ end }}>{{ if $textClass }}<span class="{{ $textClass }}">{{ if .safeHTML }}{{ $text | safeHTML }}{{ else }}{{ $text }}{{ end }}</span>{{ else }}{{ if .safeHTML }}{{ $text | safeHTML }}{{ else }}{{ $text }}{{ end }}{{ end }}</a>
 {{ end }}

@@ -4,13 +4,11 @@
 {{ $nav := resources.Get "css/nav.css" }}
 {{ $grid := resources.Get "css/grid-list.css" }}
 {{ $utils := resources.Get "css/utilities.css" }}
-{{ $cssBundle := slice $base $header $nav $grid $utils | resources.Concat "css/bundle.css" | minify }}
+{{ $cssBundle := slice $base $header $nav $grid $utils | resources.Concat "css/bundle.css" }}
+{{ if not hugo.IsServer }}{{ $cssBundle = $cssBundle | minify }}{{ end }}
 <style>{{ $cssBundle.Content | safeCSS }}</style>
 {{ end }}
 
-{{ define "prefetch-context" }}
-{{ .Scratch.Set "prefetchCandidates" (partial "prefetch-candidates-dir.html" (dict "ctx" . "mode" "bydate")) }}
-{{ end }}
 
 {{ define "main" }}
 {{ partial "list-dir-common.html" (dict "ctx" . "mode" "bydate") }}

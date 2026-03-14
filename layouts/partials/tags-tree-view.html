@@ -17,6 +17,7 @@
   {{ with $ctx.OutputFormats.Get (index $ctrl "name") }}
     {{ partial "grid-sort-cell.html" (dict
       "class" "cell-title"
+      "ctx" $ctx
       "href" (printf "%s#%v" .RelPermalink $level)
       "title" (cond (and (eq $sf "title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
       "label" (cond (and (eq $sf "title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
@@ -25,6 +26,7 @@
   {{ with $ctx.OutputFormats.Get (index $ctrl "date") }}
     {{ partial "grid-sort-cell.html" (dict
       "class" "cell-date"
+      "ctx" $ctx
       "href" (printf "%s#%v" .RelPermalink $level)
       "title" (cond (and (eq $sf "latest") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
       "label" (cond (and (eq $sf "latest") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
@@ -33,6 +35,7 @@
   {{ with $ctx.OutputFormats.Get (index $ctrl "count") }}
     {{ partial "grid-sort-cell.html" (dict
       "class" "cell-count"
+      "ctx" $ctx
       "href" (printf "%s#%v" .RelPermalink $level)
       "title" (cond (and (eq $sf "cnt") (eq $so "asc")) "Sort by count descending" "Sort by count ascending")
       "label" (cond (and (eq $sf "cnt") (eq $so "asc")) "Sort by count descending" "Sort by count ascending")
@@ -49,11 +52,11 @@
       {{ else if eq $level 3 }}
         {{ $href = relLangURL (printf "/tags/%s/%s/%s/" (urlize $sel.t1) (urlize $sel.t2) (urlize .title)) }}
       {{ end }}
-      {{ partial "grid-title-cell.html" (dict "href" $href "title" .title "text" (printf "%s/" .title) "icon" "folder" "prefetchKind" "desc") }}
+      {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" $href "title" .title "text" (printf "%s/" .title) "icon" "folder" "prefetchKind" "desc") }}
       <span class="cell-date">{{ .latest }}</span>
       <span class="cell-count"><span class="num">{{ .cnt }}</span><span class="unit"></span></span>
     {{ else if eq .kind "page" }}
-      {{ partial "grid-title-cell.html" (dict "href" .url "title" .title "icon" "file" "prefetchKind" "post") }}
+      {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .url "title" .title "icon" "file" "prefetchKind" "post") }}
       <span class="cell-date">{{ .latest }}</span>
       {{ $kb := div (add .bytes 1023) 1024 }}
       <span class="cell-count"><span class="num">{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>

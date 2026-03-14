@@ -3,8 +3,9 @@
 {{ $title := .title }}
 {{ $label := .label }}
 {{ $text := .text }}
+{{ $ctx := .ctx }}
 {{ with $href }}
 <span class="{{ $class }} header click-full">
-  {{ partial "link.html" (dict "href" . "title" $title "label" $label "text" $text "safeHTML" true) }}
+  {{ partial "link.html" (dict "ctx" $ctx "href" . "title" $title "label" $label "text" $text "safeHTML" true "prefetchSlot" "sort") }}
 </span>
 {{ end }}

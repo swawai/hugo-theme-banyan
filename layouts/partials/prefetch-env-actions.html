@@ -1,0 +1,141 @@
+{{ $envConfig := .env_config | default dict }}
+{{ $candidates := .candidates | default (dict "nav" (slice) "sort" (slice) "desc" (slice) "post" (slice)) }}
+{{ $envKey := upper (printf "%v" (.env_key | default "")) }}
+{{ $swMode := .sw_mode | default "off" }}
+{{ $slots := dict
+  "sort_siblings" "sort"
+  "descendants" "desc"
+  "post" "post"
+  "nav" "nav"
+}}
+{{ $specEnabled := eq (substr $envKey 0 1) "T" }}
+{{ $linkEnabled := eq (substr $envKey 1 1) "T" }}
+{{ $swEnabled := eq (substr $envKey 2 1) "T" }}
+{{ $specPrefetch := slice }}
+{{ $specPrerender := slice }}
+{{ $specBlocked := slice }}
+{{ $linkStaticRaw := slice }}
+{{ $linkImmediateRaw := slice }}
+{{ $linkDelayedRaw := slice }}
+{{ $swStaticRaw := slice }}
+{{ $swImmediateRaw := slice }}
+{{ $swDelayedRaw := slice }}
+
+{{ range $configKey, $candidateKey := $slots }}
+  {{ $rawMode := index $envConfig $configKey }}
+  {{ $mode := partial "prefetch-mode.html" $rawMode }}
+  {{ $kind := index $mode "kind" }}
+  {{ $transport := index $mode "transport" }}
+  {{ $source := index $mode "value" }}
+  {{ $urls := index $candidates $candidateKey | default (slice) }}
+  {{ if and $urls (gt (len $urls) 0) (or (eq $kind "prefetch") (eq $kind "prerender")) (ne $transport "") }}
+    {{ if and (eq $transport "speculationrules") (not $specEnabled) }}
+      {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 Speculation Rules transport，但当前环境键 %s 的首位为 F。" $envKey $configKey $source $envKey }}
+    {{ end }}
+    {{ if and (eq $transport "link") (not $linkEnabled) }}
+      {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 link transport，但当前环境键 %s 的第二位为 F。" $envKey $configKey $source $envKey }}
+    {{ end }}
+    {{ if and (eq $transport "sw") (not $swEnabled) }}
+      {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 SW transport，但当前环境键 %s 的第三位为 F。" $envKey $configKey $source $envKey }}
+    {{ end }}
+    {{ if and (eq $transport "sw") (ne $swMode "enable") }}
+      {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 SW transport，但 params.service_worker.mode=%q。" $envKey $configKey $source $swMode }}
+    {{ end }}
+    {{ if and (eq $kind "prerender") (not $specEnabled) }}
+      {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 使用 prerender，但当前环境键 %s 不支持 Speculation Rules transport。" $envKey $configKey $source $envKey }}
+    {{ end }}
+
+    {{ if eq $transport "speculationrules" }}
+      {{ $entry := dict
+        "urls" $urls
+        "eagerness" (index $mode "eagerness")
+      }}
+      {{ if eq $kind "prerender" }}
+        {{ $specPrerender = $specPrerender | append $entry }}
+      {{ else }}
+        {{ $specPrefetch = $specPrefetch | append $entry }}
+      {{ end }}
+      {{ range $urls }}
+        {{ $specBlocked = partial "prefetch-append-url.html" (dict "urls" $specBlocked "url" .) }}
+      {{ end }}
+    {{ else }}
+      {{ $action := "hover_delayed" }}
+      {{ if or (eq $kind "prerender") (eq (index $mode "eagerness") "eager") }}
+        {{ $action = "static" }}
+      {{ else if eq (index $mode "eagerness") "moderate" }}
+        {{ $action = "hover_immediate" }}
+      {{ end }}
+
+      {{ range $urls }}
+        {{ if eq $transport "link" }}
+          {{ if eq $action "static" }}
+            {{ $linkStaticRaw = partial "prefetch-append-url.html" (dict "urls" $linkStaticRaw "url" .) }}
+          {{ else if eq $action "hover_immediate" }}
+            {{ $linkImmediateRaw = partial "prefetch-append-url.html" (dict "urls" $linkImmediateRaw "url" .) }}
+          {{ else }}
+            {{ $linkDelayedRaw = partial "prefetch-append-url.html" (dict "urls" $linkDelayedRaw "url" .) }}
+          {{ end }}
+        {{ else if eq $transport "sw" }}
+          {{ if eq $action "static" }}
+            {{ $swStaticRaw = partial "prefetch-append-url.html" (dict "urls" $swStaticRaw "url" .) }}
+          {{ else if eq $action "hover_immediate" }}
+            {{ $swImmediateRaw = partial "prefetch-append-url.html" (dict "urls" $swImmediateRaw "url" .) }}
+          {{ else }}
+            {{ $swDelayedRaw = partial "prefetch-append-url.html" (dict "urls" $swDelayedRaw "url" .) }}
+          {{ end }}
+        {{ end }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ $specPayload := dict }}
+{{ if gt (len $specPrefetch) 0 }}
+  {{ $specPayload = merge $specPayload (dict "prefetch" $specPrefetch) }}
+{{ end }}
+{{ if gt (len $specPrerender) 0 }}
+  {{ $specPayload = merge $specPayload (dict "prerender" $specPrerender) }}
+{{ end }}
+
+{{ $linkActions := partial "prefetch-finalize-warm-actions.html" (dict
+  "static" $linkStaticRaw
+  "immediate" $linkImmediateRaw
+  "delayed" $linkDelayedRaw
+  "blocked" $specBlocked
+) }}
+{{ $linkBlocked := $specBlocked }}
+{{ range (index $linkActions "static_urls") }}
+  {{ $linkBlocked = partial "prefetch-append-url.html" (dict "urls" $linkBlocked "url" .) }}
+{{ end }}
+{{ range (index $linkActions "hover_immediate_urls") }}
+  {{ $linkBlocked = partial "prefetch-append-url.html" (dict "urls" $linkBlocked "url" .) }}
+{{ end }}
+{{ range (index $linkActions "hover_delayed_urls") }}
+  {{ $linkBlocked = partial "prefetch-append-url.html" (dict "urls" $linkBlocked "url" .) }}
+{{ end }}
+{{ $swActions := partial "prefetch-finalize-warm-actions.html" (dict
+  "static" $swStaticRaw
+  "immediate" $swImmediateRaw
+  "delayed" $swDelayedRaw
+  "blocked" $linkBlocked
+) }}
+
+{{ $hasSpec := gt (len $specPayload) 0 }}
+{{ $hasLink := or (gt (len (index $linkActions "static_urls")) 0) (gt (len (index $linkActions "hover_immediate_urls")) 0) (gt (len (index $linkActions "hover_delayed_urls")) 0) }}
+{{ $hasLinkHover := or (gt (len (index $linkActions "hover_immediate_urls")) 0) (gt (len (index $linkActions "hover_delayed_urls")) 0) }}
+{{ $hasSw := or (gt (len (index $swActions "static_urls")) 0) (gt (len (index $swActions "hover_immediate_urls")) 0) (gt (len (index $swActions "hover_delayed_urls")) 0) }}
+
+{{ $result := dict
+  "has_actions" (or $hasSpec $hasLink $hasSw)
+  "link_static_urls" (index $linkActions "static_urls")
+  "link_hover_immediate_urls" (index $linkActions "hover_immediate_urls")
+  "link_hover_delayed_urls" (index $linkActions "hover_delayed_urls")
+  "sw_static_urls" (index $swActions "static_urls")
+  "sw_hover_immediate_urls" (index $swActions "hover_immediate_urls")
+  "sw_hover_delayed_urls" (index $swActions "hover_delayed_urls")
+}}
+{{ if $hasSpec }}
+  {{ $result = merge $result (dict "speculation_rules_payload" $specPayload) }}
+{{ end }}
+
+{{ return $result }}

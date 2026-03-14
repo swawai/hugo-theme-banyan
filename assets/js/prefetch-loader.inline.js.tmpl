@@ -1,0 +1,109 @@
+(function () {
+    const bundles = {{ .bundles | jsonify }};
+    const allowServiceWorker = {{ if .allow_service_worker }}true{{ else }}false{{ end }};
+    const queryKey = 'prefetch_env';
+    const storageKey = 'banyan-prefetch-env';
+    const runtimeAttr = 'data-prefetch-runtime';
+    const envAttr = 'data-prefetch-env';
+    const profileAttr = 'data-prefetch-profile';
+    const forcedEnvAttr = 'data-prefetch-forced-env';
+
+    function normalizeEnvSequence(rawValue) {
+        const value = typeof rawValue === 'string' ? rawValue.trim().toUpperCase() : '';
+        return /^[TF]{3}$/.test(value) ? value : '';
+    }
+
+    function supportsSpeculationRules() {
+        try {
+            return typeof HTMLScriptElement !== 'undefined'
+                && typeof HTMLScriptElement.supports === 'function'
+                && HTMLScriptElement.supports('speculationrules');
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function supportsLinkPrefetch() {
+        try {
+            const link = document.createElement('link');
+            return !!(link.relList && typeof link.relList.supports === 'function' && link.relList.supports('prefetch'));
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function supportsServiceWorkerTransport() {
+        return allowServiceWorker && 'serviceWorker' in navigator;
+    }
+
+    function getBrowserEnvSequence() {
+        return [
+            supportsSpeculationRules() ? 'T' : 'F',
+            supportsLinkPrefetch() ? 'T' : 'F',
+            supportsServiceWorkerTransport() ? 'T' : 'F'
+        ].join('');
+    }
+
+    function readQueryForcedEnvSequence() {
+        try {
+            const url = new URL(window.location.href);
+            const rawValue = url.searchParams.get(queryKey) || '';
+            if (!rawValue) return '';
+
+            if (rawValue.toLowerCase() === 'auto') {
+                try {
+                    window.localStorage.removeItem(storageKey);
+                } catch (error) { }
+                return '';
+            }
+
+            const normalized = normalizeEnvSequence(rawValue);
+            if (!normalized) return '';
+
+            try {
+                window.localStorage.setItem(storageKey, normalized);
+            } catch (error) { }
+            return normalized;
+        } catch (error) {
+            return '';
+        }
+    }
+
+    function readStoredForcedEnvSequence() {
+        try {
+            return normalizeEnvSequence(window.localStorage.getItem(storageKey) || '');
+        } catch (error) {
+            return '';
+        }
+    }
+
+    function applyForcedEnv(browserEnvSequence, forcedEnvSequence) {
+        if (!forcedEnvSequence) return browserEnvSequence;
+
+        let result = '';
+        for (let index = 0; index < 3; index += 1) {
+            result += browserEnvSequence.charAt(index) === 'T' && forcedEnvSequence.charAt(index) === 'T' ? 'T' : 'F';
+        }
+        return result;
+    }
+
+    function loadBundle(envSequence, forcedEnvSequence) {
+        const root = document.documentElement;
+        const bundle = bundles[envSequence] || null;
+        root.setAttribute(envAttr, envSequence || '');
+        root.setAttribute(profileAttr, bundle ? envSequence : '');
+        root.setAttribute(forcedEnvAttr, forcedEnvSequence || '');
+        root.setAttribute(runtimeAttr, '');
+        if (!bundle || !bundle.src) return;
+
+        const script = document.createElement('script');
+        script.src = bundle.src;
+        script.async = true;
+        document.head.appendChild(script);
+    }
+
+    const forcedEnvSequence = readQueryForcedEnvSequence() || readStoredForcedEnvSequence() || '';
+    const browserEnvSequence = getBrowserEnvSequence();
+    const envSequence = applyForcedEnv(browserEnvSequence, forcedEnvSequence);
+    loadBundle(envSequence, forcedEnvSequence);
+})();

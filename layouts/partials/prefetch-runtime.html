@@ -1,0 +1,58 @@
+{{ $ctx := .ctx | default . }}
+{{ $swMode := .sw_mode | default "off" }}
+{{ $prefetchConfig := site.Params.link_prefetch | default dict }}
+{{ $envConfigMap := index $prefetchConfig "env" | default dict }}
+{{ $candidates := $ctx.Scratch.Get "prefetchCandidates" | default (dict "nav" (slice) "sort" (slice) "desc" (slice) "post" (slice)) }}
+{{ $envKeys := slice "TTT" "TTF" "TFT" "TFF" "FTT" "FTF" "FFT" "FFF" }}
+{{ $actionsByEnv := dict }}
+
+{{ range $envKey := $envKeys }}
+  {{ $envConfig := index $envConfigMap $envKey | default dict }}
+  {{ $actions := partial "prefetch-env-actions.html" (dict
+    "env_config" $envConfig
+    "candidates" $candidates
+    "env_key" $envKey
+    "sw_mode" $swMode
+  ) }}
+  {{ if index $actions "has_actions" }}
+    {{ $actionsByEnv = merge $actionsByEnv (dict $envKey $actions) }}
+  {{ end }}
+{{ end }}
+{{ if gt (len $actionsByEnv) 0 }}
+  {{ $isServer := hugo.IsServer }}
+  {{ $allowServiceWorker := eq $swMode "enable" }}
+  {{ $prefetchEntryTemplatePath := "js/prefetch.env.entry.js.tmpl" }}
+  {{ $prefetchEntryTemplate := resources.Get $prefetchEntryTemplatePath }}
+  {{ if not $prefetchEntryTemplate }}{{ errorf "编译失败: 缺少资源 %q。" $prefetchEntryTemplatePath }}{{ end }}
+  <script id="site-prefetch-actions" type="application/json">{{ $actionsByEnv | jsonify | safeJS }}</script>
+  {{ $bundleMap := dict }}
+  {{ range $envKey := $envKeys }}
+    {{ with index $actionsByEnv $envKey }}
+      {{ $envConfig := index $envConfigMap $envKey | default dict }}
+      {{ $runtimeFlags := partial "prefetch-env-runtime-flags.html" (dict
+        "env_config" $envConfig
+        "sw_mode" $swMode
+      ) }}
+      {{ $prefetchEntry := $prefetchEntryTemplate | resources.ExecuteAsTemplate (printf "js/prefetch.%s.entry.js" $envKey) (dict
+        "env_sequence" $envKey
+        "runtime_flags" $runtimeFlags
+      ) }}
+      {{ $prefetchBundle := $prefetchEntry | js.Build (dict "targetPath" (printf "js/prefetch.%s.bundle.js" $envKey)) }}
+      {{ if not $isServer }}{{ $prefetchBundle = $prefetchBundle | minify }}{{ end }}
+      {{ $prefetchBundle = $prefetchBundle | fingerprint }}
+      {{ $bundleMeta := dict
+        "src" $prefetchBundle.RelPermalink
+      }}
+      {{ $bundleMap = merge $bundleMap (dict $envKey $bundleMeta) }}
+    {{ end }}
+  {{ end }}
+  {{ $loaderTemplatePath := "js/prefetch-loader.inline.js.tmpl" }}
+  {{ $loaderTemplate := resources.Get $loaderTemplatePath }}
+  {{ if not $loaderTemplate }}{{ errorf "编译失败: 缺少资源 %q。" $loaderTemplatePath }}{{ end }}
+  {{ $bundleMapHash := md5 ($bundleMap | jsonify) }}
+  {{ $loader := $loaderTemplate | resources.ExecuteAsTemplate (printf "js/prefetch-loader.inline.%s.js" $bundleMapHash) (dict
+    "allow_service_worker" $allowServiceWorker
+    "bundles" $bundleMap
+  ) }}
+<script>{{ $loader.Content | safeJS }}</script>
+{{ end }}

@@ -1,0 +1,9 @@
+import { createServiceWorkerManagerRuntime } from './sw-manager.enable.runtime.js';
+import { startEnableMode } from './sw-manager.enable.update.js';
+
+const runtime = createServiceWorkerManagerRuntime({
+    swUrl: {{ printf "%q" .sw_url }},
+    swScope: '/'
+});
+
+startEnableMode(runtime);

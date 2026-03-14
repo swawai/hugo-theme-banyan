@@ -1,6 +1,3 @@
-{{ define "prefetch-context" }}
-{{ .Scratch.Set "prefetchCandidates" (partial "prefetch-candidates-taxonomy.html" (dict "ctx" . "mode" "bycountasc" "taxonomy" "tags")) }}
-{{ end }}
 
 {{ define "breadcrumb" }}
 {{ partial "tags-breadcrumb.html" (dict "ctx" . "mode" "bycountasc") }}

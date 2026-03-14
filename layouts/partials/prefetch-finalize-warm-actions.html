@@ -1,0 +1,22 @@
+{{ $blocked := .blocked | default (slice) }}
+{{ $staticRaw := .static | default (slice) }}
+{{ $immediateRaw := .immediate | default (slice) }}
+{{ $delayedRaw := .delayed | default (slice) }}
+
+{{ $staticUrls := partial "prefetch-filter-urls.html" (dict "urls" $staticRaw "blocked" $blocked) }}
+{{ $immediateBlocked := $blocked }}
+{{ range $staticUrls }}
+  {{ $immediateBlocked = partial "prefetch-append-url.html" (dict "urls" $immediateBlocked "url" .) }}
+{{ end }}
+{{ $hoverImmediateUrls := partial "prefetch-filter-urls.html" (dict "urls" $immediateRaw "blocked" $immediateBlocked) }}
+{{ $delayedBlocked := $immediateBlocked }}
+{{ range $hoverImmediateUrls }}
+  {{ $delayedBlocked = partial "prefetch-append-url.html" (dict "urls" $delayedBlocked "url" .) }}
+{{ end }}
+{{ $hoverDelayedUrls := partial "prefetch-filter-urls.html" (dict "urls" $delayedRaw "blocked" $delayedBlocked) }}
+
+{{ return (dict
+  "static_urls" $staticUrls
+  "hover_immediate_urls" $hoverImmediateUrls
+  "hover_delayed_urls" $hoverDelayedUrls
+) }}

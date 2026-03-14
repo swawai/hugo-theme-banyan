@@ -28,7 +28,7 @@ lastmod = ["lastmod", ":git", ":fileModTime", ":default"]
 [menu]
 [[menu.main]]
 identifier = "about"
-url = "/about"
+url = "/about/"
 weight = 5
 [[menu.main]]
 identifier = "dir"
@@ -44,7 +44,7 @@ url = "/udc/"
 weight = 3
 [[menu.main]]
 identifier = "all"
-url = "/all-by-date"
+url = "/all-by-date/"
 weight = 4
 
 

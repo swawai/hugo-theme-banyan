@@ -1,0 +1,12 @@
+{{ $urls := .urls | default (slice) }}
+{{ $blocked := .blocked | default (slice) }}
+{{ $result := slice }}
+
+{{ range $urls }}
+  {{ $href := partial "prefetch-normalize-url.html" . }}
+  {{ if and $href (not (in $blocked $href)) (not (in $result $href)) }}
+    {{ $result = $result | append $href }}
+  {{ end }}
+{{ end }}
+
+{{ return $result }}

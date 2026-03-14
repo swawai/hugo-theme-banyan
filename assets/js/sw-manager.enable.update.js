@@ -13,6 +13,8 @@ let updatePopoverAnchor = null;
 let updateCopyPromise = null;
 let updateCopyCache = null;
 let updateFallbackPrompted = false;
+let enableModeStarted = false;
+let activeRuntime = null;
 
 function setUpdateReadyState(ready) {
     if (ready) {
@@ -126,7 +128,9 @@ async function maybePromptUpdateFallback() {
     updateFallbackPrompted = true;
     const copy = await hydrateUpdateCopy();
     if (window.confirm(copy.message)) {
-        void applyWaitingWorker();
+        if (activeRuntime) {
+            void applyWaitingWorker(activeRuntime);
+        }
     }
 }
 
@@ -150,7 +154,9 @@ async function ensureUpdatePopover() {
     popover.querySelector('.site-update-popover__later').textContent = copy.later;
     popover.querySelector('.site-update-popover__confirm').addEventListener('click', () => {
         hideUpdatePopover();
-        void applyWaitingWorker();
+        if (activeRuntime) {
+            void applyWaitingWorker(activeRuntime);
+        }
     });
     popover.querySelector('.site-update-popover__later').addEventListener('click', () => {
         hideUpdatePopover();
@@ -221,23 +227,23 @@ async function warmCurrentPage() {
     } catch (error) { }
 }
 
-function bindWaitingWorker(registration) {
+function bindWaitingWorker(runtime, registration) {
     if (!registration?.waiting) return false;
 
-    activeRegistration = registration;
+    runtime.setActiveRegistration(registration);
     waitingWorker = registration.waiting;
     setUpdateReadyState(true);
     void warmCurrentPage();
     return true;
 }
 
-function watchInstallingWorker(registration) {
+function watchInstallingWorker(runtime, registration) {
     const installing = registration.installing;
     if (!installing) return;
 
     installing.addEventListener('statechange', () => {
         if (installing.state === 'installed' && navigator.serviceWorker.controller) {
-            bindWaitingWorker(registration);
+            bindWaitingWorker(runtime, registration);
         }
     });
 }
@@ -256,12 +262,13 @@ function scheduleRegistrationUpdates(registration) {
     });
 }
 
-async function applyWaitingWorker() {
+async function applyWaitingWorker(runtime) {
+    const activeRegistration = runtime.getActiveRegistration();
     if (!activeRegistration) return;
 
     if (!waitingWorker) {
         await activeRegistration.update().catch(() => { });
-        if (!bindWaitingWorker(activeRegistration)) {
+        if (!bindWaitingWorker(runtime, activeRegistration)) {
             window.location.reload();
             return;
         }
@@ -271,25 +278,24 @@ async function applyWaitingWorker() {
     waitingWorker.postMessage({ type: 'SKIP_WAITING' });
 }
 
-async function handleEnableMode() {
+async function handleEnableMode(runtime) {
     try {
         // updateViaCache=none 让浏览器检查 /sw.js 时绕过 HTTP 缓存，尽快发现新 worker。
-        const registration = await navigator.serviceWorker.register(SW_URL, {
-            scope: SW_SCOPE,
+        const registration = await navigator.serviceWorker.register(runtime.swUrl, {
+            scope: runtime.swScope,
             updateViaCache: 'none'
         });
-        activeRegistration = registration;
-        installNavigationWarmupFallback();
+        runtime.setActiveRegistration(registration);
 
-        const hasWaitingWorker = bindWaitingWorker(registration);
+        const hasWaitingWorker = bindWaitingWorker(runtime, registration);
         if (hasWaitingWorker && isReloadNavigation()) {
-            void applyWaitingWorker();
+            void applyWaitingWorker(runtime);
             return;
         }
 
-        watchInstallingWorker(registration);
+        watchInstallingWorker(runtime, registration);
         registration.addEventListener('updatefound', () => {
-            watchInstallingWorker(registration);
+            watchInstallingWorker(runtime, registration);
         });
 
         navigator.serviceWorker.addEventListener('controllerchange', () => {
@@ -301,57 +307,67 @@ async function handleEnableMode() {
         scheduleRegistrationUpdates(registration);
         navigator.serviceWorker.ready.then((readyRegistration) => {
             if (readyRegistration?.active) {
-                activeRegistration = readyRegistration;
+                runtime.setActiveRegistration(readyRegistration);
             }
         }).catch(() => { });
     } catch (error) { }
 }
 
-document.addEventListener('click', (event) => {
-    if (root.getAttribute(UPDATE_STATE_ATTR) !== UPDATE_STATE_READY) return;
+function bindUpdateUi(runtime) {
+    document.addEventListener('click', (event) => {
+        if (root.getAttribute(UPDATE_STATE_ATTR) !== UPDATE_STATE_READY) return;
 
-    const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
-    const breadcrumbLink = getBreadcrumbCurrentLink();
-    if (!isUsableUpdateAnchor(breadcrumbLink)) return;
+        const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
+        const breadcrumbLink = getBreadcrumbCurrentLink();
+        if (!isUsableUpdateAnchor(breadcrumbLink)) return;
 
-    if (anchor === breadcrumbLink) {
-        event.preventDefault();
-        void showUpdatePopover(breadcrumbLink);
+        if (anchor === breadcrumbLink) {
+            event.preventDefault();
+            void showUpdatePopover(breadcrumbLink);
+            return;
+        }
+
+        if (updatePopover && !updatePopover.hidden) {
+            const clickTarget = event.target instanceof Element ? event.target : null;
+            if (clickTarget && !updatePopover.contains(clickTarget)) {
+                hideUpdatePopover();
+            }
+        }
+    }, true);
+
+    window.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            hideUpdatePopover();
+        }
+    });
+
+    window.addEventListener('resize', () => {
+        if (updatePopover && !updatePopover.hidden && updatePopoverAnchor) {
+            positionUpdatePopover(updatePopoverAnchor);
+        }
+    });
+
+    window.addEventListener('scroll', () => {
+        if (updatePopover && !updatePopover.hidden && updatePopoverAnchor) {
+            positionUpdatePopover(updatePopoverAnchor);
+        }
+    }, true);
+}
+
+export function startEnableMode(runtime) {
+    if (!runtime?.supportsServiceWorker()) return;
+    if (enableModeStarted) return;
+
+    enableModeStarted = true;
+    activeRuntime = runtime;
+    bindUpdateUi(runtime);
+
+    if (document.readyState === 'complete') {
+        void handleEnableMode(runtime);
         return;
     }
 
-    if (updatePopover && !updatePopover.hidden) {
-        const clickTarget = event.target instanceof Element ? event.target : null;
-        if (clickTarget && !updatePopover.contains(clickTarget)) {
-            hideUpdatePopover();
-        }
-    }
-}, true);
-
-window.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-        hideUpdatePopover();
-    }
-});
-
-window.addEventListener('resize', () => {
-    if (updatePopover && !updatePopover.hidden && updatePopoverAnchor) {
-        positionUpdatePopover(updatePopoverAnchor);
-    }
-});
-
-window.addEventListener('scroll', () => {
-    if (updatePopover && !updatePopover.hidden && updatePopoverAnchor) {
-        positionUpdatePopover(updatePopoverAnchor);
-    }
-}, true);
-
-if (supportsServiceWorker()) {
-    if (document.readyState === 'complete') {
-        void handleEnableMode();
-    } else {
-        window.addEventListener('load', () => {
-            void handleEnableMode();
-        }, { once: true });
-    }
+    window.addEventListener('load', () => {
+        void handleEnableMode(runtime);
+    }, { once: true });
 }

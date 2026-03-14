@@ -27,6 +27,60 @@ panicOnWarning = true
 # copyright = "your copyright here"
 # icp = "your icp here"
 
+#[params.link_prefetch]
+# Prefetch mode short codes:
+#   "" / "off" = disable this slot
+#   transport:
+#     spec = Speculation Rules
+#     link = rel=prefetch
+#     sw   = Service Worker warmup
+#   eagerness:
+#     s = conservative
+#     m = moderate
+#     x = eager
+#   kind:
+#     f = prefetch
+#     r = prerender
+#   examples:
+#     spec_sf / spec_mf / spec_xf
+#     spec_sr / spec_mr / spec_xr
+#     link_sf / link_mf / link_xf
+#     sw_sf   / sw_mf   / sw_xf
+#
+# Slot guidance:
+#   sort_siblings is usually best with "*-prefetch"
+#   descendants is usually best with "" / "*-prefetch"
+#   post is usually best with "" / "*-prefetch" / "*-prerender"
+#   nav is usually best with "" / "*-prefetch"
+#
+# Explicit environment tables only:
+#   [params.link_prefetch.env.TTT]
+#   [params.link_prefetch.env.FTT]
+#   ...
+# There is no global base/default merge layer anymore.
+#
+# T/F bits mean:
+#   1 = Speculation Rules transport available
+#   2 = rel=prefetch transport available
+#   3 = Service Worker transport available/allowed
+#       (not "an active worker is already ready")
+#
+# Hugo compiles each explicit env profile directly into env-specific
+# prefetch actions. If an env profile references an unavailable transport,
+# Hugo fails at build time instead of leaving fallback logic to runtime.
+#
+# Testing tip:
+#   Append ?prefetch_env=TTT / ?prefetch_env=FTT to a page URL to force a
+#   specific profile during manual QA.
+#   Use ?prefetch_env=auto to clear the override and return to auto-detect.
+#
+# Example:
+# [params.link_prefetch.env.TTT]
+# nav = "spec_xr"
+# sort_siblings = "spec_xr"
+# descendants = "link_xf"
+# post = "sw_xf"
+
 #[params.social]
 # github = "https://github.com/your-github"
 

@@ -1,0 +1,38 @@
+{{ $envConfig := .env_config | default dict }}
+{{ $swMode := .sw_mode | default "off" }}
+{{ $slots := slice "nav" "sort_siblings" "descendants" "post" }}
+{{ $hasSpec := false }}
+{{ $hasLink := false }}
+{{ $hasSw := false }}
+{{ $hasLinkHover := false }}
+{{ $hasSwHover := false }}
+
+{{ range $slot := $slots }}
+  {{ $mode := partial "prefetch-mode.html" (index $envConfig $slot) }}
+  {{ $kind := index $mode "kind" }}
+  {{ $transport := index $mode "transport" }}
+  {{ $eagerness := index $mode "eagerness" }}
+  {{ if and (ne $transport "") (or (eq $kind "prefetch") (eq $kind "prerender")) }}
+    {{ if eq $transport "speculationrules" }}
+      {{ $hasSpec = true }}
+    {{ else if eq $transport "link" }}
+      {{ $hasLink = true }}
+      {{ if ne $eagerness "eager" }}
+        {{ $hasLinkHover = true }}
+      {{ end }}
+    {{ else if and (eq $transport "sw") (eq $swMode "enable") }}
+      {{ $hasSw = true }}
+      {{ if ne $eagerness "eager" }}
+        {{ $hasSwHover = true }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ return (dict
+  "has_spec" $hasSpec
+  "has_link" $hasLink
+  "has_sw" $hasSw
+  "has_link_hover" $hasLinkHover
+  "has_sw_hover" $hasSwHover
+) }}

@@ -30,7 +30,15 @@
     {{ if not $appleTouchIcon }}{{ errorf "编译失败: 缺少资源 %q。" "site/swaw180x180.png" }}{{ end }}
     {{ $appleTouchIcon = $appleTouchIcon | fingerprint }}
     {{ $defaultSite := index (sort .Sites "Language.Weight") 0 }}
-    {{ $manifest := cond $defaultSite ($defaultSite.Home.OutputFormats.Get "webmanifest") nil }}
+    {{ $manifest := "" }}
+    {{ if $defaultSite }}
+        {{ $manifestTmpl := resources.Get "site/manifest.webmanifest.tmpl" }}
+        {{ if $manifestTmpl }}
+            {{ $manifest = $manifestTmpl | resources.ExecuteAsTemplate "site/site.webmanifest" $defaultSite.Home | fingerprint }}
+        {{ else }}
+            {{ errorf "编译失败: 缺少资源 %q。" "site/manifest.webmanifest.tmpl" }}
+        {{ end }}
+    {{ end }}
     {{ $runtimeI18n := dict }}
     {{ range sort .Sites "Language.Weight" }}
         {{ $langCode := .Language.Lang }}
@@ -46,11 +54,11 @@
       | jsonify }}
     {{ $assetManifest := resources.FromString (printf "runtime/asset-manifest.%s.json" (md5 $assetManifestBody)) $assetManifestBody | fingerprint }}
     <meta charset="utf-8">
-    <link rel="icon" href="{{ $faviconSvg.RelPermalink }}" type="image/svg+xml">
-    <link rel="icon" href="{{ $faviconIco.RelPermalink }}" sizes="any">
-    <link rel="apple-touch-icon" href="{{ $appleTouchIcon.RelPermalink }}">
-    {{ with $manifest }}<link rel="manifest" href="{{ .RelPermalink }}">{{ end }}
-    <link rel="preload" href="{{ $assetManifest.RelPermalink }}" as="fetch" type="application/json" crossorigin="use-credentials">
+    <link rel="icon" href="{{ $faviconSvg.RelPermalink }}" type="image/svg+xml" fetchpriority="low">
+    <link rel="icon" href="{{ $faviconIco.RelPermalink }}" sizes="any" fetchpriority="low">
+    <link rel="apple-touch-icon" href="{{ $appleTouchIcon.RelPermalink }}" fetchpriority="low">
+    {{ with $manifest }}<link rel="manifest" href="{{ .RelPermalink }}" fetchpriority="low">{{ end }}
+    <link rel="preload" href="{{ $assetManifest.RelPermalink }}" as="fetch" type="application/json" crossorigin="use-credentials" fetchpriority="low">
     <title>{{ if .Title }}{{ .Title }} - {{ end }}{{ .Site.Title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="wap-font-scale" content="no">
@@ -73,32 +81,40 @@
     {{ $nav := resources.Get "css/nav.css" }}
     {{ $grid := resources.Get "css/grid-list.css" }}
     {{ $utils := resources.Get "css/utilities.css" }}
-    {{ $cssBundle := slice $base $header $nav $grid $utils | resources.Concat "css/bundle.css" | minify }}
+    {{ $cssBundle := slice $base $header $nav $grid $utils | resources.Concat "css/bundle.css" }}
+    {{ if not hugo.IsServer }}{{ $cssBundle = $cssBundle | minify }}{{ end }}
     {{ $css := $cssBundle | fingerprint }}
-    <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
+    <link rel="stylesheet" href="{{ $css.RelPermalink }}">
     {{ end }}
     {{ block "head-extra" . }}{{ end }}
     {{ $prefetchConfig := site.Params.link_prefetch | default dict }}
-    {{ $prefetchModes := dict
-        "sort" (index $prefetchConfig "sort_siblings")
-        "desc" (index $prefetchConfig "descendants")
-        "post" (index $prefetchConfig "post")
-        "nav" (index $prefetchConfig "nav")
-    }}
-    {{ $allowedPrefetchModes := slice "" "off" "conservative-prefetch" "moderate-prefetch" "eager-prefetch" "conservative-prerender" "moderate-prerender" "eager-prerender" }}
-    {{ range $label, $mode := $prefetchModes }}
-        {{ $normalized := lower (printf "%v" $mode) }}
-        {{ if and $normalized (not (in $allowedPrefetchModes $normalized)) }}
-            {{ errorf "编译失败: params.link_prefetch.%s 仅支持空值/off/conservative-prefetch/moderate-prefetch/eager-prefetch/conservative-prerender/moderate-prerender/eager-prerender，当前值为 %q。" $label $mode }}
+    {{ $prefetchLabels := slice "sort_siblings" "descendants" "post" "nav" }}
+    {{ $prefetchEnvConfig := index $prefetchConfig "env" | default dict }}
+    {{ range $label := $prefetchLabels }}
+        {{ if isset $prefetchConfig $label }}
+            {{ errorf "编译失败: 已移除 params.link_prefetch.%s 这类全局默认写法，请改用 params.link_prefetch.env.TTT.%s / params.link_prefetch.env.FTT.%s 这类显式环境表。" $label $label $label }}
         {{ end }}
     {{ end }}
-    {{ block "prefetch-context" . }}{{ end }}
-    {{ partial "prefetch-head.html" . }}
-
+    {{ range $rawEnvKey, $envConfig := $prefetchEnvConfig }}
+        {{ $envKey := upper (printf "%v" $rawEnvKey) }}
+        {{ if eq (len (findRE "^[TF]{3}$" $envKey)) 0 }}
+            {{ errorf "编译失败: params.link_prefetch.env 仅支持 T/F 三位环境键（如 TTT、FTT、FFF），当前键为 %q。" $rawEnvKey }}
+        {{ end }}
+        {{ range $label := $prefetchLabels }}
+            {{ if isset $envConfig $label }}
+                {{ $parsed := partial "prefetch-mode.html" (index $envConfig $label) }}
+                {{ if eq (index $parsed "kind") "invalid" }}
+                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s 仅支持空值/off 或短码（如 spec_xf、spec_xr、link_mf、sw_sf），当前值为 %q。" $envKey $label (index $parsed "value") }}
+                {{ end }}
+            {{ end }}
+        {{ end }}
+    {{ end }}
     {{ hugo.Generator }}
     {{ partial "seo.html" . }}
     {{/* 主站通用前端逻辑，defer 下载与执行，不阻塞 HTML 解析。 */}}
-    {{ $js := resources.Get "js/main.js" | js.Build | minify | fingerprint }}
+    {{ $js := resources.Get "js/main.js" | js.Build }}
+    {{ if not hugo.IsServer }}{{ $js = $js | minify }}{{ end }}
+    {{ $js = $js | fingerprint }}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
     {{ if ne $swMode "off" }}
         {{/* 源文件命名约定：含模板语法的资源用 .tmpl，纯 JS 用 .js。 */}}
@@ -112,18 +128,12 @@
             }}
             {{ $swScript := $swScriptTemplate | resources.ExecuteAsTemplate "sw.js" $swScriptContext }}
             {{ $swUrl := $swScript.RelPermalink }}
-            {{ $swManagerBasePath := "js/sw-manager.enable.base.js.tmpl" }}
-            {{ $swManagerBaseTemplate := resources.Get $swManagerBasePath }}
-            {{ if not $swManagerBaseTemplate }}{{ errorf "编译失败: 缺少资源 %q。" $swManagerBasePath }}{{ end }}
-            {{ $swManagerBaseRendered := $swManagerBaseTemplate | resources.ExecuteAsTemplate "js/sw-manager.enable.base.rendered" (dict "sw_url" $swUrl) }}
-            {{ $swManagerBase := resources.FromString "js/sw-manager.enable.base.js" $swManagerBaseRendered.Content }}
-            {{ $swManagerPrefetchPath := "js/sw-manager.enable.prefetch.js" }}
-            {{ $swManagerPrefetch := resources.Get $swManagerPrefetchPath }}
-            {{ if not $swManagerPrefetch }}{{ errorf "编译失败: 缺少资源 %q。" $swManagerPrefetchPath }}{{ end }}
-            {{ $swManagerUpdatePath := "js/sw-manager.enable.update.js" }}
-            {{ $swManagerUpdate := resources.Get $swManagerUpdatePath }}
-            {{ if not $swManagerUpdate }}{{ errorf "编译失败: 缺少资源 %q。" $swManagerUpdatePath }}{{ end }}
-            {{ $swManagerBundle := slice $swManagerBase $swManagerPrefetch $swManagerUpdate | resources.Concat "js/sw-manager.enable.bundle.js" }}
+            {{ $swManagerEntryPath := "js/sw-manager.enable.entry.js.tmpl" }}
+            {{ $swManagerEntryTemplate := resources.Get $swManagerEntryPath }}
+            {{ if not $swManagerEntryTemplate }}{{ errorf "编译失败: 缺少资源 %q。" $swManagerEntryPath }}{{ end }}
+            {{ $swManagerEntry := $swManagerEntryTemplate | resources.ExecuteAsTemplate "js/sw-manager.enable.entry.js" (dict "sw_url" $swUrl) }}
+            {{ $swManagerBundle := $swManagerEntry | js.Build (dict "targetPath" "js/sw-manager.enable.bundle.js") }}
+            {{ if not hugo.IsServer }}{{ $swManagerBundle = $swManagerBundle | minify }}{{ end }}
             {{ $swManager := $swManagerBundle | fingerprint }}
             <script src="{{ $swManager.RelPermalink }}" integrity="{{ $swManager.Data.Integrity }}" defer></script>
         {{ else }}
@@ -163,8 +173,8 @@
                     {{ $github_dark = $github_dark | fingerprint }}
                     {{ with site.Params.social.github }}
                     <a href="{{ . }}" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
-                        <img src="{{ $github_svg.RelPermalink }}" alt="GitHub" class="icon-light" />
-                        <img src="{{ $github_dark.RelPermalink }}" alt="GitHub" class="icon-dark" />
+                        <img src="{{ $github_svg.RelPermalink }}" alt="GitHub" class="icon-light" fetchpriority="low" />
+                        <img src="{{ $github_dark.RelPermalink }}" alt="GitHub" class="icon-dark" fetchpriority="low" />
                     </a>
                     {{ end }}
                 </small>
@@ -182,7 +192,7 @@
                 {{ if $has_account }}
                 <span>{{ i18n "label_account" | default "Account" }}</span>
                 {{ end }}
-                <img src="{{ $faviconSvg.RelPermalink }}" alt="Logo" class="default-avatar" />
+                <img src="{{ $faviconSvg.RelPermalink }}" alt="Logo" class="default-avatar" fetchpriority="low" />
                 <img src="" alt="User Avatar" class="user-avatar" style="display:none;" />
             </a>
 
@@ -200,8 +210,8 @@
                 {{ $lang_dark := resources.Get "icon/language-dark.svg" }}
                 {{ if not $lang_dark }}{{ errorf "编译失败: 缺少资源 %q。" "icon/language-dark.svg" }}{{ end }}
                 {{ $lang_dark = $lang_dark | fingerprint }}
-                <img src="{{ $lang_svg.RelPermalink }}" alt="Language" class="icon-light" />
-                <img src="{{ $lang_dark.RelPermalink }}" alt="Language" class="icon-dark" />
+                <img src="{{ $lang_svg.RelPermalink }}" alt="Language" class="icon-light" fetchpriority="low" />
+                <img src="{{ $lang_dark.RelPermalink }}" alt="Language" class="icon-dark" fetchpriority="low" />
                 <select
                     id="lang-select"
                     class="icon-select"
@@ -219,8 +229,8 @@
                 {{ $theme_dark := resources.Get "icon/theme-dark.svg" }}
                 {{ if not $theme_dark }}{{ errorf "编译失败: 缺少资源 %q。" "icon/theme-dark.svg" }}{{ end }}
                 {{ $theme_dark = $theme_dark | fingerprint }}
-                <img src="{{ $theme_svg.RelPermalink }}" alt="Theme" class="icon-light" />
-                <img src="{{ $theme_dark.RelPermalink }}" alt="Theme" class="icon-dark" />
+                <img src="{{ $theme_svg.RelPermalink }}" alt="Theme" class="icon-light" fetchpriority="low" />
+                <img src="{{ $theme_dark.RelPermalink }}" alt="Theme" class="icon-dark" fetchpriority="low" />
                 <select id="theme-select" class="icon-select" aria-label="{{ i18n `label_theme` | default `Theme` }}">
                     <option value="auto">{{ i18n "theme_auto" | default "Auto" }}</option>
                     <option value="light">{{ i18n "theme_light" | default "Light" }}</option>
@@ -230,7 +240,7 @@
 
             {{ range .Site.Menus.main }}
             {{ $key := printf "menu_%s" .Identifier }}
-            {{ partial "link.html" (dict "href" (.URL | relLangURL) "title" (cond (eq .Identifier "udc") "Universal Decimal Classification" "") "text" (i18n $key | default .Name)) }}
+            {{ partial "link.html" (dict "ctx" $ "href" (.URL | relLangURL) "title" (cond (eq .Identifier "udc") "Universal Decimal Classification" "") "text" (i18n $key | default .Name) "prefetchSlot" "nav") }}
             {{ end }}
         </nav>
 
@@ -241,6 +251,7 @@
             {{ block "main" . }}{{ end }}
         </main>
     </div>
+    {{ partial "prefetch-runtime.html" (dict "ctx" . "sw_mode" $swMode) }}
 </body>
 
 </html>

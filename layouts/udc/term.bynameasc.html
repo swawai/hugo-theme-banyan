@@ -1,6 +1,3 @@
-{{ define "prefetch-context" }}
-{{ .Scratch.Set "prefetchCandidates" (partial "prefetch-candidates-taxonomy.html" (dict "ctx" . "mode" "bynameasc" "taxonomy" "udc")) }}
-{{ end }}
 
 {{ define "breadcrumb" }}
 {{ partial "udc-breadcrumb.html" (dict "ctx" . "mode" "bynameasc") }}

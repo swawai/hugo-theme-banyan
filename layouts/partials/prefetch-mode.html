@@ -1,11 +1,37 @@
-{{- $raw := lower (printf "%v" .) -}}
-{{- $result := dict "kind" "invalid" "value" $raw -}}
-{{- if or (eq $raw "") (eq $raw "off") -}}
-  {{- $result = dict "kind" "" -}}
+{{- $raw := lower (printf "%v" . | replaceRE "^\\s+|\\s+$" "") -}}
+{{- $result := dict "kind" "invalid" "transport" "invalid" "value" $raw -}}
+{{- if or (eq $raw "") (eq $raw "off") (eq $raw "<nil>") -}}
+  {{- $result = dict "kind" "" "transport" "" -}}
 {{- else -}}
-  {{- $parts := split $raw "-" -}}
-  {{- if and (eq (len $parts) 2) (in (slice "eager" "moderate" "conservative") (index $parts 0)) (in (slice "prefetch" "prerender") (index $parts 1)) -}}
-    {{- $result = dict "kind" (index $parts 1) "eagerness" (index $parts 0) -}}
+  {{- $match := findRE "^([a-z]+)_([smx])([fr])$" $raw -}}
+  {{- if gt (len $match) 0 -}}
+    {{- $parts := split $raw "_" -}}
+    {{- if eq (len $parts) 2 -}}
+      {{- $transportCode := index $parts 0 -}}
+      {{- $modeCode := index $parts 1 -}}
+      {{- $transport := "" -}}
+      {{- if eq $transportCode "spec" -}}
+        {{- $transport = "speculationrules" -}}
+      {{- else if eq $transportCode "link" -}}
+        {{- $transport = "link" -}}
+      {{- else if eq $transportCode "sw" -}}
+        {{- $transport = "sw" -}}
+      {{- end -}}
+      {{- $eagernessCode := substr $modeCode 0 1 -}}
+      {{- $kindCode := substr $modeCode 1 1 -}}
+      {{- $eagerness := "" -}}
+      {{- if eq $eagernessCode "s" -}}
+        {{- $eagerness = "conservative" -}}
+      {{- else if eq $eagernessCode "m" -}}
+        {{- $eagerness = "moderate" -}}
+      {{- else if eq $eagernessCode "x" -}}
+        {{- $eagerness = "eager" -}}
+      {{- end -}}
+      {{- $kind := cond (eq $kindCode "r") "prerender" "prefetch" -}}
+      {{- if and $transport $eagerness (not (and (in (slice "link" "sw") $transport) (eq $kind "prerender"))) -}}
+        {{- $result = dict "kind" $kind "eagerness" $eagerness "transport" $transport "value" $raw -}}
+      {{- end -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 {{- return $result -}}

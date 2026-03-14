@@ -16,6 +16,7 @@
 {{ with $ctx.OutputFormats.Get (index $cfg "nameFmt") }}
   {{ partial "grid-sort-cell.html" (dict
     "class" "cell-title"
+    "ctx" $ctx
     "href" .RelPermalink
     "title" (cond (and (eq $sf "title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
     "label" (cond (and (eq $sf "title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
@@ -24,6 +25,7 @@
 {{ with $ctx.OutputFormats.Get (index $cfg "timeFmt") }}
   {{ partial "grid-sort-cell.html" (dict
     "class" "cell-date"
+    "ctx" $ctx
     "href" .RelPermalink
     "title" (cond (and (eq $sf "latestKey") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
     "label" (cond (and (eq $sf "latestKey") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
@@ -32,6 +34,7 @@
 {{ with $ctx.OutputFormats.Get (index $cfg "countFmt") }}
   {{ partial "grid-sort-cell.html" (dict
     "class" "cell-count"
+    "ctx" $ctx
     "href" .RelPermalink
     "title" (cond (and (eq $sf "cnt") (eq $so "asc")) "Sort by count descending" "Sort by count ascending")
     "label" (cond (and (eq $sf "cnt") (eq $so "asc")) "Sort by count descending" "Sort by count ascending")
@@ -56,7 +59,7 @@
 {{ range $ordered }}
   {{ $isCat := eq .kind "cat" }}
   {{ $icon := cond $isCat "folder" "file" }}
-  {{ partial "grid-title-cell.html" (dict "href" .url "title" (or .display .title) "icon" $icon "prefetchKind" (cond $isCat "desc" "post")) }}
+  {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .url "title" (or .display .title) "icon" $icon "prefetchKind" (cond $isCat "desc" "post")) }}
   <span class="cell-date">{{ cond (ne .latest "") .latest "." }}</span>
   {{ if $isCat }}
   <span class="cell-count"><span class="num">{{ cond (ne .cnt "") .cnt "." }}</span><span class="unit"></span></span>

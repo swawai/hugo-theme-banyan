@@ -8,12 +8,12 @@
 
 {{/* 面包屑 - 使用指定 format 的链接（首段统一 i18n: menu_dir） */}}
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
-{{ with $ctx.Site.Home.OutputFormats.Get $mode }}{{ partial "link.html" (dict "href" .RelPermalink "text" (i18n "menu_dir") "textClass" "breadcrumb-current-text" "dataAttrs" (cond $ctx.IsHome (dict "site-update-anchor" "true") (dict))) }}{{ end }}
+{{ with $ctx.Site.Home.OutputFormats.Get $mode }}{{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" (i18n "menu_dir") "textClass" "breadcrumb-current-text" "dataAttrs" (cond $ctx.IsHome (dict "site-update-anchor" "true") (dict)) "prefetchSlot" "nav") }}{{ end }}
 {{ range (where $ctx.Ancestors.Reverse "IsHome" "ne" true) }}
   {{ $p := . }}
-  {{ with $p.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "href" .RelPermalink "text" $p.LinkTitle "textClass" "breadcrumb-current-text") }}{{ end }}
+  {{ with $p.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" $p.LinkTitle "textClass" "breadcrumb-current-text" "prefetchSlot" "nav") }}{{ end }}
 {{ end }}
-{{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "href" .RelPermalink "text" $ctx.Title "textClass" "breadcrumb-current-text" "dataAttrs" (dict "site-update-anchor" "true")) }}{{ end }}{{ end }}
+{{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" $ctx.Title "textClass" "breadcrumb-current-text" "dataAttrs" (dict "site-update-anchor" "true") "prefetchSlot" "nav") }}{{ end }}{{ end }}
 </nav>
 
 <div class="grid-list">
@@ -26,6 +26,7 @@
   {{ with $ctx.OutputFormats.Get (index $ctrl "name") }}
     {{ partial "grid-sort-cell.html" (dict
       "class" "cell-title"
+      "ctx" $ctx
       "href" .RelPermalink
       "title" (cond (and (eq $sf "node.Title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
       "label" (cond (and (eq $sf "node.Title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
@@ -35,6 +36,7 @@
   {{ with $ctx.OutputFormats.Get (index $ctrl "date") }}
     {{ partial "grid-sort-cell.html" (dict
       "class" "cell-date"
+      "ctx" $ctx
       "href" .RelPermalink
       "title" (cond (and (eq $sf "node.Date") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
       "label" (cond (and (eq $sf "node.Date") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
@@ -44,6 +46,7 @@
   {{ with $ctx.OutputFormats.Get (index $ctrl "count") }}
     {{ partial "grid-sort-cell.html" (dict
       "class" "cell-count"
+      "ctx" $ctx
       "href" .RelPermalink
       "title" (cond (and (eq $sf "cnt") (eq $so "asc")) "Sort by count descending" "Sort by count ascending")
       "label" (cond (and (eq $sf "cnt") (eq $so "asc")) "Sort by count descending" "Sort by count ascending")
@@ -82,7 +85,7 @@
     {{ if $isSection }}
       {{ $child := $n }}
       {{ with $child.OutputFormats.Get $mode }}
-        {{ partial "grid-title-cell.html" (dict "href" .RelPermalink "title" $child.Title "icon" $iconName "prefetchKind" "desc") }}
+        {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .RelPermalink "title" $child.Title "icon" $iconName "prefetchKind" "desc") }}
       {{ end }}
       <span class="cell-date">
         {{ $displayDate := $n.Lastmod }}
@@ -99,7 +102,7 @@
       </span>
       <span class="cell-count"><span class="num">{{ .cnt }}</span><span class="unit"></span></span>
     {{ else }}
-      {{ partial "grid-title-cell.html" (dict "href" $n.RelPermalink "title" $n.Title "icon" $iconName "prefetchKind" "post") }}
+      {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" $n.RelPermalink "title" $n.Title "icon" $iconName "prefetchKind" "post") }}
       <span class="cell-date">
         {{ $d := $n.Lastmod }}
         {{ if eq ($d.Format "2006") "0001" }}{{ $d = $n.Date }}{{ end }}
