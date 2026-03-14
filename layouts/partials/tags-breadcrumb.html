@@ -5,7 +5,7 @@
 {{ $of := $ctx.OutputFormats.Get $mode }}
 {{ $curr := cond $of $of.RelPermalink (printf "/%s/" $ctx.Data.Plural | relLangURL) }}
 {{ $root := $curr | replaceRE (printf "(/%s/).*$" $ctx.Data.Plural) (printf "/%s/" $ctx.Data.Plural) }}
-{{ partial "link.html" (dict "ctx" $ctx "href" $root "text" (i18n "menu_tags") "textClass" "breadcrumb-current-text" "dataAttrs" (cond (ne $ctx.Kind "term") (dict "site-update-anchor" "true") (dict)) "prefetchSlot" "nav") }}
+    {{ partial "link.html" (dict "ctx" $ctx "href" $root "text" (i18n "menu_tags") "textClass" "breadcrumb-current-text" "dataAttrs" (cond (ne $ctx.Kind "term") (dict "site-update-anchor" "true") (dict)) "linkSlot" "nav") }}
 
 {{ if eq $ctx.Kind "term" }}
   {{ $segments := split $ctx.Data.Term "/" }}
@@ -16,7 +16,7 @@
       {{ $disp := $seg }}
       {{ if eq (lower $seg) "misc" }}{{ $disp = "untagged..." }}{{ end }}
       {{ $href := printf "%s%s/" $root (urlize (delimit $path "/")) }}
-      ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" $href "text" $disp "textClass" "breadcrumb-current-text" "dataAttrs" (cond (eq $i (sub (len $segments) 1)) (dict "site-update-anchor" "true") (dict)) "prefetchSlot" "nav") }}
+      ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" $href "text" $disp "textClass" "breadcrumb-current-text" "dataAttrs" (cond (eq $i (sub (len $segments) 1)) (dict "site-update-anchor" "true") (dict)) "linkSlot" "nav") }}
     {{ end }}
   {{ end }}
 {{ end }}

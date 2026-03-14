@@ -4,8 +4,8 @@
 {{ $icon := .icon | default "file" }}
 {{ $label := .label | default (printf "Open %s" $title) }}
 {{ $ctx := .ctx }}
-{{ $prefetchSlot := .prefetchSlot | default (.prefetchKind | default "") }}
-{{ if and $ctx $prefetchSlot }}{{ partial "prefetch-collect-url.html" (dict "ctx" $ctx "slot" $prefetchSlot "url" $href) }}{{ end }}
+{{ $linkSlot := .linkSlot | default (.prefetchSlot | default (.prefetchKind | default "")) }}
+{{ if and $ctx $linkSlot }}{{ partial "link-collect-url.html" (dict "ctx" $ctx "slot" $linkSlot "url" $href) }}{{ end }}
 <span class="cell-title">
   <a class="title-link" href="{{ $href }}" aria-label="{{ $label }}">
     <span class="title-icon">{{ partial "icon" (dict "name" $icon) }}</span>

@@ -1,0 +1,36 @@
+{{- $ctx := .ctx | default . -}}
+{{- $swMode := .sw_mode | default "off" -}}
+{{- $prefetchConfig := site.Params.link_prefetch | default dict -}}
+{{- $envConfigMap := index $prefetchConfig "env" | default dict -}}
+{{- $candidates := $ctx.Scratch.Get "linkCandidates" | default (dict "nav" (slice) "sort" (slice) "desc" (slice) "post" (slice)) -}}
+{{- $envKeys := slice "TTT" "TTF" "TFT" "TFF" "FTT" "FTF" "FFT" "FFF" -}}
+{{- $actionsPayloadByEnv := dict -}}
+
+{{- range $envKey := $envKeys -}}
+  {{- $envConfig := index $envConfigMap $envKey | default dict -}}
+  {{- $actions := partial "prefetch-env-actions.html" (dict
+    "env_config" $envConfig
+    "candidates" $candidates
+    "current" $ctx.RelPermalink
+    "env_key" $envKey
+    "sw_mode" $swMode
+  ) -}}
+  {{- if gt (len $actions) 0 -}}
+    {{- $actionsPayloadByEnv = merge $actionsPayloadByEnv (dict $envKey $actions) -}}
+  {{- end -}}
+{{- end -}}
+{{- if gt (len $actionsPayloadByEnv) 0 -}}
+  {{- $isServer := hugo.IsServer -}}
+  {{- $allowServiceWorker := eq $swMode "enable" -}}
+  {{- $runtimeTemplatePath := "js/prefetch.runtime.entry.js.tmpl" -}}
+  {{- $runtimeTemplate := resources.Get $runtimeTemplatePath -}}
+  {{- if not $runtimeTemplate }}{{ errorf "编译失败: 缺少资源 %q。" $runtimeTemplatePath }}{{ end -}}
+  {{- $runtimeEntry := $runtimeTemplate | resources.ExecuteAsTemplate (printf "js/prefetch.runtime.%s.entry.js" (cond $allowServiceWorker "sw" "nosw")) (dict
+    "allow_service_worker" $allowServiceWorker
+  ) -}}
+  {{- $runtimeBundle := $runtimeEntry | js.Build (dict "targetPath" "js/prefetch.runtime.bundle.js") -}}
+  {{- if not $isServer }}{{ $runtimeBundle = $runtimeBundle | minify }}{{ end -}}
+  {{- $runtimeBundle = $runtimeBundle | fingerprint -}}
+<script id="site-prefetch-data" type="application/json">{{ $actionsPayloadByEnv | jsonify | safeJS }}</script>
+<script src="{{ $runtimeBundle.RelPermalink }}" integrity="{{ $runtimeBundle.Data.Integrity }}" defer></script>
+{{- end -}}

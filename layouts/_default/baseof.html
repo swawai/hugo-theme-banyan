@@ -102,7 +102,7 @@
         {{ end }}
         {{ range $label := $prefetchLabels }}
             {{ if isset $envConfig $label }}
-                {{ $parsed := partial "prefetch-mode.html" (index $envConfig $label) }}
+                {{ $parsed := partial "prefetch-env-actions-mode.html" (index $envConfig $label) }}
                 {{ if eq (index $parsed "kind") "invalid" }}
                     {{ errorf "编译失败: params.link_prefetch.env.%s.%s 仅支持空值/off 或短码（如 spec_xf、spec_xr、link_mf、sw_sf），当前值为 %q。" $envKey $label (index $parsed "value") }}
                 {{ end }}
@@ -240,7 +240,7 @@
 
             {{ range .Site.Menus.main }}
             {{ $key := printf "menu_%s" .Identifier }}
-            {{ partial "link.html" (dict "ctx" $ "href" (.URL | relLangURL) "title" (cond (eq .Identifier "udc") "Universal Decimal Classification" "") "text" (i18n $key | default .Name) "prefetchSlot" "nav") }}
+        {{ partial "link.html" (dict "ctx" $ "href" (.URL | relLangURL) "title" (cond (eq .Identifier "udc") "Universal Decimal Classification" "") "text" (i18n $key | default .Name) "linkSlot" "nav") }}
             {{ end }}
         </nav>
 
@@ -251,7 +251,7 @@
             {{ block "main" . }}{{ end }}
         </main>
     </div>
-    {{ partial "prefetch-runtime.html" (dict "ctx" . "sw_mode" $swMode) }}
+    {{ partial "prefetch-runtime-embed.html" (dict "ctx" . "sw_mode" $swMode) }}
 </body>
 
 </html>

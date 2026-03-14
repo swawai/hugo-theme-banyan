@@ -7,12 +7,12 @@
 {{ $mode := .mode }}
 
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
-{{ with $ctx.OutputFormats.Get $mode }}{{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" (i18n "menu_all") "textClass" "breadcrumb-current-text" "dataAttrs" (cond $ctx.IsHome (dict "site-update-anchor" "true") (dict)) "prefetchSlot" "nav") }}{{ end }}
+      {{ with $ctx.OutputFormats.Get $mode }}{{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" (i18n "menu_all") "textClass" "breadcrumb-current-text" "dataAttrs" (cond $ctx.IsHome (dict "site-update-anchor" "true") (dict)) "linkSlot" "nav") }}{{ end }}
 {{ range (where $ctx.Ancestors.Reverse "IsHome" "ne" true) }}
   {{ $p := . }}
-  {{ with $p.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" $p.LinkTitle "textClass" "breadcrumb-current-text" "prefetchSlot" "nav") }}{{ end }}
+          {{ with $p.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" $p.LinkTitle "textClass" "breadcrumb-current-text" "linkSlot" "nav") }}{{ end }}
 {{ end }}
-{{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" $ctx.Title "textClass" "breadcrumb-current-text" "dataAttrs" (dict "site-update-anchor" "true") "prefetchSlot" "nav") }}{{ end }}{{ end }}
+      {{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" $ctx.Title "textClass" "breadcrumb-current-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}{{ end }}{{ end }}
 </nav>
 
 <div class="grid-list cols-4">

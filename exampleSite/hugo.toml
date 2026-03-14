@@ -65,14 +65,24 @@ panicOnWarning = true
 #   3 = Service Worker transport available/allowed
 #       (not "an active worker is already ready")
 #
-# Hugo compiles each explicit env profile directly into env-specific
-# prefetch actions. If an env profile references an unavailable transport,
+# Hugo compiles each explicit env profile directly into page-local
+# prefetch action data. A shared runtime script picks the matching env
+# at runtime. If an env profile references an unavailable transport,
 # Hugo fails at build time instead of leaving fallback logic to runtime.
 #
-# Testing tip:
-#   Append ?prefetch_env=TTT / ?prefetch_env=FTT to a page URL to force a
-#   specific profile during manual QA.
-#   Use ?prefetch_env=auto to clear the override and return to auto-detect.
+# Runtime payload short codes:
+#   sp = speculation rules payload
+#   ls / lm / lx = link transport conservative / moderate / eager
+#   ws / wm / wx = SW transport conservative / moderate / eager
+#
+# Runtime assignment rule:
+#   Candidates are deduplicated globally in this order:
+#   nav > sort_siblings > descendants > post
+#   The first matching slot wins for a given URL.
+#
+# Debugging tip:
+#   Open /prefetch-debug.html to inspect browser capability detection,
+#   page payload, and the prefetch resources injected into the page.
 #
 # Example:
 # [params.link_prefetch.env.TTT]

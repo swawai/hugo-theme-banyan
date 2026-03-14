@@ -6,6 +6,6 @@
 {{ $ctx := .ctx }}
 {{ with $href }}
 <span class="{{ $class }} header click-full">
-  {{ partial "link.html" (dict "ctx" $ctx "href" . "title" $title "label" $label "text" $text "safeHTML" true "prefetchSlot" "sort") }}
+  {{ partial "link.html" (dict "ctx" $ctx "href" . "title" $title "label" $label "text" $text "safeHTML" true "linkSlot" "sort") }}
 </span>
 {{ end }}

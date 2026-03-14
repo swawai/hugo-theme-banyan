@@ -1,0 +1,197 @@
+{{ define "head-extra" }}
+{{ $post := resources.Get "css/post.css" }}
+{{ if not hugo.IsServer }}{{ $post = $post | minify }}{{ end }}
+{{ $post = $post | fingerprint }}
+<link rel="stylesheet" href="{{ $post.RelPermalink }}">
+<style>
+  .prefetch-debug {
+    display: grid;
+    gap: 1rem;
+  }
+  .prefetch-debug-panel {
+    border: 1px solid var(--border-color, #d0d7de);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    background: var(--surface-1, rgba(255, 255, 255, 0.85));
+  }
+  .prefetch-debug-panel h2 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+  }
+  .prefetch-debug-panel pre {
+    margin: 0;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  .prefetch-debug-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .prefetch-debug-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+    padding: 0.45rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-color, #d0d7de);
+    text-decoration: none;
+  }
+</style>
+{{ end }}
+
+{{ define "breadcrumb" }}
+<nav class="post-dir breadcrumb-nav" aria-label="Breadcrumb">
+  <span class="label">{{ partial "link.html" (dict "ctx" . "href" .Site.Home.RelPermalink "text" (.Site.Title | default "Home") "textClass" "breadcrumb-current-text" "linkSlot" "nav") }}</span>
+  <span class="sep">/</span>
+  <span class="label">{{ partial "link.html" (dict "ctx" . "href" .RelPermalink "text" .Title "textClass" "breadcrumb-current-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}</span>
+</nav>
+{{ end }}
+
+{{ define "main" }}
+<article class="post prefetch-debug">
+  <div class="post-content">
+    {{ .Content }}
+  </div>
+
+  <section class="prefetch-debug-panel">
+    <h2>Sample Targets</h2>
+    <div class="prefetch-debug-links">
+      {{ partial "link.html" (dict "ctx" . "href" .Site.Home.RelPermalink "text" "Home" "linkSlot" "nav") }}
+      {{ partial "link.html" (dict "ctx" . "href" ("/about/" | relLangURL) "text" "About" "linkSlot" "nav") }}
+      {{ partial "link.html" (dict "ctx" . "href" ("/tags/" | relLangURL) "text" "Tags" "linkSlot" "nav") }}
+      {{ partial "link.html" (dict "ctx" . "href" ("/udc/" | relLangURL) "text" "UDC" "linkSlot" "nav") }}
+      {{ partial "link.html" (dict "ctx" . "href" ("/all-by-date/" | relLangURL) "text" "All By Date" "linkSlot" "nav") }}
+    </div>
+  </section>
+
+  <section class="prefetch-debug-panel">
+    <h2>Browser Support</h2>
+    <pre id="prefetch-debug-support">Loading...</pre>
+  </section>
+
+  <section class="prefetch-debug-panel">
+    <h2>Chosen Env</h2>
+    <pre id="prefetch-debug-env">Loading...</pre>
+  </section>
+
+  <section class="prefetch-debug-panel">
+    <h2>Chosen Actions</h2>
+    <pre id="prefetch-debug-actions">Loading...</pre>
+  </section>
+
+  <section class="prefetch-debug-panel">
+    <h2>Runtime Observation</h2>
+    <pre id="prefetch-debug-runtime">Loading...</pre>
+  </section>
+
+  <section class="prefetch-debug-panel">
+    <h2>Page Payload</h2>
+    <pre id="prefetch-debug-payload">Loading...</pre>
+  </section>
+
+  <script>
+  (function () {
+    function supportsSpeculationRules() {
+      try {
+        return typeof HTMLScriptElement !== 'undefined'
+          && typeof HTMLScriptElement.supports === 'function'
+          && HTMLScriptElement.supports('speculationrules');
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function supportsLinkPrefetch() {
+      try {
+        var link = document.createElement('link');
+        return !!(link.relList && typeof link.relList.supports === 'function' && link.relList.supports('prefetch'));
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function supportsServiceWorkerTransport() {
+      return 'serviceWorker' in navigator;
+    }
+
+    function getBrowserEnvSequence() {
+      return [
+        supportsSpeculationRules() ? 'T' : 'F',
+        supportsLinkPrefetch() ? 'T' : 'F',
+        supportsServiceWorkerTransport() ? 'T' : 'F'
+      ].join('');
+    }
+
+    function readPayload() {
+      var dataNode = document.getElementById('site-prefetch-data');
+      if (!dataNode) return null;
+      try {
+        return JSON.parse(dataNode.textContent || '{}');
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function writePre(id, value) {
+      var node = document.getElementById(id);
+      if (!node) return;
+      node.textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+    }
+
+    function inspectRuntime() {
+      var speculationRulesCount = document.head.querySelectorAll('script[type="speculationrules"][data-prefetch-generated="runtime"]').length;
+      var prefetchLinkCount = document.head.querySelectorAll('link[rel="prefetch"][data-prefetch-link="runtime"]').length;
+      var swState = {
+        supported: 'serviceWorker' in navigator,
+        controller: !!(navigator.serviceWorker && navigator.serviceWorker.controller)
+      };
+      return {
+        speculationRulesCount: speculationRulesCount,
+        prefetchLinkCount: prefetchLinkCount,
+        serviceWorker: swState
+      };
+    }
+
+    async function refresh() {
+      var payload = readPayload();
+      var envSequence = getBrowserEnvSequence();
+      var actions = payload && typeof payload === 'object' ? (payload[envSequence] || null) : null;
+      var runtimeState = inspectRuntime();
+      if (runtimeState.serviceWorker.supported) {
+        try {
+          var registration = await navigator.serviceWorker.getRegistration();
+          runtimeState.serviceWorker.registration = !!registration;
+          runtimeState.serviceWorker.active = !!(registration && registration.active);
+          runtimeState.serviceWorker.scope = registration ? registration.scope : '';
+        } catch (error) {
+          runtimeState.serviceWorker.error = String(error && error.message ? error.message : error);
+        }
+      }
+
+      writePre('prefetch-debug-support', {
+        speculationRules: supportsSpeculationRules(),
+        linkPrefetch: supportsLinkPrefetch(),
+        serviceWorkerTransport: supportsServiceWorkerTransport()
+      });
+      writePre('prefetch-debug-env', {
+        envSequence: envSequence
+      });
+      writePre('prefetch-debug-actions', actions || 'No actions for current env');
+      writePre('prefetch-debug-runtime', runtimeState);
+      writePre('prefetch-debug-payload', payload || 'No site-prefetch-data found');
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      void refresh();
+      window.setTimeout(function () { void refresh(); }, 250);
+      window.setTimeout(function () { void refresh(); }, 1200);
+    });
+  })();
+  </script>
+</article>
+{{ end }}

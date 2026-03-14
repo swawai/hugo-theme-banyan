@@ -1,33 +1,43 @@
 {{ $envConfig := .env_config | default dict }}
 {{ $candidates := .candidates | default (dict "nav" (slice) "sort" (slice) "desc" (slice) "post" (slice)) }}
+{{ $current := .current | default "" }}
 {{ $envKey := upper (printf "%v" (.env_key | default "")) }}
 {{ $swMode := .sw_mode | default "off" }}
-{{ $slots := dict
-  "sort_siblings" "sort"
-  "descendants" "desc"
-  "post" "post"
-  "nav" "nav"
+{{ $slotSpecs := slice
+  (dict "config_key" "nav" "candidate_key" "nav")
+  (dict "config_key" "sort_siblings" "candidate_key" "sort")
+  (dict "config_key" "descendants" "candidate_key" "desc")
+  (dict "config_key" "post" "candidate_key" "post")
 }}
 {{ $specEnabled := eq (substr $envKey 0 1) "T" }}
 {{ $linkEnabled := eq (substr $envKey 1 1) "T" }}
 {{ $swEnabled := eq (substr $envKey 2 1) "T" }}
 {{ $specPrefetch := slice }}
 {{ $specPrerender := slice }}
-{{ $specBlocked := slice }}
-{{ $linkStaticRaw := slice }}
-{{ $linkImmediateRaw := slice }}
-{{ $linkDelayedRaw := slice }}
-{{ $swStaticRaw := slice }}
-{{ $swImmediateRaw := slice }}
-{{ $swDelayedRaw := slice }}
+{{ $linkStaticUrls := slice }}
+{{ $linkImmediateUrls := slice }}
+{{ $linkDelayedUrls := slice }}
+{{ $swStaticUrls := slice }}
+{{ $swImmediateUrls := slice }}
+{{ $swDelayedUrls := slice }}
+{{ $seenUrls := slice }}
 
-{{ range $configKey, $candidateKey := $slots }}
+{{ range $slotSpec := $slotSpecs }}
+  {{ $configKey := index $slotSpec "config_key" }}
+  {{ $candidateKey := index $slotSpec "candidate_key" }}
   {{ $rawMode := index $envConfig $configKey }}
-  {{ $mode := partial "prefetch-mode.html" $rawMode }}
+  {{ $mode := partial "prefetch-env-actions-mode.html" $rawMode }}
   {{ $kind := index $mode "kind" }}
   {{ $transport := index $mode "transport" }}
   {{ $source := index $mode "value" }}
-  {{ $urls := index $candidates $candidateKey | default (slice) }}
+  {{ $rawUrls := index $candidates $candidateKey | default (slice) }}
+  {{ $filtered := partial "prefetch-filter-urls.html" (dict
+    "urls" $rawUrls
+    "seen" $seenUrls
+    "current" $current
+  ) }}
+  {{ $urls := index $filtered "urls" }}
+  {{ $seenUrls = index $filtered "seen" }}
   {{ if and $urls (gt (len $urls) 0) (or (eq $kind "prefetch") (eq $kind "prerender")) (ne $transport "") }}
     {{ if and (eq $transport "speculationrules") (not $specEnabled) }}
       {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 Speculation Rules transport，但当前环境键 %s 的首位为 F。" $envKey $configKey $source $envKey }}
@@ -55,9 +65,6 @@
       {{ else }}
         {{ $specPrefetch = $specPrefetch | append $entry }}
       {{ end }}
-      {{ range $urls }}
-        {{ $specBlocked = partial "prefetch-append-url.html" (dict "urls" $specBlocked "url" .) }}
-      {{ end }}
     {{ else }}
       {{ $action := "hover_delayed" }}
       {{ if or (eq $kind "prerender") (eq (index $mode "eagerness") "eager") }}
@@ -69,19 +76,19 @@
       {{ range $urls }}
         {{ if eq $transport "link" }}
           {{ if eq $action "static" }}
-            {{ $linkStaticRaw = partial "prefetch-append-url.html" (dict "urls" $linkStaticRaw "url" .) }}
+            {{ $linkStaticUrls = $linkStaticUrls | append . }}
           {{ else if eq $action "hover_immediate" }}
-            {{ $linkImmediateRaw = partial "prefetch-append-url.html" (dict "urls" $linkImmediateRaw "url" .) }}
+            {{ $linkImmediateUrls = $linkImmediateUrls | append . }}
           {{ else }}
-            {{ $linkDelayedRaw = partial "prefetch-append-url.html" (dict "urls" $linkDelayedRaw "url" .) }}
+            {{ $linkDelayedUrls = $linkDelayedUrls | append . }}
           {{ end }}
         {{ else if eq $transport "sw" }}
           {{ if eq $action "static" }}
-            {{ $swStaticRaw = partial "prefetch-append-url.html" (dict "urls" $swStaticRaw "url" .) }}
+            {{ $swStaticUrls = $swStaticUrls | append . }}
           {{ else if eq $action "hover_immediate" }}
-            {{ $swImmediateRaw = partial "prefetch-append-url.html" (dict "urls" $swImmediateRaw "url" .) }}
+            {{ $swImmediateUrls = $swImmediateUrls | append . }}
           {{ else }}
-            {{ $swDelayedRaw = partial "prefetch-append-url.html" (dict "urls" $swDelayedRaw "url" .) }}
+            {{ $swDelayedUrls = $swDelayedUrls | append . }}
           {{ end }}
         {{ end }}
       {{ end }}
@@ -97,45 +104,27 @@
   {{ $specPayload = merge $specPayload (dict "prerender" $specPrerender) }}
 {{ end }}
 
-{{ $linkActions := partial "prefetch-finalize-warm-actions.html" (dict
-  "static" $linkStaticRaw
-  "immediate" $linkImmediateRaw
-  "delayed" $linkDelayedRaw
-  "blocked" $specBlocked
-) }}
-{{ $linkBlocked := $specBlocked }}
-{{ range (index $linkActions "static_urls") }}
-  {{ $linkBlocked = partial "prefetch-append-url.html" (dict "urls" $linkBlocked "url" .) }}
+{{ $result := dict }}
+{{ if gt (len $specPayload) 0 }}
+  {{ $result = merge $result (dict "sp" $specPayload) }}
 {{ end }}
-{{ range (index $linkActions "hover_immediate_urls") }}
-  {{ $linkBlocked = partial "prefetch-append-url.html" (dict "urls" $linkBlocked "url" .) }}
+{{ if gt (len $linkDelayedUrls) 0 }}
+  {{ $result = merge $result (dict "ls" $linkDelayedUrls) }}
 {{ end }}
-{{ range (index $linkActions "hover_delayed_urls") }}
-  {{ $linkBlocked = partial "prefetch-append-url.html" (dict "urls" $linkBlocked "url" .) }}
+{{ if gt (len $linkImmediateUrls) 0 }}
+  {{ $result = merge $result (dict "lm" $linkImmediateUrls) }}
 {{ end }}
-{{ $swActions := partial "prefetch-finalize-warm-actions.html" (dict
-  "static" $swStaticRaw
-  "immediate" $swImmediateRaw
-  "delayed" $swDelayedRaw
-  "blocked" $linkBlocked
-) }}
-
-{{ $hasSpec := gt (len $specPayload) 0 }}
-{{ $hasLink := or (gt (len (index $linkActions "static_urls")) 0) (gt (len (index $linkActions "hover_immediate_urls")) 0) (gt (len (index $linkActions "hover_delayed_urls")) 0) }}
-{{ $hasLinkHover := or (gt (len (index $linkActions "hover_immediate_urls")) 0) (gt (len (index $linkActions "hover_delayed_urls")) 0) }}
-{{ $hasSw := or (gt (len (index $swActions "static_urls")) 0) (gt (len (index $swActions "hover_immediate_urls")) 0) (gt (len (index $swActions "hover_delayed_urls")) 0) }}
-
-{{ $result := dict
-  "has_actions" (or $hasSpec $hasLink $hasSw)
-  "link_static_urls" (index $linkActions "static_urls")
-  "link_hover_immediate_urls" (index $linkActions "hover_immediate_urls")
-  "link_hover_delayed_urls" (index $linkActions "hover_delayed_urls")
-  "sw_static_urls" (index $swActions "static_urls")
-  "sw_hover_immediate_urls" (index $swActions "hover_immediate_urls")
-  "sw_hover_delayed_urls" (index $swActions "hover_delayed_urls")
-}}
-{{ if $hasSpec }}
-  {{ $result = merge $result (dict "speculation_rules_payload" $specPayload) }}
+{{ if gt (len $linkStaticUrls) 0 }}
+  {{ $result = merge $result (dict "lx" $linkStaticUrls) }}
+{{ end }}
+{{ if gt (len $swDelayedUrls) 0 }}
+  {{ $result = merge $result (dict "ws" $swDelayedUrls) }}
+{{ end }}
+{{ if gt (len $swImmediateUrls) 0 }}
+  {{ $result = merge $result (dict "wm" $swImmediateUrls) }}
+{{ end }}
+{{ if gt (len $swStaticUrls) 0 }}
+  {{ $result = merge $result (dict "wx" $swStaticUrls) }}
 {{ end }}
 
 {{ return $result }}

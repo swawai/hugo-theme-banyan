@@ -1,7 +1,0 @@
-{{ $urls := .urls | default (slice) }}
-{{ $current := partial "prefetch-normalize-url.html" (.current | default "") }}
-{{ $url := partial "prefetch-normalize-url.html" (.url | default "") }}
-{{ if and $url (ne $url $current) (not (in $urls $url)) }}
-  {{ $urls = $urls | append $url }}
-{{ end }}
-{{ return $urls }}
