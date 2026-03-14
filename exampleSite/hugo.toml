@@ -43,11 +43,16 @@ panicOnWarning = true
 #     r = prerender
 #   examples:
 #     spec_sf / spec_mf / spec_xf
+#     spec_xf_gf
 #     spec_sr / spec_mr / spec_xr
 #     link_sf / link_mf / link_xf
 #     sw_sf   / sw_mf   / sw_xf
+#   global gate:
+#     append _gf = sessionStorage-backed global-once gate;
+#     the same warmup payload only runs once per browsing session
 #
 # Slot guidance:
+#   menu is usually best with "*-prefetch" / "*-prerender" / "*_gf"
 #   sort_siblings is usually best with "*-prefetch"
 #   descendants is usually best with "" / "*-prefetch"
 #   post is usually best with "" / "*-prefetch" / "*-prerender"
@@ -72,12 +77,15 @@ panicOnWarning = true
 #
 # Runtime payload short codes:
 #   sp = speculation rules payload
+#   sg = speculation rules payload with gf gate
 #   ls / lm / lx = link transport conservative / moderate / eager
+#   lsg / lmg / lxg = link transport with gf gate
 #   ws / wm / wx = SW transport conservative / moderate / eager
+#   wsg / wmg / wxg = SW transport with gf gate
 #
 # Runtime assignment rule:
 #   Candidates are deduplicated globally in this order:
-#   nav > sort_siblings > descendants > post
+#   menu > nav > sort_siblings > descendants > post
 #   The first matching slot wins for a given URL.
 #
 # Debugging tip:
@@ -86,6 +94,7 @@ panicOnWarning = true
 #
 # Example:
 # [params.link_prefetch.env.TTT]
+# menu = "spec_xr_gf"
 # nav = "spec_xr"
 # sort_siblings = "spec_xr"
 # descendants = "link_xf"

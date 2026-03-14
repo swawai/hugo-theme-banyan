@@ -88,7 +88,7 @@
     {{ end }}
     {{ block "head-extra" . }}{{ end }}
     {{ $prefetchConfig := site.Params.link_prefetch | default dict }}
-    {{ $prefetchLabels := slice "sort_siblings" "descendants" "post" "nav" }}
+    {{ $prefetchLabels := slice "menu" "nav" "sort_siblings" "descendants" "post" }}
     {{ $prefetchEnvConfig := index $prefetchConfig "env" | default dict }}
     {{ range $label := $prefetchLabels }}
         {{ if isset $prefetchConfig $label }}
@@ -104,7 +104,22 @@
             {{ if isset $envConfig $label }}
                 {{ $parsed := partial "prefetch-env-actions-mode.html" (index $envConfig $label) }}
                 {{ if eq (index $parsed "kind") "invalid" }}
-                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s 仅支持空值/off 或短码（如 spec_xf、spec_xr、link_mf、sw_sf），当前值为 %q。" $envKey $label (index $parsed "value") }}
+                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s 仅支持空值/off 或短码（如 spec_xf、spec_xf_gf、spec_xr、link_mf、sw_sf），当前值为 %q。" $envKey $label (index $parsed "value") }}
+                {{ end }}
+                {{ if and (eq (index $parsed "transport") "speculationrules") (eq (substr $envKey 0 1) "F") }}
+                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 Speculation Rules transport，但当前环境键 %s 的首位为 F。" $envKey $label (index $parsed "value") $envKey }}
+                {{ end }}
+                {{ if and (eq (index $parsed "transport") "link") (eq (substr $envKey 1 1) "F") }}
+                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 link transport，但当前环境键 %s 的第二位为 F。" $envKey $label (index $parsed "value") $envKey }}
+                {{ end }}
+                {{ if and (eq (index $parsed "transport") "sw") (eq (substr $envKey 2 1) "F") }}
+                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 SW transport，但当前环境键 %s 的第三位为 F。" $envKey $label (index $parsed "value") $envKey }}
+                {{ end }}
+                {{ if and (eq (index $parsed "transport") "sw") (ne $swMode "enable") }}
+                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 SW transport，但 params.service_worker.mode=%q。" $envKey $label (index $parsed "value") $swMode }}
+                {{ end }}
+                {{ if and (eq (index $parsed "kind") "prerender") (eq (substr $envKey 0 1) "F") }}
+                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 使用 prerender，但当前环境键 %s 不支持 Speculation Rules transport。" $envKey $label (index $parsed "value") $envKey }}
                 {{ end }}
             {{ end }}
         {{ end }}
@@ -240,7 +255,7 @@
 
             {{ range .Site.Menus.main }}
             {{ $key := printf "menu_%s" .Identifier }}
-        {{ partial "link.html" (dict "ctx" $ "href" (.URL | relLangURL) "title" (cond (eq .Identifier "udc") "Universal Decimal Classification" "") "text" (i18n $key | default .Name) "linkSlot" "nav") }}
+        {{ partial "link.html" (dict "ctx" $ "href" (.URL | relLangURL) "title" (cond (eq .Identifier "udc") "Universal Decimal Classification" "") "text" (i18n $key | default .Name) "linkSlot" "menu") }}
             {{ end }}
         </nav>
 

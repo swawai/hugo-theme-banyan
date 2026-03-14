@@ -10,7 +10,7 @@
     }
     if (!actionsByEnv || typeof actionsByEnv !== 'object') return;
 
-    const allowServiceWorker = {{ if .allow_service_worker }}true{{ else }}false{{ end }};
+    const allowServiceWorker = dataNode.dataset && dataNode.dataset.swTransport === '1';
 
     function supportsSpeculationRules() {
         try {
@@ -50,23 +50,146 @@
     const actions = pickActions();
     if (!actions || typeof actions !== 'object') return;
 
+    {{ if .has_global_gate }}
+    {{ if .has_spec_module }}
+    function mergeSpeculationRulesPayloads(primary, secondary) {
+        const merged = {};
+        const prefetch = [];
+        const prerender = [];
+
+        if (primary && Array.isArray(primary.prefetch)) {
+            prefetch.push(...primary.prefetch);
+        }
+        if (secondary && Array.isArray(secondary.prefetch)) {
+            prefetch.push(...secondary.prefetch);
+        }
+        if (primary && Array.isArray(primary.prerender)) {
+            prerender.push(...primary.prerender);
+        }
+        if (secondary && Array.isArray(secondary.prerender)) {
+            prerender.push(...secondary.prerender);
+        }
+        if (prefetch.length > 0) {
+            merged.prefetch = prefetch;
+        }
+        if (prerender.length > 0) {
+            merged.prerender = prerender;
+        }
+        return Object.keys(merged).length > 0 ? merged : null;
+    }
+    {{ end }}
+
+    function canUseGlobalPrefetchGate() {
+        try {
+            const storage = window.sessionStorage;
+            if (!storage) return false;
+
+            const probeKey = 'banyan-prefetch-gf-probe';
+            storage.setItem(probeKey, '1');
+            storage.removeItem(probeKey);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function hashString(value) {
+        let hash = 5381;
+        for (let index = 0; index < value.length; index += 1) {
+            hash = ((hash << 5) + hash) ^ value.charCodeAt(index);
+        }
+        return (hash >>> 0).toString(36);
+    }
+
+    function buildGlobalPrefetchGateKey(code, value) {
+        return `banyan-prefetch-gf:${getBrowserEnvSequence()}:${code}:${hashString(JSON.stringify(value))}`;
+    }
+
+    const canUseGlobalGate = canUseGlobalPrefetchGate();
+
+    function consumeGlobalGateValue(code, value) {
+        const isArray = Array.isArray(value);
+        if (!value || (isArray && value.length === 0)) return value;
+        if (!canUseGlobalGate) return value;
+
+        try {
+            const storageKey = buildGlobalPrefetchGateKey(code, value);
+            if (window.sessionStorage.getItem(storageKey) === '1') {
+                return isArray ? [] : null;
+            }
+            window.sessionStorage.setItem(storageKey, '1');
+        } catch (error) { }
+
+        return value;
+    }
+    {{ end }}
+
+    {{ if .has_spec_module }}
+      {{ if .has_global_gate }}
+    const normalSpeculationRulesPayload = actions.sp && typeof actions.sp === 'object'
+        ? actions.sp
+        : null;
+    const gatedSpeculationRulesPayload = consumeGlobalGateValue(
+        'sg',
+        actions.sg && typeof actions.sg === 'object' ? actions.sg : null
+    );
+    const speculationRulesPayload = mergeSpeculationRulesPayloads(
+        normalSpeculationRulesPayload,
+        gatedSpeculationRulesPayload
+    );
+      {{ else }}
     const speculationRulesPayload = actions.sp && typeof actions.sp === 'object'
         ? actions.sp
         : null;
-    const linkHoverDelayedUrls = Array.isArray(actions.ls) ? actions.ls : [];
-    const linkHoverImmediateUrls = Array.isArray(actions.lm) ? actions.lm : [];
-    const linkStaticUrls = Array.isArray(actions.lx) ? actions.lx : [];
-    const swHoverDelayedUrls = Array.isArray(actions.ws) ? actions.ws : [];
-    const swHoverImmediateUrls = Array.isArray(actions.wm) ? actions.wm : [];
-    const swStaticUrls = Array.isArray(actions.wx) ? actions.wx : [];
+      {{ end }}
+    {{ else }}
+    const speculationRulesPayload = null;
+    {{ end }}
+    {{ if .has_link_module }}
+    const linkStaticUrls = {{ if .has_global_gate }}(Array.isArray(actions.lx) ? actions.lx : []).concat(
+        consumeGlobalGateValue('lxg', Array.isArray(actions.lxg) ? actions.lxg : [])
+    ){{ else }}Array.isArray(actions.lx) ? actions.lx : []{{ end }};
+    {{ else }}
+    const linkStaticUrls = [];
+    {{ end }}
+    {{ if and .has_link_module .has_hover_module }}
+    const linkHoverDelayedUrls = {{ if .has_global_gate }}(Array.isArray(actions.ls) ? actions.ls : []).concat(
+        consumeGlobalGateValue('lsg', Array.isArray(actions.lsg) ? actions.lsg : [])
+    ){{ else }}Array.isArray(actions.ls) ? actions.ls : []{{ end }};
+    const linkHoverImmediateUrls = {{ if .has_global_gate }}(Array.isArray(actions.lm) ? actions.lm : []).concat(
+        consumeGlobalGateValue('lmg', Array.isArray(actions.lmg) ? actions.lmg : [])
+    ){{ else }}Array.isArray(actions.lm) ? actions.lm : []{{ end }};
+    {{ else }}
+    const linkHoverDelayedUrls = [];
+    const linkHoverImmediateUrls = [];
+    {{ end }}
+    {{ if .has_sw_module }}
+    const swStaticUrls = {{ if .has_global_gate }}(Array.isArray(actions.wx) ? actions.wx : []).concat(
+        consumeGlobalGateValue('wxg', Array.isArray(actions.wxg) ? actions.wxg : [])
+    ){{ else }}Array.isArray(actions.wx) ? actions.wx : []{{ end }};
+    {{ else }}
+    const swStaticUrls = [];
+    {{ end }}
+    {{ if and .has_sw_module .has_hover_module }}
+    const swHoverDelayedUrls = {{ if .has_global_gate }}(Array.isArray(actions.ws) ? actions.ws : []).concat(
+        consumeGlobalGateValue('wsg', Array.isArray(actions.wsg) ? actions.wsg : [])
+    ){{ else }}Array.isArray(actions.ws) ? actions.ws : []{{ end }};
+    const swHoverImmediateUrls = {{ if .has_global_gate }}(Array.isArray(actions.wm) ? actions.wm : []).concat(
+        consumeGlobalGateValue('wmg', Array.isArray(actions.wmg) ? actions.wmg : [])
+    ){{ else }}Array.isArray(actions.wm) ? actions.wm : []{{ end }};
+    {{ else }}
+    const swHoverDelayedUrls = [];
+    const swHoverImmediateUrls = [];
+    {{ end }}
 
-    const hasSpec = !!(speculationRulesPayload && Object.keys(speculationRulesPayload).length);
-    const hasLinkHover = linkHoverImmediateUrls.length > 0 || linkHoverDelayedUrls.length > 0;
-    const hasSwHover = swHoverImmediateUrls.length > 0 || swHoverDelayedUrls.length > 0;
-    const hasLink = linkStaticUrls.length > 0 || hasLinkHover;
-    const hasSw = swStaticUrls.length > 0 || hasSwHover;
+    const hasSpec = {{ if .has_spec_module }}!!(speculationRulesPayload && Object.keys(speculationRulesPayload).length){{ else }}false{{ end }};
+    const hasLinkHover = {{ if and .has_link_module .has_hover_module }}linkHoverImmediateUrls.length > 0 || linkHoverDelayedUrls.length > 0{{ else }}false{{ end }};
+    const hasSwHover = {{ if and .has_sw_module .has_hover_module }}swHoverImmediateUrls.length > 0 || swHoverDelayedUrls.length > 0{{ else }}false{{ end }};
+    const hasLink = {{ if .has_link_module }}linkStaticUrls.length > 0 || hasLinkHover{{ else }}false{{ end }};
+    const hasSw = {{ if .has_sw_module }}swStaticUrls.length > 0 || hasSwHover{{ else }}false{{ end }};
     if (!hasSpec && !hasLink && !hasSw) return;
 
+    {{ if or .has_link_module .has_sw_module }}
     function normalizeNavigationUrl(rawUrl) {
         try {
             const url = new URL(rawUrl, window.location.href);
@@ -78,7 +201,9 @@
     }
 
     const warmedNavigationUrls = new Set();
+    {{ end }}
 
+    {{ if .has_link_module }}
     function ensurePrefetchLink(rawUrl) {
         const href = normalizeNavigationUrl(rawUrl);
         if (!href || warmedNavigationUrls.has(href)) return false;
@@ -91,7 +216,9 @@
         document.head.appendChild(link);
         return true;
     }
+    {{ end }}
 
+    {{ if .has_sw_module }}
     async function warmServiceWorkerUrls(rawUrls) {
         const queuedUrls = [];
         for (const rawUrl of rawUrls) {
@@ -118,7 +245,9 @@
             queuedUrls.forEach((href) => warmedNavigationUrls.delete(href));
         }
     }
+    {{ end }}
 
+    {{ if .has_spec_module }}
     if (hasSpec) {
         const speculationRulesScript = document.createElement('script');
         speculationRulesScript.type = 'speculationrules';
@@ -126,17 +255,23 @@
         speculationRulesScript.textContent = JSON.stringify(speculationRulesPayload);
         document.head.appendChild(speculationRulesScript);
     }
+    {{ end }}
 
+    {{ if .has_link_module }}
     if (hasLink) {
         for (const href of linkStaticUrls) {
             ensurePrefetchLink(href);
         }
     }
+    {{ end }}
 
+    {{ if .has_sw_module }}
     if (swStaticUrls.length > 0) {
         void warmServiceWorkerUrls(swStaticUrls);
     }
+    {{ end }}
 
+    {{ if .has_hover_module }}
     if (!hasLinkHover && !hasSwHover) return;
 
     const HOVER_WARM_DELAY_MS = 65;
@@ -152,22 +287,30 @@
         }
     }
 
+    {{ if and .has_link_module .has_hover_module }}
     registerHoverTargets(linkHoverImmediateUrls, 'link', 'immediate');
     registerHoverTargets(linkHoverDelayedUrls, 'link', 'delayed');
+    {{ end }}
+    {{ if and .has_sw_module .has_hover_module }}
     registerHoverTargets(swHoverImmediateUrls, 'sw', 'immediate');
     registerHoverTargets(swHoverDelayedUrls, 'sw', 'delayed');
+    {{ end }}
 
     function warmNavigationUrls(transport, rawUrls) {
+        {{ if .has_link_module }}
         if (transport === 'link') {
             for (const rawUrl of rawUrls) {
                 ensurePrefetchLink(rawUrl);
             }
             return;
         }
+        {{ end }}
 
+        {{ if .has_sw_module }}
         if (transport === 'sw') {
             void warmServiceWorkerUrls(rawUrls);
         }
+        {{ end }}
     }
 
     function getAnchorWarmTarget(anchor) {
@@ -255,4 +398,5 @@
             maybeWarmNavigationAnchor(anchor);
         }
     }, { capture: true, passive: true });
+    {{ end }}
 })();

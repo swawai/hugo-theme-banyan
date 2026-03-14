@@ -54,11 +54,11 @@
   <section class="prefetch-debug-panel">
     <h2>Sample Targets</h2>
     <div class="prefetch-debug-links">
-      {{ partial "link.html" (dict "ctx" . "href" .Site.Home.RelPermalink "text" "Home" "linkSlot" "nav") }}
-      {{ partial "link.html" (dict "ctx" . "href" ("/about/" | relLangURL) "text" "About" "linkSlot" "nav") }}
-      {{ partial "link.html" (dict "ctx" . "href" ("/tags/" | relLangURL) "text" "Tags" "linkSlot" "nav") }}
-      {{ partial "link.html" (dict "ctx" . "href" ("/udc/" | relLangURL) "text" "UDC" "linkSlot" "nav") }}
-      {{ partial "link.html" (dict "ctx" . "href" ("/all-by-date/" | relLangURL) "text" "All By Date" "linkSlot" "nav") }}
+      {{ partial "link.html" (dict "ctx" . "href" .Site.Home.RelPermalink "text" "Home" "linkSlot" "menu") }}
+      {{ partial "link.html" (dict "ctx" . "href" ("/about/" | relLangURL) "text" "About" "linkSlot" "menu") }}
+      {{ partial "link.html" (dict "ctx" . "href" ("/tags/" | relLangURL) "text" "Tags" "linkSlot" "menu") }}
+      {{ partial "link.html" (dict "ctx" . "href" ("/udc/" | relLangURL) "text" "UDC" "linkSlot" "menu") }}
+      {{ partial "link.html" (dict "ctx" . "href" ("/all-by-date/" | relLangURL) "text" "All By Date" "linkSlot" "menu") }}
     </div>
   </section>
 

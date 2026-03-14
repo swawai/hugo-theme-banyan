@@ -1,9 +1,10 @@
 {{ $envConfig := .env_config | default dict }}
-{{ $candidates := .candidates | default (dict "nav" (slice) "sort" (slice) "desc" (slice) "post" (slice)) }}
+{{ $candidates := .candidates | default (dict "menu" (slice) "nav" (slice) "sort" (slice) "desc" (slice) "post" (slice)) }}
 {{ $current := .current | default "" }}
 {{ $envKey := upper (printf "%v" (.env_key | default "")) }}
 {{ $swMode := .sw_mode | default "off" }}
 {{ $slotSpecs := slice
+  (dict "config_key" "menu" "candidate_key" "menu")
   (dict "config_key" "nav" "candidate_key" "nav")
   (dict "config_key" "sort_siblings" "candidate_key" "sort")
   (dict "config_key" "descendants" "candidate_key" "desc")
@@ -14,12 +15,20 @@
 {{ $swEnabled := eq (substr $envKey 2 1) "T" }}
 {{ $specPrefetch := slice }}
 {{ $specPrerender := slice }}
+{{ $gatedSpecPrefetch := slice }}
+{{ $gatedSpecPrerender := slice }}
 {{ $linkStaticUrls := slice }}
 {{ $linkImmediateUrls := slice }}
 {{ $linkDelayedUrls := slice }}
+{{ $gatedLinkStaticUrls := slice }}
+{{ $gatedLinkImmediateUrls := slice }}
+{{ $gatedLinkDelayedUrls := slice }}
 {{ $swStaticUrls := slice }}
 {{ $swImmediateUrls := slice }}
 {{ $swDelayedUrls := slice }}
+{{ $gatedSwStaticUrls := slice }}
+{{ $gatedSwImmediateUrls := slice }}
+{{ $gatedSwDelayedUrls := slice }}
 {{ $seenUrls := slice }}
 
 {{ range $slotSpec := $slotSpecs }}
@@ -29,6 +38,7 @@
   {{ $mode := partial "prefetch-env-actions-mode.html" $rawMode }}
   {{ $kind := index $mode "kind" }}
   {{ $transport := index $mode "transport" }}
+  {{ $globalGate := index $mode "global_gate" }}
   {{ $source := index $mode "value" }}
   {{ $rawUrls := index $candidates $candidateKey | default (slice) }}
   {{ $filtered := partial "prefetch-filter-urls.html" (dict
@@ -60,32 +70,44 @@
         "urls" $urls
         "eagerness" (index $mode "eagerness")
       }}
-      {{ if eq $kind "prerender" }}
+      {{ if and $globalGate (eq $kind "prerender") }}
+        {{ $gatedSpecPrerender = $gatedSpecPrerender | append $entry }}
+      {{ else if and $globalGate (eq $kind "prefetch") }}
+        {{ $gatedSpecPrefetch = $gatedSpecPrefetch | append $entry }}
+      {{ else if eq $kind "prerender" }}
         {{ $specPrerender = $specPrerender | append $entry }}
       {{ else }}
         {{ $specPrefetch = $specPrefetch | append $entry }}
       {{ end }}
     {{ else }}
-      {{ $action := "hover_delayed" }}
-      {{ if or (eq $kind "prerender") (eq (index $mode "eagerness") "eager") }}
-        {{ $action = "static" }}
-      {{ else if eq (index $mode "eagerness") "moderate" }}
-        {{ $action = "hover_immediate" }}
-      {{ end }}
+      {{ $isStatic := or (eq $kind "prerender") (eq (index $mode "eagerness") "eager") }}
+      {{ $isImmediate := and (not $isStatic) (eq (index $mode "eagerness") "moderate") }}
 
       {{ range $urls }}
         {{ if eq $transport "link" }}
-          {{ if eq $action "static" }}
+          {{ if and $globalGate $isStatic }}
+            {{ $gatedLinkStaticUrls = $gatedLinkStaticUrls | append . }}
+          {{ else if and $globalGate $isImmediate }}
+            {{ $gatedLinkImmediateUrls = $gatedLinkImmediateUrls | append . }}
+          {{ else if $globalGate }}
+            {{ $gatedLinkDelayedUrls = $gatedLinkDelayedUrls | append . }}
+          {{ else if $isStatic }}
             {{ $linkStaticUrls = $linkStaticUrls | append . }}
-          {{ else if eq $action "hover_immediate" }}
+          {{ else if $isImmediate }}
             {{ $linkImmediateUrls = $linkImmediateUrls | append . }}
           {{ else }}
             {{ $linkDelayedUrls = $linkDelayedUrls | append . }}
           {{ end }}
         {{ else if eq $transport "sw" }}
-          {{ if eq $action "static" }}
+          {{ if and $globalGate $isStatic }}
+            {{ $gatedSwStaticUrls = $gatedSwStaticUrls | append . }}
+          {{ else if and $globalGate $isImmediate }}
+            {{ $gatedSwImmediateUrls = $gatedSwImmediateUrls | append . }}
+          {{ else if $globalGate }}
+            {{ $gatedSwDelayedUrls = $gatedSwDelayedUrls | append . }}
+          {{ else if $isStatic }}
             {{ $swStaticUrls = $swStaticUrls | append . }}
-          {{ else if eq $action "hover_immediate" }}
+          {{ else if $isImmediate }}
             {{ $swImmediateUrls = $swImmediateUrls | append . }}
           {{ else }}
             {{ $swDelayedUrls = $swDelayedUrls | append . }}
@@ -103,10 +125,20 @@
 {{ if gt (len $specPrerender) 0 }}
   {{ $specPayload = merge $specPayload (dict "prerender" $specPrerender) }}
 {{ end }}
+{{ $gatedSpecPayload := dict }}
+{{ if gt (len $gatedSpecPrefetch) 0 }}
+  {{ $gatedSpecPayload = merge $gatedSpecPayload (dict "prefetch" $gatedSpecPrefetch) }}
+{{ end }}
+{{ if gt (len $gatedSpecPrerender) 0 }}
+  {{ $gatedSpecPayload = merge $gatedSpecPayload (dict "prerender" $gatedSpecPrerender) }}
+{{ end }}
 
 {{ $result := dict }}
 {{ if gt (len $specPayload) 0 }}
   {{ $result = merge $result (dict "sp" $specPayload) }}
+{{ end }}
+{{ if gt (len $gatedSpecPayload) 0 }}
+  {{ $result = merge $result (dict "sg" $gatedSpecPayload) }}
 {{ end }}
 {{ if gt (len $linkDelayedUrls) 0 }}
   {{ $result = merge $result (dict "ls" $linkDelayedUrls) }}
@@ -117,6 +149,15 @@
 {{ if gt (len $linkStaticUrls) 0 }}
   {{ $result = merge $result (dict "lx" $linkStaticUrls) }}
 {{ end }}
+{{ if gt (len $gatedLinkDelayedUrls) 0 }}
+  {{ $result = merge $result (dict "lsg" $gatedLinkDelayedUrls) }}
+{{ end }}
+{{ if gt (len $gatedLinkImmediateUrls) 0 }}
+  {{ $result = merge $result (dict "lmg" $gatedLinkImmediateUrls) }}
+{{ end }}
+{{ if gt (len $gatedLinkStaticUrls) 0 }}
+  {{ $result = merge $result (dict "lxg" $gatedLinkStaticUrls) }}
+{{ end }}
 {{ if gt (len $swDelayedUrls) 0 }}
   {{ $result = merge $result (dict "ws" $swDelayedUrls) }}
 {{ end }}
@@ -125,6 +166,15 @@
 {{ end }}
 {{ if gt (len $swStaticUrls) 0 }}
   {{ $result = merge $result (dict "wx" $swStaticUrls) }}
+{{ end }}
+{{ if gt (len $gatedSwDelayedUrls) 0 }}
+  {{ $result = merge $result (dict "wsg" $gatedSwDelayedUrls) }}
+{{ end }}
+{{ if gt (len $gatedSwImmediateUrls) 0 }}
+  {{ $result = merge $result (dict "wmg" $gatedSwImmediateUrls) }}
+{{ end }}
+{{ if gt (len $gatedSwStaticUrls) 0 }}
+  {{ $result = merge $result (dict "wxg" $gatedSwStaticUrls) }}
 {{ end }}
 
 {{ return $result }}
