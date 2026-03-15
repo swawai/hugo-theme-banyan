@@ -89,22 +89,18 @@
     {{ block "head-extra" . }}{{ end }}
     {{ $prefetchConfig := site.Params.link_prefetch | default dict }}
     {{ $prefetchLabels := slice "menu" "nav" "sort_siblings" "descendants" "post" }}
-    {{ $prefetchEnvConfig := index $prefetchConfig "env" | default dict }}
     {{ range $label := $prefetchLabels }}
         {{ if isset $prefetchConfig $label }}
             {{ errorf "编译失败: 已移除 params.link_prefetch.%s 这类全局默认写法，请改用 params.link_prefetch.env.TTT.%s / params.link_prefetch.env.FTT.%s 这类显式环境表。" $label $label $label }}
         {{ end }}
     {{ end }}
-    {{ range $rawEnvKey, $envConfig := $prefetchEnvConfig }}
-        {{ $envKey := upper (printf "%v" $rawEnvKey) }}
-        {{ if eq (len (findRE "^[TF]{3}$" $envKey)) 0 }}
-            {{ errorf "编译失败: params.link_prefetch.env 仅支持 T/F 三位环境键（如 TTT、FTT、FFF），当前键为 %q。" $rawEnvKey }}
-        {{ end }}
+    {{ $prefetchEnvConfig := partial "prefetch-env-config-map.html" (dict "prefetch_config" $prefetchConfig "prefetch_labels" $prefetchLabels) }}
+    {{ range $envKey, $envConfig := $prefetchEnvConfig }}
         {{ range $label := $prefetchLabels }}
             {{ if isset $envConfig $label }}
                 {{ $parsed := partial "prefetch-env-actions-mode.html" (index $envConfig $label) }}
                 {{ if eq (index $parsed "kind") "invalid" }}
-                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s 仅支持空值/off 或短码（如 spec_xf、spec_xf_gf、spec_xr、link_mf、sw_sf），当前值为 %q。" $envKey $label (index $parsed "value") }}
+                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s 仅支持空值/off 或短码（如 spec_xf、spec_xf_g、spec_xr、link_mf、sw_sf），当前值为 %q。" $envKey $label (index $parsed "value") }}
                 {{ end }}
                 {{ if and (eq (index $parsed "transport") "speculationrules") (eq (substr $envKey 0 1) "F") }}
                     {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 Speculation Rules transport，但当前环境键 %s 的首位为 F。" $envKey $label (index $parsed "value") $envKey }}
@@ -266,7 +262,7 @@
             {{ block "main" . }}{{ end }}
         </main>
     </div>
-    {{ partial "prefetch-runtime-embed.html" (dict "ctx" . "sw_mode" $swMode) }}
+    {{ partial "prefetch-runtime-embed.html" (dict "ctx" . "sw_mode" $swMode "env_config_map" $prefetchEnvConfig) }}
 </body>
 
 </html>

@@ -1,0 +1,35 @@
+{{- $prefetchLabels := .prefetch_labels | default (slice "menu" "nav" "sort_siblings" "descendants" "post") -}}
+{{- $envKey := upper (printf "%v" (.env_key | default "")) -}}
+{{- $envConfigMap := .env_config_map | default dict -}}
+{{- $stack := .stack | default (slice) -}}
+{{- if in $stack $envKey -}}
+  {{- errorf "编译失败: params.link_prefetch.env.%s 的引用链存在循环：%s。" $envKey (delimit (append $stack $envKey) " -> ") -}}
+{{- end -}}
+{{- $rawEnvConfig := index $envConfigMap $envKey | default dict -}}
+{{- $refTargetRaw := "" -}}
+{{- if isset $rawEnvConfig "ref" -}}
+  {{- $refTargetRaw = printf "%v" (index $rawEnvConfig "ref") -}}
+{{- end -}}
+{{- $refTargetRaw = replaceRE "^\\s+|\\s+$" "" $refTargetRaw -}}
+{{- $resolvedEnvConfig := dict -}}
+{{- if and (ne $refTargetRaw "") (ne $refTargetRaw "<nil>") -}}
+  {{- $refTarget := upper $refTargetRaw -}}
+  {{- if eq (len (findRE "^[TF]{3}$" $refTarget)) 0 -}}
+    {{- errorf "编译失败: params.link_prefetch.env.%s 的引用目标仅支持 T/F 三位环境键（如 TTT、FTT、FFF），当前值为 %q。" $envKey $refTargetRaw -}}
+  {{- end -}}
+  {{- if not (isset $envConfigMap $refTarget) -}}
+    {{- errorf "编译失败: params.link_prefetch.env.%s 引用了不存在的环境 %q。" $envKey $refTarget -}}
+  {{- end -}}
+  {{- $resolvedEnvConfig = partial "prefetch-env-config-resolve.html" (dict
+    "env_key" $refTarget
+    "env_config_map" $envConfigMap
+    "prefetch_labels" $prefetchLabels
+    "stack" ($stack | append $envKey)
+  ) -}}
+{{- end -}}
+{{- range $label := $prefetchLabels -}}
+  {{- if isset $rawEnvConfig $label -}}
+    {{- $resolvedEnvConfig = merge $resolvedEnvConfig (dict $label (index $rawEnvConfig $label)) -}}
+  {{- end -}}
+{{- end -}}
+{{- return $resolvedEnvConfig -}}

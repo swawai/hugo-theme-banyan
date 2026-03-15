@@ -130,6 +130,21 @@
       }
     }
 
+    function pickActions(payload, envSequence) {
+      if (!payload || typeof payload !== 'object') return null;
+      var entry = payload[envSequence] || null;
+      if (!entry) return null;
+      if (typeof entry === 'string') {
+        var target = payload[entry] || null;
+        return target && typeof target === 'object'
+          ? { targetEnv: entry, actions: target }
+          : null;
+      }
+      return typeof entry === 'object'
+        ? { targetEnv: envSequence, actions: entry }
+        : null;
+    }
+
     function writePre(id, value) {
       var node = document.getElementById(id);
       if (!node) return;
@@ -153,7 +168,7 @@
     async function refresh() {
       var payload = readPayload();
       var envSequence = getBrowserEnvSequence();
-      var actions = payload && typeof payload === 'object' ? (payload[envSequence] || null) : null;
+      var picked = pickActions(payload, envSequence);
       var runtimeState = inspectRuntime();
       if (runtimeState.serviceWorker.supported) {
         try {
@@ -172,9 +187,11 @@
         serviceWorkerTransport: supportsServiceWorkerTransport()
       });
       writePre('prefetch-debug-env', {
-        envSequence: envSequence
+        envSequence: envSequence,
+        payloadEntry: payload && typeof payload === 'object' ? (payload[envSequence] || null) : null,
+        resolvedEnv: picked ? picked.targetEnv : null
       });
-      writePre('prefetch-debug-actions', actions || 'No actions for current env');
+      writePre('prefetch-debug-actions', picked ? picked.actions : 'No actions for current env');
       writePre('prefetch-debug-runtime', runtimeState);
       writePre('prefetch-debug-payload', payload || 'No site-prefetch-data found');
     }

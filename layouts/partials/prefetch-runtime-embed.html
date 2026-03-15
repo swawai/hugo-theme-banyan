@@ -1,10 +1,11 @@
 {{- $ctx := .ctx | default . -}}
 {{- $swMode := .sw_mode | default "off" -}}
 {{- $prefetchConfig := site.Params.link_prefetch | default dict -}}
-{{- $envConfigMap := index $prefetchConfig "env" | default dict -}}
+{{- $envConfigMap := .env_config_map | default (partial "prefetch-env-config-map.html" (dict "prefetch_config" $prefetchConfig)) -}}
 {{- $candidates := $ctx.Scratch.Get "linkCandidates" | default (dict "menu" (slice) "nav" (slice) "sort" (slice) "desc" (slice) "post" (slice)) -}}
 {{- $envKeys := slice "TTT" "TTF" "TFT" "TFF" "FTT" "FTF" "FFT" "FFF" -}}
 {{- $actionsPayloadByEnv := dict -}}
+{{- $canonicalEnvByFingerprint := dict -}}
 {{- $hasGlobalGate := false -}}
 {{- $hasSpecModule := false -}}
 {{- $hasLinkModule := false -}}
@@ -21,7 +22,14 @@
     "sw_mode" $swMode
   ) -}}
   {{- if gt (len $actions) 0 -}}
-    {{- $actionsPayloadByEnv = merge $actionsPayloadByEnv (dict $envKey $actions) -}}
+    {{- $actionsFingerprint := printf "%s" ($actions | jsonify) -}}
+    {{- $canonicalEnvKey := index $canonicalEnvByFingerprint $actionsFingerprint | default "" -}}
+    {{- if $canonicalEnvKey -}}
+      {{- $actionsPayloadByEnv = merge $actionsPayloadByEnv (dict $envKey $canonicalEnvKey) -}}
+    {{- else -}}
+      {{- $actionsPayloadByEnv = merge $actionsPayloadByEnv (dict $envKey $actions) -}}
+      {{- $canonicalEnvByFingerprint = merge $canonicalEnvByFingerprint (dict $actionsFingerprint $envKey) -}}
+    {{- end -}}
     {{- $hasGlobalGate = or $hasGlobalGate (isset $actions "sg") (isset $actions "lsg") (isset $actions "lmg") (isset $actions "lxg") (isset $actions "wsg") (isset $actions "wmg") (isset $actions "wxg") -}}
     {{- $hasSpecModule = or $hasSpecModule (isset $actions "sp") (isset $actions "sg") -}}
     {{- $hasLinkModule = or $hasLinkModule (isset $actions "ls") (isset $actions "lm") (isset $actions "lx") (isset $actions "lsg") (isset $actions "lmg") (isset $actions "lxg") -}}

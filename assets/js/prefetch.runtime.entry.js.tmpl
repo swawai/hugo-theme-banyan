@@ -44,7 +44,13 @@
     }
 
     function pickActions() {
-        return actionsByEnv[getBrowserEnvSequence()] || null;
+        const entry = actionsByEnv[getBrowserEnvSequence()] || null;
+        if (!entry) return null;
+        if (typeof entry === 'string') {
+            const target = actionsByEnv[entry] || null;
+            return target && typeof target === 'object' ? target : null;
+        }
+        return typeof entry === 'object' ? entry : null;
     }
 
     const actions = pickActions();
@@ -84,7 +90,7 @@
             const storage = window.sessionStorage;
             if (!storage) return false;
 
-            const probeKey = 'banyan-prefetch-gf-probe';
+            const probeKey = 'banyan-prefetch-g-probe';
             storage.setItem(probeKey, '1');
             storage.removeItem(probeKey);
             return true;
@@ -102,7 +108,7 @@
     }
 
     function buildGlobalPrefetchGateKey(code, value) {
-        return `banyan-prefetch-gf:${getBrowserEnvSequence()}:${code}:${hashString(JSON.stringify(value))}`;
+        return `banyan-prefetch-g:${getBrowserEnvSequence()}:${code}:${hashString(JSON.stringify(value))}`;
     }
 
     const canUseGlobalGate = canUseGlobalPrefetchGate();

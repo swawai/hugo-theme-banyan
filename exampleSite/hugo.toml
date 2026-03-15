@@ -43,26 +43,29 @@ panicOnWarning = true
 #     r = prerender
 #   examples:
 #     spec_sf / spec_mf / spec_xf
-#     spec_xf_gf
+#     spec_xf_g
 #     spec_sr / spec_mr / spec_xr
 #     link_sf / link_mf / link_xf
 #     sw_sf   / sw_mf   / sw_xf
 #   global gate:
-#     append _gf = sessionStorage-backed global-once gate;
+#     append _g = sessionStorage-backed global-once gate;
 #     the same warmup payload only runs once per browsing session
 #
 # Slot guidance:
-#   menu is usually best with "*-prefetch" / "*-prerender" / "*_gf"
+#   menu is usually best with "*-prefetch" / "*-prerender" / "*_g"
 #   sort_siblings is usually best with "*-prefetch"
 #   descendants is usually best with "" / "*-prefetch"
 #   post is usually best with "" / "*-prefetch" / "*-prerender"
 #   nav is usually best with "" / "*-prefetch"
 #
-# Explicit environment tables only:
+# Explicit environment tables:
 #   [params.link_prefetch.env.TTT]
 #   [params.link_prefetch.env.FTT]
 #   ...
-# There is no global base/default merge layer anymore.
+# To reuse another env profile, optionally add:
+#   ref = "FTT"
+# Reference expansion happens at build time; runtime still receives
+# fully expanded actions.
 #
 # T/F bits mean:
 #   1 = Speculation Rules transport available
@@ -77,11 +80,14 @@ panicOnWarning = true
 #
 # Runtime payload short codes:
 #   sp = speculation rules payload
-#   sg = speculation rules payload with gf gate
+#   sg = speculation rules payload with global gate
 #   ls / lm / lx = link transport conservative / moderate / eager
-#   lsg / lmg / lxg = link transport with gf gate
+#   lsg / lmg / lxg = link transport with global gate
 #   ws / wm / wx = SW transport conservative / moderate / eager
-#   wsg / wmg / wxg = SW transport with gf gate
+#   wsg / wmg / wxg = SW transport with global gate
+#   site-prefetch-data deduplicates identical final actions.
+#   When two envs resolve to the same actions, the later one is emitted
+#   as a direct alias string to the earlier concrete env key.
 #
 # Runtime assignment rule:
 #   Candidates are deduplicated globally in this order:
@@ -94,7 +100,7 @@ panicOnWarning = true
 #
 # Example:
 # [params.link_prefetch.env.TTT]
-# menu = "spec_xr_gf"
+# menu = "spec_xr_g"
 # nav = "spec_xr"
 # sort_siblings = "spec_xr"
 # descendants = "link_xf"

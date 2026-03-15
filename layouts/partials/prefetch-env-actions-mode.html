@@ -1,9 +1,9 @@
 {{- $rawValue := lower (printf "%v" . | replaceRE "^\\s+|\\s+$" "") -}}
 {{- $raw := $rawValue -}}
 {{- $globalGate := false -}}
-{{- if gt (len (findRE "_gf$" $raw)) 0 -}}
+{{- if gt (len (findRE "_g$" $raw)) 0 -}}
   {{- $globalGate = true -}}
-  {{- $raw = replaceRE "_gf$" "" $raw -}}
+  {{- $raw = replaceRE "_g$" "" $raw -}}
 {{- end -}}
 {{- $result := dict "kind" "invalid" "transport" "invalid" "global_gate" false "value" $rawValue -}}
 {{- if or (eq $rawValue "") (eq $rawValue "off") (eq $rawValue "<nil>") -}}
