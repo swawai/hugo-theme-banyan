@@ -1,0 +1,12 @@
+.prose :is(ul, ol) {
+    margin: 1em 0;
+    padding-left: 1.5em;
+}
+
+.prose li + li {
+    margin-top: 0.25em;
+}
+
+.prose li > :is(ul, ol) {
+    margin-bottom: 0;
+}

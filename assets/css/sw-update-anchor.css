@@ -1,0 +1,29 @@
+[data-site-update="ready"] [data-site-update-anchor] {
+    color: var(--focus);
+    text-decoration-thickness: 0.12em;
+}
+
+[data-site-update="ready"] [data-site-update-anchor] .crumb-text {
+    display: inline-block;
+    animation: up 1.5s ease-in-out infinite;
+}
+
+@keyframes up {
+    0%,
+    100% {
+        opacity: 0.62;
+        transform: translateY(0);
+    }
+
+    50% {
+        opacity: 1;
+        transform: translateY(-0.04rem);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-site-update="ready"] [data-site-update-anchor] .crumb-text {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}

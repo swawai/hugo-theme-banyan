@@ -65,8 +65,6 @@
     <style>
         html,
         body {
-            -webkit-text-size-adjust: 100% !important;
-            -moz-text-size-adjust: 100% !important;
             text-size-adjust: 100% !important;
         }
     </style>
@@ -75,7 +73,7 @@
     <script>(function () { try { var pref = localStorage.getItem('theme-preference'); var media = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)'); var theme; if (!pref || pref === 'auto') { theme = (media && media.matches) ? 'dark' : 'light'; } else { theme = pref; } document.documentElement.setAttribute('data-theme', theme); } catch (e) { } })();</script>
     {{/* 恢复跨页导航进度条状态，让 MPA 跳转前后的加载提示连续。 */}}
     <script>(function () { try { if (window.matchMedia && window.matchMedia('(pointer: fine) and (hover: hover)').matches && sessionStorage.getItem('nav-progress-pending') === '1') { document.documentElement.setAttribute('data-nav-progress', 'active'); document.documentElement.style.setProperty('--nav-progress-scale', '0.82'); document.documentElement.classList.add('is-nav-pending'); } } catch (e) { } })();</script>
-    {{ block "styles" . }}{{ partial "head-styles.html" . }}{{ end }}
+    {{ block "styles" . }}{{ partial "head-styles.html" (dict "ctx" .) }}{{ end }}
     {{ block "head-extra" . }}{{ end }}
     {{ $prefetchConfig := site.Params.link_prefetch | default dict }}
     {{ $prefetchLabels := slice "menu" "nav" "sort_siblings" "descendants" "post" }}
@@ -129,10 +127,13 @@
             }}
             {{ $swScript := $swScriptTemplate | resources.ExecuteAsTemplate "sw.js" $swScriptContext }}
             {{ $swUrl := $swScript.RelPermalink }}
+            {{ $swUpdatePopover := resources.Get "css/sw-update-popover.css" }}
+            {{ if not $swUpdatePopover }}{{ errorf "编译失败: 缺少资源 %q。" "css/sw-update-popover.css" }}{{ end }}
+            {{ $swUpdatePopover = partial "css-process.html" (dict "resource" $swUpdatePopover "fingerprint" true) }}
             {{ $swManagerEntryPath := "js/sw-manager.enable.entry.js.tmpl" }}
             {{ $swManagerEntryTemplate := resources.Get $swManagerEntryPath }}
             {{ if not $swManagerEntryTemplate }}{{ errorf "编译失败: 缺少资源 %q。" $swManagerEntryPath }}{{ end }}
-            {{ $swManagerEntry := $swManagerEntryTemplate | resources.ExecuteAsTemplate "js/sw-manager.enable.entry.js" (dict "sw_url" $swUrl) }}
+            {{ $swManagerEntry := $swManagerEntryTemplate | resources.ExecuteAsTemplate "js/sw-manager.enable.entry.js" (dict "sw_url" $swUrl "update_style_url" $swUpdatePopover.RelPermalink) }}
             {{ $swManagerBundle := $swManagerEntry | js.Build (dict "targetPath" "js/sw-manager.enable.bundle.js") }}
             {{ if not hugo.IsServer }}{{ $swManagerBundle = $swManagerBundle | minify }}{{ end }}
             {{ $swManager := $swManagerBundle | fingerprint }}
@@ -157,7 +158,7 @@
     {{ end }}
     <div class="page">
         <a class="skip" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
-        <header class="site-header">
+        <header>
             <div class="copyright">
                 {{ with site.Params.copyright }}
                 <small>&copy; {{ now.Format "2006" }} {{ . | safeHTML }}</small>
@@ -182,7 +183,7 @@
             </div>
         </header>
 
-        <nav aria-label="Primary">
+        <nav class="site-nav" aria-label="Primary">
             {{ $account_link := site.Params.account_url }}
             {{ $has_account := true }}
             {{ if not $account_link }}
@@ -194,7 +195,7 @@
                 <span>{{ i18n "label_account" | default "Account" }}</span>
                 {{ end }}
                 <img src="{{ $faviconSvg.RelPermalink }}" alt="Logo" class="default-avatar" fetchpriority="low" />
-                <img src="" alt="User Avatar" class="user-avatar" style="display:none;" />
+                <img src="" alt="User Avatar" class="user-avatar" />
             </a>
 
             {{ $cur := .Language.Lang }}

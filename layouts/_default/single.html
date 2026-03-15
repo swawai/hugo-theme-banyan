@@ -1,14 +1,15 @@
+{{ define "styles" }}
+{{ partial "head-styles.html" (dict "ctx" . "variant" "page-crumb") }}
+{{ end }}
+
 {{ define "head-extra" }}
-{{ $post := resources.Get "css/post.css" }}
-{{ if not hugo.IsServer }}{{ $post = $post | minify }}{{ end }}
-{{ $post = $post | fingerprint }}
-<link rel="stylesheet" href="{{ $post.RelPermalink }}">
+{{ partial "article-styles.html" (dict "ctx" . "with_meta" true) }}
 {{ end }}
 
 
 {{ define "breadcrumb" }}
 {{ $page := . }}
-<nav class="post-dir breadcrumb-nav" aria-label="Breadcrumb"><span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "dir") 0) }}{{ partial "link.html" (dict "ctx" $page "href" (.URL | relLangURL) "text" (i18n (printf "menu_%s" .Identifier) | default .Name) "textClass" "breadcrumb-current-text" "linkSlot" "nav") }}{{ else }}{{ (i18n "menu_dir") | default "DIR" }}{{ end }}</span> <span class="sep">/</span>{{ range (where .Ancestors.Reverse "IsHome" "ne" true) }}{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "text" .LinkTitle "textClass" "breadcrumb-current-text" "linkSlot" "nav") }}<span class="sep">/</span>{{ end }}{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "text" .Title "textClass" "breadcrumb-current-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}</nav>
+<nav class="post-dir breadcrumb-nav" aria-label="Breadcrumb"><span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "dir") 0) }}{{ partial "link.html" (dict "ctx" $page "href" (.URL | relLangURL) "text" (i18n (printf "menu_%s" .Identifier) | default .Name) "textClass" "crumb-text" "linkSlot" "nav") }}{{ else }}{{ (i18n "menu_dir") | default "DIR" }}{{ end }}</span> <span class="sep">/</span>{{ range (where .Ancestors.Reverse "IsHome" "ne" true) }}{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "text" .LinkTitle "textClass" "crumb-text" "linkSlot" "nav") }}<span class="sep">/</span>{{ end }}{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "text" .Title "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}</nav>
 
 {{/* UDC 精简显示：按分支只显示最深层 term */}}
 {{ with .Params.udc }}
@@ -61,10 +62,10 @@
 {{ end }}
 {{ end }}
 {{ define "main" }}
-    <article class="post">
+    <article class="article">
         {{/*  <h1>{{ .Title }}</h1>  */}}
         {{/* 发布与更新：合并为一行，仅在 Lastmod 不同于 Date 时追加 Updated */}}
-        <div class="post-meta-time">
+        <div class="article-meta">
           {{ if .Date }}
             <time datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
               {{ i18n "label_published" | default "Published" }} {{ .Date.Format "2006-01-02" }}
@@ -72,12 +73,12 @@
           {{ end }}
           {{ if and .Lastmod (ne (.Lastmod.Format "2006-01-02") (.Date.Format "2006-01-02")) }}
             <span class="sep"> · </span>
-            <time class="post-updated" datetime="{{ .Lastmod.Format "2006-01-02T15:04:05Z07:00" }}">
+            <time class="article-updated" datetime="{{ .Lastmod.Format "2006-01-02T15:04:05Z07:00" }}">
               {{ i18n "label_updated" | default "Updated" }} {{ .Lastmod.Format "2006-01-02" }}
             </time>
           {{ end }}
         </div>
-        <div class="post-content">
+        <div class="prose">
     {{ .Content }}
         </div>
 

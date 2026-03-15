@@ -1,0 +1,23 @@
+.prose :where(code, pre) {
+    background: var(--border-subtle);
+}
+
+.prose code {
+    padding: 0.15em 0.35em;
+    border-radius: 3px;
+    font: 0.9em "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+}
+
+.prose pre {
+    margin: 1em 0;
+    padding: 1em;
+    overflow-x: auto;
+    border-radius: 4px;
+}
+
+.prose pre code {
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+    font-size: 0.85em;
+}

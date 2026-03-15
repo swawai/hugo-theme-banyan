@@ -1,0 +1,40 @@
+.prose {
+    line-height: 1.65;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.prose p {
+    margin: 1em 0;
+}
+
+.prose h2,
+.prose h3 {
+    line-height: 1.3;
+}
+
+.prose h2 {
+    margin: 1.4em 0 0.7em;
+    font-size: 1.5em;
+}
+
+.prose h3 {
+    margin: 1.2em 0 0.6em;
+    font-size: 1.25em;
+}
+
+.prose h4,
+.prose h5,
+.prose h6 {
+    margin: 1em 0 0.5em;
+}
+
+.prose h4 {
+    font-size: 1.1em;
+    line-height: 1.35;
+}
+
+.prose :is(h5, h6) {
+    font-size: 1em;
+    line-height: 1.4;
+}

@@ -1,0 +1,27 @@
+.copyright {
+    display: flex;
+    flex-wrap: nowrap;
+    column-gap: 0.4rem;
+    white-space: nowrap;
+    margin-bottom: 0.05rem;
+}
+
+.copyright > * {
+    flex-shrink: 0;
+}
+
+.copyright a,
+.copyright a:visited {
+    color: inherit;
+}
+
+.copyright a:hover {
+    opacity: 0.8;
+}
+
+.copyright .social-links img {
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.15em;
+    border-bottom: 1px solid;
+}

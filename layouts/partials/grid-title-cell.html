@@ -2,12 +2,12 @@
 {{ $title := .title }}
 {{ $text := .text | default $title }}
 {{ $icon := .icon | default "file" }}
-{{ $label := .label | default (printf "Open %s" $title) }}
+{{ $label := .label }}
 {{ $ctx := .ctx }}
 {{ $linkSlot := .linkSlot | default (.prefetchSlot | default (.prefetchKind | default "")) }}
 {{ if and $ctx $linkSlot }}{{ partial "link-collect-url.html" (dict "ctx" $ctx "slot" $linkSlot "url" $href) }}{{ end }}
 <span class="cell-title">
-  <a class="title-link" href="{{ $href }}" aria-label="{{ $label }}">
+  <a class="title-link" href="{{ $href }}"{{ with $label }} aria-label="{{ . }}"{{ end }}>
     <span class="title-icon">{{ partial "icon" (dict "name" $icon) }}</span>
     <span class="title-text">{{ $text }}</span>
   </a>

@@ -1,0 +1,17 @@
+.prose table {
+    margin: 1em 0;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95em;
+}
+
+.prose :is(th, td) {
+    padding: 0.5em 0.75em;
+    border: 1px solid var(--border);
+    text-align: left;
+}
+
+.prose th {
+    background: var(--border-subtle);
+    font-weight: 600;
+}

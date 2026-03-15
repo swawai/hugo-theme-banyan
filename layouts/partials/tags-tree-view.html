@@ -54,12 +54,12 @@
       {{ end }}
       {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" $href "title" .title "text" (printf "%s/" .title) "icon" "folder" "prefetchKind" "desc") }}
       <span class="cell-date">{{ .latest }}</span>
-      <span class="cell-count"><span class="num">{{ .cnt }}</span><span class="unit"></span></span>
+      <span class="cell-count"><span>{{ .cnt }}</span><span class="unit"></span></span>
     {{ else if eq .kind "page" }}
       {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .url "title" .title "icon" "file" "prefetchKind" "post") }}
       <span class="cell-date">{{ .latest }}</span>
       {{ $kb := div (add .bytes 1023) 1024 }}
-      <span class="cell-count"><span class="num">{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>
+      <span class="cell-count"><span>{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>
     {{ end }}
   {{ end }}
 </div>

@@ -1,0 +1,9 @@
+.article {
+    max-width: 65ch;
+}
+
+.article h1 {
+    margin: 0.8em 0 0.4em;
+    font-size: 1.75em;
+    line-height: 1.3;
+}

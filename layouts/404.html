@@ -1,11 +1,19 @@
+{{ define "styles" }}
+{{ partial "head-styles.html" (dict "ctx" . "variant" "page") }}
+{{ end }}
+
+{{ define "head-extra" }}
+{{ partial "article-styles.html" (dict "ctx" .) }}
+{{ end }}
+
 {{ define "main" }}
-<article class="post">
+<article class="article">
     <h1>404</h1>
     <p>{{ i18n "notFoundTitle" | default "页面不存在" }}</p>
     <p>{{ i18n "notFoundDesc" | default "当前语言可能没有该页面的翻译。您可以：" }}</p>
     <ul>
         <li><a href="{{ .Site.Home.RelPermalink }}">{{ i18n "goHome" | default "返回本语言首页" }}</a></li>
-        <li id="try-others" class="hidden">
+        <li id="try-others" hidden>
             {{ i18n "tryOtherLangs" | default "尝试其他语言版本：" }}
             <span id="alt-lang-links"></span>
         </li>
@@ -54,7 +62,7 @@
                 a.textContent = lang;
                 a.style.marginRight = '0.5rem';
                 links.appendChild(a);
-                if (!shown) { box.style.display = ''; shown = true; }
+                if (!shown) { box.hidden = false; shown = true; }
               }
             })
             .catch(function(){});

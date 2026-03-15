@@ -1,27 +1,10 @@
 .grid-list {
-    --title-icon-gap: 0.15em;
-    --icon-size: 1.2rem;
-    --title-header-offset: 0.8rem;
-    --date-header-offset: 0;
-    --count-header-offset: 0;
-    --col-title: 15em;
-    --col-date-min: 5em;
-    --col-count-min: 3em;
-    --col-size-min: 3em;
-    --col-path-min: 8em;
-    --size-unit-min-width: 3ch;
-    --grid-columns: minmax(var(--col-title), var(--col-title)) minmax(var(--col-date-min), max-content) minmax(var(--col-count-min), max-content);
-
     position: relative;
     display: grid;
     width: max-content;
-    grid-template-columns: var(--grid-columns);
+    grid-template-columns: 15em minmax(5em, max-content) minmax(3em, max-content);
     justify-content: start;
     column-gap: 1em;
-}
-
-.grid-list.cols-4 {
-    --grid-columns: minmax(var(--col-title), var(--col-title)) minmax(var(--col-date-min), max-content) minmax(var(--col-size-min), max-content) minmax(var(--col-path-min), max-content);
 }
 
 .grid-list > * {
@@ -31,52 +14,38 @@
     white-space: nowrap;
 }
 
-.grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path) {
+.grid-list > :is(.cell-title, .cell-date, .cell-count) {
     pointer-events: none;
 }
 
-.grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path) a {
+.grid-list > :is(.cell-title, .cell-date, .cell-count) a {
     pointer-events: auto;
-}
-
-.grid-list .cell-title {
-    min-width: 0;
 }
 
 .grid-list .title-link {
     display: inline-flex;
     align-items: center;
-    gap: var(--title-icon-gap);
+    gap: 0.15em;
     min-width: 0;
     max-width: 100%;
     color: inherit;
 }
 
 .grid-list .title-icon {
-    display: inline-flex;
-    align-items: center;
     flex: none;
 }
 
 .grid-list .title-text {
     flex: 1 1 auto;
-    display: inline-block;
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.grid-list :is(.icon, img.icon) {
-    display: inline-block;
-    width: var(--icon-size);
-    height: var(--icon-size);
+.grid-list .icon {
+    width: 1.2rem;
+    height: 1.2rem;
     vertical-align: -0.15em;
-}
-
-.grid-list .icon svg {
-    display: block;
-    width: 100%;
-    height: 100%;
 }
 
 .grid-list .cell-count {
@@ -88,62 +57,41 @@
     justify-self: stretch;
 }
 
-.grid-list .num {
-    display: inline-block;
-    text-align: right;
-}
-
 .grid-list .unit {
     display: inline-block;
-    min-width: var(--size-unit-min-width);
+    min-width: 3ch;
     text-align: left;
 }
-
-/* .grid-list :is(.cell-date, .cell-count, .cell-path):not(.header),
-.grid-list :is(.cell-title, .cell-date, .cell-count, .cell-path).header {
-    color: var(--link);
-
-} */
 
 .grid-list a:focus-visible {
     outline-offset: -2px;
 }
 
-.grid-list :is(.cell-path a, .header a) {
+.grid-list .header a {
     display: block;
     width: 100%;
+    height: 100%;
     color: inherit;
-}
-
-.grid-list .header a {
     margin-bottom: -0.3rem;
 }
 
 .grid-list::after {
     content: "";
     position: absolute;
+    top: 1.45rem;
     left: 0;
     right: 0;
-    top: 1.45rem;
-    border-bottom: 1px solid currentColor;
+    border-bottom: 1px solid;
     opacity: 0.05;
     pointer-events: none;
 }
 
 .grid-list .cell-title.header a {
-    padding-left: var(--title-header-offset);
-}
-
-.grid-list .cell-date.header a {
-    padding-left: var(--date-header-offset);
-}
-
-.grid-list .cell-count.header a {
-    padding-left: var(--count-header-offset);
+    padding-left: 0.8rem;
 }
 
 .grid-list .cell-count.header a::after {
     content: "";
     display: inline-block;
-    width: var(--size-unit-min-width);
+    width: 3ch;
 }

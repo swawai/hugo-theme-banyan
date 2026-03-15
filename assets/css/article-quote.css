@@ -1,0 +1,10 @@
+.prose blockquote {
+    margin: 1em 0;
+    padding: 0.5em 1em;
+    border-left: 3px solid var(--border);
+    opacity: 0.85;
+}
+
+.prose blockquote p:last-child {
+    margin-bottom: 0;
+}

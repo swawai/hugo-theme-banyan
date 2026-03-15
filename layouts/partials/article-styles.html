@@ -1,0 +1,38 @@
+{{ $articleBase := resources.Get "css/article-base.css" }}
+{{ $articleMeta := resources.Get "css/article-meta.css" }}
+{{ $articleProse := resources.Get "css/article-prose.css" }}
+{{ $articleCode := resources.Get "css/article-code.css" }}
+{{ $articleList := resources.Get "css/article-list.css" }}
+{{ $articleMedia := resources.Get "css/article-media.css" }}
+{{ $articleQuote := resources.Get "css/article-quote.css" }}
+{{ $articleTable := resources.Get "css/article-table.css" }}
+{{ $ctx := . }}
+{{ with .ctx }}{{ $ctx = . }}{{ end }}
+{{ $withMeta := false }}
+{{ with .with_meta }}{{ $withMeta = . }}{{ end }}
+{{ $content := "" }}
+{{ with $ctx.Content }}{{ $content = . }}{{ end }}
+{{ $features := slice }}
+{{ if and $content (gt (len (findRE "<(?:ul|ol)\\b" $content)) 0) }}{{ $features = $features | append "list" }}{{ end }}
+{{ if and $content (gt (len (findRE "<blockquote\\b" $content)) 0) }}{{ $features = $features | append "quote" }}{{ end }}
+{{ if and $content (gt (len (findRE "<(?:img|hr)\\b" $content)) 0) }}{{ $features = $features | append "media" }}{{ end }}
+{{ if and $content (gt (len (findRE "<(?:pre|code)\\b" $content)) 0) }}{{ $features = $features | append "code" }}{{ end }}
+{{ if and $content (gt (len (findRE "<table\\b" $content)) 0) }}{{ $features = $features | append "table" }}{{ end }}
+{{ $articleCoreParts := slice $articleBase $articleProse }}
+{{ if $withMeta }}{{ $articleCoreParts = $articleCoreParts | append $articleMeta }}{{ end }}
+{{ $articleCore := $articleCoreParts | resources.Concat "css/article-core.css" }}
+{{ $articleCore = partial "css-process.html" (dict "resource" $articleCore "fingerprint" true) }}
+<link rel="stylesheet" href="{{ $articleCore.RelPermalink }}">
+{{ $articleAddonParts := slice }}
+{{ $articleAddonKeys := slice }}
+{{ if in $features "list" }}{{ $articleAddonParts = $articleAddonParts | append $articleList }}{{ $articleAddonKeys = $articleAddonKeys | append "list" }}{{ end }}
+{{ if in $features "quote" }}{{ $articleAddonParts = $articleAddonParts | append $articleQuote }}{{ $articleAddonKeys = $articleAddonKeys | append "quote" }}{{ end }}
+{{ if in $features "media" }}{{ $articleAddonParts = $articleAddonParts | append $articleMedia }}{{ $articleAddonKeys = $articleAddonKeys | append "media" }}{{ end }}
+{{ if in $features "code" }}{{ $articleAddonParts = $articleAddonParts | append $articleCode }}{{ $articleAddonKeys = $articleAddonKeys | append "code" }}{{ end }}
+{{ if in $features "table" }}{{ $articleAddonParts = $articleAddonParts | append $articleTable }}{{ $articleAddonKeys = $articleAddonKeys | append "table" }}{{ end }}
+{{ if gt (len $articleAddonParts) 0 }}
+{{ $articleAddonTarget := printf "css/article-addon.%s.css" (delimit $articleAddonKeys ".") }}
+{{ $articleAddon := $articleAddonParts | resources.Concat $articleAddonTarget }}
+{{ $articleAddon = partial "css-process.html" (dict "resource" $articleAddon "fingerprint" true) }}
+<link rel="stylesheet" href="{{ $articleAddon.RelPermalink }}">
+{{ end }}

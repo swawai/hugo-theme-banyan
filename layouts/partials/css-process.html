@@ -1,0 +1,5 @@
+{{ $css := .resource | css.PostCSS (dict "noMap" true) }}
+{{ if not hugo.IsServer }}{{ $css = $css | minify }}{{ end }}
+{{ if .fingerprint }}{{ $css = $css | fingerprint }}{{ end }}
+{{ if not hugo.IsServer }}{{ $css = $css | resources.PostProcess }}{{ end }}
+{{ return $css }}

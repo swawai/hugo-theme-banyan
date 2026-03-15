@@ -1,22 +1,51 @@
-{{ $base := resources.Get "css/base.css" }}
-{{ $header := resources.Get "css/header.css" }}
-{{ $nav := resources.Get "css/nav.css" }}
-{{ $grid := resources.Get "css/grid-list.css" }}
-{{ $utils := resources.Get "css/utilities.css" }}
-{{ $cssBundle := slice $base $header $nav $grid $utils | resources.Concat "css/bundle.css" }}
-{{ if not hugo.IsServer }}{{ $cssBundle = $cssBundle | minify }}{{ end }}
-{{ $alternativeOutputNames := slice }}
-{{ range .AlternativeOutputFormats }}{{ $alternativeOutputNames = $alternativeOutputNames | append .Name }}{{ end }}
-{{ $currentOutputName := "" }}
-{{ range .OutputFormats }}
-{{ if not (in $alternativeOutputNames .Name) }}{{ $currentOutputName = .Name }}{{ end }}
+{{ $ctx := . }}
+{{ with .ctx }}{{ $ctx = . }}{{ end }}
+{{ $variant := "" }}
+{{ with .variant }}{{ $variant = . }}{{ end }}
+{{ $flags := partial "page-style-flags.html" (dict "ctx" $ctx) }}
+{{ $coreA11y := resources.Get "css/core-a11y.css" }}
+{{ $coreBase := resources.Get "css/core-base.css" }}
+{{ $coreMotion := resources.Get "css/core-motion.css" }}
+{{ $gridAll := resources.Get "css/grid-all.css" }}
+{{ $gridList := resources.Get "css/grid-list.css" }}
+{{ $navBreadcrumb := resources.Get "css/nav-breadcrumb.css" }}
+{{ $navPrimary := resources.Get "css/nav-primary.css" }}
+{{ $siteHeader := resources.Get "css/site-header.css" }}
+{{ $swUpdateAnchor := resources.Get "css/sw-update-anchor.css" }}
+{{ $swModeRaw := $ctx.Site.Params.service_worker.mode | default "off" }}
+{{ $swMode := lower (printf "%v" $swModeRaw) }}
+{{ $pageBundleParts := slice $coreBase $siteHeader $navPrimary $coreA11y $coreMotion }}
+{{ $pageBundle := $pageBundleParts | resources.Concat "css/bundle-page.css" }}
+{{ $pageBundle = partial "css-process.html" (dict "resource" $pageBundle "fingerprint" true) }}
+{{ $pageCrumbBundleParts := $pageBundleParts | append $navBreadcrumb }}
+{{ if eq $swMode "enable" }}{{ $pageCrumbBundleParts = $pageCrumbBundleParts | append $swUpdateAnchor }}{{ end }}
+{{ $pageCrumbBundle := $pageCrumbBundleParts | resources.Concat "css/bundle-page-crumb.css" }}
+{{ $pageCrumbBundle = partial "css-process.html" (dict "resource" $pageCrumbBundle "fingerprint" true) }}
+{{ $listBundleParts := $pageCrumbBundleParts | append $gridList }}
+{{ $listBundle := $listBundleParts | resources.Concat "css/bundle-list.css" }}
+{{ $listBundle = partial "css-process.html" (dict "resource" $listBundle "fingerprint" true) }}
+{{ $allBundleParts := $listBundleParts | append $gridAll }}
+{{ $allBundle := $allBundleParts | resources.Concat "css/bundle-all.css" }}
+{{ $allBundle = partial "css-process.html" (dict "resource" $allBundle "fingerprint" true) }}
+{{ $homeCritical := slice $coreBase $siteHeader $navPrimary $coreA11y $gridList | resources.Concat "css/home-critical.css" }}
+{{ $homeCritical = partial "css-process.html" (dict "resource" $homeCritical) }}
+{{ $homeAddonParts := slice $coreMotion }}
+{{ $homeAddon := $homeAddonParts | resources.Concat "css/home-addon.css" }}
+{{ $homeAddon = partial "css-process.html" (dict "resource" $homeAddon "fingerprint" true) }}
+{{ $resolvedVariant := $variant }}
+{{ if not $resolvedVariant }}
+{{ $resolvedVariant = index $flags "defaultVariant" }}
 {{ end }}
-{{ $primaryOutputName := "" }}
-{{ with index .OutputFormats 0 }}{{ $primaryOutputName = .Name }}{{ end }}
-{{ $isLanguageHome := and .IsHome (eq $currentOutputName $primaryOutputName) }}
-{{ if $isLanguageHome }}
-<style>{{ $cssBundle.Content | safeCSS }}</style>
+{{ if eq $resolvedVariant "home" }}
+<style>{{ $homeCritical.Content | safeCSS }}</style>
+<link rel="preload" href="{{ $homeAddon.RelPermalink }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="{{ $homeAddon.RelPermalink }}"></noscript>
+{{ else if eq $resolvedVariant "all" }}
+<link rel="stylesheet" href="{{ $allBundle.RelPermalink }}">
+{{ else if eq $resolvedVariant "list" }}
+<link rel="stylesheet" href="{{ $listBundle.RelPermalink }}">
+{{ else if eq $resolvedVariant "page" }}
+<link rel="stylesheet" href="{{ $pageBundle.RelPermalink }}">
 {{ else }}
-{{ $css := $cssBundle | fingerprint }}
-<link rel="stylesheet" href="{{ $css.RelPermalink }}">
+<link rel="stylesheet" href="{{ $pageCrumbBundle.RelPermalink }}">
 {{ end }}

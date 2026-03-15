@@ -1,0 +1,7 @@
+@media (prefers-reduced-motion: reduce) {
+    html::before,
+    body,
+    a {
+        transition-duration: 0.01ms !important;
+    }
+}

@@ -136,6 +136,9 @@ async function maybePromptUpdateFallback() {
 
 async function ensureUpdatePopover() {
     if (updatePopover) return updatePopover;
+    if (activeRuntime?.ensureUpdateStyle) {
+        await activeRuntime.ensureUpdateStyle();
+    }
 
     const copy = await hydrateUpdateCopy();
     const popover = document.createElement('div');

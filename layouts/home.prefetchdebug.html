@@ -1,8 +1,9 @@
+{{ define "styles" }}
+{{ partial "head-styles.html" (dict "ctx" . "variant" "page") }}
+{{ end }}
+
 {{ define "head-extra" }}
-{{ $post := resources.Get "css/post.css" }}
-{{ if not hugo.IsServer }}{{ $post = $post | minify }}{{ end }}
-{{ $post = $post | fingerprint }}
-<link rel="stylesheet" href="{{ $post.RelPermalink }}">
+{{ partial "article-styles.html" (dict "ctx" .) }}
 <style>
   .prefetch-debug {
     display: grid;
@@ -45,8 +46,8 @@
 {{ end }}
 
 {{ define "main" }}
-<article class="post prefetch-debug">
-  <div class="post-content">
+<article class="article prefetch-debug">
+  <div class="prose">
     <h1>Prefetch Debug</h1>
     <p>Use this page to inspect browser capability detection, current prefetch payload, and the resources actually injected into the page.</p>
   </div>

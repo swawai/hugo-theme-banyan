@@ -1,0 +1,12 @@
+.prose img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 1em 0;
+}
+
+.prose hr {
+    margin: 2em 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+}

@@ -62,11 +62,11 @@
   {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .url "title" (or .display .title) "icon" $icon "prefetchKind" (cond $isCat "desc" "post")) }}
   <span class="cell-date">{{ cond (ne .latest "") .latest "." }}</span>
   {{ if $isCat }}
-  <span class="cell-count"><span class="num">{{ cond (ne .cnt "") .cnt "." }}</span><span class="unit"></span></span>
+  <span class="cell-count"><span>{{ cond (ne .cnt "") .cnt "." }}</span><span class="unit"></span></span>
   {{ else }}
     {{ $bytes := .bytes }}
     {{ $kb := div (add $bytes 1023) 1024 }}
-    <span class="cell-count"><span class="num">{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>
+    <span class="cell-count"><span>{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>
   {{ end }}
 {{ end }}
 

@@ -1,0 +1,30 @@
+{{ $ctx := . }}
+{{ with .ctx }}{{ $ctx = . }}{{ end }}
+{{ $alternativeOutputNames := slice }}
+{{ range $ctx.AlternativeOutputFormats }}{{ $alternativeOutputNames = $alternativeOutputNames | append .Name }}{{ end }}
+{{ $currentOutputName := "" }}
+{{ range $ctx.OutputFormats }}
+{{ if not (in $alternativeOutputNames .Name) }}{{ $currentOutputName = .Name }}{{ end }}
+{{ end }}
+{{ $primaryOutputName := "" }}
+{{ with index $ctx.OutputFormats 0 }}{{ $primaryOutputName = .Name }}{{ end }}
+{{ $isLanguageHome := and $ctx.IsHome (eq $currentOutputName $primaryOutputName) }}
+{{ $gridOutputNames := slice "byname" "bynameasc" "bydate" "bydateasc" "bycount" "bycountasc" "allbyname" "allbynameasc" "allbydate" "allbydateasc" "allbypath" "allbypathasc" "allbysize" "allbysizeasc" }}
+{{ $needsGrid := in $gridOutputNames $currentOutputName }}
+{{ $needsGridAll := hasPrefix $currentOutputName "allby" }}
+{{ $defaultVariant := "page-crumb" }}
+{{ if $isLanguageHome }}
+{{ $defaultVariant = "home" }}
+{{ else if $needsGridAll }}
+{{ $defaultVariant = "all" }}
+{{ else if $needsGrid }}
+{{ $defaultVariant = "list" }}
+{{ end }}
+{{ return dict
+    "currentOutputName" $currentOutputName
+    "primaryOutputName" $primaryOutputName
+    "isLanguageHome" $isLanguageHome
+    "needsGrid" $needsGrid
+    "needsGridAll" $needsGridAll
+    "defaultVariant" $defaultVariant
+}}
