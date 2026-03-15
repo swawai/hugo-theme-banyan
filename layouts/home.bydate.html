@@ -1,15 +1,3 @@
-{{ define "styles" }}
-{{ $base := resources.Get "css/base.css" }}
-{{ $header := resources.Get "css/header.css" }}
-{{ $nav := resources.Get "css/nav.css" }}
-{{ $grid := resources.Get "css/grid-list.css" }}
-{{ $utils := resources.Get "css/utilities.css" }}
-{{ $cssBundle := slice $base $header $nav $grid $utils | resources.Concat "css/bundle.css" }}
-{{ if not hugo.IsServer }}{{ $cssBundle = $cssBundle | minify }}{{ end }}
-<style>{{ $cssBundle.Content | safeCSS }}</style>
-{{ end }}
-
-
 {{ define "main" }}
 {{ partial "list-dir-common.html" (dict "ctx" . "mode" "bydate") }}
 {{ end }}
