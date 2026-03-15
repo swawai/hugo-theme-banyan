@@ -1,4 +1,4 @@
-{{ define "styles" }}
+{{ define "head-extra" }}
 {{ $post := resources.Get "css/post.css" }}
 {{ if not hugo.IsServer }}{{ $post = $post | minify }}{{ end }}
 {{ $post = $post | fingerprint }}
