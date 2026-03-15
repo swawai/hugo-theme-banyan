@@ -70,8 +70,10 @@ panicOnWarning = true
 # T/F bits mean:
 #   1 = Speculation Rules transport available
 #   2 = rel=prefetch transport available
-#   3 = Service Worker transport available/allowed
-#       (not "an active worker is already ready")
+#   3 = Service Worker API available in the current context
+#       This only checks final SW API availability.
+#       It does not require an active worker to be ready, and it does
+#       not add a separate site-side policy gate.
 #
 # Hugo compiles each explicit env profile directly into page-local
 # prefetch action data. A shared runtime script picks the matching env

@@ -10,8 +10,6 @@
     }
     if (!actionsByEnv || typeof actionsByEnv !== 'object') return;
 
-    const allowServiceWorker = dataNode.dataset && dataNode.dataset.swTransport === '1';
-
     function supportsSpeculationRules() {
         try {
             return typeof HTMLScriptElement !== 'undefined'
@@ -31,15 +29,15 @@
         }
     }
 
-    function supportsServiceWorkerTransport() {
-        return allowServiceWorker && 'serviceWorker' in navigator;
+    function supportsServiceWorkerApi() {
+        return 'serviceWorker' in navigator;
     }
 
     function getBrowserEnvSequence() {
         return [
             supportsSpeculationRules() ? 'T' : 'F',
             supportsLinkPrefetch() ? 'T' : 'F',
-            supportsServiceWorkerTransport() ? 'T' : 'F'
+            supportsServiceWorkerApi() ? 'T' : 'F'
         ].join('');
     }
 

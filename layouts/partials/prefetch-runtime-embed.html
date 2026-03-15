@@ -39,7 +39,6 @@
 {{- end -}}
 {{- if gt (len $actionsPayloadByEnv) 0 -}}
   {{- $isServer := hugo.IsServer -}}
-  {{- $allowServiceWorker := eq $swMode "enable" -}}
   {{- $runtimeTemplatePath := "js/prefetch.runtime.entry.js.tmpl" -}}
   {{- $runtimeTemplate := resources.Get $runtimeTemplatePath -}}
   {{- if not $runtimeTemplate }}{{ errorf "编译失败: 缺少资源 %q。" $runtimeTemplatePath }}{{ end -}}
@@ -61,6 +60,6 @@
   {{- $runtimeBundle := $runtimeEntry | js.Build (dict "targetPath" (printf "js/prefetch.runtime.%s.bundle.js" $runtimeVariant)) -}}
   {{- if not $isServer }}{{ $runtimeBundle = $runtimeBundle | minify }}{{ end -}}
   {{- $runtimeBundle = $runtimeBundle | fingerprint -}}
-<script id="site-prefetch-data" type="application/json" data-sw-transport="{{ cond $allowServiceWorker "1" "0" }}">{{ $actionsPayloadByEnv | jsonify | safeJS }}</script>
+<script id="site-prefetch-data" type="application/json">{{ $actionsPayloadByEnv | jsonify | safeJS }}</script>
 <script src="{{ $runtimeBundle.RelPermalink }}" integrity="{{ $runtimeBundle.Data.Integrity }}" defer></script>
 {{- end -}}
