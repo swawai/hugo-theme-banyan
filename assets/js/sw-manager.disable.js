@@ -1,13 +1,14 @@
 const SW_SCOPE = '/';
 const NAVIGATION_CACHE_PREFIX = 'nav-html-';
 const ASSET_CACHE_PREFIX = 'asset-static-';
+const FINGERPRINT_ASSET_CACHE = 'asset-fingerprint';
 
 function supportsServiceWorker() {
     return 'serviceWorker' in navigator;
 }
 
 function isManagedCacheKey(key) {
-    return key.startsWith(NAVIGATION_CACHE_PREFIX) || key.startsWith(ASSET_CACHE_PREFIX);
+    return key === FINGERPRINT_ASSET_CACHE || key.startsWith(NAVIGATION_CACHE_PREFIX) || key.startsWith(ASSET_CACHE_PREFIX);
 }
 
 async function clearManagedCaches() {

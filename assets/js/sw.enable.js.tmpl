@@ -1,5 +1,6 @@
 const NAVIGATION_CACHE_PREFIX = 'nav-html-';
 const ASSET_CACHE_PREFIX = 'asset-static-';
+const FINGERPRINT_ASSET_CACHE = 'asset-fingerprint';
 const NAVIGATION_CACHE = NAVIGATION_CACHE_PREFIX + '{{ .build_version }}';
 const ASSET_CACHE = ASSET_CACHE_PREFIX + '{{ .build_version }}';
 const CACHE_FIRST_EXTENSIONS = {{ .cache_first_extensions | jsonify }};
@@ -38,9 +39,17 @@ function isCacheableAssetResponse(response) {
     return response && response.ok;
 }
 
+function getRequestPathname(request) {
+    try {
+        return new URL(request.url).pathname.toLowerCase();
+    } catch (error) {
+        return '';
+    }
+}
+
 function getRequestExtension(request) {
     try {
-        const pathname = new URL(request.url).pathname.toLowerCase();
+        const pathname = getRequestPathname(request);
         const match = pathname.match(/\.([a-z0-9]+)$/);
         return match ? match[1] : '';
     } catch (error) {
@@ -48,17 +57,38 @@ function getRequestExtension(request) {
     }
 }
 
-function shouldHandleAssetRequest(request) {
-    if (!CACHE_FIRST_EXTENSIONS.length) return false;
+function isEligibleAssetRequest(request) {
     if (request.method !== 'GET') return false;
     if (!isSameOriginRequest(request)) return false;
     if (isHtmlDocumentRequest(request)) return false;
+    return true;
+}
 
+function hasFingerprintInPath(pathname) {
+    return /\.[0-9a-f]{8,}\.[^./]+$/i.test(pathname);
+}
+
+function isFingerprintAssetRequest(request) {
+    if (!isEligibleAssetRequest(request)) return false;
+    return hasFingerprintInPath(getRequestPathname(request));
+}
+
+function isConfiguredCacheFirstAssetRequest(request) {
+    if (!CACHE_FIRST_EXTENSIONS.length) return false;
+    if (!isEligibleAssetRequest(request)) return false;
     return CACHE_FIRST_EXTENSIONS.includes(getRequestExtension(request));
 }
 
+function shouldHandleAssetRequest(request) {
+    return isFingerprintAssetRequest(request) || isConfiguredCacheFirstAssetRequest(request);
+}
+
+function getAssetCacheName(request) {
+    return isFingerprintAssetRequest(request) ? FINGERPRINT_ASSET_CACHE : ASSET_CACHE;
+}
+
 function isManagedCacheKey(key) {
-    return key.startsWith(NAVIGATION_CACHE_PREFIX) || key.startsWith(ASSET_CACHE_PREFIX);
+    return key === FINGERPRINT_ASSET_CACHE || key.startsWith(NAVIGATION_CACHE_PREFIX) || key.startsWith(ASSET_CACHE_PREFIX);
 }
 
 async function fetchNavigationResponse(request, preloadResponsePromise) {
@@ -117,6 +147,8 @@ async function warmNavigationUrl(urlValue) {
                 Accept: 'text/html'
             }
         });
+        const cachedResponse = await cache.match(request);
+        if (cachedResponse) return;
         await updateNavigationCache(request, cache, null);
     })();
 
@@ -137,22 +169,20 @@ async function warmNavigationUrls(urlValues) {
 async function handleNavigationRequest(request, preloadResponsePromise) {
     const cache = await caches.open(NAVIGATION_CACHE);
     const cachedResponse = await cache.match(request);
-    const networkResponsePromise = updateNavigationCache(request, cache, preloadResponsePromise);
-
     if (cachedResponse) {
-        return { response: cachedResponse, background: networkResponsePromise };
+        return cachedResponse;
     }
 
-    const networkResponse = await networkResponsePromise;
+    const networkResponse = await updateNavigationCache(request, cache, preloadResponsePromise);
     if (networkResponse) {
-        return { response: networkResponse, background: null };
+        return networkResponse;
     }
 
     throw new Error('Navigation request failed with no cached response.');
 }
 
 async function handleAssetRequest(request) {
-    const cache = await caches.open(ASSET_CACHE);
+    const cache = await caches.open(getAssetCacheName(request));
     const cachedResponse = await cache.match(request);
     if (cachedResponse) return cachedResponse;
 
@@ -193,14 +223,8 @@ self.addEventListener('message', (event) => {
 self.addEventListener('fetch', (event) => {
     const { request } = event;
     if (isHtmlDocumentRequest(request)) {
-        event.respondWith((async () => {
-            const preloadResponsePromise = request.mode === 'navigate' ? event.preloadResponse : null;
-            const result = await handleNavigationRequest(request, preloadResponsePromise);
-            if (result.background) {
-                event.waitUntil(result.background);
-            }
-            return result.response;
-        })());
+        const preloadResponsePromise = request.mode === 'navigate' ? event.preloadResponse : null;
+        event.respondWith(handleNavigationRequest(request, preloadResponsePromise));
         return;
     }
 

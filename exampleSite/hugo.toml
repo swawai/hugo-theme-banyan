@@ -111,6 +111,19 @@ panicOnWarning = true
 #[params.social]
 # github = "https://github.com/your-github"
 
+#[params.service_worker]
+# mode = "enable"
+# version = "202603110001"
+# Fingerprinted/hash assets are cache-first automatically.
+# cache_first_extensions is only for additional same-origin non-fingerprinted
+# asset types that you explicitly want to cache-first in a versioned bucket.
+# cache_first_extensions = ["webmanifest"]
+
+#[params.runtime_i18n]
+# Runtime UI copy fallback chain for shared assets such as SW update prompts.
+# Keys and values should use lowercase language tags.
+# fallbacks = { "zh-hk" = "zh-tw", "zh-mo" = "zh-tw" }
+
 [outputFormats.prefetchdebug]
 mediaType = "text/html"
 isHTML    = true

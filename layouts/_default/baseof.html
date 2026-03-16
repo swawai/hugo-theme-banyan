@@ -16,6 +16,17 @@
     {{ end }}
 {{ end }}
 {{ $cacheFirstExtensions = $cacheFirstExtensions | uniq }}
+{{ $runtimeI18nConfig := site.Params.runtime_i18n | default dict }}
+{{ $runtimeI18nFallbacks := dict }}
+{{ with index $runtimeI18nConfig "fallbacks" }}
+    {{ range $from, $to := . }}
+        {{ $fromLang := lower (printf "%v" $from) }}
+        {{ $toLang := lower (printf "%v" $to) }}
+        {{ if and $fromLang $toLang }}
+            {{ $runtimeI18nFallbacks = merge $runtimeI18nFallbacks (dict $fromLang $toLang) }}
+        {{ end }}
+    {{ end }}
+{{ end }}
 <!DOCTYPE html>
 <html lang="{{ .Site.Language.Lang }}">
 
@@ -51,6 +62,7 @@
     {{ $assetManifestBody := dict
         "langList" $langListResource.RelPermalink
         "i18n" $runtimeI18n
+        "i18nFallbacks" $runtimeI18nFallbacks
       | jsonify }}
     {{ $assetManifest := resources.FromString (printf "runtime/asset-manifest.%s.json" (md5 $assetManifestBody)) $assetManifestBody | fingerprint }}
     <meta charset="utf-8">

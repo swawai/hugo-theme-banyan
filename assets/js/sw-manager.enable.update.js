@@ -69,11 +69,17 @@ async function getRuntimeManifest() {
 function getRuntimeI18nUrl(manifest, lang) {
     const normalized = typeof lang === 'string' ? lang.toLowerCase() : '';
     const i18nMap = manifest && typeof manifest.i18n === 'object' ? manifest.i18n : null;
+    const fallbackMap = manifest && typeof manifest.i18nFallbacks === 'object' ? manifest.i18nFallbacks : null;
     if (!i18nMap) return '';
 
     if (typeof i18nMap[normalized] === 'string' && i18nMap[normalized]) return i18nMap[normalized];
-    if (normalized === 'zh-hk' || normalized === 'zh-mo') {
-        if (typeof i18nMap['zh-tw'] === 'string' && i18nMap['zh-tw']) return i18nMap['zh-tw'];
+
+    let current = normalized;
+    const visited = new Set();
+    while (fallbackMap && typeof fallbackMap[current] === 'string' && fallbackMap[current] && !visited.has(current)) {
+        visited.add(current);
+        current = fallbackMap[current].toLowerCase();
+        if (typeof i18nMap[current] === 'string' && i18nMap[current]) return i18nMap[current];
     }
 
     return '';
