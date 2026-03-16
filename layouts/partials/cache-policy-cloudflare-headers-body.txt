@@ -1,0 +1,18 @@
+{{- $routes := .routes | default slice -}}
+{{- $lines := slice -}}
+
+{{- range $route := $routes -}}
+    {{- $path := printf "%v" (index $route "path" | default "") -}}
+    {{- if not $path -}}
+        {{- continue -}}
+    {{- end -}}
+    {{- $lines = $lines | append $path -}}
+    {{- $headers := index $route "headers" | default dict -}}
+    {{- range $key, $value := $headers -}}
+        {{- $lines = $lines | append (printf "  %s: %s" $key $value) -}}
+    {{- end -}}
+    {{- $lines = $lines | append "" -}}
+{{- end -}}
+
+{{- $body := printf "%s\n" (delimit $lines "\n") -}}
+{{- return $body -}}

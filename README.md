@@ -31,3 +31,27 @@ Once copied, open your root `hugo.toml` and customize the `baseURL`, `title`, an
 
 ## License
 MIT
+
+
+
+
+
+public/_headers / public/edgeone.json 是 Hugo cache-policy.json  产物，腾讯Edgeone 可能需要拷贝public/edgeone.json 到你项目根目录
+
+### 查看静态资源统计
+npm run report:assets
+
+### npm
+npm run dev
+
+npm run build
+
+### hugo 基本命令
+a 开发，动态构建并指定端口：
+    hugo server  -D --port 13241
+b 开发，指定地址和访问地址：
+    hugo server  -D --bind 0.0.0.0 --port 5120 --baseURL "http://120.233.73.242:5120/"  --appendPort=false --printPathWarnings
+c 编译生产版：
+    hugo --gc --cleanDestinationDir --minify
+d 使用banyan 模板（archetypes 目录下的）创建文章
+    hugo new -k banyan content/blog/2026-03-06-asdf.md

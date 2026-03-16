@@ -6,16 +6,29 @@
     {{ errorf "编译失败: params.service_worker.mode 仅支持 enable/disable/off，当前值为 %q。" $swModeRaw }}
 {{ end }}
 {{ $swVersion := partialCached "service-worker-version.html" . "service-worker-version" }}
-{{ $cacheFirstExtensions := slice }}
 {{ with index $swConfig "cache_first_extensions" }}
-    {{ range . }}
-        {{ $ext := lower (printf "%v" .) | replaceRE "^\\." "" }}
-        {{ if $ext }}
-            {{ $cacheFirstExtensions = $cacheFirstExtensions | append $ext }}
-        {{ end }}
+    {{ errorf "编译失败: params.service_worker.cache_first_extensions 已迁移到根目录 cache-policy.json 的 routes[].sw 配置，请勿继续在 hugo.toml 中设置。" }}
+{{ end }}
+{{ $cachePolicyPath := "cache-policy.json" }}
+{{ if not (fileExists $cachePolicyPath) }}
+    {{ errorf "编译失败: 缺少根目录缓存策略文件 %q。" $cachePolicyPath }}
+{{ end }}
+{{ $cachePolicy := transform.Unmarshal (dict "format" "json") (readFile $cachePolicyPath) }}
+{{ $cachePolicyRoutes := index $cachePolicy "routes" | default slice }}
+{{ $cachePolicyHeaderRoutes := partial "cache-policy-header-routes.html" (dict "routes" $cachePolicyRoutes) }}
+{{ $swRoutes := slice }}
+{{ range $route := $cachePolicyRoutes }}
+    {{ with index $route "sw" }}
+        {{ $routeBucket := lower (printf "%v" (index . "bucket" | default "none")) }}
+        {{ $swRoute := dict
+            "scope" (lower (printf "%v" (index $route "scope" | default "")))
+            "path" (printf "%v" (index $route "path" | default ""))
+            "mode" (lower (printf "%v" (index . "mode" | default "ignore")))
+            "bucket" $routeBucket
+        }}
+        {{ $swRoutes = $swRoutes | append $swRoute }}
     {{ end }}
 {{ end }}
-{{ $cacheFirstExtensions = $cacheFirstExtensions | uniq }}
 {{ $runtimeI18nConfig := site.Params.runtime_i18n | default dict }}
 {{ $runtimeI18nFallbacks := dict }}
 {{ with index $runtimeI18nConfig "fallbacks" }}
@@ -26,6 +39,26 @@
             {{ $runtimeI18nFallbacks = merge $runtimeI18nFallbacks (dict $fromLang $toLang) }}
         {{ end }}
     {{ end }}
+{{ end }}
+{{ $offlineFallbacks := slice }}
+{{ range sort .Sites "Language.Weight" }}
+    {{ $offlineFallbacks = $offlineFallbacks | append (dict
+        "path_prefix" (lower (printf "%v" .Home.RelPermalink))
+        "url" (printf "%soffline/" .Home.RelPermalink)
+    ) }}
+{{ end }}
+{{ $primarySite := index (sort .Sites "Language.Weight") 0 }}
+{{ if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) }}
+    {{ $headersBody := partial "cache-policy-cloudflare-headers-body.txt" (dict "routes" $cachePolicyHeaderRoutes) }}
+    {{ $headersResource := resources.FromString "_headers" $headersBody }}
+    {{ $publishHeaders := $headersResource.RelPermalink }}
+    {{ $edgeoneConfig := partial "cache-policy-edgeone-config.html" (dict
+        "edgeone" (index $cachePolicy "edgeone" | default dict)
+        "routes" $cachePolicyHeaderRoutes
+    ) }}
+    {{ $edgeoneBody := jsonify $edgeoneConfig }}
+    {{ $edgeoneResource := resources.FromString "edgeone.json" $edgeoneBody }}
+    {{ $publishEdgeone := $edgeoneResource.RelPermalink }}
 {{ end }}
 <!DOCTYPE html>
 <html lang="{{ .Site.Language.Lang }}">
@@ -40,7 +73,7 @@
     {{ $appleTouchIcon := resources.Get "site/swaw180x180.png" }}
     {{ if not $appleTouchIcon }}{{ errorf "编译失败: 缺少资源 %q。" "site/swaw180x180.png" }}{{ end }}
     {{ $appleTouchIcon = $appleTouchIcon | fingerprint }}
-    {{ $defaultSite := index (sort .Sites "Language.Weight") 0 }}
+    {{ $defaultSite := $primarySite }}
     {{ $manifest := "" }}
     {{ if $defaultSite }}
         {{ $manifestTmpl := resources.Get "site/manifest.webmanifest.tmpl" }}
@@ -135,10 +168,16 @@
             {{ if not $swScriptTemplate }}{{ errorf "编译失败: 缺少资源 %q。" $swScriptTemplatePath }}{{ end }}
             {{ $swScriptContext := dict
                 "build_version" $swVersion
-                "cache_first_extensions" $cacheFirstExtensions
+                "offline_fallbacks" $offlineFallbacks
+                "sw_routes" $swRoutes
             }}
-            {{ $swScript := $swScriptTemplate | resources.ExecuteAsTemplate "sw.js" $swScriptContext }}
-            {{ $swUrl := $swScript.RelPermalink }}
+            {{ $swScriptEntry := $swScriptTemplate | resources.ExecuteAsTemplate "js/sw.enable.entry.js" $swScriptContext }}
+            {{ $swScript := $swScriptEntry | js.Build (dict
+                "targetPath" "sw.js"
+                "minify" (not hugo.IsServer)
+            ) }}
+            {{ $publishSw := $swScript.RelPermalink }}
+            {{ $swUrl := "sw.js" | relURL }}
             {{ $swUpdatePopover := resources.Get "css/sw-update-popover.css" }}
             {{ if not $swUpdatePopover }}{{ errorf "编译失败: 缺少资源 %q。" "css/sw-update-popover.css" }}{{ end }}
             {{ $swUpdatePopover = partial "css-process.html" (dict "resource" $swUpdatePopover "fingerprint" true) }}
@@ -155,7 +194,8 @@
             {{ $swScriptSource := resources.Get $swScriptPath }}
             {{ if not $swScriptSource }}{{ errorf "编译失败: 缺少资源 %q。" $swScriptPath }}{{ end }}
             {{ $swScript := $swScriptSource | resources.Copy "sw.js" }}
-            {{ $swUrl := $swScript.RelPermalink }}
+            {{ $publishSw := $swScript.RelPermalink }}
+            {{ $swUrl := "sw.js" | relURL }}
             {{ $swManagerPath := "js/sw-manager.disable.js" }}
             {{ $swManagerSource := resources.Get $swManagerPath }}
             {{ if not $swManagerSource }}{{ errorf "编译失败: 缺少资源 %q。" $swManagerPath }}{{ end }}

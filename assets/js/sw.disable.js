@@ -1,9 +1,13 @@
 const NAVIGATION_CACHE_PREFIX = 'nav-html-';
-const ASSET_CACHE_PREFIX = 'asset-static-';
+const VERSIONED_ASSET_CACHE_PREFIX = 'asset-versioned-';
+const LEGACY_VERSIONED_ASSET_CACHE_PREFIX = 'asset-static-';
 const FINGERPRINT_ASSET_CACHE = 'asset-fingerprint';
 
 function isManagedCacheKey(key) {
-    return key === FINGERPRINT_ASSET_CACHE || key.startsWith(NAVIGATION_CACHE_PREFIX) || key.startsWith(ASSET_CACHE_PREFIX);
+    return key === FINGERPRINT_ASSET_CACHE
+        || key.startsWith(NAVIGATION_CACHE_PREFIX)
+        || key.startsWith(VERSIONED_ASSET_CACHE_PREFIX)
+        || key.startsWith(LEGACY_VERSIONED_ASSET_CACHE_PREFIX);
 }
 
 self.addEventListener('install', () => {

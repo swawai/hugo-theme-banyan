@@ -1,9 +1,11 @@
 const NAVIGATION_CACHE_PREFIX = 'nav-html-';
-const ASSET_CACHE_PREFIX = 'asset-static-';
+const VERSIONED_ASSET_CACHE_PREFIX = 'asset-versioned-';
+const LEGACY_VERSIONED_ASSET_CACHE_PREFIX = 'asset-static-';
 const FINGERPRINT_ASSET_CACHE = 'asset-fingerprint';
 const NAVIGATION_CACHE = NAVIGATION_CACHE_PREFIX + '{{ .build_version }}';
-const ASSET_CACHE = ASSET_CACHE_PREFIX + '{{ .build_version }}';
-const CACHE_FIRST_EXTENSIONS = {{ .cache_first_extensions | jsonify }};
+const VERSIONED_ASSET_CACHE = VERSIONED_ASSET_CACHE_PREFIX + '{{ .build_version }}';
+const OFFLINE_FALLBACKS = {{ .offline_fallbacks | jsonify }};
+const SW_ROUTES = {{ .sw_routes | jsonify }};
 const navigationWarmupTasks = new Map();
 
 function isSameOriginRequest(request) {
@@ -47,16 +49,6 @@ function getRequestPathname(request) {
     }
 }
 
-function getRequestExtension(request) {
-    try {
-        const pathname = getRequestPathname(request);
-        const match = pathname.match(/\.([a-z0-9]+)$/);
-        return match ? match[1] : '';
-    } catch (error) {
-        return '';
-    }
-}
-
 function isEligibleAssetRequest(request) {
     if (request.method !== 'GET') return false;
     if (!isSameOriginRequest(request)) return false;
@@ -64,31 +56,63 @@ function isEligibleAssetRequest(request) {
     return true;
 }
 
-function hasFingerprintInPath(pathname) {
-    return /\.[0-9a-f]{8,}\.[^./]+$/i.test(pathname);
+function normalizeRoutePath(pathValue) {
+    return typeof pathValue === 'string' ? pathValue.toLowerCase() : '';
 }
 
-function isFingerprintAssetRequest(request) {
-    if (!isEligibleAssetRequest(request)) return false;
-    return hasFingerprintInPath(getRequestPathname(request));
+function matchesRoutePath(routePath, pathname) {
+    const normalizedRoutePath = normalizeRoutePath(routePath);
+    if (!normalizedRoutePath || !pathname) return false;
+    if (normalizedRoutePath === '/*') return true;
+    if (normalizedRoutePath.endsWith('/*')) {
+        return pathname.startsWith(normalizedRoutePath.slice(0, -1));
+    }
+    return pathname === normalizedRoutePath;
 }
 
-function isConfiguredCacheFirstAssetRequest(request) {
-    if (!CACHE_FIRST_EXTENSIONS.length) return false;
-    if (!isEligibleAssetRequest(request)) return false;
-    return CACHE_FIRST_EXTENSIONS.includes(getRequestExtension(request));
+function getMatchingRoute(scope, pathname) {
+    let defaultRoute = null;
+
+    for (const route of SW_ROUTES) {
+        if (!route || typeof route !== 'object') continue;
+        const routeScope = typeof route.scope === 'string' ? route.scope.toLowerCase() : '';
+        if (routeScope === 'default' && !defaultRoute && matchesRoutePath(route.path, pathname)) {
+            defaultRoute = route;
+            continue;
+        }
+        if (routeScope === scope && matchesRoutePath(route.path, pathname)) {
+            return route;
+        }
+    }
+
+    return defaultRoute;
 }
 
-function shouldHandleAssetRequest(request) {
-    return isFingerprintAssetRequest(request) || isConfiguredCacheFirstAssetRequest(request);
+function shouldHandleRoute(route) {
+    return route && route.mode === 'cache-first';
 }
 
-function getAssetCacheName(request) {
-    return isFingerprintAssetRequest(request) ? FINGERPRINT_ASSET_CACHE : ASSET_CACHE;
+function getCacheNameForRoute(route) {
+    if (!route) return '';
+    if (route.bucket === 'fingerprinted') return FINGERPRINT_ASSET_CACHE;
+    if (route.bucket === 'versioned') {
+        return route.scope === 'navigation' ? NAVIGATION_CACHE : VERSIONED_ASSET_CACHE;
+    }
+    return '';
 }
 
 function isManagedCacheKey(key) {
-    return key === FINGERPRINT_ASSET_CACHE || key.startsWith(NAVIGATION_CACHE_PREFIX) || key.startsWith(ASSET_CACHE_PREFIX);
+    return key === FINGERPRINT_ASSET_CACHE
+        || key.startsWith(NAVIGATION_CACHE_PREFIX)
+        || key.startsWith(VERSIONED_ASSET_CACHE_PREFIX)
+        || key.startsWith(LEGACY_VERSIONED_ASSET_CACHE_PREFIX);
+}
+
+function shouldDeleteOnActivate(key) {
+    if (key.startsWith(NAVIGATION_CACHE_PREFIX)) return key !== NAVIGATION_CACHE;
+    if (key.startsWith(VERSIONED_ASSET_CACHE_PREFIX)) return key !== VERSIONED_ASSET_CACHE;
+    if (key.startsWith(LEGACY_VERSIONED_ASSET_CACHE_PREFIX)) return true;
+    return false;
 }
 
 async function fetchNavigationResponse(request, preloadResponsePromise) {
@@ -113,6 +137,51 @@ function normalizeWarmNavigationUrl(urlValue) {
     }
 }
 
+function normalizePathnameForPrefixMatch(pathname) {
+    if (typeof pathname !== 'string' || !pathname) return '/';
+    if (pathname === '/') return '/';
+    return pathname.endsWith('/') ? pathname : pathname + '/';
+}
+
+function getOfflineFallbackUrl(pathname) {
+    const normalizedPathname = normalizePathnameForPrefixMatch(pathname);
+    let matchedUrl = '';
+    let matchedPrefixLength = -1;
+
+    for (const fallback of OFFLINE_FALLBACKS) {
+        if (!fallback || typeof fallback !== 'object') continue;
+
+        const normalizedPrefix = normalizePathnameForPrefixMatch(
+            typeof fallback.path_prefix === 'string' ? fallback.path_prefix.toLowerCase() : ''
+        );
+        const normalizedUrl = normalizeWarmNavigationUrl(fallback.url);
+
+        if (!normalizedPrefix || !normalizedUrl) continue;
+        if (!normalizedPathname.startsWith(normalizedPrefix)) continue;
+        if (normalizedPrefix.length <= matchedPrefixLength) continue;
+
+        matchedUrl = normalizedUrl;
+        matchedPrefixLength = normalizedPrefix.length;
+    }
+
+    return matchedUrl;
+}
+
+function getOfflineFallbackUrls() {
+    const urls = [];
+    const seenUrls = new Set();
+
+    for (const fallback of OFFLINE_FALLBACKS) {
+        if (!fallback || typeof fallback !== 'object') continue;
+        const normalizedUrl = normalizeWarmNavigationUrl(fallback.url);
+        if (!normalizedUrl || seenUrls.has(normalizedUrl)) continue;
+        seenUrls.add(normalizedUrl);
+        urls.push(normalizedUrl);
+    }
+
+    return urls;
+}
+
 async function updateNavigationCache(request, cache, preloadResponsePromise) {
     try {
         let response = await fetchNavigationResponse(request, preloadResponsePromise);
@@ -130,9 +199,36 @@ async function updateNavigationCache(request, cache, preloadResponsePromise) {
     }
 }
 
+async function getOfflineFallbackResponse(pathname) {
+    const offlineUrl = getOfflineFallbackUrl(pathname);
+    if (!offlineUrl) return null;
+
+    const cache = await caches.open(NAVIGATION_CACHE);
+    const offlineRequest = new Request(offlineUrl, {
+        credentials: 'same-origin',
+        headers: {
+            Accept: 'text/html'
+        }
+    });
+    const cachedResponse = await cache.match(offlineRequest);
+    if (cachedResponse) {
+        return cachedResponse;
+    }
+
+    const networkResponse = await updateNavigationCache(offlineRequest, cache, null);
+    if (isCacheableHtmlResponse(networkResponse)) {
+        return networkResponse;
+    }
+
+    return null;
+}
+
 async function warmNavigationUrl(urlValue) {
     const href = normalizeWarmNavigationUrl(urlValue);
     if (!href) return;
+    const pathname = getRequestPathname(new Request(href));
+    const route = getMatchingRoute('navigation', pathname);
+    if (!shouldHandleRoute(route)) return;
 
     if (navigationWarmupTasks.has(href)) {
         await navigationWarmupTasks.get(href);
@@ -140,7 +236,7 @@ async function warmNavigationUrl(urlValue) {
     }
 
     const task = (async () => {
-        const cache = await caches.open(NAVIGATION_CACHE);
+        const cache = await caches.open(getCacheNameForRoute(route));
         const request = new Request(href, {
             credentials: 'same-origin',
             headers: {
@@ -166,8 +262,18 @@ async function warmNavigationUrls(urlValues) {
     }
 }
 
+self.addEventListener('install', (event) => {
+    event.waitUntil(warmNavigationUrls(getOfflineFallbackUrls()));
+});
+
 async function handleNavigationRequest(request, preloadResponsePromise) {
-    const cache = await caches.open(NAVIGATION_CACHE);
+    const pathname = getRequestPathname(request);
+    const route = getMatchingRoute('navigation', pathname);
+    if (!shouldHandleRoute(route)) {
+        return fetchNavigationResponse(request, preloadResponsePromise);
+    }
+
+    const cache = await caches.open(getCacheNameForRoute(route));
     const cachedResponse = await cache.match(request);
     if (cachedResponse) {
         return cachedResponse;
@@ -178,13 +284,30 @@ async function handleNavigationRequest(request, preloadResponsePromise) {
         return networkResponse;
     }
 
+    const offlineFallbackResponse = await getOfflineFallbackResponse(pathname);
+    if (offlineFallbackResponse) {
+        return offlineFallbackResponse;
+    }
+
     throw new Error('Navigation request failed with no cached response.');
 }
 
-async function handleAssetRequest(request) {
-    const cache = await caches.open(getAssetCacheName(request));
+async function handleAssetRequest(request, pathname) {
+    const route = getMatchingRoute('asset', pathname);
+    if (!shouldHandleRoute(route)) {
+        return fetch(request);
+    }
+
+    const cacheName = getCacheNameForRoute(route);
+    if (!cacheName) {
+        return fetch(request);
+    }
+
+    const cache = await caches.open(cacheName);
     const cachedResponse = await cache.match(request);
-    if (cachedResponse) return cachedResponse;
+    if (cachedResponse) {
+        return cachedResponse;
+    }
 
     const networkResponse = await fetch(request);
     if (isCacheableAssetResponse(networkResponse)) {
@@ -201,8 +324,7 @@ self.addEventListener('activate', (event) => {
         const keys = await caches.keys();
         await Promise.all(
             keys
-                .filter((key) => key.startsWith(NAVIGATION_CACHE_PREFIX) || key.startsWith(ASSET_CACHE_PREFIX))
-                .filter((key) => key !== NAVIGATION_CACHE && key !== ASSET_CACHE)
+                .filter((key) => shouldDeleteOnActivate(key))
                 .map((key) => caches.delete(key))
         );
         await self.clients.claim();
@@ -222,13 +344,28 @@ self.addEventListener('message', (event) => {
 
 self.addEventListener('fetch', (event) => {
     const { request } = event;
+    const pathname = getRequestPathname(request);
+    if (!pathname) return;
+
     if (isHtmlDocumentRequest(request)) {
+        const route = getMatchingRoute('navigation', pathname);
+        if (!shouldHandleRoute(route)) return;
+
         const preloadResponsePromise = request.mode === 'navigate' ? event.preloadResponse : null;
         event.respondWith(handleNavigationRequest(request, preloadResponsePromise));
         return;
     }
 
-    if (shouldHandleAssetRequest(request)) {
-        event.respondWith(handleAssetRequest(request));
-    }
+    if (!isEligibleAssetRequest(request)) return;
+
+    const route = getMatchingRoute('asset', pathname);
+    if (!shouldHandleRoute(route)) return;
+
+    event.respondWith((async () => {
+        try {
+            return await handleAssetRequest(request, pathname);
+        } catch (error) {
+            return fetch(request);
+        }
+    })());
 });

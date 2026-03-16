@@ -1,0 +1,27 @@
+{{- $edgeone := .edgeone | default dict -}}
+{{- $routes := .routes | default slice -}}
+{{- $headers := slice -}}
+
+{{- range $route := $routes -}}
+    {{- $path := printf "%v" (index $route "path" | default "") -}}
+    {{- if not $path -}}
+        {{- continue -}}
+    {{- end -}}
+    {{- $headerEntries := slice -}}
+    {{- range $key, $value := (index $route "headers" | default dict) -}}
+        {{- $headerEntries = $headerEntries | append (dict "key" $key "value" $value) -}}
+    {{- end -}}
+    {{- $headers = $headers | append (dict
+        "source" $path
+        "headers" $headerEntries
+    ) -}}
+{{- end -}}
+
+{{- $config := dict
+    "installCommand" (printf "%v" (index $edgeone "installCommand" | default ""))
+    "buildCommand" (printf "%v" (index $edgeone "buildCommand" | default ""))
+    "outputDirectory" (printf "%v" (index $edgeone "outputDirectory" | default ""))
+    "nodeVersion" (printf "%v" (index $edgeone "nodeVersion" | default ""))
+    "headers" $headers
+-}}
+{{- return $config -}}

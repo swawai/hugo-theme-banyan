@@ -79,6 +79,9 @@ panicOnWarning = true
 # prefetch action data. A shared runtime script picks the matching env
 # at runtime. If an env profile references an unavailable transport,
 # Hugo fails at build time instead of leaving fallback logic to runtime.
+# There is no guarantee that link/spec transports will write into or hit
+# Service Worker caches. When SW is available, prefer SW warmup if you
+# need deterministic SW cache population and offline support.
 #
 # Runtime payload short codes:
 #   sp = speculation rules payload
@@ -97,8 +100,9 @@ panicOnWarning = true
 #   The first matching slot wins for a given URL.
 #
 # Debugging tip:
-#   Open /prefetch-debug.html to inspect browser capability detection,
-#   page payload, and the prefetch resources injected into the page.
+#   Open the content anchor page /prefetchdebug/ to inspect browser
+#   capability detection, page payload, and the prefetch resources injected
+#   into the page.
 #
 # Example:
 # [params.link_prefetch.env.TTT]
@@ -114,20 +118,16 @@ panicOnWarning = true
 #[params.service_worker]
 # mode = "enable"
 # version = "202603110001"
-# Fingerprinted/hash assets are cache-first automatically.
-# cache_first_extensions is only for additional same-origin non-fingerprinted
-# asset types that you explicitly want to cache-first in a versioned bucket.
-# cache_first_extensions = ["webmanifest"]
+# Asset caching routes, SW cache behavior, CDN headers, and platform-specific
+# header outputs are all driven by the root-level cache-policy.json file.
+# Hugo renders public/_headers and public/edgeone.json directly; keep the
+# repo-root edgeone.json synced via your npm/bun scripts.
+# Keep this section focused on SW lifecycle settings such as mode/version.
 
 #[params.runtime_i18n]
 # Runtime UI copy fallback chain for shared assets such as SW update prompts.
 # Keys and values should use lowercase language tags.
 # fallbacks = { "zh-hk" = "zh-tw", "zh-mo" = "zh-tw" }
-
-[outputFormats.prefetchdebug]
-mediaType = "text/html"
-isHTML    = true
-baseName  = "prefetch-debug"
 
 [frontmatter]
 lastmod = ["lastmod", ":git", ":fileModTime", ":default"]
@@ -218,7 +218,7 @@ baseName  = "index"
 path      = "all-by-size-asc"
 [outputs]
 section  = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
-home     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","prefetchdebug","rss"]
+home     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
 taxonomy = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
 term     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
 
@@ -228,7 +228,7 @@ languageName = "English"
 weight = 1
 [languages.en.outputs]
 section  = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
-home     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","prefetchdebug","rss"]
+home     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
 taxonomy = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
 term     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
 [languages.en.params]

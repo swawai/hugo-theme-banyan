@@ -1,0 +1,268 @@
+{{ define "styles" }}
+{{ partial "head-styles.html" (dict "ctx" . "variant" "page") }}
+{{ end }}
+
+{{ define "head-extra" }}
+{{ partial "article-styles.html" (dict "ctx" .) }}
+<style>
+    .prefetch-debug {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .prefetch-debug-panel {
+        border: 1px solid var(--border-color, #d0d7de);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        background: var(--surface-1, rgba(255, 255, 255, 0.85));
+    }
+
+    .prefetch-debug-panel h2 {
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+    }
+
+    .prefetch-debug-panel pre {
+        margin: 0;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    .prefetch-debug-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .prefetch-debug-links a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 2.5rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 999px;
+        border: 1px solid var(--border-color, #d0d7de);
+        text-decoration: none;
+    }
+</style>
+{{ end }}
+
+{{ define "main" }}
+<article class="article prefetch-debug">
+    <div class="prose">
+        <h1>{{ .Title }}</h1>
+        <p>Use this page to inspect browser capability detection, current prefetch payload, and the resources actually injected into the page.</p>
+        {{ with .Content }}{{ . }}{{ end }}
+    </div>
+
+    <section class="prefetch-debug-panel">
+        <h2>Sample Targets</h2>
+        <div class="prefetch-debug-links">
+            {{ partial "link.html" (dict "ctx" . "href" .Site.Home.RelPermalink "text" "Home" "linkSlot" "menu") }}
+            {{ partial "link.html" (dict "ctx" . "href" ("/about/" | relLangURL) "text" "About" "linkSlot" "menu") }}
+            {{ partial "link.html" (dict "ctx" . "href" ("/tags/" | relLangURL) "text" "Tags" "linkSlot" "menu") }}
+            {{ partial "link.html" (dict "ctx" . "href" ("/udc/" | relLangURL) "text" "UDC" "linkSlot" "menu") }}
+            {{ partial "link.html" (dict "ctx" . "href" ("/all-by-date/" | relLangURL) "text" "All By Date" "linkSlot" "menu") }}
+        </div>
+    </section>
+
+    <section class="prefetch-debug-panel">
+        <h2>Browser Support</h2>
+        <pre id="prefetch-debug-support">Loading...</pre>
+    </section>
+
+    <section class="prefetch-debug-panel">
+        <h2>Chosen Env</h2>
+        <pre id="prefetch-debug-env">Loading...</pre>
+    </section>
+
+    <section class="prefetch-debug-panel">
+        <h2>Chosen Actions</h2>
+        <pre id="prefetch-debug-actions">Loading...</pre>
+    </section>
+
+    <section class="prefetch-debug-panel">
+        <h2>Runtime Observation</h2>
+        <pre id="prefetch-debug-runtime">Loading...</pre>
+    </section>
+
+    <section class="prefetch-debug-panel">
+        <h2>Page Payload</h2>
+        <pre id="prefetch-debug-payload">Loading...</pre>
+    </section>
+
+    <script>
+    (function () {
+      function supportsSpeculationRules() {
+        try {
+          return typeof HTMLScriptElement !== 'undefined'
+            && typeof HTMLScriptElement.supports === 'function'
+            && HTMLScriptElement.supports('speculationrules');
+        } catch (error) {
+          return false;
+        }
+      }
+
+      function supportsLinkPrefetch() {
+        try {
+          var link = document.createElement('link');
+          return !!(link.relList && typeof link.relList.supports === 'function' && link.relList.supports('prefetch'));
+        } catch (error) {
+          return false;
+        }
+      }
+
+      function supportsServiceWorkerApi() {
+        return 'serviceWorker' in navigator;
+      }
+
+      function getBrowserEnvSequence() {
+        return [
+          supportsSpeculationRules() ? 'T' : 'F',
+          supportsLinkPrefetch() ? 'T' : 'F',
+          supportsServiceWorkerApi() ? 'T' : 'F'
+        ].join('');
+      }
+
+      function readPayload() {
+        var dataNode = document.getElementById('site-prefetch-data');
+        if (!dataNode) return null;
+        try {
+          return JSON.parse(dataNode.textContent || '{}');
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function pickActions(payload, envSequence) {
+        if (!payload || typeof payload !== 'object') return null;
+        var entry = payload[envSequence] || null;
+        if (!entry) return null;
+        if (typeof entry === 'string') {
+          var target = payload[entry] || null;
+          return target && typeof target === 'object'
+            ? { targetEnv: entry, actions: target }
+            : null;
+        }
+        return typeof entry === 'object'
+          ? { targetEnv: envSequence, actions: entry }
+          : null;
+      }
+
+      function writePre(id, value) {
+        var node = document.getElementById(id);
+        if (!node) return;
+        node.textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+      }
+
+      function describeWorker(worker) {
+        if (!worker) return null;
+        return {
+          scriptURL: worker.scriptURL || '',
+          state: worker.state || '',
+          type: worker.type || ''
+        };
+      }
+
+      function inspectRuntime() {
+        var speculationRulesCount = document.head.querySelectorAll('script[type="speculationrules"][data-prefetch-generated="runtime"]').length;
+        var prefetchLinkCount = document.head.querySelectorAll('link[rel="prefetch"][data-prefetch-link="runtime"]').length;
+        var serviceWorkerApi = supportsServiceWorkerApi();
+        var container = serviceWorkerApi ? navigator.serviceWorker : null;
+        var swState = {
+          apiAvailable: serviceWorkerApi,
+          secureContext: !!window.isSecureContext,
+          protocol: window.location.protocol,
+          controllerPresent: !!(container && container.controller),
+          hasReadyPromise: !!(container && container.ready),
+          hasGetRegistration: !!(container && typeof container.getRegistration === 'function'),
+          hasGetRegistrations: !!(container && typeof container.getRegistrations === 'function'),
+          controller: describeWorker(container && container.controller)
+        };
+        return {
+          speculationRulesCount: speculationRulesCount,
+          prefetchLinkCount: prefetchLinkCount,
+          serviceWorker: swState
+        };
+      }
+
+      async function refresh() {
+        var payload = readPayload();
+        var envSequence = getBrowserEnvSequence();
+        var picked = pickActions(payload, envSequence);
+        var runtimeState = inspectRuntime();
+        if (runtimeState.serviceWorker.apiAvailable) {
+          try {
+            var registration = await navigator.serviceWorker.getRegistration();
+            runtimeState.serviceWorker.getRegistrationResult = !!registration;
+            runtimeState.serviceWorker.registration = registration ? {
+              scope: registration.scope || '',
+              updateViaCache: registration.updateViaCache || '',
+              installing: describeWorker(registration.installing),
+              waiting: describeWorker(registration.waiting),
+              active: describeWorker(registration.active)
+            } : null;
+          } catch (error) {
+            runtimeState.serviceWorker.getRegistrationError = String(error && error.message ? error.message : error);
+          }
+
+          try {
+            var readyRegistration = await navigator.serviceWorker.ready;
+            runtimeState.serviceWorker.ready = readyRegistration ? {
+              scope: readyRegistration.scope || '',
+              installing: describeWorker(readyRegistration.installing),
+              waiting: describeWorker(readyRegistration.waiting),
+              active: describeWorker(readyRegistration.active)
+            } : null;
+          } catch (error) {
+            runtimeState.serviceWorker.readyError = String(error && error.message ? error.message : error);
+          }
+
+          if (typeof navigator.serviceWorker.getRegistrations === 'function') {
+            try {
+              var registrations = await navigator.serviceWorker.getRegistrations();
+              runtimeState.serviceWorker.registrationCount = Array.isArray(registrations) ? registrations.length : 0;
+              runtimeState.serviceWorker.registrations = Array.isArray(registrations)
+                ? registrations.map(function (item) {
+                    return {
+                      scope: item.scope || '',
+                      installing: describeWorker(item.installing),
+                      waiting: describeWorker(item.waiting),
+                      active: describeWorker(item.active)
+                    };
+                  })
+                : [];
+            } catch (error) {
+              runtimeState.serviceWorker.getRegistrationsError = String(error && error.message ? error.message : error);
+            }
+          }
+        }
+
+        writePre('prefetch-debug-support', {
+          speculationRules: supportsSpeculationRules(),
+          linkPrefetch: supportsLinkPrefetch(),
+          serviceWorkerApi: supportsServiceWorkerApi(),
+          secureContext: !!window.isSecureContext
+        });
+        writePre('prefetch-debug-env', {
+          envSequence: envSequence,
+          payloadEntry: payload && typeof payload === 'object' ? (payload[envSequence] || null) : null,
+          resolvedEnv: picked ? picked.targetEnv : null
+        });
+        writePre('prefetch-debug-actions', picked ? picked.actions : 'No actions for current env');
+        writePre('prefetch-debug-runtime', runtimeState);
+        writePre('prefetch-debug-payload', payload || 'No site-prefetch-data found');
+      }
+
+      document.addEventListener('DOMContentLoaded', function () {
+        void refresh();
+        window.setTimeout(function () { void refresh(); }, 250);
+        window.setTimeout(function () { void refresh(); }, 1200);
+      });
+    })();
+    </script>
+</article>
+{{ end }}

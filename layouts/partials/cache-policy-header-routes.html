@@ -1,0 +1,32 @@
+{{- $routes := .routes | default slice -}}
+{{- $defaultRoute := dict -}}
+{{- $nonDefaultRoutes := slice -}}
+
+{{- range $index, $route := $routes -}}
+    {{- $scope := lower (printf "%v" (index $route "scope" | default "")) -}}
+    {{- $path := printf "%v" (index $route "path" | default "") -}}
+    {{- $headers := index $route "headers" | default dict -}}
+    {{- if and $path (reflect.IsMap $headers) (gt (len $headers) 0) -}}
+        {{- $headerRoute := dict
+            "index" $index
+            "scope" $scope
+            "path" $path
+            "headers" $headers
+        -}}
+        {{- if eq $scope "default" -}}
+            {{- $defaultRoute = $headerRoute -}}
+        {{- else -}}
+            {{- $nonDefaultRoutes = $nonDefaultRoutes | append $headerRoute -}}
+        {{- end -}}
+    {{- end -}}
+{{- end -}}
+
+{{- $headerRoutes := $nonDefaultRoutes -}}
+{{- if gt (len $defaultRoute) 0 -}}
+    {{- $headerRoutes = slice $defaultRoute -}}
+    {{- range $route := $nonDefaultRoutes -}}
+        {{- $headerRoutes = $headerRoutes | append $route -}}
+    {{- end -}}
+{{- end -}}
+
+{{- return $headerRoutes -}}
