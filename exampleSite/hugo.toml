@@ -119,9 +119,9 @@ panicOnWarning = true
 # mode = "enable"
 # version = "202603110001"
 # Asset caching routes, SW cache behavior, CDN headers, and platform-specific
-# header outputs are all driven by the root-level cache-policy.json file.
-# Hugo renders public/_headers and public/edgeone.json directly; keep the
-# repo-root edgeone.json synced via your npm/bun scripts.
+# header outputs are driven by the theme default data/cache-policy-default.toml.
+# Override them by copying exampleSite/data/cache-policy.toml to your repo-root
+# data/cache-policy.toml. Keep repo-root edgeone.json synced via your npm/bun scripts.
 # Keep this section focused on SW lifecycle settings such as mode/version.
 
 #[params.runtime_i18n]

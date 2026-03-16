@@ -7,14 +7,22 @@
 {{ end }}
 {{ $swVersion := partialCached "service-worker-version.html" . "service-worker-version" }}
 {{ with index $swConfig "cache_first_extensions" }}
-    {{ errorf "编译失败: params.service_worker.cache_first_extensions 已迁移到根目录 cache-policy.json 的 routes[].sw 配置，请勿继续在 hugo.toml 中设置。" }}
+    {{ errorf "编译失败: params.service_worker.cache_first_extensions 已迁移到 data/cache-policy.toml（或主题默认缓存策略）的 routes[].sw 配置，请勿继续在 hugo.toml 中设置。" }}
 {{ end }}
-{{ $cachePolicyPath := "cache-policy.json" }}
-{{ if not (fileExists $cachePolicyPath) }}
-    {{ errorf "编译失败: 缺少根目录缓存策略文件 %q。" $cachePolicyPath }}
+{{ $themeCachePolicy := index site.Data "cache-policy-default" | default dict }}
+{{ if eq (len $themeCachePolicy) 0 }}
+    {{ errorf "编译失败: 缺少主题默认缓存策略数据 %q。" "themes/<theme>/data/cache-policy-default.toml" }}
 {{ end }}
-{{ $cachePolicy := transform.Unmarshal (dict "format" "json") (readFile $cachePolicyPath) }}
-{{ $cachePolicyRoutes := index $cachePolicy "routes" | default slice }}
+{{ $siteCachePolicy := index site.Data "cache-policy" | default dict }}
+{{ $themeCachePolicyRoutes := index $themeCachePolicy "routes" | default slice }}
+{{ $siteCachePolicyRoutes := index $siteCachePolicy "routes" }}
+{{ $cachePolicyRoutes := $themeCachePolicyRoutes }}
+{{ with $siteCachePolicyRoutes }}
+    {{ $cachePolicyRoutes = . }}
+{{ end }}
+{{ $themeCachePolicyEdgeone := index $themeCachePolicy "edgeone" | default dict }}
+{{ $siteCachePolicyEdgeone := index $siteCachePolicy "edgeone" | default dict }}
+{{ $cachePolicyEdgeone := merge $themeCachePolicyEdgeone $siteCachePolicyEdgeone }}
 {{ $cachePolicyHeaderRoutes := partial "cache-policy-header-routes.html" (dict "routes" $cachePolicyRoutes) }}
 {{ $swRoutes := slice }}
 {{ range $route := $cachePolicyRoutes }}
@@ -53,10 +61,10 @@
     {{ $headersResource := resources.FromString "_headers" $headersBody }}
     {{ $publishHeaders := $headersResource.RelPermalink }}
     {{ $edgeoneConfig := partial "cache-policy-edgeone-config.html" (dict
-        "edgeone" (index $cachePolicy "edgeone" | default dict)
+        "edgeone" $cachePolicyEdgeone
         "routes" $cachePolicyHeaderRoutes
     ) }}
-    {{ $edgeoneBody := jsonify $edgeoneConfig }}
+    {{ $edgeoneBody := $edgeoneConfig | jsonify (dict "indent" "  ") }}
     {{ $edgeoneResource := resources.FromString "edgeone.json" $edgeoneBody }}
     {{ $publishEdgeone := $edgeoneResource.RelPermalink }}
 {{ end }}

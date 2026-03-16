@@ -1,0 +1,114 @@
+# Theme default cache policy.
+# Site owners can override it by creating data/cache-policy.toml at the repo root.
+
+[edgeone]
+installCommand = "npm ci"
+buildCommand = "npm run build"
+outputDirectory = "public"
+nodeVersion = "22.11.0"
+
+[[routes]]
+scope = "asset"
+path = "/css/*"
+
+[routes.headers]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[routes.sw]
+mode = "cache-first"
+bucket = "fingerprinted"
+
+[[routes]]
+scope = "asset"
+path = "/js/*"
+
+[routes.headers]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[routes.sw]
+mode = "cache-first"
+bucket = "fingerprinted"
+
+[[routes]]
+scope = "asset"
+path = "/icon/*"
+
+[routes.headers]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[routes.sw]
+mode = "cache-first"
+bucket = "fingerprinted"
+
+[[routes]]
+scope = "asset"
+path = "/site/*"
+
+[routes.headers]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[routes.sw]
+mode = "cache-first"
+bucket = "fingerprinted"
+
+[[routes]]
+scope = "asset"
+path = "/runtime/*"
+
+[routes.headers]
+Cache-Control = "public, max-age=31536000, immutable"
+
+[routes.sw]
+mode = "cache-first"
+bucket = "fingerprinted"
+
+[[routes]]
+scope = "asset"
+path = "/favicon.ico"
+
+[routes.headers]
+Cache-Control = "public, max-age=86400, must-revalidate"
+
+[routes.sw]
+mode = "ignore"
+
+[[routes]]
+scope = "asset"
+path = "/favicon.svg"
+
+[routes.headers]
+Cache-Control = "public, max-age=86400, must-revalidate"
+
+[routes.sw]
+mode = "ignore"
+
+[[routes]]
+scope = "asset"
+path = "/sw.js"
+
+[routes.headers]
+Cache-Control = "no-cache, max-age=0, must-revalidate"
+
+[routes.sw]
+mode = "ignore"
+
+[[routes]]
+scope = "navigation"
+path = "/*"
+
+[routes.sw]
+mode = "cache-first"
+bucket = "versioned"
+
+[[routes]]
+scope = "default"
+path = "/*"
+
+[routes.headers]
+Referrer-Policy = "strict-origin-when-cross-origin"
+X-Content-Type-Options = "nosniff"
+X-Frame-Options = "SAMEORIGIN"
+Cache-Control = "public, max-age=900, must-revalidate"
+
+[routes.sw]
+mode = "ignore"
