@@ -27,7 +27,7 @@
 {{ $allBundleParts := $listBundleParts | append $gridAll }}
 {{ $allBundle := $allBundleParts | resources.Concat "css/bundle-all.css" }}
 {{ $allBundle = partial "css-process.html" (dict "resource" $allBundle "fingerprint" true) }}
-{{ $homeCritical := slice $coreBase $siteHeader $navPrimary $coreA11y $gridList | resources.Concat "css/home-critical.css" }}
+{{ $homeCritical := slice $coreBase $siteHeader $navPrimary $navBreadcrumb $coreA11y $gridList | resources.Concat "css/home-critical.css" }}
 {{ $homeCritical = partial "css-process.html" (dict "resource" $homeCritical) }}
 {{ $homeAddonParts := slice $coreMotion }}
 {{ $homeAddon := $homeAddonParts | resources.Concat "css/home-addon.css" }}
