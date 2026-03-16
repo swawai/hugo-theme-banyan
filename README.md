@@ -22,6 +22,14 @@ cp themes/banyan/exampleSite/hugo.toml ./hugo.toml
 
 Once copied, open your root `hugo.toml` and customize the `baseURL`, `title`, and site descriptions to match your needs.
 
+If you need to customize cache routes, SW cache behavior, or deployment metadata,
+copy the optional cache policy starter into your site's `data` directory:
+
+```bash
+mkdir -p data
+cp themes/banyan/exampleSite/data/cache-policy.toml ./data/cache-policy.toml
+```
+
 ## Features
 
 - Built-in multi-language switcher (English, Simplified Chinese, Traditional Chinese)
@@ -36,15 +44,11 @@ MIT
 
 
 
-public/_headers / public/edgeone.json 是 Hugo cache-policy.json  产物，腾讯Edgeone 可能需要拷贝public/edgeone.json 到你项目根目录
+public/_headers / public/edgeone.json 由主题默认缓存策略和站点 data/cache-policy.toml（若存在）共同驱动，腾讯Edgeone 可能需要拷贝public/edgeone.json 到你项目根目录
 
-### 查看静态资源统计
-npm run report:assets
 
-### npm
-npm run dev
 
-npm run build
+
 
 ### hugo 基本命令
 a 开发，动态构建并指定端口：
