@@ -193,10 +193,15 @@
                 "visibility_throttle" $swVisibilityThrottle 
             }}
             {{ $swManagerEntry := $swManagerEntryTemplate | resources.ExecuteAsTemplate "js/sw-manager.enable.entry.js" $swManagerEntryCtx }}
-            {{ $swManagerBundle := $swManagerEntry | js.Build (dict "targetPath" "js/sw-manager.enable.bundle.js") }}
-            {{ if not hugo.IsServer }}{{ $swManagerBundle = $swManagerBundle | minify }}{{ end }}
+            {{/* Hugo 当前会为这条 bundle 生成错误的 SRI；保留指纹 URL 做缓存失效，避免浏览器因假阳性 integrity 直接拦截。 */}}
+            {{ $swManagerTargetPath := cond hugo.IsServer "js/sw-manager.enable.bundle.js" "js/sw-manager.enable.bundle.min.js" }}
+            {{ $swManagerBuilt := $swManagerEntry | js.Build (dict
+                "targetPath" $swManagerTargetPath
+                "minify" (not hugo.IsServer)
+            ) }}
+            {{ $swManagerBundle := resources.FromString $swManagerTargetPath $swManagerBuilt.Content }}
             {{ $swManager := $swManagerBundle | fingerprint }}
-            <script src="{{ $swManager.RelPermalink }}" integrity="{{ $swManager.Data.Integrity }}" defer></script>
+            <script src="{{ $swManager.RelPermalink }}" defer></script>
         {{ else }}
             {{ $swScriptPath := "js/sw.disable.js" }}
             {{ $swScriptSource := resources.Get $swScriptPath }}

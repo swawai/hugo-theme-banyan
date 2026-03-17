@@ -126,6 +126,16 @@ async function fetchNavigationResponse(request, preloadResponsePromise) {
     return fetch(request);
 }
 
+function settleNavigationPreload(preloadResponsePromise) {
+    if (!preloadResponsePromise) return Promise.resolve();
+
+    return (async () => {
+        try {
+            await preloadResponsePromise;
+        } catch (error) { }
+    })();
+}
+
 function normalizeWarmNavigationUrl(urlValue) {
     try {
         const url = new URL(urlValue, self.location.origin);
@@ -352,6 +362,9 @@ self.addEventListener('fetch', (event) => {
         if (!shouldHandleRoute(route)) return;
 
         const preloadResponsePromise = request.mode === 'navigate' ? event.preloadResponse : null;
+        if (preloadResponsePromise) {
+            event.waitUntil(settleNavigationPreload(preloadResponsePromise));
+        }
         event.respondWith(handleNavigationRequest(request, preloadResponsePromise));
         return;
     }
