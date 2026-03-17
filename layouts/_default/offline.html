@@ -1,9 +1,20 @@
 {{ define "styles" }}
-{{ partial "head-styles.html" (dict "ctx" . "variant" "page") }}
+{{ $coreBase := resources.Get "css/core-base.css" }}
+{{ $siteHeader := resources.Get "css/site-header.css" }}
+{{ $navPrimary := resources.Get "css/nav-primary.css" }}
+{{ $coreA11y := resources.Get "css/core-a11y.css" }}
+{{ $coreMotion := resources.Get "css/core-motion.css" }}
+{{ $articleBase := resources.Get "css/article-base.css" }}
+{{ $articleProse := resources.Get "css/article-prose.css" }}
+{{ $offlineBaseBundle := slice $coreBase $siteHeader $navPrimary $coreA11y $coreMotion | resources.Concat "css/offline-inline-base.css" }}
+{{ $offlineBaseBundle = partial "css-process.html" (dict "resource" $offlineBaseBundle) }}
+{{ $offlineArticleBundle := slice $articleBase $articleProse | resources.Concat "css/offline-inline-article.css" }}
+{{ $offlineArticleBundle = partial "css-process.html" (dict "resource" $offlineArticleBundle) }}
+<style>{{ $offlineBaseBundle.Content | safeCSS }}</style>
+<style>{{ $offlineArticleBundle.Content | safeCSS }}</style>
 {{ end }}
 
 {{ define "head-extra" }}
-{{ partial "article-styles.html" (dict "ctx" .) }}
 <style>
     .offline-shell {
         max-width: 42rem;

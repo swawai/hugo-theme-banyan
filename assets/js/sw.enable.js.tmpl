@@ -7,6 +7,7 @@ const VERSIONED_ASSET_CACHE = VERSIONED_ASSET_CACHE_PREFIX + '{{ .build_version 
 const OFFLINE_FALLBACKS = {{ .offline_fallbacks | jsonify }};
 const SW_ROUTES = {{ .sw_routes | jsonify }};
 const navigationWarmupTasks = new Map();
+const HTML_ASSET_ATTR_PATTERN = /\b(?:href|src|data-asset-manifest-url)\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s"'=<>`]+))/ig;
 
 function isSameOriginRequest(request) {
     try {
@@ -136,15 +137,19 @@ function settleNavigationPreload(preloadResponsePromise) {
     })();
 }
 
-function normalizeWarmNavigationUrl(urlValue) {
+function normalizeSameOriginUrl(urlValue, baseUrl) {
     try {
-        const url = new URL(urlValue, self.location.origin);
+        const url = new URL(urlValue, baseUrl || self.location.origin);
         if (url.origin !== self.location.origin) return '';
         url.hash = '';
         return url.toString();
     } catch (error) {
         return '';
     }
+}
+
+function normalizeWarmNavigationUrl(urlValue) {
+    return normalizeSameOriginUrl(urlValue, self.location.origin);
 }
 
 function normalizePathnameForPrefixMatch(pathname) {
@@ -192,7 +197,49 @@ function getOfflineFallbackUrls() {
     return urls;
 }
 
-async function updateNavigationCache(request, cache, preloadResponsePromise) {
+function getAssetUrlsFromHtml(htmlText, baseUrl) {
+    if (typeof htmlText !== 'string' || !htmlText) return [];
+
+    const urls = [];
+    const seenUrls = new Set();
+    HTML_ASSET_ATTR_PATTERN.lastIndex = 0;
+
+    let match = null;
+    while ((match = HTML_ASSET_ATTR_PATTERN.exec(htmlText))) {
+        const rawUrl = match[1] || match[2] || match[3] || '';
+        const normalizedUrl = normalizeSameOriginUrl(rawUrl, baseUrl);
+        if (!normalizedUrl || seenUrls.has(normalizedUrl)) continue;
+
+        const pathname = getRequestPathname(new Request(normalizedUrl));
+        const route = getMatchingRoute('asset', pathname);
+        if (!shouldHandleRoute(route)) continue;
+
+        seenUrls.add(normalizedUrl);
+        urls.push(normalizedUrl);
+    }
+
+    return urls;
+}
+
+async function fetchAssetResponse(request) {
+    let response = await fetch(request);
+    if (response && response.status === 304) {
+        response = await fetch(new Request(request, { cache: 'reload' }));
+    }
+    return response;
+}
+
+async function warmAssetsFromHtmlResponse(response, baseUrl) {
+    if (!isCacheableHtmlResponse(response)) return;
+
+    try {
+        const htmlText = await response.text();
+        const assetUrls = getAssetUrlsFromHtml(htmlText, baseUrl);
+        await Promise.all(assetUrls.map((assetUrl) => warmAssetUrl(assetUrl)));
+    } catch (error) { }
+}
+
+async function updateNavigationCache(request, cache, preloadResponsePromise, waitForAssetWarmup = false) {
     try {
         let response = await fetchNavigationResponse(request, preloadResponsePromise);
         if (response && response.status === 304) {
@@ -201,6 +248,24 @@ async function updateNavigationCache(request, cache, preloadResponsePromise) {
             response = await fetch(new Request(request, { cache: 'reload' }));
         }
         if (isCacheableHtmlResponse(response)) {
+            await cache.put(request, response.clone());
+            const assetWarmupTask = warmAssetsFromHtmlResponse(response.clone(), response.url || request.url);
+            if (waitForAssetWarmup) {
+                await assetWarmupTask;
+            } else {
+                assetWarmupTask.catch(() => { });
+            }
+        }
+        return response;
+    } catch (error) {
+        return null;
+    }
+}
+
+async function updateAssetCache(request, cache) {
+    try {
+        const response = await fetchAssetResponse(request);
+        if (isCacheableAssetResponse(response)) {
             await cache.put(request, response.clone());
         }
         return response;
@@ -225,12 +290,33 @@ async function getOfflineFallbackResponse(pathname) {
         return cachedResponse;
     }
 
-    const networkResponse = await updateNavigationCache(offlineRequest, cache, null);
+    const networkResponse = await updateNavigationCache(offlineRequest, cache, null, true);
     if (isCacheableHtmlResponse(networkResponse)) {
         return networkResponse;
     }
 
     return null;
+}
+
+async function warmAssetUrl(urlValue) {
+    const href = normalizeSameOriginUrl(urlValue, self.location.origin);
+    if (!href) return;
+
+    const pathname = getRequestPathname(new Request(href));
+    const route = getMatchingRoute('asset', pathname);
+    if (!shouldHandleRoute(route)) return;
+
+    const cacheName = getCacheNameForRoute(route);
+    if (!cacheName) return;
+
+    const cache = await caches.open(cacheName);
+    const request = new Request(href, {
+        credentials: 'same-origin'
+    });
+    const cachedResponse = await cache.match(request);
+    if (cachedResponse) return;
+
+    await updateAssetCache(request, cache);
 }
 
 async function warmNavigationUrl(urlValue) {
@@ -254,8 +340,11 @@ async function warmNavigationUrl(urlValue) {
             }
         });
         const cachedResponse = await cache.match(request);
-        if (cachedResponse) return;
-        await updateNavigationCache(request, cache, null);
+        if (cachedResponse) {
+            await warmAssetsFromHtmlResponse(cachedResponse.clone(), href);
+            return;
+        }
+        await updateNavigationCache(request, cache, null, true);
     })();
 
     navigationWarmupTasks.set(href, task);
@@ -319,11 +408,12 @@ async function handleAssetRequest(request, pathname) {
         return cachedResponse;
     }
 
-    const networkResponse = await fetch(request);
-    if (isCacheableAssetResponse(networkResponse)) {
-        await cache.put(request, networkResponse.clone());
+    const networkResponse = await updateAssetCache(request, cache);
+    if (networkResponse) {
+        return networkResponse;
     }
-    return networkResponse;
+
+    throw new Error('Asset request failed with no network response.');
 }
 
 self.addEventListener('activate', (event) => {

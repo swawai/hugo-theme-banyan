@@ -1,6 +1,7 @@
 {{ $swConfig := site.Params.service_worker | default dict }}
 {{ $swModeRaw := index $swConfig "mode" | default "off" }}
 {{ $swMode := lower (printf "%v" $swModeRaw) }}
+{{ $isOfflineLayout := eq .Layout "offline" }}
 {{ $allowedSwModes := slice "enable" "disable" "off" }}
 {{ if not (in $allowedSwModes $swMode) }}
     {{ errorf "编译失败: params.service_worker.mode 仅支持 enable/disable/off，当前值为 %q。" $swModeRaw }}
@@ -160,7 +161,7 @@
     {{ if not hugo.IsServer }}{{ $js = $js | minify }}{{ end }}
     {{ $js = $js | fingerprint }}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
-    {{ if ne $swMode "off" }}
+    {{ if and (ne $swMode "off") (not $isOfflineLayout) }}
         {{/* 源文件命名约定：含模板语法的资源用 .tmpl，纯 JS 用 .js。 */}}
         {{ if eq $swMode "enable" }}
             {{ $swScriptTemplatePath := "js/sw.enable.js.tmpl" }}
@@ -318,7 +319,9 @@
             {{ block "main" . }}{{ end }}
         </main>
     </div>
+    {{ if not $isOfflineLayout }}
     {{ partial "prefetch-runtime-embed.html" (dict "ctx" . "sw_mode" $swMode "env_config_map" $prefetchEnvConfig) }}
+    {{ end }}
 </body>
 
 </html>

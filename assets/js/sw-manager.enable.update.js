@@ -14,6 +14,12 @@ let updateCopyCache = null;
 let updateFallbackPrompted = false;
 let enableModeStarted = false;
 let activeRuntime = null;
+const SW_ACTIVATION_TIMEOUT_MS = 4000;
+const NAVIGATION_CACHE_PREFIX = 'nav-html-';
+const VERSIONED_ASSET_CACHE_PREFIX = 'asset-versioned-';
+const LEGACY_VERSIONED_ASSET_CACHE_PREFIX = 'asset-static-';
+const FINGERPRINT_ASSET_CACHE = 'asset-fingerprint';
+let activationFallbackTimer = null;
 
 function setUpdateReadyState(ready) {
     if (ready) {
@@ -29,6 +35,29 @@ function setUpdateReadyState(ready) {
 
 function getBreadcrumbCurrentLink() {
     return document.querySelector('[data-site-update-anchor]');
+}
+
+function clearActivationFallbackTimer() {
+    if (!activationFallbackTimer) return;
+
+    window.clearTimeout(activationFallbackTimer);
+    activationFallbackTimer = null;
+}
+
+function isManagedCacheKey(key) {
+    return key === FINGERPRINT_ASSET_CACHE
+        || key.startsWith(NAVIGATION_CACHE_PREFIX)
+        || key.startsWith(VERSIONED_ASSET_CACHE_PREFIX)
+        || key.startsWith(LEGACY_VERSIONED_ASSET_CACHE_PREFIX);
+}
+
+async function clearManagedCaches() {
+    if (!('caches' in window)) return;
+
+    try {
+        const keys = await caches.keys();
+        await Promise.all(keys.filter(isManagedCacheKey).map((key) => caches.delete(key)));
+    } catch (error) { }
 }
 
 function isUsableUpdateAnchor(anchor) {
@@ -220,7 +249,7 @@ function isReloadNavigation() {
     }
 }
 
-async function warmCurrentPage() {
+async function warmCurrentPage(runtime) {
     const currentUrl = new URL(window.location.href);
     currentUrl.hash = '';
     const href = currentUrl.toString();
@@ -228,9 +257,13 @@ async function warmCurrentPage() {
 
     warmedCurrentUrl = href;
     try {
-        await fetch(href, {
-            credentials: 'same-origin',
-            cache: 'reload'
+        const registration = runtime ? await runtime.getActiveWorkerRegistration() : null;
+        const worker = registration && registration.active ? registration.active : null;
+        if (!worker) return;
+
+        worker.postMessage({
+            type: 'WARM_NAV_BATCH',
+            urls: [href]
         });
     } catch (error) { }
 }
@@ -241,7 +274,7 @@ function bindWaitingWorker(runtime, registration) {
     runtime.setActiveRegistration(registration);
     waitingWorker = registration.waiting;
     setUpdateReadyState(true);
-    void warmCurrentPage();
+    void warmCurrentPage(runtime);
     return true;
 }
 
@@ -278,20 +311,89 @@ function scheduleRegistrationUpdates(runtime, registration) {
     });
 }
 
+async function resolveWaitingWorker(runtime, registration) {
+    const registrationWaiting = registration?.waiting || null;
+    if (registrationWaiting) {
+        runtime.setActiveRegistration(registration);
+        waitingWorker = registrationWaiting;
+        setUpdateReadyState(true);
+        void warmCurrentPage(runtime);
+    }
+
+    if (waitingWorker && waitingWorker.state !== 'redundant') {
+        return waitingWorker;
+    }
+
+    waitingWorker = null;
+    await registration?.update().catch(() => { });
+    if (bindWaitingWorker(runtime, registration)) {
+        return waitingWorker;
+    }
+
+    return null;
+}
+
+async function recoverStuckWaitingWorker(registration) {
+    clearActivationFallbackTimer();
+    waitingWorker = null;
+    reloadOnControllerChange = false;
+    setUpdateReadyState(false);
+
+    try {
+        await registration?.unregister();
+    } catch (error) { }
+
+    await clearManagedCaches();
+    window.location.reload();
+}
+
+function scheduleActivationFallback(runtime, registration, expectedWorker) {
+    clearActivationFallbackTimer();
+
+    activationFallbackTimer = window.setTimeout(() => {
+        void (async () => {
+            try {
+                if (!reloadOnControllerChange) return;
+
+                const currentRegistration = runtime.getActiveRegistration() || registration;
+                if (!currentRegistration) {
+                    window.location.reload();
+                    return;
+                }
+
+                await currentRegistration.update().catch(() => { });
+                if (currentRegistration.waiting === expectedWorker) {
+                    await recoverStuckWaitingWorker(currentRegistration);
+                    return;
+                }
+
+                window.location.reload();
+            } catch (error) {
+                window.location.reload();
+            }
+        })();
+    }, SW_ACTIVATION_TIMEOUT_MS);
+}
+
 async function applyWaitingWorker(runtime) {
     const activeRegistration = runtime.getActiveRegistration();
     if (!activeRegistration) return;
 
-    if (!waitingWorker) {
-        await activeRegistration.update().catch(() => { });
-        if (!bindWaitingWorker(runtime, activeRegistration)) {
-            window.location.reload();
-            return;
-        }
+    const targetWaitingWorker = await resolveWaitingWorker(runtime, activeRegistration);
+    if (!targetWaitingWorker) {
+        window.location.reload();
+        return;
     }
 
+    setUpdateReadyState(false);
     reloadOnControllerChange = true;
-    waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+    scheduleActivationFallback(runtime, activeRegistration, targetWaitingWorker);
+
+    try {
+        targetWaitingWorker.postMessage({ type: 'SKIP_WAITING' });
+    } catch (error) {
+        await recoverStuckWaitingWorker(activeRegistration);
+    }
 }
 
 async function handleEnableMode(runtime) {
@@ -315,12 +417,16 @@ async function handleEnableMode(runtime) {
         });
 
         navigator.serviceWorker.addEventListener('controllerchange', () => {
+            waitingWorker = null;
+            clearActivationFallbackTimer();
+            setUpdateReadyState(false);
             if (reloadOnControllerChange) {
                 window.location.reload();
             }
         });
 
         scheduleRegistrationUpdates(runtime, registration);
+        void warmCurrentPage(runtime);
         navigator.serviceWorker.ready.then((readyRegistration) => {
             if (readyRegistration?.active) {
                 runtime.setActiveRegistration(readyRegistration);
