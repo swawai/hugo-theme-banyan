@@ -156,16 +156,19 @@
     {{ else }}
     const linkStaticUrls = [];
     {{ end }}
-    {{ if and .has_link_module .has_hover_module }}
-    const linkHoverDelayedUrls = {{ if .has_global_gate }}(Array.isArray(actions.ls) ? actions.ls : []).concat(
+    {{ if and .has_link_module .has_conservative_module }}
+    const linkConservativeUrls = {{ if .has_global_gate }}(Array.isArray(actions.ls) ? actions.ls : []).concat(
         consumeGlobalGateValue('lsg', Array.isArray(actions.lsg) ? actions.lsg : [])
     ){{ else }}Array.isArray(actions.ls) ? actions.ls : []{{ end }};
-    const linkHoverImmediateUrls = {{ if .has_global_gate }}(Array.isArray(actions.lm) ? actions.lm : []).concat(
+    {{ else }}
+    const linkConservativeUrls = [];
+    {{ end }}
+    {{ if and .has_link_module .has_moderate_module }}
+    const linkModerateUrls = {{ if .has_global_gate }}(Array.isArray(actions.lm) ? actions.lm : []).concat(
         consumeGlobalGateValue('lmg', Array.isArray(actions.lmg) ? actions.lmg : [])
     ){{ else }}Array.isArray(actions.lm) ? actions.lm : []{{ end }};
     {{ else }}
-    const linkHoverDelayedUrls = [];
-    const linkHoverImmediateUrls = [];
+    const linkModerateUrls = [];
     {{ end }}
     {{ if .has_sw_module }}
     const swStaticUrls = {{ if .has_global_gate }}(Array.isArray(actions.wx) ? actions.wx : []).concat(
@@ -174,23 +177,26 @@
     {{ else }}
     const swStaticUrls = [];
     {{ end }}
-    {{ if and .has_sw_module .has_hover_module }}
-    const swHoverDelayedUrls = {{ if .has_global_gate }}(Array.isArray(actions.ws) ? actions.ws : []).concat(
+    {{ if and .has_sw_module .has_conservative_module }}
+    const swConservativeUrls = {{ if .has_global_gate }}(Array.isArray(actions.ws) ? actions.ws : []).concat(
         consumeGlobalGateValue('wsg', Array.isArray(actions.wsg) ? actions.wsg : [])
     ){{ else }}Array.isArray(actions.ws) ? actions.ws : []{{ end }};
-    const swHoverImmediateUrls = {{ if .has_global_gate }}(Array.isArray(actions.wm) ? actions.wm : []).concat(
+    {{ else }}
+    const swConservativeUrls = [];
+    {{ end }}
+    {{ if and .has_sw_module .has_moderate_module }}
+    const swModerateUrls = {{ if .has_global_gate }}(Array.isArray(actions.wm) ? actions.wm : []).concat(
         consumeGlobalGateValue('wmg', Array.isArray(actions.wmg) ? actions.wmg : [])
     ){{ else }}Array.isArray(actions.wm) ? actions.wm : []{{ end }};
     {{ else }}
-    const swHoverDelayedUrls = [];
-    const swHoverImmediateUrls = [];
+    const swModerateUrls = [];
     {{ end }}
 
     const hasSpec = {{ if .has_spec_module }}!!(speculationRulesPayload && Object.keys(speculationRulesPayload).length){{ else }}false{{ end }};
-    const hasLinkHover = {{ if and .has_link_module .has_hover_module }}linkHoverImmediateUrls.length > 0 || linkHoverDelayedUrls.length > 0{{ else }}false{{ end }};
-    const hasSwHover = {{ if and .has_sw_module .has_hover_module }}swHoverImmediateUrls.length > 0 || swHoverDelayedUrls.length > 0{{ else }}false{{ end }};
-    const hasLink = {{ if .has_link_module }}linkStaticUrls.length > 0 || hasLinkHover{{ else }}false{{ end }};
-    const hasSw = {{ if .has_sw_module }}swStaticUrls.length > 0 || hasSwHover{{ else }}false{{ end }};
+    const hasLinkInteraction = {{ if and .has_link_module .has_interaction_module }}linkConservativeUrls.length > 0 || linkModerateUrls.length > 0{{ else }}false{{ end }};
+    const hasSwInteraction = {{ if and .has_sw_module .has_interaction_module }}swConservativeUrls.length > 0 || swModerateUrls.length > 0{{ else }}false{{ end }};
+    const hasLink = {{ if .has_link_module }}linkStaticUrls.length > 0 || hasLinkInteraction{{ else }}false{{ end }};
+    const hasSw = {{ if .has_sw_module }}swStaticUrls.length > 0 || hasSwInteraction{{ else }}false{{ end }};
     if (!hasSpec && !hasLink && !hasSw) return;
 
     {{ if or .has_link_module .has_sw_module }}
@@ -275,29 +281,37 @@
     }
     {{ end }}
 
-    {{ if .has_hover_module }}
-    if (!hasLinkHover && !hasSwHover) return;
+    {{ if .has_interaction_module }}
+    if (!hasLinkInteraction && !hasSwInteraction) return;
 
     const HOVER_WARM_DELAY_MS = 65;
-    const hoverTargets = new Map();
+    {{ if .has_moderate_module }}
+    const TOUCH_INTERACTION_SUPPRESS_MS = 1200;
+    let recentTouchInteractionUntil = 0;
+    {{ end }}
+    const interactionTargets = new Map();
     let hoverWarmTimer = null;
     let hoverWarmAnchor = null;
 
-    function registerHoverTargets(rawUrls, transport, action) {
+    function registerInteractionTargets(rawUrls, transport, eagerness) {
         for (const rawUrl of rawUrls) {
             const href = normalizeNavigationUrl(rawUrl);
-            if (!href || hoverTargets.has(href)) continue;
-            hoverTargets.set(href, { transport, action });
+            if (!href || interactionTargets.has(href)) continue;
+            interactionTargets.set(href, { transport, eagerness });
         }
     }
 
-    {{ if and .has_link_module .has_hover_module }}
-    registerHoverTargets(linkHoverImmediateUrls, 'link', 'immediate');
-    registerHoverTargets(linkHoverDelayedUrls, 'link', 'delayed');
+    {{ if and .has_link_module .has_moderate_module }}
+    registerInteractionTargets(linkModerateUrls, 'link', 'moderate');
     {{ end }}
-    {{ if and .has_sw_module .has_hover_module }}
-    registerHoverTargets(swHoverImmediateUrls, 'sw', 'immediate');
-    registerHoverTargets(swHoverDelayedUrls, 'sw', 'delayed');
+    {{ if and .has_link_module .has_conservative_module }}
+    registerInteractionTargets(linkConservativeUrls, 'link', 'conservative');
+    {{ end }}
+    {{ if and .has_sw_module .has_moderate_module }}
+    registerInteractionTargets(swModerateUrls, 'sw', 'moderate');
+    {{ end }}
+    {{ if and .has_sw_module .has_conservative_module }}
+    registerInteractionTargets(swConservativeUrls, 'sw', 'conservative');
     {{ end }}
 
     function warmNavigationUrls(transport, rawUrls) {
@@ -317,6 +331,11 @@
         {{ end }}
     }
 
+    function getEventAnchor(event) {
+        const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
+        return anchor instanceof HTMLAnchorElement ? anchor : null;
+    }
+
     function getAnchorWarmTarget(anchor) {
         if (!(anchor instanceof HTMLAnchorElement)) return null;
         if (anchor.target && anchor.target.toLowerCase() !== '_self') return null;
@@ -324,14 +343,34 @@
 
         const href = normalizeNavigationUrl(anchor.href);
         if (!href) return null;
-        return hoverTargets.get(href) || null;
+        return interactionTargets.get(href) || null;
     }
 
-    function maybeWarmNavigationAnchor(anchor) {
+    function maybeWarmNavigationAnchor(anchor, expectedEagerness) {
         const target = getAnchorWarmTarget(anchor);
         if (!target) return;
+        if (expectedEagerness && target.eagerness !== expectedEagerness) return;
         warmNavigationUrls(target.transport, [anchor.href]);
     }
+
+    {{ if .has_moderate_module }}
+    function noteRecentTouchInteraction() {
+        recentTouchInteractionUntil = Date.now() + TOUCH_INTERACTION_SUPPRESS_MS;
+    }
+
+    function hasRecentTouchInteraction() {
+        return recentTouchInteractionUntil > 0 && Date.now() < recentTouchInteractionUntil;
+    }
+
+    function isPrimaryTouchPointerDevice() {
+        if (!window.matchMedia) return false;
+        try {
+            return window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+        } catch (error) {
+            return false;
+        }
+    }
+    {{ end }}
 
     function clearHoverWarmTimer() {
         if (hoverWarmTimer) {
@@ -348,7 +387,7 @@
             return;
         }
 
-        if (target.action === 'immediate') {
+        if (target.eagerness === 'moderate') {
             clearHoverWarmTimer();
             maybeWarmNavigationAnchor(anchor);
             return;
@@ -369,8 +408,15 @@
     }
 
     document.addEventListener('mouseover', (event) => {
-        const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
-        if (anchor instanceof HTMLAnchorElement) {
+        {{ if .has_moderate_module }}
+        // Suppress synthetic mouse events that some touch browsers dispatch after a tap.
+        if (hasRecentTouchInteraction()) {
+            clearHoverWarmTimer();
+            return;
+        }
+        {{ end }}
+        const anchor = getEventAnchor(event);
+        if (anchor) {
             scheduleHoverWarm(anchor);
             return;
         }
@@ -379,9 +425,15 @@
     }, true);
 
     document.addEventListener('mouseout', (event) => {
+        {{ if .has_moderate_module }}
+        if (hasRecentTouchInteraction()) {
+            clearHoverWarmTimer();
+            return;
+        }
+        {{ end }}
         if (!hoverWarmAnchor) return;
 
-        const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
+        const anchor = getEventAnchor(event);
         if (anchor !== hoverWarmAnchor) return;
 
         const related = event.relatedTarget instanceof Node ? event.relatedTarget : null;
@@ -390,17 +442,74 @@
     }, true);
 
     document.addEventListener('focusin', (event) => {
-        const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
-        if (anchor instanceof HTMLAnchorElement) {
+        {{ if .has_moderate_module }}
+        if (hasRecentTouchInteraction()) return;
+        {{ end }}
+        const anchor = getEventAnchor(event);
+        if (anchor) {
             maybeWarmNavigationAnchor(anchor);
         }
     }, true);
 
+    {{ if or .has_conservative_module .has_moderate_module }}
     document.addEventListener('touchstart', (event) => {
-        const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
-        if (anchor instanceof HTMLAnchorElement) {
-            maybeWarmNavigationAnchor(anchor);
+        {{ if .has_moderate_module }}
+        noteRecentTouchInteraction();
+        {{ end }}
+        {{ if .has_conservative_module }}
+        const anchor = getEventAnchor(event);
+        if (anchor) {
+            maybeWarmNavigationAnchor(anchor, 'conservative');
         }
+        {{ end }}
     }, { capture: true, passive: true });
+    {{ end }}
+
+    {{ if .has_moderate_module }}
+    function initTouchViewportObserver() {
+        if (!window.IntersectionObserver) return;
+        if (!isPrimaryTouchPointerDevice()) return;
+
+        // Respect data-saving / slow-network users before enabling viewport warmup.
+        if (navigator.connection) {
+            if (navigator.connection.saveData) return;
+            if (navigator.connection.effectiveType && navigator.connection.effectiveType.includes('2g')) return;
+        }
+
+        const runObserver = () => {
+            const idleCb = window.requestIdleCallback || function(cb) { setTimeout(cb, 1); };
+            idleCb(() => {
+                const observer = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting) {
+                            const anchor = entry.target;
+                            const target = getAnchorWarmTarget(anchor);
+                            if (target && target.eagerness === 'moderate') {
+                                observer.unobserve(anchor);
+                                warmNavigationUrls(target.transport, [anchor.href]);
+                            }
+                        }
+                    }
+                });
+
+                const allAnchors = document.querySelectorAll('a[href]');
+                for (let i = 0; i < allAnchors.length; i++) {
+                    const anchor = allAnchors[i];
+                    const target = getAnchorWarmTarget(anchor);
+                    if (target && target.eagerness === 'moderate') {
+                        observer.observe(anchor);
+                    }
+                }
+            });
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', runObserver);
+        } else {
+            runObserver();
+        }
+    }
+    initTouchViewportObserver();
+    {{ end }}
     {{ end }}
 })();

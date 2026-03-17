@@ -99,6 +99,18 @@ panicOnWarning = true
 #   menu > nav > sort_siblings > descendants > post
 #   The first matching slot wins for a given URL.
 #
+# Runtime eagerness mapping:
+#   spec_* uses the browser's native conservative / moderate / eager semantics.
+#   The runtime does not remap spec_* for touch devices.
+#   link_* / sw_* on non-touch primary-pointer devices:
+#     s = hover delayed
+#     m = hover immediate
+#     x = static eager warmup
+#   link_* / sw_* on touch-primary-pointer devices:
+#     s = immediate warmup on touchstart
+#     m = viewport warmup (requires IntersectionObserver and respects saveData / 2g)
+#     x = static eager warmup
+#
 # Debugging tip:
 #   Open the content anchor page /prefetchdebug/ to inspect browser
 #   capability detection, page payload, and the prefetch resources injected

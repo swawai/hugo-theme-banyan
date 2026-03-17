@@ -9,7 +9,9 @@
 {{- $hasGlobalGate := false -}}
 {{- $hasSpecModule := false -}}
 {{- $hasLinkModule := false -}}
-{{- $hasHoverModule := false -}}
+{{- $hasInteractionModule := false -}}
+{{- $hasConservativeModule := false -}}
+{{- $hasModerateModule := false -}}
 {{- $hasSwModule := false -}}
 
 {{- range $envKey := $envKeys -}}
@@ -33,7 +35,9 @@
     {{- $hasGlobalGate = or $hasGlobalGate (isset $actions "sg") (isset $actions "lsg") (isset $actions "lmg") (isset $actions "lxg") (isset $actions "wsg") (isset $actions "wmg") (isset $actions "wxg") -}}
     {{- $hasSpecModule = or $hasSpecModule (isset $actions "sp") (isset $actions "sg") -}}
     {{- $hasLinkModule = or $hasLinkModule (isset $actions "ls") (isset $actions "lm") (isset $actions "lx") (isset $actions "lsg") (isset $actions "lmg") (isset $actions "lxg") -}}
-    {{- $hasHoverModule = or $hasHoverModule (isset $actions "ls") (isset $actions "lm") (isset $actions "lsg") (isset $actions "lmg") (isset $actions "ws") (isset $actions "wm") (isset $actions "wsg") (isset $actions "wmg") -}}
+    {{- $hasInteractionModule = or $hasInteractionModule (isset $actions "ls") (isset $actions "lm") (isset $actions "lsg") (isset $actions "lmg") (isset $actions "ws") (isset $actions "wm") (isset $actions "wsg") (isset $actions "wmg") -}}
+    {{- $hasConservativeModule = or $hasConservativeModule (isset $actions "ls") (isset $actions "lsg") (isset $actions "ws") (isset $actions "wsg") -}}
+    {{- $hasModerateModule = or $hasModerateModule (isset $actions "lm") (isset $actions "lmg") (isset $actions "wm") (isset $actions "wmg") -}}
     {{- $hasSwModule = or $hasSwModule (isset $actions "ws") (isset $actions "wm") (isset $actions "wx") (isset $actions "wsg") (isset $actions "wmg") (isset $actions "wxg") -}}
   {{- end -}}
 {{- end -}}
@@ -45,7 +49,9 @@
   {{- $featureLetters := slice -}}
   {{- if $hasSpecModule }}{{- $featureLetters = $featureLetters | append "s" -}}{{- end -}}
   {{- if $hasLinkModule }}{{- $featureLetters = $featureLetters | append "l" -}}{{- end -}}
-  {{- if $hasHoverModule }}{{- $featureLetters = $featureLetters | append "h" -}}{{- end -}}
+  {{- if $hasInteractionModule }}{{- $featureLetters = $featureLetters | append "i" -}}{{- end -}}
+  {{- if $hasConservativeModule }}{{- $featureLetters = $featureLetters | append "t" -}}{{- end -}}
+  {{- if $hasModerateModule }}{{- $featureLetters = $featureLetters | append "v" -}}{{- end -}}
   {{- if $hasSwModule }}{{- $featureLetters = $featureLetters | append "w" -}}{{- end -}}
   {{- $featureVariant := delimit $featureLetters "" -}}
   {{- if $hasGlobalGate }}{{- $featureVariant = printf "g%s" $featureVariant -}}{{- end -}}
@@ -54,7 +60,9 @@
     "has_global_gate" $hasGlobalGate
     "has_spec_module" $hasSpecModule
     "has_link_module" $hasLinkModule
-    "has_hover_module" $hasHoverModule
+    "has_interaction_module" $hasInteractionModule
+    "has_conservative_module" $hasConservativeModule
+    "has_moderate_module" $hasModerateModule
     "has_sw_module" $hasSwModule
   ) -}}
   {{- $runtimeBundle := $runtimeEntry | js.Build (dict "targetPath" (printf "js/prefetch.runtime.%s.bundle.js" $runtimeVariant)) -}}
