@@ -1,4 +1,5 @@
 .grid-list {
+    margin-top: 0.8rem;
     position: relative;
     display: grid;
     width: max-content;
