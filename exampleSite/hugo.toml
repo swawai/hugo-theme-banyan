@@ -117,12 +117,14 @@ panicOnWarning = true
 
 #[params.service_worker]
 # mode = "enable"
+# update_check_interval = 15
+# update_visibility_throttle = 3
 # version = "202603110001"
 # Asset caching routes, SW cache behavior, CDN headers, and platform-specific
 # header outputs are driven by the theme default data/cache-policy-default.toml.
 # Override them by copying exampleSite/data/cache-policy.toml to your repo-root
 # data/cache-policy.toml. Keep repo-root edgeone.json synced via your npm/bun scripts.
-# Keep this section focused on SW lifecycle settings such as mode/version.
+# Keep this section focused on SW lifecycle settings such as mode/version/intervals.
 
 #[params.runtime_i18n]
 # Runtime UI copy fallback chain for shared assets such as SW update prompts.

@@ -1,6 +1,5 @@
 const UPDATE_STATE_ATTR = 'data-site-update';
 const UPDATE_STATE_READY = 'ready';
-const UPDATE_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 
 const root = document.documentElement;
 
@@ -257,16 +256,24 @@ function watchInstallingWorker(runtime, registration) {
     });
 }
 
-function scheduleRegistrationUpdates(registration) {
+function scheduleRegistrationUpdates(runtime, registration) {
     if (updateCheckTimer) return;
+
+    const intervalMs = runtime.updateCheckInterval || 15 * 60 * 1000;
+    const throttleMs = runtime.updateVisibilityThrottle || 3 * 60 * 1000;
 
     updateCheckTimer = window.setInterval(() => {
         registration.update().catch(() => { });
-    }, UPDATE_CHECK_INTERVAL_MS);
+    }, intervalMs);
 
+    let lastUpdateCheck = 0;
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-            registration.update().catch(() => { });
+            const now = Date.now();
+            if (now - lastUpdateCheck > throttleMs) {
+                lastUpdateCheck = now;
+                registration.update().catch(() => { });
+            }
         }
     });
 }
@@ -313,7 +320,7 @@ async function handleEnableMode(runtime) {
             }
         });
 
-        scheduleRegistrationUpdates(registration);
+        scheduleRegistrationUpdates(runtime, registration);
         navigator.serviceWorker.ready.then((readyRegistration) => {
             if (readyRegistration?.active) {
                 runtime.setActiveRegistration(readyRegistration);

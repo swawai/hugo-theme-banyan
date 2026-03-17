@@ -115,17 +115,9 @@
     <title>{{ if .Title }}{{ .Title }} - {{ end }}{{ .Site.Title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="wap-font-scale" content="no">
-    <style>
-        html,
-        body {
-            text-size-adjust: 100% !important;
-        }
-    </style>
     <link rel="canonical" href="{{ .Permalink }}">
-    {{/* 首屏前同步设置主题，避免先亮后暗/先暗后亮的闪烁。 */}}
-    <script>(function () { try { var pref = localStorage.getItem('theme-preference'); var media = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)'); var theme; if (!pref || pref === 'auto') { theme = (media && media.matches) ? 'dark' : 'light'; } else { theme = pref; } document.documentElement.setAttribute('data-theme', theme); } catch (e) { } })();</script>
-    {{/* 恢复跨页导航进度条状态，让 MPA 跳转前后的加载提示连续。 */}}
-    <script>(function () { try { if (window.matchMedia && window.matchMedia('(pointer: fine) and (hover: hover)').matches && sessionStorage.getItem('nav-progress-pending') === '1') { document.documentElement.setAttribute('data-nav-progress', 'active'); document.documentElement.style.setProperty('--nav-progress-scale', '0.82'); document.documentElement.classList.add('is-nav-pending'); } } catch (e) { } })();</script>
+    {{/* 首屏阻塞性状态初始化：同步主题以防闪烁，并恢复 MPA 跨页导航进度条。 */}}
+    <script>(function(){try{var pref=localStorage.getItem('theme-preference');var media=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');var theme=(!pref||pref==='auto')?((media&&media.matches)?'dark':'light'):pref;document.documentElement.setAttribute('data-theme',theme);}catch(e){}try{if(window.matchMedia&&window.matchMedia('(pointer: fine) and (hover: hover)').matches&&sessionStorage.getItem('nav-progress-pending')==='1'){document.documentElement.setAttribute('data-nav-progress','active');document.documentElement.style.setProperty('--nav-progress-scale','0.82');document.documentElement.classList.add('is-nav-pending');}}catch(e){}})();</script>
     {{ block "styles" . }}{{ partial "head-styles.html" (dict "ctx" .) }}{{ end }}
     {{ block "head-extra" . }}{{ end }}
     {{ $prefetchConfig := site.Params.link_prefetch | default dict }}
@@ -192,7 +184,15 @@
             {{ $swManagerEntryPath := "js/sw-manager.enable.entry.js.tmpl" }}
             {{ $swManagerEntryTemplate := resources.Get $swManagerEntryPath }}
             {{ if not $swManagerEntryTemplate }}{{ errorf "编译失败: 缺少资源 %q。" $swManagerEntryPath }}{{ end }}
-            {{ $swManagerEntry := $swManagerEntryTemplate | resources.ExecuteAsTemplate "js/sw-manager.enable.entry.js" (dict "sw_url" $swUrl "update_style_url" $swUpdatePopover.RelPermalink) }}
+            {{ $swCheckInterval := index $swConfig "update_check_interval" | default 15 }}
+            {{ $swVisibilityThrottle := index $swConfig "update_visibility_throttle" | default 3 }}
+            {{ $swManagerEntryCtx := dict 
+                "sw_url" $swUrl 
+                "update_style_url" $swUpdatePopover.RelPermalink 
+                "check_interval" $swCheckInterval 
+                "visibility_throttle" $swVisibilityThrottle 
+            }}
+            {{ $swManagerEntry := $swManagerEntryTemplate | resources.ExecuteAsTemplate "js/sw-manager.enable.entry.js" $swManagerEntryCtx }}
             {{ $swManagerBundle := $swManagerEntry | js.Build (dict "targetPath" "js/sw-manager.enable.bundle.js") }}
             {{ if not hugo.IsServer }}{{ $swManagerBundle = $swManagerBundle | minify }}{{ end }}
             {{ $swManager := $swManagerBundle | fingerprint }}

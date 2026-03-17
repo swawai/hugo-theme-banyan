@@ -30,6 +30,7 @@
 {{ $homeCritical := slice $coreBase $siteHeader $navPrimary $navBreadcrumb $coreA11y $gridList | resources.Concat "css/home-critical.css" }}
 {{ $homeCritical = partial "css-process.html" (dict "resource" $homeCritical) }}
 {{ $homeAddonParts := slice $coreMotion }}
+{{ if eq $swMode "enable" }}{{ $homeAddonParts = $homeAddonParts | append $swUpdateAnchor }}{{ end }}
 {{ $homeAddon := $homeAddonParts | resources.Concat "css/home-addon.css" }}
 {{ $homeAddon = partial "css-process.html" (dict "resource" $homeAddon "fingerprint" true) }}
 {{ $resolvedVariant := $variant }}

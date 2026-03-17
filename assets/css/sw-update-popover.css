@@ -11,6 +11,10 @@
     box-shadow: 0 0.75rem 1.75rem rgba(0, 0, 0, 0.14);
 }
 
+.site-update-popover[hidden] {
+    display: none;
+}
+
 .site-update-popover__text {
     margin: 0;
     line-height: 1.45;
