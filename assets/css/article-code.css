@@ -3,13 +3,23 @@
 }
 
 .prose code {
-    padding: 0.15em 0.35em;
+    padding: 0.065rem 0.33rem 0;
+    font-size: 0.9em;
+    font-family: Operator Mono, Consolas, Monaco, Menlo, monospace;
+    color: #059669;
+    background: rgba(7, 193, 96, 0.07);
+    border: 1px solid rgba(7, 193, 96, 0.3);
     border-radius: 3px;
-    font: 0.9em "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+}
+
+[data-theme="dark"] .prose code {
+    color: #3ad67a;
+    background: rgba(58, 214, 122, 0.07);
+    border: 1px solid rgba(58, 214, 122, 0.3);
 }
 
 .prose pre {
-    margin: 1em 0;
+    margin: 1rem 0 1rem 0;
     padding: 1em;
     overflow-x: auto;
     border-radius: 4px;
@@ -18,6 +28,8 @@
 .prose pre code {
     padding: 0;
     background: transparent;
+    border: none;
     border-radius: 0;
     font-size: 0.85em;
+    color: inherit;
 }

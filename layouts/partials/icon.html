@@ -1,14 +1,11 @@
-{{- /* 参数: name (如 "folder" / "file") */ -}}
 {{- $name := .name -}}
-{{- $svgPath := printf "icon/%s.svg" $name -}}
-{{- $svg := resources.Get $svgPath -}}
-{{- if $svg -}}
-  {{- $svg = $svg | fingerprint -}}
-  <img class="icon" src="{{ $svg.RelPermalink }}" alt="" aria-hidden="true" />
-{{- else if fileExists (printf "assets/icon/%s.svg.html" $name) -}}
-  <span class="icon">{{ readFile (printf "assets/icon/%s.svg.html" $name) | safeHTML }}</span>
-{{- else -}}
-  {{- errorf "编译失败: 缺少图标资源 %q。" $svgPath -}}
+{{- $supported := slice "file" "folder" "github" "language" "theme" -}}
+{{- if not (in $supported $name) -}}
+  {{- errorf "编译失败: 未定义 sprite 图标 %q。" $name -}}
 {{- end -}}
-
-
+{{- $classes := slice "icon" (printf "icon-%s" $name) -}}
+{{- with .class }}{{ $classes = $classes | append . }}{{ end -}}
+{{- $label := .label -}}
+<svg class="{{ delimit $classes " " }}"{{ if $label }} role="img" aria-label="{{ $label }}"{{ else }} aria-hidden="true"{{ end }} focusable="false">
+  <use href="#icon-{{ $name }}"></use>
+</svg>

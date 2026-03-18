@@ -7,7 +7,7 @@
     border: 1px solid var(--border);
     border-radius: 0.55rem;
     background: var(--bg);
-    color: var(--fg);
+    /* 弹窗阴影效果 */
     box-shadow: 0 0.75rem 1.75rem rgba(0, 0, 0, 0.14);
 }
 

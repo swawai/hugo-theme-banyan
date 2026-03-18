@@ -1,12 +1,20 @@
 .prose :is(ul, ol) {
-    margin: 1em 0;
-    padding-left: 1.5em;
+    list-style: none; /* doocs/md 渲染器已将符号硬编码注入 li 文本 */
+    margin: 0 0 0.8rem 0;
+    padding-left: 0;
 }
 
-.prose li + li {
-    margin-top: 0.25em;
+.prose li {
+    display: block;
+    margin: 0 0 0.8rem 0;
 }
 
-.prose li > :is(ul, ol) {
+.prose li:last-child {
     margin-bottom: 0;
+}
+
+/* 嵌套列表缩进 */
+.prose :is(ul, ol) :is(ul, ol) {
+    padding-left: 1em;
+    margin: 0.8rem 0 0;
 }

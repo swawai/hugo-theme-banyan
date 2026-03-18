@@ -20,13 +20,11 @@
     }
 })();
 
-const NAV_PROGRESS_KEY = 'nav-progress-pending';
+
 const PREFERRED_LANG_KEY = 'preferred_lang';
 const LANG_SUGGEST_HANDLED_KEY = 'lang-suggest-handled-v1';
 const html = document.documentElement;
-const desktopNavMedia = window.matchMedia ? window.matchMedia('(pointer: fine) and (hover: hover)') : null;
-let navProgressTimer = null;
-let navProgressValue = 0;
+
 let runtimeManifestPromise = null;
 let runtimeManifestCache = null;
 
@@ -75,81 +73,7 @@ function getRuntimeI18nUrl(manifest, lang, homeUrl) {
     return '';
 }
 
-function canUseNavProgress() {
-    return !!desktopNavMedia?.matches;
-}
 
-function setNavProgressValue(value) {
-    navProgressValue = Math.max(0, Math.min(1, value));
-    html.style.setProperty('--nav-progress-scale', navProgressValue.toFixed(3));
-}
-
-function stopNavProgressTimer() {
-    if (navProgressTimer) {
-        window.clearInterval(navProgressTimer);
-        navProgressTimer = null;
-    }
-}
-
-function activateNavProgress() {
-    html.setAttribute('data-nav-progress', 'active');
-    html.classList.add('is-nav-pending');
-}
-
-function resetNavProgress() {
-    stopNavProgressTimer();
-    html.classList.remove('is-nav-pending');
-    html.removeAttribute('data-nav-progress');
-    setNavProgressValue(0);
-}
-
-function startNavProgress(initialValue) {
-    if (!canUseNavProgress()) return;
-
-    activateNavProgress();
-    setNavProgressValue(Math.max(navProgressValue, initialValue));
-    stopNavProgressTimer();
-
-    navProgressTimer = window.setInterval(() => {
-        const current = navProgressValue;
-        const step = current < 0.28 ? 0.05 : current < 0.56 ? 0.025 : current < 0.82 ? 0.012 : 0;
-        if (!step) {
-            stopNavProgressTimer();
-            return;
-        }
-
-        setNavProgressValue(Math.min(0.88, current + step));
-    }, 140);
-}
-
-function finishNavProgress() {
-    stopNavProgressTimer();
-
-    if (!html.hasAttribute('data-nav-progress')) {
-        sessionStorage.removeItem(NAV_PROGRESS_KEY);
-        return;
-    }
-
-    activateNavProgress();
-    setNavProgressValue(1);
-    sessionStorage.removeItem(NAV_PROGRESS_KEY);
-
-    window.setTimeout(() => {
-        resetNavProgress();
-    }, 220);
-}
-
-function markNavigationPending() {
-    if (!canUseNavProgress()) return;
-
-    sessionStorage.setItem(NAV_PROGRESS_KEY, '1');
-    startNavProgress(0.14);
-}
-
-function navigateWithProgress(url) {
-    markNavigationPending();
-    window.location.href = url;
-}
 
 function readStorage(key) {
     try {
@@ -202,49 +126,25 @@ function runAfterPageSettles(callback, delayMs) {
     window.addEventListener('load', run, { once: true });
 }
 
-function shouldTrackNavigation(anchor, event) {
-    if (!canUseNavProgress() || !anchor || event.defaultPrevented) return false;
-    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return false;
-    if (anchor.target && anchor.target.toLowerCase() !== '_self') return false;
-    if (anchor.hasAttribute('download')) return false;
 
-    const rawHref = anchor.getAttribute('href');
-    if (!rawHref || rawHref.startsWith('#')) return false;
-
-    let targetUrl;
-    try {
-        targetUrl = new URL(anchor.href, window.location.href);
-    } catch (e) {
-        return false;
-    }
-
-    if (!/^https?:$/.test(targetUrl.protocol)) return false;
-    if (targetUrl.origin !== window.location.origin) return false;
-
-    const currentUrl = new URL(window.location.href);
-    const sameDocument = targetUrl.pathname === currentUrl.pathname && targetUrl.search === currentUrl.search;
-    if (sameDocument) return false;
-
-    return true;
-}
-
-if (canUseNavProgress() && sessionStorage.getItem(NAV_PROGRESS_KEY) === '1') {
-    startNavProgress(0.82);
-}
 
 void getRuntimeManifest();
 
-document.addEventListener('click', (event) => {
-    const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
-    if (!shouldTrackNavigation(anchor, event)) return;
-    markNavigationPending();
-}, true);
-
-window.addEventListener('pageshow', () => {
-    finishNavProgress();
-});
+async function injectSiteManifest() {
+    try {
+        const manifest = await getRuntimeManifest();
+        const url = manifest?.siteManifest;
+        if (!url) return;
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = url;
+        link.setAttribute('fetchpriority', 'low');
+        document.head.appendChild(link);
+    } catch (e) { /* ignore */ }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
+    injectSiteManifest();
     const themeSelect = document.getElementById('theme-select');
     const langSelect = document.getElementById('lang-select');
     const updateFit = (el) => {
@@ -412,7 +312,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         const curUrl = new URL(window.location.href);
                         const relativePath = toRelativePath(curUrl.pathname);
                         curUrl.pathname = buildTargetUrl(targetLang, relativePath);
-                        navigateWithProgress(curUrl.href);
+                        window.location.href = curUrl.href;
+
                     }, 800);
                 };
 
@@ -448,7 +349,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (supportedLangs.includes(code)) {
                                 writeStorage(PREFERRED_LANG_KEY, code);
                             }
-                            navigateWithProgress(targetHome);
+                            window.location.href = targetHome;
+
                             return;
                         }
 
@@ -460,10 +362,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         const curUrl = new URL(window.location.href);
                         const relativePath = toRelativePath(curUrl.pathname);
                         curUrl.pathname = buildTargetUrl(targetLang, relativePath);
-                        navigateWithProgress(curUrl.href);
+                        window.location.href = curUrl.href;
+
                     } catch (e) {
                         const fallback = langSelect.options[langSelect.selectedIndex]?.value || 'en';
-                        navigateWithProgress(normalizeHomeUrl(langHomes[fallback], fallback));
+                        window.location.href = normalizeHomeUrl(langHomes[fallback], fallback);
+
                     }
                 });
 

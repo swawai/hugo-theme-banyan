@@ -76,6 +76,10 @@
     margin-bottom: -0.3rem;
 }
 
+.grid-list .header {
+    color: var(--link-visited);
+}
+
 .grid-list::after {
     content: "";
     position: absolute;

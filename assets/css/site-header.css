@@ -4,6 +4,9 @@
     column-gap: 0.4rem;
     white-space: nowrap;
     margin-bottom: 0.05rem;
+    color: var(--link-visited);
+
+    /* 字体由<small>指定 */
 }
 
 .copyright > * {
@@ -15,11 +18,11 @@
     color: inherit;
 }
 
-.copyright a:hover {
+/* .copyright a:hover {
     opacity: 0.8;
-}
+} */
 
-.copyright .social-links img {
+.copyright .social-links .icon {
     width: 1em;
     height: 1em;
     vertical-align: -0.15em;

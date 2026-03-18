@@ -76,9 +76,6 @@
     {{ $faviconSvg := resources.Get "site/favicon.svg" }}
     {{ if not $faviconSvg }}{{ errorf "编译失败: 缺少资源 %q。" "site/favicon.svg" }}{{ end }}
     {{ $faviconSvg = $faviconSvg | fingerprint }}
-    {{ $faviconIco := resources.Get "site/favicon.ico" }}
-    {{ if not $faviconIco }}{{ errorf "编译失败: 缺少资源 %q。" "site/favicon.ico" }}{{ end }}
-    {{ $faviconIco = $faviconIco | fingerprint }}
     {{ $appleTouchIcon := resources.Get "site/swaw180x180.png" }}
     {{ if not $appleTouchIcon }}{{ errorf "编译失败: 缺少资源 %q。" "site/swaw180x180.png" }}{{ end }}
     {{ $appleTouchIcon = $appleTouchIcon | fingerprint }}
@@ -105,20 +102,19 @@
         "langList" $langListResource.RelPermalink
         "i18n" $runtimeI18n
         "i18nFallbacks" $runtimeI18nFallbacks
+        "siteManifest" (cond (ne $manifest "") $manifest.RelPermalink "")
       | jsonify }}
     {{ $assetManifest := resources.FromString (printf "runtime/asset-manifest.%s.json" (md5 $assetManifestBody)) $assetManifestBody | fingerprint }}
     <meta charset="utf-8">
     <link rel="icon" href="{{ $faviconSvg.RelPermalink }}" type="image/svg+xml" fetchpriority="low">
-    <link rel="icon" href="{{ $faviconIco.RelPermalink }}" sizes="any" fetchpriority="low">
     <link rel="apple-touch-icon" href="{{ $appleTouchIcon.RelPermalink }}" fetchpriority="low">
-    {{ with $manifest }}<link rel="manifest" href="{{ .RelPermalink }}" fetchpriority="low">{{ end }}
     <link rel="preload" href="{{ $assetManifest.RelPermalink }}" as="fetch" type="application/json" crossorigin="use-credentials" fetchpriority="low">
     <title>{{ if .Title }}{{ .Title }} - {{ end }}{{ .Site.Title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="wap-font-scale" content="no">
     <link rel="canonical" href="{{ .Permalink }}">
     {{/* 首屏阻塞性状态初始化：同步主题以防闪烁，并恢复 MPA 跨页导航进度条。 */}}
-    <script>(function(){try{var pref=localStorage.getItem('theme-preference');var media=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');var theme=(!pref||pref==='auto')?((media&&media.matches)?'dark':'light'):pref;document.documentElement.setAttribute('data-theme',theme);}catch(e){}try{if(window.matchMedia&&window.matchMedia('(pointer: fine) and (hover: hover)').matches&&sessionStorage.getItem('nav-progress-pending')==='1'){document.documentElement.setAttribute('data-nav-progress','active');document.documentElement.style.setProperty('--nav-progress-scale','0.82');document.documentElement.classList.add('is-nav-pending');}}catch(e){}})();</script>
+    <script>(function(){try{var pref=localStorage.getItem('theme-preference');var media=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');var theme=(!pref||pref==='auto')?((media&&media.matches)?'dark':'light'):pref;document.documentElement.setAttribute('data-theme',theme);}catch(e){}})();</script>
     {{ block "styles" . }}{{ partial "head-styles.html" (dict "ctx" .) }}{{ end }}
     {{ block "head-extra" . }}{{ end }}
     {{ $prefetchConfig := site.Params.link_prefetch | default dict }}
@@ -219,6 +215,7 @@
     {{ end }}
 </head>
 <body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}">
+    {{ partialCached "icon-sprite.html" . "icon-sprite" }}
     {{ if and .IsPage (not .Params.slug) }}
         {{ errorf "编译失败: 页面 %q (标题: %q) 未配置 slug 字段。" .File.Path .Title }}
     {{ end }}
@@ -233,16 +230,9 @@
                 <small><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">{{ . }}</a></small>
                 {{ end }}
                 <small class="social-links">
-                    {{ $github_svg := resources.Get "icon/github.svg" }}
-                    {{ if not $github_svg }}{{ errorf "编译失败: 缺少资源 %q。" "icon/github.svg" }}{{ end }}
-                    {{ $github_svg = $github_svg | fingerprint }}
-                    {{ $github_dark := resources.Get "icon/github-dark.svg" }}
-                    {{ if not $github_dark }}{{ errorf "编译失败: 缺少资源 %q。" "icon/github-dark.svg" }}{{ end }}
-                    {{ $github_dark = $github_dark | fingerprint }}
                     {{ with site.Params.social.github }}
                     <a href="{{ . }}" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
-                        <img src="{{ $github_svg.RelPermalink }}" alt="GitHub" class="icon-light" fetchpriority="low" />
-                        <img src="{{ $github_dark.RelPermalink }}" alt="GitHub" class="icon-dark" fetchpriority="low" />
+                        {{ partial "icon" (dict "name" "github") }}
                     </a>
                     {{ end }}
                 </small>
@@ -272,14 +262,7 @@
             {{- $transLangs = $transLangs | uniq -}}
             <span class="icon-select-wrapper" title="{{ i18n `label_language` | default `Language` }}">
                 <span class="sr-only">{{ i18n "label_language" | default "Language" }}</span>
-                {{ $lang_svg := resources.Get "icon/language.svg" }}
-                {{ if not $lang_svg }}{{ errorf "编译失败: 缺少资源 %q。" "icon/language.svg" }}{{ end }}
-                {{ $lang_svg = $lang_svg | fingerprint }}
-                {{ $lang_dark := resources.Get "icon/language-dark.svg" }}
-                {{ if not $lang_dark }}{{ errorf "编译失败: 缺少资源 %q。" "icon/language-dark.svg" }}{{ end }}
-                {{ $lang_dark = $lang_dark | fingerprint }}
-                <img src="{{ $lang_svg.RelPermalink }}" alt="Language" class="icon-light" fetchpriority="low" />
-                <img src="{{ $lang_dark.RelPermalink }}" alt="Language" class="icon-dark" fetchpriority="low" />
+                {{ partial "icon" (dict "name" "language") }}
                 <select
                     id="lang-select"
                     class="icon-select"
@@ -291,14 +274,7 @@
 
             <span class="icon-select-wrapper" title="{{ i18n `label_theme` | default `Theme` }}">
                 <span class="sr-only">{{ i18n "label_theme" | default "Theme" }}</span>
-                {{ $theme_svg := resources.Get "icon/theme.svg" }}
-                {{ if not $theme_svg }}{{ errorf "编译失败: 缺少资源 %q。" "icon/theme.svg" }}{{ end }}
-                {{ $theme_svg = $theme_svg | fingerprint }}
-                {{ $theme_dark := resources.Get "icon/theme-dark.svg" }}
-                {{ if not $theme_dark }}{{ errorf "编译失败: 缺少资源 %q。" "icon/theme-dark.svg" }}{{ end }}
-                {{ $theme_dark = $theme_dark | fingerprint }}
-                <img src="{{ $theme_svg.RelPermalink }}" alt="Theme" class="icon-light" fetchpriority="low" />
-                <img src="{{ $theme_dark.RelPermalink }}" alt="Theme" class="icon-dark" fetchpriority="low" />
+                {{ partial "icon" (dict "name" "theme") }}
                 <select id="theme-select" class="icon-select" aria-label="{{ i18n `label_theme` | default `Theme` }}">
                     <option value="auto">{{ i18n "theme_auto" | default "Auto" }}</option>
                     <option value="light">{{ i18n "theme_light" | default "Light" }}</option>

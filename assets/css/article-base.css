@@ -1,9 +1,31 @@
 .article {
-    max-width: 65ch;
+    max-width: 80ch;
+    --quote-bg: #f2f2f2;
+    --quote-border: #DFDFDF;
+    --quote-text: #555;
+    --table-striped-bg: #fcfcfc;
+    --table-text: #555;
+    --img-border-radius: 0.2rem; /* 3px */
+    --caption-color: #666;
+    --border-subtle: #e6e6e6;
 }
 
-.article h1 {
-    margin: 0.8em 0 0.4em;
-    font-size: 1.75em;
-    line-height: 1.3;
+[data-theme="dark"] .article {
+    --quote-bg: var(--border-subtle);
+    --quote-border: var(--border);
+    --quote-text: var(--fg);
+    --table-striped-bg: rgba(255, 255, 255, 0.02);
+    --table-text: var(--fg);
+    --img-border-radius: 0.2rem;
+    --caption-color: #999;
 }
+
+
+
+/* 迁移自 article-meta.css：文章元信息（发布/更新时间）样式 */
+.article .article-meta {
+    margin: 0.05rem 0;
+    font-size: small; /* 已按要求改为 1rem */
+    color: var(--link-visited);
+}
+

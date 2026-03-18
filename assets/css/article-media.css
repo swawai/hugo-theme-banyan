@@ -2,11 +2,51 @@
     display: block;
     max-width: 100%;
     height: auto;
-    margin: 1em 0;
+    margin: 0;
+    padding: 0;
+    border-radius: var(--img-border-radius);
 }
 
 .prose hr {
-    margin: 2em 0;
+    margin: 1.2rem 0 7.2rem;
     border: 0;
-    border-top: 1px solid var(--border);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.prose figure {
+    margin: 1.2rem 0 1.2rem 0;
+    padding: 0;
+    font-size: 1rem;
+    line-height: 1.65;
+    text-align: justify;
+    word-break: break-all;
+}
+
+.prose :is(figcaption, .md-figcaption) {
+    display: block;
+    margin: 0 0 -0.27rem; /* -4px */
+    font-size: 0.8rem; /* 12px */
+    line-height: 1.65;
+    text-align: left;
+    color: var(--caption-color);
+}
+
+/* doocs 特定类支持 */
+.prose .md-caption {
+    margin-top: -1.2rem;
+    margin-bottom: 1.6rem;
+    display: block;
+    font-size: 0.8rem;
+    line-height: 1.65;
+    text-align: left;
+    color: var(--caption-color);
+}
+
+.prose .md-spacer {
+    display: block;
+    margin-top: 0;
+    margin-bottom: -3.2rem;
+    padding: 0;
+    overflow: hidden;
+    clear: both;
 }
