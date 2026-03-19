@@ -9,9 +9,9 @@
     /* 字体由<small>指定 */
 }
 
-.copyright > * {
+/* .copyright > * {
     flex-shrink: 0;
-}
+} */
 
 .copyright a,
 .copyright a:visited {

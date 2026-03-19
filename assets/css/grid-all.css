@@ -12,3 +12,7 @@
     color: inherit;
     pointer-events: auto;
 }
+
+.grid-all > .cell-path a:visited {
+    color: var(--link-visited);
+}

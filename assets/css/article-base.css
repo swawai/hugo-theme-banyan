@@ -1,30 +1,33 @@
 .article {
     max-width: 80ch;
-    --quote-bg: #f2f2f2;
-    --quote-border: #DFDFDF;
-    --quote-text: #555;
-    --table-striped-bg: #fcfcfc;
-    --table-text: #555;
     --img-border-radius: 0.2rem; /* 3px */
-    --caption-color: #666;
     --border-subtle: #e6e6e6;
+
+    --quote-bg: #F1F1F1;
+    --quote-border: #D7D7D7;
+    --quote-text: var(--link-visited);
+    --table-header-bg: #F1F1F1;
+    --table-striped-bg: #FAFAFA;
+    --table-text: var(--link-visited);
+    --caption-color: var(--link-visited);
+
 }
 
 [data-theme="dark"] .article {
-    --quote-bg: var(--border-subtle);
-    --quote-border: var(--border);
-    --quote-text: var(--fg);
-    --table-striped-bg: rgba(255, 255, 255, 0.02);
-    --table-text: var(--fg);
-    --img-border-radius: 0.2rem;
-    --caption-color: #999;
+    --quote-bg: #2C2C2C;
+    --quote-border: #9B9B9B;
+    --quote-text: var(--link-visited);
+    --table-header-bg: var(--bg);
+    --table-striped-bg: var(--bg);
+    --table-text: var(--link-visited);
+    --caption-color: var(--link-visited);
 }
 
 
 
 /* 迁移自 article-meta.css：文章元信息（发布/更新时间）样式 */
 .article .article-meta {
-    margin: 0.05rem 0;
+    margin: 1px 0;
     font-size: small; /* 已按要求改为 1rem */
     color: var(--link-visited);
 }

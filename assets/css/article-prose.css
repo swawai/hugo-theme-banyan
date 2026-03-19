@@ -1,8 +1,8 @@
 .prose {
     /* line-height: 1.7; */
-    font-size: 1rem;
-    /* line-height: 1.65; */
-    letter-spacing: normal;
+    /* font-size: 1rem; */
+    line-height: 1.65;
+    /* letter-spacing: normal; */
     word-break: break-all;
     text-align: justify;
     overflow-wrap: break-word;
@@ -10,12 +10,12 @@
 }
 
 .prose p {
-    margin: 0 0 0.8rem 0;
+    margin: 0 0 12px 0;
 }
 
 .prose strong {
     color: var(--focus);
-    padding: 0 0.135rem;
+    padding: 0 2px;
 }
 
 .prose :is(h1, h2, h3, h4, h5, h6) {
@@ -23,28 +23,28 @@
     text-align: left;
     color: var(--focus);
     letter-spacing: 0;
-    background: none;
-    border: none;
+    /* background: none; */
+    /* border: none; */
     font-size: 1rem;
     font-weight: bold;
 }
 
 .prose h1 {
-    margin: 2.55rem 0 2.55rem;
+    margin: 38px 0 38px;
     color: var(--focus);
-    padding-bottom: 0.135rem;
+    padding-bottom: 3px;
     border-bottom: 2px solid color-mix(in srgb, var(--focus), transparent 85%);
 }
 
 .prose h2 {
-    margin: 2.4rem 0 2.55rem;
-    padding-bottom: 0.2rem;
+    margin: 36px 0 38px;
+    padding-bottom: 2px;
     text-align: left;
     border-bottom: 1px solid color-mix(in srgb, var(--focus), transparent 85%);
 }
 
 .prose h3 {
-    margin: 1.05rem 0 1.05rem;
+    margin: 16px 0 16px;
     text-align: left;
     /* font-weight: normal; */
 }
@@ -52,10 +52,7 @@
 .prose h4,
 .prose h5,
 .prose h6 {
-    margin: 1.05rem 0 0.25rem;
+    margin: 16px 0 4px;
     font-weight: normal;
-}
-
-.prose :is(h5, h6) {
-    font-size: 1em;
+    font-size: 1rem;
 }

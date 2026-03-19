@@ -33,13 +33,15 @@
 .site-nav .nav-login-btn img {
     width: 1em;
     height: 1em;
-    transform: translateY(-0.05rem);
-    border-bottom: 1px solid;
+    /* 调节登录按钮图片垂直位置 */
+    transform: translateY(-0.1rem);
+    border-bottom: 0.1rem solid;
 }
 
-.site-nav .icon-select-wrapper > .icon {
-    margin-bottom: -1px;
-}
+/* 调整语言、情景模式图标的垂直位置 */
+/* .site-nav .icon-select-wrapper > .icon {
+    margin-bottom: .15rem;
+} */
 
 .site-nav .icon-select-wrapper select.icon-select {
     position: absolute;

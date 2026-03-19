@@ -3,9 +3,9 @@
     position: relative;
     display: grid;
     width: max-content;
-    grid-template-columns: 15em minmax(5em, max-content) minmax(3em, max-content);
+    grid-template-columns: 15rem minmax(5rem, max-content) minmax(3rem, max-content);
     justify-content: start;
-    column-gap: 1em;
+    column-gap: 1rem;
 }
 
 .grid-list > * {
@@ -26,7 +26,7 @@
 .grid-list .title-link {
     display: inline-flex;
     align-items: center;
-    gap: 0.15em;
+    gap: 0.15rem;
     min-width: 0;
     max-width: 100%;
     color: inherit;
@@ -46,7 +46,7 @@
 .grid-list .icon {
     width: 1.2rem;
     height: 1.2rem;
-    vertical-align: -0.15em;
+    vertical-align: -0.25rem;
 }
 
 .grid-list .cell-count {
@@ -67,6 +67,11 @@
 .grid-list a:focus-visible {
     outline-offset: -2px;
 }
+
+.grid-list a:visited {
+    color: var(--link-visited);
+}
+
 
 .grid-list .header a {
     display: block;

@@ -1,16 +1,16 @@
-@view-transition {
+/* @view-transition {
     navigation: auto;
-}
+} */
 
 :root {
     --bg: #FFFFFF;
     --fg: #1B1B1B;
     --link: #1B1B1B;
     --link-visited: #5F5F5F;
-    --border: #838383;
+    --border: #838383; /*弹窗窗口的边框线条*/
     --focus: #9E685F;
     /* --text-secondary:#5F5F5F;
-    --bg-surface:#FAFAFA; */
+    --bg-surface:#FAFAFA; F9F9F9 F1F1F1 #E3E3E3 #D7D7D7 #868686 1D1D1D 7727272 */
 }
 
 [data-theme="dark"] {
@@ -20,7 +20,7 @@
     --link-visited: #D0D0D0;
     --border: #CCCCCC;
     --focus: #AC7B73;
-    /* --text-secondary:rgba(255,255,255,0.65);
+    /* E3E3E3 #9B9B9B 505050 333333 323232  313131 303030 2C2C2C 282828 202020
     --bg-surface:#2A2A2A; */
 }
 
@@ -29,8 +29,8 @@
 html,
 body {
     height: 100%;
-    margin: 0;
-    padding: 0;
+    /* margin: 0;
+    padding: 0; */
     font-size: 15px;
     -webkit-text-size-adjust: 100% !important;
     text-size-adjust: 100% !important;
@@ -38,13 +38,13 @@ body {
     background: var(--bg);
     color: var(--fg);
     transition: background 0.3s, color 0.3s;
+    font-family:-apple-system, BlinkMacSystemFont, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
 .page {
     min-height: 100vh;
     width: max-content;
     min-width: 100%;
-    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
     line-height: 1.7;
 }
 
@@ -67,8 +67,8 @@ a:focus-visible {
 
 .icon {
     display: inline-block;
-    width: 1em;
-    height: 1em;
+    width: 1rem;
+    height: 1rem;
     flex: none;
-    vertical-align: -0.15em;
+    vertical-align: 0;
 }
