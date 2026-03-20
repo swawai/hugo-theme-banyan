@@ -1,7 +1,7 @@
 .article {
     max-width: 80ch;
     --img-border-radius: 3px;
-    --border-subtle: #e6e6e6;
+    --border-subtle: #888888;
 
     --quote-bg: #F1F1F1;
     --quote-border: #D7D7D7;
@@ -12,18 +12,18 @@
     --table-text: var(--link-visited);
 
     --caption-color: var(--link-visited);
-    --code-inline-text: #059669;
-    --code-inline-bg: rgba(7, 193, 96, 0.07);
-    --code-inline-border: rgba(7, 193, 96, 0.3);
+    --code-inline-text: var(--link-visited);
+    --code-inline-bg: var(--quote-bg);
+    --code-inline-border: var(--quote-border);
     --code-block-bg: var(--bg);
-    --code-block-border: var(--quote-border);
-    --code-block-text: #5D7C86;
-    --code-token-string: #7C5A54;
-    --code-token-keyword: #8B5E3C;
-    --code-token-comment: #767676;
-    --code-line-highlight: #F1F1F1;
-    --code-token-type: #7C5A54;
-    --code-line-number: #8A8A8A;
+    --code-block-border: var(--bg);
+    --code-block-text: #5F959E;
+    --code-token-string: #885F9E;
+    --code-token-comment: var(--link-visited);
+    --code-token-keyword: var(--focus);
+    --code-token-type: #759E5F;
+    --code-line-highlight: var(--quote-bg);
+    --code-line-number: var(--border);
 }
 
 [data-theme="dark"] .article {
@@ -35,18 +35,20 @@
     --table-striped-bg: var(--bg);
     --table-text: var(--link-visited);
     --caption-color: var(--link-visited);
-    --code-inline-text: #64D4A5;
-    --code-inline-bg: rgba(100, 212, 165, 0.1);
-    --code-inline-border: rgba(100, 212, 165, 0.25);
+
+    --code-inline-text: var(--quote-border);
+    --code-inline-bg: var(--quote-bg);
+    --code-inline-border: var(--quote-border);
+    
     --code-block-bg: var(--bg);
-    --code-block-border: var(--quote-border);
-    --code-block-text: var(--fg);
-    --code-line-number: #7F7F7F;
-    --code-line-highlight: #2B2B2B;
-    --code-token-keyword: #C49A93;
-    --code-token-type: #8FB7C2;
-    --code-token-string: #D7A57C;
-    --code-token-comment: #A5A5A5;
+    --code-block-border: var(--bg);
+    --code-block-text: #79A8AF;
+    --code-token-string: #9C79AF;
+    --code-token-comment: var(--quote-border);
+    --code-token-keyword: var(--focus);
+    --code-token-type: #8CAF79;
+    --code-line-highlight: var(--quote-bg);
+    --code-line-number: var(--quote-border);
 }
 
 

@@ -1,5 +1,5 @@
 .prose strong {
-    color: var(--focus);
+    /* color: var(--focus); */
     padding: 0 2px;
 }
 
@@ -13,24 +13,12 @@
     text-decoration: line-through var(--focus);
 }
 
-.prose .markup-underline {
-    padding-bottom: 2px;
-    text-decoration: none;
-    border-bottom: 1px solid var(--focus);
-}
-
-.prose .markup-wavyline {
-    padding-bottom: 1px;
-    text-decoration: none;
-    border-bottom: 3px double var(--focus);
-}
-
-.prose :is(mark, .markup-highlight) {
+/* .prose mark {
     padding: 0 2px;
     color: #fff;
     background: var(--focus);
     border-radius: 2px;
-}
+} */
 
 .prose a {
     color: var(--link);
@@ -43,7 +31,12 @@
     color: var(--link-visited);
 }
 
-.prose a[href*="mp.weixin.qq.com"] {
-    color: var(--link);
-    border-bottom: none;
+.prose code {
+    padding: 0.065rem 0.33rem 0;
+    font-size: 0.9em;
+    font-family: Operator Mono, Consolas, Monaco, Menlo, monospace;
+    color: var(--code-inline-text);
+    background: var(--code-inline-bg);
+    border: 1px solid var(--code-inline-border);
+    border-radius: 3px;
 }

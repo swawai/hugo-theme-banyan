@@ -2,7 +2,7 @@
     display: block;
     max-width: 100%;
     height: auto;
-    margin: 0;
+    margin: 18px 0 18px 0;
     padding: 0;
     border-radius: var(--img-border-radius);
 }
@@ -13,25 +13,7 @@
     border-top: 1px solid var(--border-subtle);
 }
 
-.prose figure {
-    margin: 18px 0;
-    padding: 0;
-    font-size: inherit;
-    line-height: inherit;
-    color: inherit;
-    letter-spacing: inherit;
-    text-align: justify;
-    word-break: break-all;
-}
 
-.prose :is(figcaption, .md-figcaption) {
-    display: block;
-    margin: 0 0 -4px;
-    font-size: 12px;
-    line-height: 1.65;
-    text-align: left;
-    color: var(--caption-color);
-}
 
 /* --- 自定义占位与间隙控制类 (供手写 HTML 使用，不影响 SEO) --- */
 /* 使用方法: 在 Markdown 源码中插入 <section class="md-caption">注：说明文字</section> 或 <section class="md-spacer"></section> */

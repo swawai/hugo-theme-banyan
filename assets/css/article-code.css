@@ -2,16 +2,6 @@
     margin: 15px 0;
 }
 
-.prose code {
-    padding: 0.065rem 0.33rem 0;
-    font-size: 0.9em;
-    font-family: Operator Mono, Consolas, Monaco, Menlo, monospace;
-    color: var(--code-inline-text);
-    background: var(--code-inline-bg);
-    border: 1px solid var(--code-inline-border);
-    border-radius: 3px;
-}
-
 .prose .highlight {
     background: var(--code-block-bg);
     border: 1px solid var(--code-block-border);

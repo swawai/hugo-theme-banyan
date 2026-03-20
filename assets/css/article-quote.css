@@ -1,7 +1,4 @@
-.prose blockquote,
-.prose .multiquote-1,
-.prose .multiquote-2,
-.prose .multiquote-3 {
+.prose blockquote {
     margin: 18px 0;
     padding: 4px 8px 4px;
     border-left: 2px solid var(--quote-border);
@@ -15,10 +12,7 @@
     margin: 0;
 }
 
-.prose blockquote p,
-.prose .multiquote-1 p,
-.prose .multiquote-2 p,
-.prose .multiquote-3 p {
+.prose blockquote p {
     margin: 0;
     /* 覆写了上面 P 的外部节奏间距，因为在此组件内部 */
     font-size: 14px;
@@ -26,12 +20,8 @@
     color: var(--quote-text);
 }
 
-.prose blockquote a,
-.prose .multiquote-1 a,
-.prose .multiquote-2 a,
-.prose .multiquote-3 a {
+.prose blockquote a {
     color: var(--quote-text);
-    font-size: 13px;
-    /* 需要与引用块内的 p 文字大小保持一致，否则微信默认或其他样式可能会覆盖 */
-    border-bottom-color: #ddd;
+    border-bottom-color: var(--quote-border);
 }
+

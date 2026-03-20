@@ -45,11 +45,11 @@
     margin: 0 0 12px 0;
 }
 
-.prose :is(figure, pre, .highlight, blockquote, .multiquote-1, .multiquote-2, .multiquote-3, section[style*="overflow: auto"]) + h2 {
+.prose :is(pre, .highlight, blockquote) + h2 {
     margin-top: 40px;
 }
 
-.prose :is(figure, pre, .highlight, blockquote, .multiquote-1, .multiquote-2, .multiquote-3, section[style*="overflow: auto"]) + h3 {
+.prose :is(pre, .highlight, blockquote) + h3 {
     margin-top: 22px;
 }
 
@@ -57,12 +57,12 @@
     margin-top: 40px;
 }
 
-.prose :is(figure, blockquote, .multiquote-1, .multiquote-2, .multiquote-3, section[style*="overflow: auto"]) + :is(figure, blockquote, .multiquote-1, .multiquote-2, .multiquote-3, section[style*="overflow: auto"]) {
+.prose :is(blockquote) + :is(blockquote) {
     margin-top: 24px !important;
 }
 
-.prose :is(pre, .highlight) + :is(figure, blockquote, .multiquote-1, .multiquote-2, .multiquote-3, section[style*="overflow: auto"]),
-.prose :is(figure, blockquote, .multiquote-1, .multiquote-2, .multiquote-3, section[style*="overflow: auto"]) + :is(pre, .highlight) {
+.prose :is(pre, .highlight) + :is(blockquote),
+.prose :is(blockquote) + :is(pre, .highlight) {
     margin-top: 21px !important;
 }
 
@@ -70,9 +70,9 @@
     margin-top: 18px !important;
 }
 
-.prose figure + br {
+/* .prose img + br {
     display: none;
-}
+} */
 
 
 .prose .md-caption + p {
