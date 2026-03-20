@@ -1,25 +1,29 @@
+.prose section[style*="overflow: auto"] {
+    margin: 18px 0;
+}
+
 .prose table {
     margin: 0;
     width: auto;
     min-width: 100%;
+    color: var(--table-text);
     border-collapse: collapse;
 }
 
+.prose th {
+    background: var(--table-header-bg);
+}
+
 .prose :is(th, td) {
-    padding: 0.27rem 0.065rem 0.27rem 0.27rem; /* 4px 1px 4px 4px */
+    padding: 4px 1px 4px 4px;
     text-align: left;
     vertical-align: top;
-    font-size: 0.8rem; /* 12px */
+    font-size: 12px;
     color: var(--table-text);
     word-break: keep-all;
-    border: 1px solid var(--border-subtle);
+    border: 1px solid var(--table-border);
 }
 
 .prose tr:nth-child(even) {
     background: var(--table-striped-bg);
-}
-
-/* 兼容 doocs 的硬编码表格滚动容器 */
-.prose section[style*="overflow: auto"] {
-    margin: 1.2rem 0 1.2rem 0;
 }

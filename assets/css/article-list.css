@@ -1,12 +1,43 @@
 .prose :is(ul, ol) {
-    list-style: none; /* doocs/md 渲染器已将符号硬编码注入 li 文本 */
-    margin: 0 0 0.8rem 0;
-    padding-left: 0;
+    color: inherit;
+    font-size: inherit;
+}
+
+.prose ul {
+    padding-left: 1.4em;
+    list-style-type: disc;
+}
+
+.prose ol {
+    padding-left: 1.6em;
+    list-style-type: decimal;
 }
 
 .prose li {
-    display: block;
-    margin: 0 0 0.8rem 0;
+    display: list-item;
+    color: inherit;
+    line-height: 1.65;
+    word-break: break-all;
+}
+
+.prose ul ul {
+    list-style-type: circle;
+}
+
+.prose ul ul ul {
+    list-style-type: square;
+}
+
+.prose ol ol {
+    list-style-type: lower-alpha;
+}
+
+.prose ol ol ol {
+    list-style-type: lower-roman;
+}
+
+.prose :is(ul, ol, li) {
+    margin: 0 0 12px 0;
 }
 
 .prose li:last-child {
@@ -15,6 +46,6 @@
 
 /* 嵌套列表缩进 */
 .prose :is(ul, ol) :is(ul, ol) {
-    padding-left: 1em;
-    margin: 0.8rem 0 0;
+    margin-top: 12px;
+    padding-left: 1.2em;
 }

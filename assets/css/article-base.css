@@ -1,16 +1,29 @@
 .article {
     max-width: 80ch;
-    --img-border-radius: 0.2rem; /* 3px */
+    --img-border-radius: 3px;
     --border-subtle: #e6e6e6;
 
     --quote-bg: #F1F1F1;
     --quote-border: #D7D7D7;
     --quote-text: var(--link-visited);
     --table-header-bg: #F1F1F1;
+    --table-border: var(--quote-border);
     --table-striped-bg: #FAFAFA;
     --table-text: var(--link-visited);
-    --caption-color: var(--link-visited);
 
+    --caption-color: var(--link-visited);
+    --code-inline-text: #059669;
+    --code-inline-bg: rgba(7, 193, 96, 0.07);
+    --code-inline-border: rgba(7, 193, 96, 0.3);
+    --code-block-bg: var(--bg);
+    --code-block-border: var(--quote-border);
+    --code-block-text: #5D7C86;
+    --code-token-string: #7C5A54;
+    --code-token-keyword: #8B5E3C;
+    --code-token-comment: #767676;
+    --code-line-highlight: #F1F1F1;
+    --code-token-type: #7C5A54;
+    --code-line-number: #8A8A8A;
 }
 
 [data-theme="dark"] .article {
@@ -18,9 +31,22 @@
     --quote-border: #9B9B9B;
     --quote-text: var(--link-visited);
     --table-header-bg: var(--bg);
+    --table-border: var(--quote-border);
     --table-striped-bg: var(--bg);
     --table-text: var(--link-visited);
     --caption-color: var(--link-visited);
+    --code-inline-text: #64D4A5;
+    --code-inline-bg: rgba(100, 212, 165, 0.1);
+    --code-inline-border: rgba(100, 212, 165, 0.25);
+    --code-block-bg: var(--bg);
+    --code-block-border: var(--quote-border);
+    --code-block-text: var(--fg);
+    --code-line-number: #7F7F7F;
+    --code-line-highlight: #2B2B2B;
+    --code-token-keyword: #C49A93;
+    --code-token-type: #8FB7C2;
+    --code-token-string: #D7A57C;
+    --code-token-comment: #A5A5A5;
 }
 
 
@@ -31,4 +57,3 @@
     font-size: small; /* 已按要求改为 1rem */
     color: var(--link-visited);
 }
-

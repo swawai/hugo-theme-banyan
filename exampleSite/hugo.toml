@@ -153,6 +153,9 @@ udc = "udc"
 tag = "tags"
 
 [markup]
+[markup.highlight]
+noClasses = false
+style = "vs"
 [markup.goldmark]
 [markup.goldmark.renderer]
 unsafe = true

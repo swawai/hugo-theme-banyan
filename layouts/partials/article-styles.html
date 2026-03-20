@@ -1,5 +1,6 @@
 {{ $articleBase := resources.Get "css/article-base.css" }}
 {{ $articleProse := resources.Get "css/article-prose.css" }}
+{{ $articleInline := resources.Get "css/article-inline.css" }}
 {{ $articleCode := resources.Get "css/article-code.css" }}
 {{ $articleList := resources.Get "css/article-list.css" }}
 {{ $articleMedia := resources.Get "css/article-media.css" }}
@@ -17,7 +18,7 @@
 {{ if and $content (gt (len (findRE "<(?:img|hr)\\b" $content)) 0) }}{{ $features = $features | append "media" }}{{ end }}
 {{ if and $content (gt (len (findRE "<(?:pre|code)\\b" $content)) 0) }}{{ $features = $features | append "code" }}{{ end }}
 {{ if and $content (gt (len (findRE "<table\\b" $content)) 0) }}{{ $features = $features | append "table" }}{{ end }}
-{{ $articleCoreParts := slice $articleBase $articleProse }}
+{{ $articleCoreParts := slice $articleBase $articleProse $articleInline }}
 {{ $articleCore := $articleCoreParts | resources.Concat "css/article-core.css" }}
 {{ $articleCore = partial "css-process.html" (dict "resource" $articleCore "fingerprint" true) }}
 <link rel="stylesheet" href="{{ $articleCore.RelPermalink }}">

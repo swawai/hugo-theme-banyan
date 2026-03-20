@@ -8,35 +8,39 @@
 }
 
 .prose hr {
-    margin: 1.2rem 0 7.2rem;
+    margin: 18px 0 108px;
     border: 0;
     border-top: 1px solid var(--border-subtle);
 }
 
 .prose figure {
-    margin: 1.2rem 0 1.2rem 0;
+    margin: 18px 0;
     padding: 0;
-    font-size: 1rem;
-    line-height: 1.65;
+    font-size: inherit;
+    line-height: inherit;
+    color: inherit;
+    letter-spacing: inherit;
     text-align: justify;
     word-break: break-all;
 }
 
 .prose :is(figcaption, .md-figcaption) {
     display: block;
-    margin: 0 0 -0.27rem; /* -4px */
-    font-size: 0.8rem; /* 12px */
+    margin: 0 0 -4px;
+    font-size: 12px;
     line-height: 1.65;
     text-align: left;
     color: var(--caption-color);
 }
 
-/* doocs 特定类支持 */
+/* --- 自定义占位与间隙控制类 (供手写 HTML 使用，不影响 SEO) --- */
+/* 使用方法: 在 Markdown 源码中插入 <section class="md-caption">注：说明文字</section> 或 <section class="md-spacer"></section> */
+/* 微信防过滤提示: 微信编辑器常清洗 div 标签及带有负值的 margin 复合属性，请务必使用 section 标签并在该标签上下各留一个空行！ */
 .prose .md-caption {
-    margin-top: -1.2rem;
-    margin-bottom: 1.6rem;
     display: block;
-    font-size: 0.8rem;
+    margin-top: -18px;
+    margin-bottom: 24px;
+    font-size: 12px;
     line-height: 1.65;
     text-align: left;
     color: var(--caption-color);
@@ -45,7 +49,7 @@
 .prose .md-spacer {
     display: block;
     margin-top: 0;
-    margin-bottom: -3.2rem;
+    margin-bottom: -48px;
     padding: 0;
     overflow: hidden;
     clear: both;

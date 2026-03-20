@@ -1,28 +1,104 @@
-.prose :where(code, pre) {
-    background: var(--border-subtle);
+.prose :is(pre, .highlight) {
+    margin: 15px 0;
 }
 
 .prose code {
     padding: 0.065rem 0.33rem 0;
     font-size: 0.9em;
     font-family: Operator Mono, Consolas, Monaco, Menlo, monospace;
-    color: #059669;
-    background: rgba(7, 193, 96, 0.07);
-    border: 1px solid rgba(7, 193, 96, 0.3);
+    color: var(--code-inline-text);
+    background: var(--code-inline-bg);
+    border: 1px solid var(--code-inline-border);
     border-radius: 3px;
 }
 
-[data-theme="dark"] .prose code {
-    color: #3ad67a;
-    background: rgba(58, 214, 122, 0.07);
-    border: 1px solid rgba(58, 214, 122, 0.3);
+.prose .highlight {
+    background: var(--code-block-bg);
+    border: 1px solid var(--code-block-border);
+    border-radius: 4px;
+}
+
+.prose .chroma {
+    color: var(--code-block-text);
+    background-color: transparent;
+    -webkit-text-size-adjust: none;
+}
+
+.prose .chroma .lnlinks {
+    color: inherit;
+    text-decoration: none;
+    outline: none;
+}
+
+.prose .chroma .lntd,
+.prose .chroma .lntable {
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+
+.prose .chroma .lntd {
+    vertical-align: top;
+}
+
+.prose .chroma .lntable {
+    border-spacing: 0;
+}
+
+.prose .chroma .hl {
+    background-color: var(--code-line-highlight);
+}
+
+.prose .chroma :is(.lnt, .ln) {
+    white-space: pre;
+    user-select: none;
+    margin-right: 0.4em;
+    padding: 0 0.4em;
+    color: var(--code-line-number);
+}
+
+.prose .chroma .line {
+    display: flex;
+}
+
+.prose .chroma :is(.k, .kc, .kd, .kn, .kp, .kr, .ow, .cp, .cpf) {
+    color: var(--code-token-keyword);
+}
+
+.prose .chroma :is(.kt, .nc) {
+    color: var(--code-token-type);
+}
+
+.prose .chroma :is(.s, .sa, .sb, .sc, .dl, .sd, .s2, .se, .sh, .si, .sx, .sr, .s1, .ss) {
+    color: var(--code-token-string);
+}
+
+.prose .chroma :is(.c, .ch, .cm, .c1, .cs) {
+    color: var(--code-token-comment);
+}
+
+.prose .chroma :is(.gh, .gp, .gs, .gu) {
+    font-weight: bold;
+}
+
+.prose .chroma .ge {
+    font-style: italic;
 }
 
 .prose pre {
-    margin: 1rem 0 1rem 0;
     padding: 1em;
     overflow-x: auto;
+    color: var(--code-block-text);
+    background: var(--code-block-bg);
+    border: 1px solid var(--code-block-border);
     border-radius: 4px;
+}
+
+.prose .highlight pre {
+    margin: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
 }
 
 .prose pre code {

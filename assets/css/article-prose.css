@@ -1,21 +1,8 @@
 .prose {
-    /* line-height: 1.7; */
-    /* font-size: 1rem; */
     line-height: 1.65;
-    /* letter-spacing: normal; */
     word-break: break-all;
     text-align: justify;
     overflow-wrap: break-word;
-
-}
-
-.prose p {
-    margin: 0 0 12px 0;
-}
-
-.prose strong {
-    color: var(--focus);
-    padding: 0 2px;
 }
 
 .prose :is(h1, h2, h3, h4, h5, h6) {
@@ -23,8 +10,6 @@
     text-align: left;
     color: var(--focus);
     letter-spacing: 0;
-    /* background: none; */
-    /* border: none; */
     font-size: 1rem;
     font-weight: bold;
 }
@@ -46,7 +31,6 @@
 .prose h3 {
     margin: 16px 0 16px;
     text-align: left;
-    /* font-weight: normal; */
 }
 
 .prose h4,
@@ -55,4 +39,51 @@
     margin: 16px 0 4px;
     font-weight: normal;
     font-size: 1rem;
+}
+
+.prose p {
+    margin: 0 0 12px 0;
+}
+
+.prose :is(figure, pre, .highlight, blockquote, .multiquote-1, .multiquote-2, .multiquote-3, section[style*="overflow: auto"]) + h2 {
+    margin-top: 40px;
+}
+
+.prose :is(figure, pre, .highlight, blockquote, .multiquote-1, .multiquote-2, .multiquote-3, section[style*="overflow: auto"]) + h3 {
+    margin-top: 22px;
+}
+
+.prose h2 + h3 {
+    margin-top: 40px;
+}
+
+.prose :is(figure, blockquote, .multiquote-1, .multiquote-2, .multiquote-3, section[style*="overflow: auto"]) + :is(figure, blockquote, .multiquote-1, .multiquote-2, .multiquote-3, section[style*="overflow: auto"]) {
+    margin-top: 24px !important;
+}
+
+.prose :is(pre, .highlight) + :is(figure, blockquote, .multiquote-1, .multiquote-2, .multiquote-3, section[style*="overflow: auto"]),
+.prose :is(figure, blockquote, .multiquote-1, .multiquote-2, .multiquote-3, section[style*="overflow: auto"]) + :is(pre, .highlight) {
+    margin-top: 21px !important;
+}
+
+.prose :is(pre, .highlight) + :is(pre, .highlight) {
+    margin-top: 18px !important;
+}
+
+.prose figure + br {
+    display: none;
+}
+
+
+.prose .md-caption + p {
+    display: block;
+    margin-top: -12px;
+}
+
+.prose p + .md-spacer {
+    margin-top: 0;
+}
+
+.prose .md-spacer + p {
+    margin-top: 12px;
 }
