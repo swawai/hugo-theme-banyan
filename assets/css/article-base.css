@@ -16,7 +16,7 @@
     --code-inline-bg: var(--quote-bg);
     --code-inline-border: var(--quote-border);
     --code-block-bg: var(--bg);
-    --code-block-border: var(--bg);
+    /* --code-block-border: var(--bg); */
     --code-block-text: #5F959E;
     --code-token-string: #885F9E;
     --code-token-comment: var(--link-visited);
@@ -24,6 +24,9 @@
     --code-token-type: #759E5F;
     --code-line-highlight: var(--quote-bg);
     --code-line-number: var(--border);
+    --code-scrollbar-track: var(--bg);
+    --code-scrollbar-thumb: var(--quote-bg);
+    --code-scrollbar-thumb-hover: var(--link-visited);
 }
 
 [data-theme="dark"] .article {
@@ -41,7 +44,7 @@
     --code-inline-border: var(--quote-border);
     
     --code-block-bg: var(--bg);
-    --code-block-border: var(--bg);
+    /* --code-block-border: var(--bg); */
     --code-block-text: #79A8AF;
     --code-token-string: #9C79AF;
     --code-token-comment: var(--quote-border);
@@ -49,6 +52,9 @@
     --code-token-type: #8CAF79;
     --code-line-highlight: var(--quote-bg);
     --code-line-number: var(--quote-border);
+    --code-scrollbar-track: var(--bg);
+    --code-scrollbar-thumb: var(--quote-bg);
+    --code-scrollbar-thumb-hover: var(--quote-border);
 }
 
 
