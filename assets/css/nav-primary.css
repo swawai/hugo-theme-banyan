@@ -1,47 +1,79 @@
 .site-nav {
     display: flex;
     flex-wrap: nowrap;
-    align-items: center;
+    align-items: flex-end;
     column-gap: 0.8rem;
     white-space: nowrap;
-    margin-bottom: 0.05rem;
+    margin-bottom: 0.4rem;
+    line-height: 1;
 }
 
 .site-nav > * {
     flex-shrink: 0;
 }
 
-/* .site-nav a:visited {
-    color: inherit;
-} */
+.site-nav :is(a, .icon-select-wrapper) {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    box-sizing: border-box;
+    min-height: 1.15em;
+    padding-bottom: 0.14em;
+    text-decoration: none;
+}
+
+.site-nav > :is(a, .icon-select-wrapper)::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-bottom: 1px solid currentColor;
+}
 
 /* .site-nav select option {
     background: var(--bg);
     color: var(--fg);
 } */
 
-.site-nav :is(.icon-select-wrapper, .nav-login-btn) {
-    display: inline-flex;
-    align-items: center;
-}
-
-.site-nav .icon-select-wrapper {
-    position: relative;
-}
-
 .site-nav .icon-select-wrapper > .icon,
-.site-nav .nav-login-btn img {
+.site-nav .nav-about-link .nav-about-logo,
+.site-nav .nav-me-btn :is(.default-me-icon, .me-avatar) {
+    display: block;
     width: 1em;
     height: 1em;
-    /* 调节登录按钮图片垂直位置 */
-    transform: translateY(-0.1rem);
-    border-bottom: 0.1rem solid;
+    flex: none;
+    transform-origin: center center;
 }
 
-/* 调整语言、情景模式图标的垂直位置 */
-/* .site-nav .icon-select-wrapper > .icon {
-    margin-bottom: .15rem;
-} */
+.site-nav .nav-me-btn > span {
+    display: block;
+    line-height: 1;
+}
+
+.site-nav .nav-about-link {
+    gap: 0.22rem;
+}
+
+.site-nav .nav-me-btn {
+    gap: 0;
+}
+
+.site-nav .nav-me-btn .me-avatar,
+.site-nav .nav-me-btn .me-avatar:not([src]),
+.site-nav .nav-me-btn .me-avatar[src=""] {
+    display: none;
+}
+
+.site-nav .nav-about-link .nav-about-logo,
+.site-nav .nav-me-btn .default-me-icon {
+    transform: translateY(-0.04em) scale(0.92);
+}
+
+.site-nav .nav-me-btn .me-avatar {
+    transform: translateY(-0.03em);
+}
 
 .site-nav .icon-select-wrapper select.icon-select {
     position: absolute;
@@ -61,15 +93,11 @@
     outline: none;
 }
 
-.site-nav .user-avatar {
-    display: none;
-}
-
-[data-logged-in="true"] .site-nav .default-avatar {
+[data-logged-in="true"] .site-nav .nav-me-btn .default-me-icon {
     display: none !important;
 }
 
-[data-logged-in="true"] .site-nav .user-avatar {
-    display: inline-block !important;
+[data-logged-in="true"] .site-nav .nav-me-btn .me-avatar {
+    display: block !important;
     border-radius: 50%;
 }

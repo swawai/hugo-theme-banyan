@@ -3,8 +3,9 @@
     flex-wrap: nowrap;
     column-gap: 0.4rem;
     white-space: nowrap;
-    margin-bottom: 0.05rem;
-    color: var(--link-visited);
+    margin-bottom: 0.4rem;
+    color: var(--focus);
+    font-weight: bold;
 
     /* 字体由<small>指定 */
 }

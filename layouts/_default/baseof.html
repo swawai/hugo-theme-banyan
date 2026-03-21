@@ -240,18 +240,30 @@
         </header>
 
         <nav class="site-nav" aria-label="Primary">
-            {{ $account_link := site.Params.account_url }}
-            {{ $has_account := true }}
-            {{ if not $account_link }}
-                {{ $account_link = "https://github.com/swawai/hugo-theme-banyan" }}
-                {{ $has_account = false }}
-            {{ end }}
-            <a href="{{ $account_link }}" target="_blank" rel="noopener noreferrer" aria-label="{{ if $has_account }}{{ i18n `label_account` | default `Account` }}{{ else }}Banyan Theme GitHub{{ end }}" class="nav-login-btn">
-                {{ if $has_account }}
-                <span>{{ i18n "label_account" | default "Account" }}</span>
+            {{ $meLinkRaw := site.Params.me_url | default (site.Params.account_url | default "") }}
+            {{ $meLink := "" }}
+            {{ $meIsInternal := false }}
+            {{ $hasMe := true }}
+            {{ if $meLinkRaw }}
+                {{ if or (hasPrefix $meLinkRaw "/") (and (not (hasPrefix $meLinkRaw "http://")) (not (hasPrefix $meLinkRaw "https://")) (not (hasPrefix $meLinkRaw "//"))) }}
+                    {{ $meIsInternal = true }}
+                    {{ if hasPrefix $meLinkRaw "/" }}
+                        {{ $meLink = $meLinkRaw | relLangURL }}
+                    {{ else }}
+                        {{ $meLink = (printf "/%s" $meLinkRaw) | relLangURL }}
+                    {{ end }}
+                {{ else }}
+                    {{ $meLink = $meLinkRaw }}
                 {{ end }}
-                <img src="{{ $faviconSvg.RelPermalink }}" alt="Logo" class="default-avatar" fetchpriority="low" />
-                <img src="" alt="User Avatar" class="user-avatar" />
+            {{ else }}
+                {{ $meLink = "https://github.com/swawai/hugo-theme-banyan" }}
+                {{ $hasMe = false }}
+            {{ end }}
+            {{ if $meIsInternal }}{{ partial "link-collect-url.html" (dict "ctx" . "slot" "menu" "url" $meLink) }}{{ end }}
+            <a href="{{ $meLink }}"{{ if not $meIsInternal }} target="_blank" rel="noopener noreferrer"{{ end }} aria-label="{{ if $hasMe }}{{ i18n `label_me` | default `Me` }}{{ else }}Banyan Theme GitHub{{ end }}" class="nav-me-btn">
+                <span class="sr-only">{{ if $hasMe }}{{ i18n "label_me" | default "Me" }}{{ else }}Banyan Theme GitHub{{ end }}</span>
+                {{ partial "icon" (dict "name" "me" "class" "default-me-icon") }}
+                <img alt="Me Avatar" class="me-avatar" />
             </a>
 
             {{ $cur := .Language.Lang }}
@@ -284,7 +296,14 @@
 
             {{ range .Site.Menus.main }}
             {{ $key := printf "menu_%s" .Identifier }}
-        {{ partial "link.html" (dict "ctx" $ "href" (.URL | relLangURL) "title" (cond (eq .Identifier "udc") "Universal Decimal Classification" "") "text" (i18n $key | default .Name) "linkSlot" "menu") }}
+            {{ $menuText := i18n $key | default .Name }}
+            {{ $menuTitle := cond (eq .Identifier "udc") "Universal Decimal Classification" "" }}
+            {{ if eq .Identifier "about" }}
+                {{ $aboutText := printf `<span>%s</span><img src="%s" alt="" class="nav-about-logo" aria-hidden="true" fetchpriority="low" />` $menuText $faviconSvg.RelPermalink }}
+        {{ partial "link.html" (dict "ctx" $ "href" (.URL | relLangURL) "title" $menuTitle "text" $aboutText "safeHTML" true "class" "nav-about-link" "linkSlot" "menu") }}
+            {{ else }}
+        {{ partial "link.html" (dict "ctx" $ "href" (.URL | relLangURL) "title" $menuTitle "text" $menuText "linkSlot" "menu") }}
+            {{ end }}
             {{ end }}
         </nav>
 

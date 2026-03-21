@@ -1,5 +1,5 @@
 {{- $name := .name -}}
-{{- $supported := slice "file" "folder" "github" "language" "theme" -}}
+{{- $supported := slice "file" "folder" "github" "language" "theme" "me" -}}
 {{- if not (in $supported $name) -}}
   {{- errorf "编译失败: 未定义 sprite 图标 %q。" $name -}}
 {{- end -}}

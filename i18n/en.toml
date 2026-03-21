@@ -25,8 +25,8 @@ other = "Published"
 [label_updated]
 other = "Updated"
 
-[label_account]
-other = "Account"
+[label_me]
+other = "Me"
 
 [no_trans_msg]
 other = "This page does not yet have a [{lang}] version.\nGo to the [{lang}] homepage?"

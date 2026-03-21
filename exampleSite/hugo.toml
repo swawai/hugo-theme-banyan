@@ -21,9 +21,9 @@ enableGitInfo = false
 panicOnWarning = true
 
 [params]
-# If account_url is empty or commented out, the login button will ONLY show the logo and link to the Banyan theme GitHub repo.
-# If configured, it will show the "Account" text and link to the specified URL.
-# account_url = "https://your-account-link.com"
+# If me_url is empty or commented out, the Me icon links to the Banyan theme GitHub repo.
+# If configured, it can point to either an internal page or an external URL.
+# me_url = "https://your-me-link.com"
 # copyright = "your copyright here"
 # icp = "your icp here"
 
