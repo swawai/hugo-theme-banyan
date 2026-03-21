@@ -3,7 +3,7 @@
     inline-size: min(80ch, calc(100vw - 8px));
     max-inline-size: 100%;
     /* margin-inline: auto; */
-    padding-inline: 0;
+    padding-inline: 0 8px;
 
     --img-border-radius: 3px;
     --border-subtle: #888888;
