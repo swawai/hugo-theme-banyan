@@ -45,45 +45,50 @@
     margin: 0 0 12px 0;
 }
 
-.prose :is(pre, .highlight, blockquote) + h2 {
-    margin-top: 40px;
-}
-
-.prose :is(pre, .highlight, blockquote) + h3 {
-    margin-top: 22px;
-}
 
 .prose h2 + h3 {
-    margin-top: 40px;
+    margin-top: 38px;
 }
 
-.prose :is(blockquote) + :is(blockquote) {
-    margin-top: 24px !important;
-}
 
-.prose :is(pre, .highlight) + :is(blockquote),
-.prose :is(blockquote) + :is(pre, .highlight) {
-    margin-top: 21px !important;
-}
+.prose h2 + :is(blockquote, table) { margin-top: 40px; }
+.prose :is(blockquote, table) + h2 { margin-top: 38px; }
+.prose h2 + p:has(img) { margin-top: 44px; }
+.prose p:has(img) + h2 { margin-top: 42px; }
 
-.prose :is(pre, .highlight) + :is(pre, .highlight) {
-    margin-top: 18px !important;
-}
+.prose h3 + :is(blockquote, table),
+.prose :is(blockquote, table) + h3 { margin-top: 18px; }
+.prose h3 + p:has(img),
+.prose p:has(img) + h3 { margin-top: 22px; }
 
-/* .prose img + br {
-    display: none;
-} */
+.prose :is(blockquote, table) + :is(blockquote, p:has(img), table),
+.prose p:has(img) + :is(blockquote, table) { margin-top: 20px; }
+
+.prose p:has(img) + p:has(img) { margin-top: 24px; }
 
 
-.prose .md-caption + p {
+
+
+
+/* --- 自定义占位与间隙控制类 (供手写 HTML 使用，不影响 SEO) --- */
+/* 使用方法: 在 Markdown 源码中插入 <section class="md-caption">注：说明文字</section> 或 <section class="md-spacer"></section> */
+/* 微信防过滤提示: 微信编辑器常清洗 div 标签及带有负值的 margin 复合属性，请务必使用 section 标签并在该标签上下各留一个空行！ */
+.prose .md-caption {
     display: block;
-    margin-top: -12px;
+    margin-top: -18px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    line-height: 1.65;
+    text-align: left;
+    color: var(--caption-color);
 }
 
-.prose p + .md-spacer {
-    margin-top: 0;
-}
 
-.prose .md-spacer + p {
-    margin-top: 12px;
+.prose .md-spacer {
+    display: block;
+    margin-top: -24px;
+    margin-bottom: 12px;
+    padding: 0;
+    overflow: hidden;
+    clear: both;
 }

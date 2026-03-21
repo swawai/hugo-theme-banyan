@@ -1,12 +1,27 @@
 .prose :is(pre, .highlight) {
-    margin: 0px 0 16px 0;
+    margin: 0 0 12px 0;
 }
 
-.prose .highlight {
+.prose pre {
+    overflow-x: auto;
+    overflow-y: hidden;
+    color: var(--code-block-text);
     background: var(--code-block-bg);
-    /* border: 0; */
-    overflow: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--code-scrollbar-thumb) var(--code-scrollbar-track);
 }
+
+.prose pre code {
+    display: inline-block;
+    min-width: 100%;
+    box-sizing: border-box;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    font-size: 14px;
+    color: inherit;
+}
+
 
 .prose .chroma {
     color: var(--code-block-text);
@@ -76,47 +91,4 @@
     font-style: italic;
 }
 
-.prose pre {
-    overflow-x: auto;
-    overflow-y: hidden;
-    color: var(--code-block-text);
-    background: var(--code-block-bg);
-    scrollbar-width: thin;
-    scrollbar-color: var(--code-scrollbar-thumb) var(--code-scrollbar-track);
-}
 
-.prose .highlight pre {
-    margin: 0;
-    background: transparent;
-    /* border: 0; */
-}
-
-.prose pre::-webkit-scrollbar {
-    height: 10px;
-}
-
-.prose pre::-webkit-scrollbar-track {
-    background: var(--code-scrollbar-track);
-}
-
-.prose pre::-webkit-scrollbar-thumb {
-    background: var(--code-scrollbar-thumb);
-    border-radius: 999px;
-    border: 2px solid var(--code-scrollbar-track);
-}
-
-.prose pre::-webkit-scrollbar-thumb:hover {
-    background: var(--code-scrollbar-thumb-hover);
-}
-
-.prose pre code {
-    display: block;
-    width: max-content;
-    min-width: 100%;
-    padding: 0;
-    background: transparent;
-    border: none;
-    border-radius: 0;
-    font-size: 14px;
-    color: inherit;
-}
