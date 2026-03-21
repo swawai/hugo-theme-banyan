@@ -51,14 +51,14 @@
     display: block;
     line-height: 1;
 }
-
+/* 
 .site-nav .nav-about-link {
     gap: 0.22rem;
 }
 
 .site-nav .nav-me-btn {
     gap: 0;
-}
+} */
 
 .site-nav .nav-me-btn .me-avatar,
 .site-nav .nav-me-btn .me-avatar:not([src]),
@@ -66,14 +66,14 @@
     display: none;
 }
 
-.site-nav .nav-about-link .nav-about-logo,
+/* .site-nav .nav-about-link .nav-about-logo,
 .site-nav .nav-me-btn .default-me-icon {
     transform: translateY(-0.04em) scale(0.92);
 }
 
 .site-nav .nav-me-btn .me-avatar {
     transform: translateY(-0.03em);
-}
+} */
 
 .site-nav .icon-select-wrapper select.icon-select {
     position: absolute;
