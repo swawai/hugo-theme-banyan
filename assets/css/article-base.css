@@ -1,5 +1,10 @@
 .article {
-    max-width: 80ch;
+    box-sizing: border-box;
+    inline-size: min(80ch, calc(100vw - 8px));
+    max-inline-size: 100%;
+    /* margin-inline: auto; */
+    padding-inline: 0;
+
     --img-border-radius: 3px;
     --border-subtle: #888888;
 
