@@ -10,11 +10,15 @@
 {{ with index $ctx.OutputFormats 0 }}{{ $primaryOutputName = .Name }}{{ end }}
 {{ $isLanguageHome := and $ctx.IsHome (eq $currentOutputName $primaryOutputName) }}
 {{ $gridOutputNames := slice "byname" "bynameasc" "bydate" "bydateasc" "bycount" "bycountasc" "allbyname" "allbynameasc" "allbydate" "allbydateasc" "allbypath" "allbypathasc" "allbysize" "allbysizeasc" }}
-{{ $needsGrid := in $gridOutputNames $currentOutputName }}
+{{ $resourceOutputNames := slice "resourcesbynameasc" "resourcesbyname" "resourcesbyprice" "resourcesbypriceasc" "resourcesbyvalue" "resourcesbyvalueasc" }}
+{{ $needsGridResources := in $resourceOutputNames $currentOutputName }}
+{{ $needsGrid := or (in $gridOutputNames $currentOutputName) $needsGridResources }}
 {{ $needsGridAll := hasPrefix $currentOutputName "allby" }}
 {{ $defaultVariant := "page-crumb" }}
 {{ if $isLanguageHome }}
 {{ $defaultVariant = "home" }}
+{{ else if $needsGridResources }}
+{{ $defaultVariant = "resources" }}
 {{ else if $needsGridAll }}
 {{ $defaultVariant = "all" }}
 {{ else if $needsGrid }}
@@ -26,5 +30,6 @@
     "isLanguageHome" $isLanguageHome
     "needsGrid" $needsGrid
     "needsGridAll" $needsGridAll
+    "needsGridResources" $needsGridResources
     "defaultVariant" $defaultVariant
 }}

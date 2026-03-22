@@ -3,7 +3,7 @@
 
 # Hugo 编译输出和本地缓存
 public/
-resources/
+/resources/
 .hugo_build.lock
 
 # 针对 exampleSite 文件夹忽略那些本地生成的编译和缓存文件

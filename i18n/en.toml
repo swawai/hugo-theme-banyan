@@ -11,6 +11,29 @@ other = "UDC"
 [menu_all]
 other = "ALL"
 
+[resources_col_name]
+other = "Name"
+[resources_col_price]
+other = "Price"
+[resources_col_value]
+other = "Value"
+[resources_free]
+other = "Free"
+[resources_empty]
+other = "No resources yet."
+[resources_sort_name_asc]
+other = "Sort by name ascending"
+[resources_sort_name_desc]
+other = "Sort by name descending"
+[resources_sort_price_asc]
+other = "Sort by price ascending"
+[resources_sort_price_desc]
+other = "Sort by price descending"
+[resources_sort_value_asc]
+other = "Sort by value ascending"
+[resources_sort_value_desc]
+other = "Sort by value descending"
+
 [home_shortcut_directory]
 other = "Directory"
 [home_shortcut_tags]

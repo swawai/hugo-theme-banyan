@@ -11,6 +11,29 @@ other = "学科"
 [menu_all]
 other = "总览"
 
+[resources_col_name]
+other = "名称"
+[resources_col_price]
+other = "价格"
+[resources_col_value]
+other = "价值点"
+[resources_free]
+other = "免费"
+[resources_empty]
+other = "还没有资源。"
+[resources_sort_name_asc]
+other = "按名称升序排序"
+[resources_sort_name_desc]
+other = "按名称降序排序"
+[resources_sort_price_asc]
+other = "按价格升序排序"
+[resources_sort_price_desc]
+other = "按价格降序排序"
+[resources_sort_value_asc]
+other = "按价值点升序排序"
+[resources_sort_value_desc]
+other = "按价值点降序排序"
+
 [home_shortcut_directory]
 other = "目录"
 [home_shortcut_tags]

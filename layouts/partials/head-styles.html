@@ -8,6 +8,7 @@
 {{ $coreMotion := resources.Get "css/core-motion.css" }}
 {{ $gridAll := resources.Get "css/grid-all.css" }}
 {{ $gridList := resources.Get "css/grid-list.css" }}
+{{ $gridResources := resources.Get "css/grid-resources.css" }}
 {{ $navBreadcrumb := resources.Get "css/nav-breadcrumb.css" }}
 {{ $navPrimary := resources.Get "css/nav-primary.css" }}
 {{ $siteHeader := resources.Get "css/site-header.css" }}
@@ -24,6 +25,9 @@
 {{ $listBundleParts := $pageCrumbBundleParts | append $gridList }}
 {{ $listBundle := $listBundleParts | resources.Concat "css/bundle-list.css" }}
 {{ $listBundle = partial "css-process.html" (dict "resource" $listBundle "fingerprint" true) }}
+{{ $resourcesBundleParts := $listBundleParts | append $gridResources }}
+{{ $resourcesBundle := $resourcesBundleParts | resources.Concat "css/bundle-resources.css" }}
+{{ $resourcesBundle = partial "css-process.html" (dict "resource" $resourcesBundle "fingerprint" true) }}
 {{ $allBundleParts := $listBundleParts | append $gridAll }}
 {{ $allBundle := $allBundleParts | resources.Concat "css/bundle-all.css" }}
 {{ $allBundle = partial "css-process.html" (dict "resource" $allBundle "fingerprint" true) }}
@@ -43,6 +47,8 @@
 <noscript><link rel="stylesheet" href="{{ $homeAddon.RelPermalink }}"></noscript>
 {{ else if eq $resolvedVariant "all" }}
 <link rel="stylesheet" href="{{ $allBundle.RelPermalink }}">
+{{ else if eq $resolvedVariant "resources" }}
+<link rel="stylesheet" href="{{ $resourcesBundle.RelPermalink }}">
 {{ else if eq $resolvedVariant "list" }}
 <link rel="stylesheet" href="{{ $listBundle.RelPermalink }}">
 {{ else if eq $resolvedVariant "page" }}
