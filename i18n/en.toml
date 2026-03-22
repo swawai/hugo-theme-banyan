@@ -1,11 +1,11 @@
 [menu_home]
-other = "HOME"
+other = "Home"
 [menu_resources]
-other = "RESOURCES"
+other = "Resources"
 [menu_about]
-other = "ABOUT"
+other = "About"
 [menu_tags]
-other = "TAG"
+other = "Tag"
 [menu_udc]
 other = "UDC"
 [menu_all]
