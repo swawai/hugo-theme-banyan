@@ -26,7 +26,7 @@
   {{ end }}
   {{ $cats := $scratch.Get "cats" }}
   {{ range $cats }}
-    {{ $items = $items | append (dict "kind" "cat" "title" .name "latest" .latest "cnt" .cnt "url" (partial "udc-url.html" (dict "ctx" $ctx "mode" $mode "value" .full))) }}
+    {{ $items = $items | append (dict "kind" "cat" "title" .name "latest" .latest "latestKey" .latestKey "cnt" .cnt "url" (partial "udc-url.html" (dict "ctx" $ctx "mode" $mode "value" .full))) }}
   {{ end }}
   {{ $termDepth := len (split $term "/") }}
   {{ $root := index (split $term "/") 0 }}

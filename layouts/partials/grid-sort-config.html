@@ -4,10 +4,10 @@
 
 {{ if eq $variant "dir" }}
   {{ $config := dict
-    "bynameasc"  (dict "sortField" "node.Title" "sortOrder" "asc"  "controls" (dict "name" "byname"    "nameText" "<b>↓</b>"   "date" "bydateasc" "dateText" "↨"        "count" "bycount"    "countText" "↨"))
-    "byname"     (dict "sortField" "node.Title" "sortOrder" "desc" "controls" (dict "name" "bynameasc" "nameText" "<b>↑</b>"   "date" "bydateasc" "dateText" "↨"        "count" "bycount"    "countText" "↨"))
-    "bydate"     (dict "sortField" "node.Date"  "sortOrder" "desc" "controls" (dict "name" "byname"    "nameText" "↨"          "date" "bydateasc" "dateText" "<b>↑</b>" "count" "bycount"    "countText" "↨"))
-    "bydateasc"  (dict "sortField" "node.Date"  "sortOrder" "asc"  "controls" (dict "name" "byname"    "nameText" "↨"          "date" "bydate"    "dateText" "<b>↓</b>" "count" "bycount"    "countText" "↨"))
+    "bynameasc"  (dict "sortField" "title" "sortOrder" "asc"  "controls" (dict "name" "byname"    "nameText" "<b>↓</b>"   "date" "bydateasc" "dateText" "↨"        "count" "bycount"    "countText" "↨"))
+    "byname"     (dict "sortField" "title" "sortOrder" "desc" "controls" (dict "name" "bynameasc" "nameText" "<b>↑</b>"   "date" "bydateasc" "dateText" "↨"        "count" "bycount"    "countText" "↨"))
+    "bydate"     (dict "sortField" "dateKey"  "sortOrder" "desc" "controls" (dict "name" "byname"    "nameText" "↨"          "date" "bydateasc" "dateText" "<b>↑</b>" "count" "bycount"    "countText" "↨"))
+    "bydateasc"  (dict "sortField" "dateKey"  "sortOrder" "asc"  "controls" (dict "name" "byname"    "nameText" "↨"          "date" "bydate"    "dateText" "<b>↓</b>" "count" "bycount"    "countText" "↨"))
     "bycountasc" (dict "sortField" "cnt"        "sortOrder" "asc"  "controls" (dict "name" "byname"    "nameText" "↨"          "date" "bydateasc" "dateText" "↨"        "count" "bycount"    "countText" "<b>↓</b>"))
     "bycount"    (dict "sortField" "cnt"        "sortOrder" "desc" "controls" (dict "name" "byname"    "nameText" "↨"          "date" "bydateasc" "dateText" "↨"        "count" "bycountasc" "countText" "<b>↑</b>"))
   }}

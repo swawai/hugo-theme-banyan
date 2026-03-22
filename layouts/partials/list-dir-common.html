@@ -18,18 +18,20 @@
 
 <div class="grid-list">
   {{ $cfg := partial "grid-sort-config.html" (dict "variant" "dir" "mode" $mode) }}
-
   {{ $ctrl := index $cfg "controls" }}
   {{ $sf := index $cfg "sortField" }}
   {{ $so := index $cfg "sortOrder" }}
+  {{ $nameAsc := and (eq $sf "title") (eq $so "asc") }}
+  {{ $dateAsc := and (eq $sf "dateKey") (eq $so "asc") }}
+  {{ $countAsc := and (eq $sf "cnt") (eq $so "asc") }}
 
   {{ with $ctx.OutputFormats.Get (index $ctrl "name") }}
     {{ partial "grid-sort-cell.html" (dict
       "class" "cell-title"
       "ctx" $ctx
       "href" .RelPermalink
-      "title" (cond (and (eq $sf "node.Title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
-      "label" (cond (and (eq $sf "node.Title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
+      "title" (cond $nameAsc "Sort by name descending" "Sort by name ascending")
+      "label" (cond $nameAsc "Sort by name descending" "Sort by name ascending")
       "text" (index $ctrl "nameText")) }}
   {{ end }}
 
@@ -38,8 +40,8 @@
       "class" "cell-date"
       "ctx" $ctx
       "href" .RelPermalink
-      "title" (cond (and (eq $sf "node.Date") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
-      "label" (cond (and (eq $sf "node.Date") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
+      "title" (cond $dateAsc "Sort by date descending" "Sort by date ascending")
+      "label" (cond $dateAsc "Sort by date descending" "Sort by date ascending")
       "text" (index $ctrl "dateText")) }}
   {{ end }}
 
@@ -48,83 +50,83 @@
       "class" "cell-count"
       "ctx" $ctx
       "href" .RelPermalink
-      "title" (cond (and (eq $sf "cnt") (eq $so "asc")) "Sort by count descending" "Sort by count ascending")
-      "label" (cond (and (eq $sf "cnt") (eq $so "asc")) "Sort by count descending" "Sort by count ascending")
+      "title" (cond $countAsc "Sort by count descending" "Sort by count ascending")
+      "label" (cond $countAsc "Sort by count descending" "Sort by count ascending")
       "text" (index $ctrl "countText")) }}
   {{ end }}
 
-  {{ $secEntries := slice }}
-  {{ $fileEntries := slice }}
+  {{ $dirEntries := slice }}
   {{ range $ctx.Sections }}
-    {{ $cnt := len .RegularPagesRecursive }}
-    {{ $secEntries = $secEntries | append (dict "node" . "cnt" $cnt) }}
+    {{ $section := . }}
+    {{ $cnt := len $section.RegularPagesRecursive }}
+    {{ $d := $section.Lastmod }}
+    {{ with first 1 ($section.RegularPagesRecursive.ByLastmod.Reverse) }}
+      {{ $p := index . 0 }}
+      {{ $d = $p.Lastmod }}
+    {{ else }}
+      {{ with first 1 ($section.RegularPagesRecursive.ByDate.Reverse) }}
+        {{ $p := index . 0 }}
+        {{ $d = $p.Date }}
+      {{ end }}
+    {{ end }}
+    {{ if eq ($d.Format "2006") "0001" }}{{ $d = $section.Date }}{{ end }}
+    {{ with $section.OutputFormats.Get $mode }}
+      {{ $dirEntries = $dirEntries | append (dict
+        "kind" "section"
+        "title" $section.Title
+        "href" .RelPermalink
+        "icon" "folder"
+        "prefetchKind" "desc"
+        "cnt" $cnt
+        "countText" $cnt
+        "countUnit" ""
+        "dateKey" ($d.Format "20060102150405")
+        "dateText" ($d.Format "2006-01-02")) }}
+    {{ end }}
   {{ end }}
+
   {{ range $ctx.RegularPages }}
-    {{ $bytes := len .RawContent }}
-    {{ $fileEntries = $fileEntries | append (dict "node" . "cnt" $bytes) }}
+    {{ $page := . }}
+    {{ $bytes := len $page.RawContent }}
+    {{ $kb := div (add $bytes 1023) 1024 }}
+    {{ $d := $page.Lastmod }}
+    {{ if eq ($d.Format "2006") "0001" }}{{ $d = $page.Date }}{{ end }}
+    {{ $dirEntries = $dirEntries | append (dict
+      "kind" "page"
+      "title" $page.Title
+      "href" $page.RelPermalink
+      "icon" "file"
+      "prefetchKind" "post"
+      "cnt" $bytes
+      "countText" $kb
+      "countUnit" "&thinsp;KB"
+      "dateKey" ($d.Format "20060102150405")
+      "dateText" ($d.Format "2006-01-02")) }}
   {{ end }}
 
   {{ $sortField := index $cfg "sortField" }}
   {{ $sortOrder := index $cfg "sortOrder" }}
-  {{ $secSorted := sort $secEntries $sortField $sortOrder }}
-  {{ $fileSorted := sort $fileEntries $sortField $sortOrder }}
-  {{ $sorted := slice }}
+  {{ $sectionEntries := sort (where $dirEntries "kind" "section") $sortField $sortOrder }}
+  {{ $pageEntries := sort (where $dirEntries "kind" "page") $sortField $sortOrder }}
+  {{ $ordered := slice }}
   {{ if eq $sortOrder "asc" }}
-    {{ range $secSorted }}{{ $sorted = $sorted | append . }}{{ end }}
-    {{ range $fileSorted }}{{ $sorted = $sorted | append . }}{{ end }}
+    {{ range $sectionEntries }}{{ $ordered = $ordered | append . }}{{ end }}
+    {{ range $pageEntries }}{{ $ordered = $ordered | append . }}{{ end }}
   {{ else }}
-    {{ range $fileSorted }}{{ $sorted = $sorted | append . }}{{ end }}
-    {{ range $secSorted }}{{ $sorted = $sorted | append . }}{{ end }}
+    {{ range $pageEntries }}{{ $ordered = $ordered | append . }}{{ end }}
+    {{ range $sectionEntries }}{{ $ordered = $ordered | append . }}{{ end }}
   {{ end }}
 
-  {{ range $sorted }}
-    {{ $n := .node }}
-    {{ $isSection := eq $n.Kind "section" }}
-    {{ $iconName := cond $isSection "folder" "file" }}
-
-    {{ if $isSection }}
-      {{ $child := $n }}
-      {{ with $child.OutputFormats.Get $mode }}
-        {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .RelPermalink "title" $child.Title "icon" $iconName "prefetchKind" "desc") }}
-      {{ end }}
-      <span class="cell-date">
-        {{ $displayDate := $n.Lastmod }}
-        {{ with first 1 ($n.RegularPagesRecursive.ByLastmod.Reverse) }}
-          {{ $p := index . 0 }}
-          {{ $displayDate = $p.Lastmod }}
-        {{ else }}
-          {{ with first 1 ($n.RegularPagesRecursive.ByDate.Reverse) }}
-            {{ $p := index . 0 }}
-            {{ $displayDate = $p.Date }}
-          {{ end }}
-        {{ end }}
-        {{ $displayDate.Format "2006-01-02" }}
-      </span>
-      <span class="cell-count"><span>{{ .cnt }}</span><span class="unit"></span></span>
-    {{ else }}
-      {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" $n.RelPermalink "title" $n.Title "icon" $iconName "prefetchKind" "post") }}
-      <span class="cell-date">
-        {{ $d := $n.Lastmod }}
-        {{ if eq ($d.Format "2006") "0001" }}{{ $d = $n.Date }}{{ end }}
-        {{ $d.Format "2006-01-02" }}
-      </span>
-      {{ $bytes := .cnt }}
-      {{ $kb := div (add $bytes 1023) 1024 }}
-      <span class="cell-count"><span>{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>
-    {{ end }}
+  {{ range $ordered }}
+    {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .href "title" .title "icon" .icon "prefetchKind" .prefetchKind) }}
+    <span class="cell-date">{{ .dateText }}</span>
+    <span class="cell-count"><span>{{ .countText }}</span><span class="unit">{{ .countUnit | safeHTML }}</span></span>
   {{ end }}
 </div>
 
 {{- $entries := slice -}}
-{{- range $sorted -}}
-  {{- $n := .node -}}
-  {{- if eq $n.Kind "section" -}}
-    {{- with $n.OutputFormats.Get $mode -}}
-      {{- $entries = $entries | append (dict "url" .RelPermalink "name" $n.Title) -}}
-    {{- end -}}
-  {{- else -}}
-    {{- $entries = $entries | append (dict "url" $n.RelPermalink "name" $n.Title) -}}
-  {{- end -}}
+{{- range $ordered -}}
+  {{- $entries = $entries | append (dict "url" .href "name" .title) -}}
 {{- end -}}
 {{ partial "schema-itemlist.html" (dict "entries" $entries) }}
 
