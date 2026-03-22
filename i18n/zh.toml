@@ -1,13 +1,24 @@
+[menu_home]
+other = "首页"
+[menu_resources]
+other = "资源"
 [menu_about]
 other = "关于"
-[menu_dir]
-other = "目录"
 [menu_tags]
 other = "标签"
 [menu_udc]
 other = "学科"
 [menu_all]
 other = "总览"
+
+[home_shortcut_directory]
+other = "目录"
+[home_shortcut_tags]
+other = "标签"
+[home_shortcut_udc_index]
+other = "学科索引"
+[home_shortcut_all_content]
+other = "全部内容"
 
  
 

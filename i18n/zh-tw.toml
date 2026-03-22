@@ -1,13 +1,24 @@
+[menu_home]
+other = "首頁"
+[menu_resources]
+other = "資源"
 [menu_about]
 other = "關於"
-[menu_dir]
-other = "目錄"
 [menu_tags]
 other = "標籤"
 [menu_udc]
 other = "學科"
 [menu_all]
 other = "總覽"
+
+[home_shortcut_directory]
+other = "目錄"
+[home_shortcut_tags]
+other = "標籤"
+[home_shortcut_udc_index]
+other = "學科索引"
+[home_shortcut_all_content]
+other = "全部內容"
 [label_theme]
 other = "主題"
 [theme_auto]

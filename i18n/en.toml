@@ -1,13 +1,24 @@
+[menu_home]
+other = "HOME"
+[menu_resources]
+other = "RESOURCES"
 [menu_about]
 other = "ABOUT"
-[menu_dir]
-other = "DIR"
 [menu_tags]
 other = "TAG"
 [menu_udc]
 other = "UDC"
 [menu_all]
 other = "ALL"
+
+[home_shortcut_directory]
+other = "Directory"
+[home_shortcut_tags]
+other = "Tags"
+[home_shortcut_udc_index]
+other = "UDC Index"
+[home_shortcut_all_content]
+other = "All Content"
 
  
 
