@@ -1,5 +1,5 @@
 .grid-all {
-    grid-template-columns: 14em minmax(5em, max-content) minmax(3em, max-content) minmax(8em, max-content);
+    grid-template-columns: 13em minmax(5.8em, max-content) minmax(3em, max-content) minmax(8em, max-content);
 }
 
 .grid-all > .cell-path {

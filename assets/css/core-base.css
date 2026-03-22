@@ -11,9 +11,9 @@
     --focus: #9E685F;
     --page-edge-inline: 8px;
     --page-edge-block-start: 4px;
-    --page-edge-block-end: 32rem;
-    --page-shell-min-inline: min(80ch, calc(100vw - (var(--page-edge-inline) * 2)));
-    --page-shell-min-block: calc(100vh - var(--page-edge-block-start) - var(--page-edge-block-end));
+    --page-edge-block-end: 6rem;
+    --page-shell-min-inline: min(80ch, 100%);
+    --page-shell-min-block: calc(100vh - var(--page-edge-block-start));
     /* --text-secondary:#5F5F5F;
     --bg-surface:#FAFAFA; F9F9F9 F1F1F1 #E3E3E3 #D7D7D7 #868686 1D1D1D 7727272 */
 }
@@ -37,16 +37,18 @@ html {
     background: var(--bg);
     color: var(--fg);
     scrollbar-gutter: stable;
+    overscroll-behavior-x: none;
+    overscroll-behavior-y: auto;
 }
 
 body {
-    min-height: 100%;
     margin: 0;
-    padding: var(--page-edge-block-start) var(--page-edge-inline) var(--page-edge-block-end);
+    padding: var(--page-edge-block-start) var(--page-edge-inline) 0;
     font-size: 15px;
     -webkit-text-size-adjust: 100% !important;
     text-size-adjust: 100% !important;
     overscroll-behavior-x: none;
+    overscroll-behavior-y: auto;
     background: var(--bg);
     color: var(--fg);
     transition: background 0.3s, color 0.3s;
@@ -56,10 +58,10 @@ body {
 .page {
     box-sizing: border-box;
     min-height: var(--page-shell-min-block);
-    width: max-content;
-    min-width: var(--page-shell-min-inline);
+    width: var(--page-shell-min-inline);
     max-width: 100%;
     margin-inline: auto;
+    padding-bottom: var(--page-edge-block-end);
     line-height: 1.7;
 }
 
