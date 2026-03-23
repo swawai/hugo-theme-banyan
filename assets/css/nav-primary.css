@@ -24,6 +24,11 @@
     padding-bottom: 0.14em;
     text-decoration: none;
     color: inherit;
+    transition: color 0.3s, opacity 0.3s;
+}
+
+.site-nav :is(a, .icon-select-wrapper):hover {
+    opacity: 0.8;
 }
 
 .site-nav > :is(a, .icon-select-wrapper)::after {

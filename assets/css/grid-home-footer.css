@@ -1,26 +1,27 @@
 .home-footer-shortcuts {
-    margin: -14px 4px 0;
+    margin: -24px 4px 0;
 }
 
 .grid-list.grid-list-meta {
     grid-template-columns: minmax(0, 13rem);
-    row-gap: 0;
+    row-gap: 4px;
     font-size: 12px;
     color: var(--link-visited);
 }
 
 .grid-list.grid-list-meta .title-link {
-    gap: 5px;
+    gap: 4px;
 }
 
 .grid-list.grid-list-meta .title-icon {
     color: var(--focus);
+    /* font-size: 15px; */
 }
 
 .grid-list.grid-list-meta .icon {
     width: 1em;
     height: 1em;
-    vertical-align: -0.18em;
+    vertical-align: -3px;
 }
 
 .grid-list.grid-list-meta .title-icon-text {
@@ -32,3 +33,15 @@
     font-weight: bold;
     line-height: 1;
 }
+
+/* .grid-list.grid-list-meta::after {
+    display: none;
+} */
+
+.grid-list.grid-list-meta {
+    padding-top: 26px;
+}
+
+/* .grid-list.grid-list-meta::after {
+    top: 0px;
+} */

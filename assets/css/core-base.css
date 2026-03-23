@@ -10,7 +10,7 @@
     --border: #838383; /*弹窗窗口的边框线条*/
     --focus: #9E685F;
     --page-edge-inline: 8px;
-    --page-edge-block-start: 4px;
+    --page-edge-block-start: 12px;
     --page-edge-block-end: 6rem;
     --page-shell-min-inline: min(80ch, 100%);
     --page-shell-min-block: calc(100vh - var(--page-edge-block-start));
