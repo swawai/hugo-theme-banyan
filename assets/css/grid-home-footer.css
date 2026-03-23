@@ -13,10 +13,10 @@
     gap: 4px;
 }
 
-.grid-list.grid-list-meta .title-icon {
+/* .grid-list.grid-list-meta .title-icon {
     color: var(--focus);
-    /* font-size: 15px; */
-}
+    font-size: 15px;
+} */
 
 .grid-list.grid-list-meta .icon {
     width: 1em;
