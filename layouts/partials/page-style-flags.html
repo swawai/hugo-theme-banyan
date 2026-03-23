@@ -14,9 +14,12 @@
 {{ $needsGridResources := in $resourceOutputNames $currentOutputName }}
 {{ $needsGrid := or (in $gridOutputNames $currentOutputName) $needsGridResources }}
 {{ $needsGridAll := hasPrefix $currentOutputName "allby" }}
+{{ $isHomeGrid := and $ctx.IsHome $needsGrid }}
 {{ $defaultVariant := "page-crumb" }}
 {{ if $isLanguageHome }}
 {{ $defaultVariant = "home" }}
+{{ else if $isHomeGrid }}
+{{ $defaultVariant = "home-list" }}
 {{ else if $needsGridResources }}
 {{ $defaultVariant = "resources" }}
 {{ else if $needsGridAll }}
@@ -28,6 +31,7 @@
     "currentOutputName" $currentOutputName
     "primaryOutputName" $primaryOutputName
     "isLanguageHome" $isLanguageHome
+    "isHomeGrid" $isHomeGrid
     "needsGrid" $needsGrid
     "needsGridAll" $needsGridAll
     "needsGridResources" $needsGridResources

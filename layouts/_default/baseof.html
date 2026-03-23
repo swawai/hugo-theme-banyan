@@ -221,24 +221,6 @@
     {{ end }}
     <div class="page">
         <a class="skip" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
-        <header>
-            <div class="copyright">
-                {{ with site.Params.copyright }}
-                <small>&copy; {{ now.Format "2006" }} {{ . | safeHTML }}</small>
-                {{ end }}
-                {{ with site.Params.icp }}
-                <small><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">{{ . }}</a></small>
-                {{ end }}
-                <small class="social-links">
-                    {{ with site.Params.social.github }}
-                    <a href="{{ . }}" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
-                        {{ partial "icon" (dict "name" "github") }}
-                    </a>
-                    {{ end }}
-                </small>
-            </div>
-        </header>
-
         <nav class="site-nav" aria-label="Primary">
             {{ $meLinkRaw := site.Params.me_url | default (site.Params.account_url | default "") }}
             {{ $meLink := "" }}

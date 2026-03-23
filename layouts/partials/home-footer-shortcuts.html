@@ -1,0 +1,39 @@
+{{ $ctx := .ctx }}
+{{ $entries := slice }}
+{{ $aboutHref := $ctx.Site.Home.RelPermalink }}
+{{ range $ctx.Site.Menus.main }}
+  {{ if eq .Identifier "about" }}
+    {{ $aboutHref = .URL | relLangURL }}
+  {{ end }}
+{{ end }}
+
+{{ with site.Params.copyright }}
+  {{ $entries = $entries | append (dict
+    "title" (printf "%s %s" (now.Format "2006") ((printf "%v" .) | htmlUnescape))
+    "href" $aboutHref
+    "iconText" "©"
+    "dateKey" "20260323030000"
+    "cnt" 3) }}
+{{ end }}
+{{ with site.Params.icp }}
+  {{ $icpValue := printf "%v" . }}
+  {{ $entries = $entries | append (dict
+    "title" (replaceRE "^." "" $icpValue)
+    "href" "https://beian.miit.gov.cn/"
+    "iconText" (substr $icpValue 0 1)
+    "target" "_blank"
+    "rel" "noopener noreferrer"
+    "dateKey" "20260323020000"
+    "cnt" 2) }}
+{{ end }}
+{{ with site.Params.social.github }}
+  {{ $entries = $entries | append (dict
+    "title" "github"
+    "href" .
+    "icon" "github"
+    "target" "_blank"
+    "rel" "noopener noreferrer"
+    "dateKey" "20260323010000"
+    "cnt" 1) }}
+{{ end }}
+{{ return $entries }}

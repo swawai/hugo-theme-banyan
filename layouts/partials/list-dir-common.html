@@ -139,12 +139,16 @@
     {{ range $sectionEntries }}{{ $ordered = $ordered | append . }}{{ end }}
   {{ end }}
 
-  {{ range $ordered }}
+{{ range $ordered }}
     {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .href "title" .title "icon" .icon "prefetchKind" .prefetchKind) }}
     <span class="cell-date">{{ .dateText }}</span>
     <span class="cell-count"><span>{{ .countText }}</span><span class="unit">{{ .countUnit | safeHTML }}</span></span>
   {{ end }}
 </div>
+
+{{ if $ctx.IsHome }}
+  {{ partial "home-footer-grid.html" (dict "ctx" $ctx "mode" $mode) }}
+{{ end }}
 
 {{- $entries := slice -}}
 {{- range $ordered -}}

@@ -6,13 +6,15 @@
     white-space: nowrap;
     margin-bottom: 0.4rem;
     line-height: 1;
+    color: var(--focus);
+    font-weight: bold;
 }
 
 .site-nav > * {
     flex-shrink: 0;
 }
 
-.site-nav :is(a, .icon-select-wrapper) {
+.site-nav :is(a, a:visited, .icon-select-wrapper) {
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -21,6 +23,7 @@
     min-height: 1.15em;
     padding-bottom: 0.14em;
     text-decoration: none;
+    color: inherit;
 }
 
 .site-nav > :is(a, .icon-select-wrapper)::after {

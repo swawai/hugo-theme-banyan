@@ -1,0 +1,23 @@
+{{ $ctx := .ctx }}
+{{ $mode := .mode }}
+{{ $entries := partial "home-footer-shortcuts.html" (dict "ctx" $ctx) }}
+{{ if gt (len $entries) 0 }}
+  {{ $cfg := partial "grid-sort-config.html" (dict "variant" "dir" "mode" $mode) }}
+  {{ $sortField := index $cfg "sortField" }}
+  {{ $sortOrder := index $cfg "sortOrder" }}
+  {{ $ordered := sort $entries $sortField $sortOrder }}
+  <footer class="home-footer-shortcuts" aria-label="Site footer shortcuts">
+    <div class="grid-list grid-list-meta">
+      {{ range $ordered }}
+        {{ partial "grid-title-cell.html" (dict
+          "ctx" $ctx
+          "href" .href
+          "title" .title
+          "icon" (.icon | default "file")
+          "iconText" .iconText
+          "target" .target
+          "rel" .rel) }}
+      {{ end }}
+    </div>
+  </footer>
+{{ end }}

@@ -7,6 +7,7 @@
 {{ $coreBase := resources.Get "css/core-base.css" }}
 {{ $coreMotion := resources.Get "css/core-motion.css" }}
 {{ $gridAll := resources.Get "css/grid-all.css" }}
+{{ $gridHomeFooter := resources.Get "css/grid-home-footer.css" }}
 {{ $gridList := resources.Get "css/grid-list.css" }}
 {{ $gridResources := resources.Get "css/grid-resources.css" }}
 {{ $navBreadcrumb := resources.Get "css/nav-breadcrumb.css" }}
@@ -25,13 +26,16 @@
 {{ $listBundleParts := $pageCrumbBundleParts | append $gridList }}
 {{ $listBundle := $listBundleParts | resources.Concat "css/bundle-list.css" }}
 {{ $listBundle = partial "css-process.html" (dict "resource" $listBundle "fingerprint" true) }}
+{{ $homeListBundleParts := $listBundleParts | append $gridHomeFooter }}
+{{ $homeListBundle := $homeListBundleParts | resources.Concat "css/bundle-home-list.css" }}
+{{ $homeListBundle = partial "css-process.html" (dict "resource" $homeListBundle "fingerprint" true) }}
 {{ $resourcesBundleParts := $listBundleParts | append $gridResources }}
 {{ $resourcesBundle := $resourcesBundleParts | resources.Concat "css/bundle-resources.css" }}
 {{ $resourcesBundle = partial "css-process.html" (dict "resource" $resourcesBundle "fingerprint" true) }}
 {{ $allBundleParts := $listBundleParts | append $gridAll }}
 {{ $allBundle := $allBundleParts | resources.Concat "css/bundle-all.css" }}
 {{ $allBundle = partial "css-process.html" (dict "resource" $allBundle "fingerprint" true) }}
-{{ $homeCritical := slice $coreBase $siteHeader $navPrimary $navBreadcrumb $coreA11y $gridList | resources.Concat "css/home-critical.css" }}
+{{ $homeCritical := slice $coreBase $siteHeader $navPrimary $navBreadcrumb $coreA11y $gridList $gridHomeFooter | resources.Concat "css/home-critical.css" }}
 {{ $homeCritical = partial "css-process.html" (dict "resource" $homeCritical) }}
 {{ $homeAddonParts := slice $coreMotion }}
 {{ if eq $swMode "enable" }}{{ $homeAddonParts = $homeAddonParts | append $swUpdateAnchor }}{{ end }}
@@ -45,6 +49,8 @@
 <style>{{ $homeCritical.Content | safeCSS }}</style>
 <link rel="preload" href="{{ $homeAddon.RelPermalink }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="{{ $homeAddon.RelPermalink }}"></noscript>
+{{ else if eq $resolvedVariant "home-list" }}
+<link rel="stylesheet" href="{{ $homeListBundle.RelPermalink }}">
 {{ else if eq $resolvedVariant "all" }}
 <link rel="stylesheet" href="{{ $allBundle.RelPermalink }}">
 {{ else if eq $resolvedVariant "resources" }}
