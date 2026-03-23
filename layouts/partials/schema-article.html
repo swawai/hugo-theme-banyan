@@ -7,19 +7,18 @@
   {{- $desc = site.Params.description -}}
 {{- end -}}
 {{- $author := or site.Params.author "ipzu" -}}
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "BlogPosting",
-  "headline": {{ .Title | jsonify }},
-  "description": {{ $desc | jsonify }},
-  "author": { "@type": "Person", "name": {{ $author | jsonify }} },
-  "inLanguage": "{{ .Language.Lang }}",
-  "datePublished": "{{ .PublishDate }}",
-  "dateModified": "{{ .Lastmod }}",
-  "mainEntityOfPage": "{{ .Permalink }}"
-}
-</script>
+{{- $payload := dict
+  "@context" "https://schema.org"
+  "@type" "BlogPosting"
+  "headline" .Title
+  "description" $desc
+  "author" (dict "@type" "Person" "name" $author)
+  "inLanguage" .Language.Lang
+  "datePublished" (.PublishDate.Format "2006-01-02T15:04:05Z07:00")
+  "dateModified" (.Lastmod.Format "2006-01-02T15:04:05Z07:00")
+  "mainEntityOfPage" .Permalink
+-}}
+<script type="application/ld+json">{{ $payload | jsonify | safeJS }}</script>
 
 
 

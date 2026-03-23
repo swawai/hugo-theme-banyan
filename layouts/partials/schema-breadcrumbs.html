@@ -7,13 +7,12 @@
   {{- end -}}
 {{- end -}}
 {{- $items = $items | append (dict "@type" "ListItem" "position" $pos "name" .Title "item" .Permalink) -}}
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": {{ $items | jsonify }}
-}
-</script>
+{{- $payload := dict
+  "@context" "https://schema.org"
+  "@type" "BreadcrumbList"
+  "itemListElement" $items
+-}}
+<script type="application/ld+json">{{ $payload | jsonify | safeJS }}</script>
 
 
 
