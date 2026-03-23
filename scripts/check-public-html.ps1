@@ -27,7 +27,7 @@ $allowedInline = @(
     (Join-Path $publicPath "zh-tw\index.html")
 ) | ForEach-Object { [System.IO.Path]::GetFullPath($_) }
 
-$htmlFiles = Get-ChildItem -Path $publicPath -Recurse -File -Include *.html
+$htmlFiles = Get-ChildItem -Path $publicPath -Recurse -File -Filter *.html
 $issues = New-Object System.Collections.Generic.List[string]
 $summary = [ordered]@{
     Total = 0
@@ -35,6 +35,10 @@ $summary = [ordered]@{
     ExternalOnly = 0
     Both = 0
     Neither = 0
+}
+
+if (-not $htmlFiles -or $htmlFiles.Count -eq 0) {
+    throw "No HTML files found under: $publicPath"
 }
 
 foreach ($file in $htmlFiles) {
