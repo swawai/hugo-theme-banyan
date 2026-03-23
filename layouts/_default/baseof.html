@@ -21,9 +21,6 @@
 {{ with $siteCachePolicyRoutes }}
     {{ $cachePolicyRoutes = . }}
 {{ end }}
-{{ $themeCachePolicyEdgeone := index $themeCachePolicy "edgeone" | default dict }}
-{{ $siteCachePolicyEdgeone := index $siteCachePolicy "edgeone" | default dict }}
-{{ $cachePolicyEdgeone := merge $themeCachePolicyEdgeone $siteCachePolicyEdgeone }}
 {{ $cachePolicyHeaderRoutes := partial "cache-policy-header-routes.html" (dict "routes" $cachePolicyRoutes) }}
 {{ $swRoutes := slice }}
 {{ range $route := $cachePolicyRoutes }}
@@ -61,13 +58,6 @@
     {{ $headersBody := partial "cache-policy-cloudflare-headers-body.txt" (dict "routes" $cachePolicyHeaderRoutes) }}
     {{ $headersResource := resources.FromString "_headers" $headersBody }}
     {{ $publishHeaders := $headersResource.RelPermalink }}
-    {{ $edgeoneConfig := partial "cache-policy-edgeone-config.html" (dict
-        "edgeone" $cachePolicyEdgeone
-        "routes" $cachePolicyHeaderRoutes
-    ) }}
-    {{ $edgeoneBody := $edgeoneConfig | jsonify (dict "indent" "  ") }}
-    {{ $edgeoneResource := resources.FromString "edgeone.json" $edgeoneBody }}
-    {{ $publishEdgeone := $edgeoneResource.RelPermalink }}
 {{ end }}
 <!DOCTYPE html>
 <html lang="{{ .Site.Language.Lang }}">

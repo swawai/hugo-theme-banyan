@@ -1,12 +1,9 @@
 import { spawn } from 'node:child_process';
-import fs from 'node:fs/promises';
 import http from 'node:http';
 import net from 'node:net';
 import path from 'node:path';
 
 const repoRoot = process.cwd();
-const publicEdgeonePath = path.join(repoRoot, 'public', 'edgeone.json');
-const repoEdgeonePath = path.join(repoRoot, 'edgeone.json');
 const hugoBin = path.join(
     repoRoot,
     'node_modules',
@@ -186,35 +183,6 @@ function formatPublicUrl(host, port) {
     return `http://${displayHost}:${port}/`;
 }
 
-async function syncEdgeone() {
-    let publicBody = '';
-    let repoBody = '';
-
-    try {
-        publicBody = await fs.readFile(publicEdgeonePath, 'utf8');
-    } catch (error) {
-        if (!error || error.code !== 'ENOENT') {
-            throw error;
-        }
-        return;
-    }
-
-    try {
-        repoBody = await fs.readFile(repoEdgeonePath, 'utf8');
-    } catch (error) {
-        if (!error || error.code !== 'ENOENT') {
-            throw error;
-        }
-    }
-
-    if (publicBody === repoBody) {
-        return;
-    }
-
-    await fs.writeFile(repoEdgeonePath, publicBody, 'utf8');
-    console.log('[edgeone-sync] Synced public/edgeone.json -> edgeone.json');
-}
-
 async function main() {
     const backendPort = await findAvailablePort();
     let hugoArgs = stripOptions(cliArgs, ['--bind', '-b']);
@@ -337,35 +305,7 @@ async function main() {
         `[dev-proxy] Public ${formatPublicUrl(publicBind, publicPort)} -> Hugo http://${backendHost}:${backendPort}/`
     );
 
-    let syncInFlight = false;
-    let syncQueued = false;
-
-    async function runSyncLoop() {
-        if (syncInFlight) {
-            syncQueued = true;
-            return;
-        }
-
-        syncInFlight = true;
-        try {
-            await syncEdgeone();
-        } catch (error) {
-            console.error('[edgeone-sync]', error instanceof Error ? error.message : String(error));
-        } finally {
-            syncInFlight = false;
-            if (syncQueued) {
-                syncQueued = false;
-                void runSyncLoop();
-            }
-        }
-    }
-
-    const interval = setInterval(() => {
-        void runSyncLoop();
-    }, 1000);
-
     const shutdown = (signal) => {
-        clearInterval(interval);
         proxyServer.close(() => {
             if (!child.killed) {
                 child.kill(signal);
@@ -377,7 +317,6 @@ async function main() {
     };
 
     child.on('exit', (code, signal) => {
-        clearInterval(interval);
         proxyServer.close(() => {
             if (signal) {
                 process.kill(process.pid, signal);
@@ -388,7 +327,6 @@ async function main() {
     });
 
     child.on('error', (error) => {
-        clearInterval(interval);
         proxyServer.close(() => {
             console.error(error instanceof Error ? error.message : String(error));
             process.exit(1);
@@ -402,8 +340,6 @@ async function main() {
     process.on('SIGTERM', () => {
         shutdown('SIGTERM');
     });
-
-    void runSyncLoop();
 }
 
 main().catch((error) => {
