@@ -76,3 +76,15 @@ other = "立即刷新"
 
 [site_update_later]
 other = "稍后"
+
+[notFoundTitle]
+other = "页面不存在"
+
+[notFoundDesc]
+other = "当前语言可能没有该页面的翻译。您可以："
+
+[goHome]
+other = "返回本语言首页"
+
+[tryOtherLangs]
+other = "尝试其他语言版本："

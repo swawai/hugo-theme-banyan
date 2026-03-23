@@ -73,3 +73,15 @@ other = "立即重新整理"
 
 [site_update_later]
 other = "稍後"
+
+[notFoundTitle]
+other = "頁面不存在"
+
+[notFoundDesc]
+other = "目前語言可能沒有這個頁面的翻譯。您可以："
+
+[goHome]
+other = "返回本語言首頁"
+
+[tryOtherLangs]
+other = "嘗試其他語言版本："

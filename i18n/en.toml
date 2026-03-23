@@ -76,3 +76,15 @@ other = "Refresh"
 
 [site_update_later]
 other = "Later"
+
+[notFoundTitle]
+other = "Page not found"
+
+[notFoundDesc]
+other = "This page may not be available in the current language. You can:"
+
+[goHome]
+other = "Go to this language's homepage"
+
+[tryOtherLangs]
+other = "Try other language versions:"
