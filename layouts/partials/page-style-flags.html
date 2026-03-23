@@ -18,12 +18,12 @@
 {{ $defaultVariant := "page-crumb" }}
 {{ if $isLanguageHome }}
 {{ $defaultVariant = "home" }}
-{{ else if $isHomeGrid }}
-{{ $defaultVariant = "home-list" }}
-{{ else if $needsGridResources }}
-{{ $defaultVariant = "resources" }}
 {{ else if $needsGridAll }}
 {{ $defaultVariant = "all" }}
+{{ else if $needsGridResources }}
+{{ $defaultVariant = "resources" }}
+{{ else if $isHomeGrid }}
+{{ $defaultVariant = "home-list" }}
 {{ else if $needsGrid }}
 {{ $defaultVariant = "list" }}
 {{ end }}
