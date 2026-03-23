@@ -21,14 +21,18 @@
   {{ $ctrl := index $cfg "controls" }}
   {{ $sf := index $cfg "sortField" }}
   {{ $so := index $cfg "sortOrder" }}
+  {{ $nameSortText := cond (and (eq $sf "Title") (eq $so "asc")) (i18n "list_sort_name_desc") (i18n "list_sort_name_asc") }}
+  {{ $dateSortText := cond (and (eq $sf "Date") (eq $so "asc")) (i18n "list_sort_date_desc") (i18n "list_sort_date_asc") }}
+  {{ $sizeSortText := cond (and (eq $sf "_size") (eq $so "asc")) (i18n "list_sort_size_desc") (i18n "list_sort_size_asc") }}
+  {{ $pathSortText := cond (and (eq $sf "File.Dir") (eq $so "asc")) (i18n "list_sort_path_desc") (i18n "list_sort_path_asc") }}
 
   {{ with $ctx.OutputFormats.Get (index $ctrl "name") }}
     {{ partial "grid-sort-cell.html" (dict
       "class" "cell-title"
       "ctx" $ctx
       "href" .RelPermalink
-      "title" (cond (and (eq $sf "Title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
-      "label" (cond (and (eq $sf "Title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
+      "title" $nameSortText
+      "label" $nameSortText
       "text" (index $ctrl "nameText")) }}
   {{ end }}
   {{ with $ctx.OutputFormats.Get (index $ctrl "date") }}
@@ -36,8 +40,8 @@
       "class" "cell-date"
       "ctx" $ctx
       "href" .RelPermalink
-      "title" (cond (and (eq $sf "Date") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
-      "label" (cond (and (eq $sf "Date") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
+      "title" $dateSortText
+      "label" $dateSortText
       "text" (index $ctrl "dateText")) }}
   {{ end }}
   {{ with $ctx.OutputFormats.Get (index $ctrl "size") }}
@@ -45,8 +49,8 @@
       "class" "cell-count"
       "ctx" $ctx
       "href" .RelPermalink
-      "title" (cond (and (eq $sf "_size") (eq $so "asc")) "Sort by size descending" "Sort by size ascending")
-      "label" (cond (and (eq $sf "_size") (eq $so "asc")) "Sort by size descending" "Sort by size ascending")
+      "title" $sizeSortText
+      "label" $sizeSortText
       "text" (index $ctrl "sizeText")) }}
   {{ end }}
   {{ with $ctx.OutputFormats.Get (index $ctrl "path") }}
@@ -54,8 +58,8 @@
       "class" "cell-path"
       "ctx" $ctx
       "href" .RelPermalink
-      "title" (cond (and (eq $sf "File.Dir") (eq $so "asc")) "Sort by path descending" "Sort by path ascending")
-      "label" (cond (and (eq $sf "File.Dir") (eq $so "asc")) "Sort by path descending" "Sort by path ascending")
+      "title" $pathSortText
+      "label" $pathSortText
       "text" (index $ctrl "pathText")) }}
   {{ end }}
 

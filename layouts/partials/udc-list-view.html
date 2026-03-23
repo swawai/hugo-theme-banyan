@@ -13,13 +13,16 @@
 
 {{ $sf := index $cfg "sortField" }}
 {{ $so := index $cfg "sortOrder" }}
+{{ $nameSortText := cond (and (eq $sf "title") (eq $so "asc")) (i18n "list_sort_name_desc") (i18n "list_sort_name_asc") }}
+{{ $dateSortText := cond (and (eq $sf "latestKey") (eq $so "asc")) (i18n "list_sort_date_desc") (i18n "list_sort_date_asc") }}
+{{ $countSortText := cond (and (eq $sf "cnt") (eq $so "asc")) (i18n "list_sort_count_desc") (i18n "list_sort_count_asc") }}
 {{ with $ctx.OutputFormats.Get (index $cfg "nameFmt") }}
   {{ partial "grid-sort-cell.html" (dict
     "class" "cell-title"
     "ctx" $ctx
     "href" .RelPermalink
-    "title" (cond (and (eq $sf "title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
-    "label" (cond (and (eq $sf "title") (eq $so "asc")) "Sort by name descending" "Sort by name ascending")
+    "title" $nameSortText
+    "label" $nameSortText
     "text" (index $cfg "nameText")) }}
 {{ end }}
 {{ with $ctx.OutputFormats.Get (index $cfg "timeFmt") }}
@@ -27,8 +30,8 @@
     "class" "cell-date"
     "ctx" $ctx
     "href" .RelPermalink
-    "title" (cond (and (eq $sf "latestKey") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
-    "label" (cond (and (eq $sf "latestKey") (eq $so "asc")) "Sort by date descending" "Sort by date ascending")
+    "title" $dateSortText
+    "label" $dateSortText
     "text" (index $cfg "timeText")) }}
 {{ end }}
 {{ with $ctx.OutputFormats.Get (index $cfg "countFmt") }}
@@ -36,8 +39,8 @@
     "class" "cell-count"
     "ctx" $ctx
     "href" .RelPermalink
-    "title" (cond (and (eq $sf "cnt") (eq $so "asc")) "Sort by count descending" "Sort by count ascending")
-    "label" (cond (and (eq $sf "cnt") (eq $so "asc")) "Sort by count descending" "Sort by count ascending")
+    "title" $countSortText
+    "label" $countSortText
     "text" (index $cfg "countText")) }}
 {{ end }}
 

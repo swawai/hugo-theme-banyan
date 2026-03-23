@@ -40,14 +40,17 @@
   {{ $nameAsc := and (eq $sf "title") (eq $so "asc") }}
   {{ $dateAsc := and (eq $sf "dateKey") (eq $so "asc") }}
   {{ $countAsc := and (eq $sf "cnt") (eq $so "asc") }}
+  {{ $nameSortText := cond $nameAsc (i18n "list_sort_name_desc") (i18n "list_sort_name_asc") }}
+  {{ $dateSortText := cond $dateAsc (i18n "list_sort_date_desc") (i18n "list_sort_date_asc") }}
+  {{ $countSortText := cond $countAsc (i18n "list_sort_count_desc") (i18n "list_sort_count_asc") }}
 
   {{ with $ctx.OutputFormats.Get (index $ctrl "name") }}
     {{ partial "grid-sort-cell.html" (dict
       "class" "cell-title"
       "ctx" $ctx
       "href" .RelPermalink
-      "title" (cond $nameAsc "Sort by name descending" "Sort by name ascending")
-      "label" (cond $nameAsc "Sort by name descending" "Sort by name ascending")
+      "title" $nameSortText
+      "label" $nameSortText
       "text" (index $ctrl "nameText")) }}
   {{ end }}
 
@@ -56,8 +59,8 @@
       "class" "cell-date"
       "ctx" $ctx
       "href" .RelPermalink
-      "title" (cond $dateAsc "Sort by date descending" "Sort by date ascending")
-      "label" (cond $dateAsc "Sort by date descending" "Sort by date ascending")
+      "title" $dateSortText
+      "label" $dateSortText
       "text" (index $ctrl "dateText")) }}
   {{ end }}
 
@@ -66,8 +69,8 @@
       "class" "cell-count"
       "ctx" $ctx
       "href" .RelPermalink
-      "title" (cond $countAsc "Sort by count descending" "Sort by count ascending")
-      "label" (cond $countAsc "Sort by count descending" "Sort by count ascending")
+      "title" $countSortText
+      "label" $countSortText
       "text" (index $ctrl "countText")) }}
   {{ end }}
 

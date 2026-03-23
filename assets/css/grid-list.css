@@ -112,9 +112,9 @@
     pointer-events: none;
 }
 
-.grid-list .cell-title.header a {
+/* .grid-list .cell-title.header a {
     padding-left: 0.8rem;
-}
+} */
 
 .grid-list .cell-count.header a::after {
     content: "";
