@@ -21,10 +21,23 @@ if (-not (Test-Path $publicPath)) {
     throw "Public directory not found: $publicPath"
 }
 
-$allowedInline = @(
+$homeInlinePages = @(
     (Join-Path $publicPath "index.html"),
     (Join-Path $publicPath "zh\index.html"),
     (Join-Path $publicPath "zh-tw\index.html")
+) | ForEach-Object { [System.IO.Path]::GetFullPath($_) }
+
+$offlineInlinePages = @(
+    (Join-Path $publicPath "offline\index.html"),
+    (Join-Path $publicPath "zh\offline\index.html"),
+    (Join-Path $publicPath "zh-tw\offline\index.html")
+) | ForEach-Object { [System.IO.Path]::GetFullPath($_) }
+
+$customInlinePages = @(
+    (Join-Path $publicPath "me\index.html"),
+    (Join-Path $publicPath "zh\me\index.html"),
+    (Join-Path $publicPath "zh-tw\me\index.html"),
+    (Join-Path $publicPath "prefetchdebug\index.html")
 ) | ForEach-Object { [System.IO.Path]::GetFullPath($_) }
 
 $htmlFiles = Get-ChildItem -Path $publicPath -Recurse -File -Filter *.html
@@ -45,8 +58,8 @@ foreach ($file in $htmlFiles) {
     $path = [System.IO.Path]::GetFullPath($file.FullName)
     $text = Get-Content $path -Raw
 
-    $hasInline = Test-Pattern $text '<style>@view-transition'
-    $hasExternal = Test-Pattern $text 'rel="stylesheet"|rel=stylesheet'
+    $hasInline = Test-Pattern $text '<style(?:\s[^>]*)?>'
+    $hasExternal = Test-Pattern $text '<link[^>]+rel=(?:"stylesheet"|stylesheet)|<link[^>]+rel=(?:"preload"|preload)[^>]+as=(?:"style"|style)'
     $hasMainJs = Test-Pattern $text '/js/main(\.min)?\.[^"'' >]+'
     $hasCanonical = Test-Pattern $text '<link rel="canonical"|<link rel=canonical'
 
@@ -56,19 +69,30 @@ foreach ($file in $htmlFiles) {
     if ($hasInline -and $hasExternal) { $summary.Both++ }
     if (-not $hasInline -and -not $hasExternal) { $summary.Neither++ }
 
-    $shouldInline = $allowedInline -contains $path
+    $isHomeInlinePage = $homeInlinePages -contains $path
+    $isOfflineInlinePage = $offlineInlinePages -contains $path
 
-    if ($shouldInline) {
+    if ($isHomeInlinePage) {
         if (-not $hasInline) {
-            $issues.Add("Expected inline CSS but none found: $path")
+            $issues.Add("Expected inline base CSS on home page: $path")
         }
-        if ($hasExternal) {
-            $issues.Add("Expected no external main stylesheet on inline page: $path")
+        if (-not $hasExternal) {
+            $issues.Add("Expected deferred/external addon stylesheet on home page: $path")
+        }
+    }
+    elseif ($isOfflineInlinePage) {
+        if (-not $hasInline) {
+            $issues.Add("Expected inline CSS on offline page: $path")
+        }
+    }
+    elseif ($customInlinePages -contains $path) {
+        if (-not $hasExternal) {
+            $issues.Add("Expected external stylesheet on custom-inline page: $path")
         }
     }
     else {
         if ($hasInline) {
-            $issues.Add("Unexpected inline CSS on non-home page: $path")
+            $issues.Add("Unexpected inline CSS on non-inline page: $path")
         }
         if (-not $hasExternal) {
             $issues.Add("Missing external main stylesheet on non-home page: $path")
@@ -86,8 +110,12 @@ foreach ($file in $htmlFiles) {
 
 Write-Host "Checked $($summary.Total) HTML files in $publicPath"
 Write-Host "inlineOnly=$($summary.InlineOnly) externalOnly=$($summary.ExternalOnly) both=$($summary.Both) neither=$($summary.Neither)"
-Write-Host "Allowed inline pages:"
-$allowedInline | ForEach-Object { Write-Host "  $_" }
+Write-Host "Home inline pages:"
+$homeInlinePages | ForEach-Object { Write-Host "  $_" }
+Write-Host "Offline inline pages:"
+$offlineInlinePages | ForEach-Object { Write-Host "  $_" }
+Write-Host "Custom inline pages:"
+$customInlinePages | ForEach-Object { Write-Host "  $_" }
 
 if ($issues.Count -gt 0) {
     Write-Host ""
