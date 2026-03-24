@@ -116,25 +116,28 @@ function shouldDeleteOnActivate(key) {
     return false;
 }
 
-async function fetchNavigationResponse(request, preloadResponsePromise) {
-    if (preloadResponsePromise) {
+function createNavigationPreloadConsumer(event) {
+    let consumed = false;
+
+    return async function consumeNavigationPreload() {
+        if (consumed || !event || typeof event.preloadResponse === 'undefined') return null;
+        consumed = true;
+
         try {
-            const preloadResponse = await preloadResponsePromise;
-            if (preloadResponse) return preloadResponse;
-        } catch (error) { }
+            return await event.preloadResponse;
+        } catch (error) {
+            return null;
+        }
+    };
+}
+
+async function fetchNavigationResponse(request, consumeNavigationPreload) {
+    if (consumeNavigationPreload) {
+        const preloadResponse = await consumeNavigationPreload();
+        if (preloadResponse) return preloadResponse;
     }
 
     return fetch(request);
-}
-
-function settleNavigationPreload(preloadResponsePromise) {
-    if (!preloadResponsePromise) return Promise.resolve();
-
-    return (async () => {
-        try {
-            await preloadResponsePromise;
-        } catch (error) { }
-    })();
 }
 
 function normalizeSameOriginUrl(urlValue, baseUrl) {
@@ -239,9 +242,9 @@ async function warmAssetsFromHtmlResponse(response, baseUrl) {
     } catch (error) { }
 }
 
-async function updateNavigationCache(request, cache, preloadResponsePromise, waitForAssetWarmup = false) {
+async function updateNavigationCache(request, cache, consumeNavigationPreload, waitForAssetWarmup = false) {
     try {
-        let response = await fetchNavigationResponse(request, preloadResponsePromise);
+        let response = await fetchNavigationResponse(request, consumeNavigationPreload);
         if (response && response.status === 304) {
             // Browser-level prefetch often revalidates from HTTP cache and returns 304.
             // SW cache needs a full body, so retry by bypassing the browser cache layer.
@@ -365,11 +368,11 @@ self.addEventListener('install', (event) => {
     event.waitUntil(warmNavigationUrls(getOfflineFallbackUrls()));
 });
 
-async function handleNavigationRequest(request, preloadResponsePromise) {
+async function handleNavigationRequest(request, consumeNavigationPreload) {
     const pathname = getRequestPathname(request);
     const route = getMatchingRoute('navigation', pathname);
     if (!shouldHandleRoute(route)) {
-        return fetchNavigationResponse(request, preloadResponsePromise);
+        return fetchNavigationResponse(request, consumeNavigationPreload);
     }
 
     const cache = await caches.open(getCacheNameForRoute(route));
@@ -378,7 +381,7 @@ async function handleNavigationRequest(request, preloadResponsePromise) {
         return cachedResponse;
     }
 
-    const networkResponse = await updateNavigationCache(request, cache, preloadResponsePromise);
+    const networkResponse = await updateNavigationCache(request, cache, consumeNavigationPreload);
     if (networkResponse) {
         return networkResponse;
     }
@@ -451,11 +454,10 @@ self.addEventListener('fetch', (event) => {
         const route = getMatchingRoute('navigation', pathname);
         if (!shouldHandleRoute(route)) return;
 
-        const preloadResponsePromise = request.mode === 'navigate' ? event.preloadResponse : null;
-        if (preloadResponsePromise) {
-            event.waitUntil(settleNavigationPreload(preloadResponsePromise));
-        }
-        event.respondWith(handleNavigationRequest(request, preloadResponsePromise));
+        const consumeNavigationPreload = request.mode === 'navigate'
+            ? createNavigationPreloadConsumer(event)
+            : null;
+        event.respondWith(handleNavigationRequest(request, consumeNavigationPreload));
         return;
     }
 
