@@ -5,6 +5,8 @@ title: "离线浏览"
 slug: "offline"
 type: "page"
 layout: "offline"
+page_inline_css:
+  - page.inline.css
 params:
   retry_label: "重试"
   home_label: "返回首页"

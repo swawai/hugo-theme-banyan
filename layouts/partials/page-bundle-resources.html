@@ -1,0 +1,68 @@
+{{- $ctx := .ctx | default . -}}
+{{- $kind := lower (printf "%v" (.kind | default "")) -}}
+{{- if not (in (slice "css" "js" "inline-css" "primary-inline-css") $kind) -}}
+  {{- errorf "编译失败: partial %q 仅支持 kind=css/js/inline-css/primary-inline-css，当前值为 %q。" "page-bundle-resources.html" $kind -}}
+{{- end -}}
+
+{{- $paramKey := printf "page_%s" (replace $kind "-" "_") -}}
+{{- $declared := index $ctx.Params $paramKey | default (slice) -}}
+{{- if not (reflect.IsSlice $declared) -}}
+  {{- $declared = slice $declared -}}
+{{- end -}}
+{{- $primaryInlineDeclared := index $ctx.Params "page_primary_inline_css" | default (slice) -}}
+{{- if not (reflect.IsSlice $primaryInlineDeclared) -}}
+  {{- $primaryInlineDeclared = slice $primaryInlineDeclared -}}
+{{- end -}}
+{{- $flags := partial "page-style-flags.html" (dict "ctx" $ctx) -}}
+{{- $currentOutputName := printf "%v" (index $flags "currentOutputName" | default "") -}}
+{{- $primaryOutputName := printf "%v" (index $flags "primaryOutputName" | default "") -}}
+{{- $isPrimaryOutput := and (ne $currentOutputName "") (eq $currentOutputName $primaryOutputName) -}}
+
+{{- $pageIdentity := $ctx.RelPermalink -}}
+{{- with $ctx.File }}{{ $pageIdentity = .Path }}{{ end -}}
+{{- $targetExt := cond (eq $kind "js") "js" "css" -}}
+
+{{- range $idx, $entryRaw := $declared -}}
+  {{- $entry := printf "%v" $entryRaw -}}
+  {{- if eq $entry "" }}{{ continue }}{{ end -}}
+  {{- if and (eq $kind "css") (in $primaryInlineDeclared $entry) }}{{ continue }}{{ end -}}
+
+  {{- $resource := false -}}
+  {{- with $ctx.Resources.GetMatch $entry }}{{ $resource = . }}{{ end -}}
+  {{- if not $resource -}}
+    {{- $filePath := printf "%s" $pageIdentity -}}
+    {{- if and $ctx.File $ctx.File.Path }}{{ $filePath = $ctx.File.Path }}{{ end -}}
+    {{- errorf "编译失败: 页面 %q (标题: %q) 声明了 %s=%q，但当前 page bundle 中未找到该资源。" $filePath $ctx.Title $paramKey $entry -}}
+  {{- end -}}
+
+  {{- $entryParts := split $entry "/" -}}
+  {{- $entryFile := index $entryParts (sub (len $entryParts) 1) -}}
+  {{- $baseName := replaceRE "\\.[^.]+$" "" $entryFile -}}
+  {{- if eq $baseName "" }}{{ $baseName = printf "%s-%d" $kind $idx }}{{ end -}}
+  {{- $resourceKey := substr (md5 (printf "%s|%s|%s" $pageIdentity $kind $entry)) 0 12 -}}
+  {{- $targetPath := printf "%s/page/%s-%s.%s" $targetExt ($baseName | urlize) $resourceKey $targetExt -}}
+
+  {{- if eq $kind "inline-css" -}}
+    {{- $out := resources.FromString $targetPath $resource.Content -}}
+    {{- $out = partial "css-process.html" (dict "resource" $out) -}}
+<style>{{ $out.Content | safeCSS }}</style>
+  {{- else if eq $kind "primary-inline-css" -}}
+    {{- $out := resources.FromString $targetPath $resource.Content -}}
+    {{- if $isPrimaryOutput -}}
+      {{- $out = partial "css-process.html" (dict "resource" $out) -}}
+<style>{{ $out.Content | safeCSS }}</style>
+    {{- else -}}
+      {{- $out = partial "css-process.html" (dict "resource" $out "fingerprint" true) -}}
+<link rel="stylesheet" href="{{ $out.RelPermalink }}">
+    {{- end -}}
+  {{- else if eq $kind "css" -}}
+    {{- $out := resources.FromString $targetPath $resource.Content -}}
+    {{- $out = partial "css-process.html" (dict "resource" $out "fingerprint" true) -}}
+<link rel="stylesheet" href="{{ $out.RelPermalink }}">
+  {{- else -}}
+    {{- $out := resources.FromString $targetPath $resource.Content -}}
+    {{- $out = $out | js.Build (dict "targetPath" $targetPath "minify" (not hugo.IsServer)) -}}
+    {{- $out = $out | fingerprint -}}
+<script src="{{ $out.RelPermalink }}" integrity="{{ $out.Data.Integrity }}" defer></script>
+  {{- end -}}
+{{- end -}}

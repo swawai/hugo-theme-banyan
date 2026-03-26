@@ -1,0 +1,42 @@
+.prefetch-debug {
+    display: grid;
+    gap: 1rem;
+}
+
+.prefetch-debug-panel {
+    border: 1px solid var(--border-color, #d0d7de);
+    border-radius: 0.75rem;
+    padding: 1rem;
+    background: var(--surface-1, rgba(255, 255, 255, 0.85));
+}
+
+.prefetch-debug-panel h2 {
+    margin-top: 0;
+    margin-bottom: 0.75rem;
+}
+
+.prefetch-debug-panel pre {
+    margin: 0;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.prefetch-debug-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.prefetch-debug-links a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.5rem;
+    padding: 0.45rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid var(--border-color, #d0d7de);
+    text-decoration: none;
+}
