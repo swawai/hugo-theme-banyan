@@ -11,8 +11,9 @@
 {{ $isLanguageHome := and $ctx.IsHome (eq $currentOutputName $primaryOutputName) }}
 {{ $gridOutputNames := slice "byname" "bynameasc" "bydate" "bydateasc" "bycount" "bycountasc" "allbyname" "allbynameasc" "allbydate" "allbydateasc" "allbypath" "allbypathasc" "allbysize" "allbysizeasc" }}
 {{ $resourceOutputNames := slice "resourcesbynameasc" "resourcesbyname" "resourcesbyprice" "resourcesbypriceasc" "resourcesbyvalue" "resourcesbyvalueasc" }}
+{{ $isCanonicalGrid := and (eq $currentOutputName "html") (or $ctx.IsHome (eq $ctx.Kind "section") (and (or (eq $ctx.Kind "taxonomy") (eq $ctx.Kind "term")) (or (eq $ctx.Data.Plural "tags") (eq $ctx.Data.Plural "udc")))) }}
 {{ $needsGridResources := in $resourceOutputNames $currentOutputName }}
-{{ $needsGrid := or (in $gridOutputNames $currentOutputName) $needsGridResources }}
+{{ $needsGrid := or (in $gridOutputNames $currentOutputName) $needsGridResources $isCanonicalGrid }}
 {{ $needsGridAll := hasPrefix $currentOutputName "allby" }}
 {{ $isHomeGrid := and $ctx.IsHome $needsGrid }}
 {{ $defaultVariant := "page-crumb" }}

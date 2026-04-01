@@ -1,0 +1,7 @@
+{{ $ctx := .ctx }}
+{{ if $ctx.IsPage }}
+  <section class="desktop-workspace-meta-panel">
+    {{ partial "article-path-meta.html" (dict "ctx" $ctx) }}
+    {{ partial "article-time-meta.html" (dict "ctx" $ctx) }}
+  </section>
+{{ end }}

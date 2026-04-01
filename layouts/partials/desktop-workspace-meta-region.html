@@ -1,0 +1,6 @@
+{{ $ctx := .ctx }}
+{{ $pageKind := .pageKind | default "branch" }}
+
+{{ if eq $pageKind "leaf" }}
+  {{ partial "desktop-workspace-meta.html" (dict "ctx" $ctx) }}
+{{ end }}

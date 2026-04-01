@@ -17,7 +17,7 @@
     "bycount"    (dict "sortField" "cnt"        "sortOrder" "desc" "controls" (dict "name" "byname"    "nameText" (printf `%s&nbsp;↨` $nameLabel)          "date" "bydateasc" "dateText" (printf `%s&nbsp;↨` $dateLabel)        "count" "bycountasc" "countText" (printf `%s&nbsp;<b>↑</b>` $countLabel)))
   }}
   {{ $cfg = index $config $mode }}
-  {{ if not $cfg }}{{ $cfg = index $config "bynameasc" }}{{ end }}
+  {{ if not $cfg }}{{ $cfg = index $config "bydate" }}{{ end }}
 {{ else if eq $variant "all" }}
   {{ $config := dict
     "allbynameasc" (dict "sortField" "Title"    "sortOrder" "asc"  "controls" (dict "name" "allbyname"    "nameText" (printf `%s&nbsp;<b>↓</b>` $nameLabel) "date" "allbydateasc" "dateText" (printf `%s&nbsp;↨` $dateLabel) "size" "allbysize"    "sizeText" (printf `%s&nbsp;↨` $sizeLabel) "path" "allbypath"    "pathText" (printf `%s&nbsp;↨` $pathLabel)))
@@ -30,7 +30,7 @@
     "allbysizeasc" (dict "sortField" "_size"    "sortOrder" "asc"  "controls" (dict "name" "allbyname"    "nameText" (printf `%s&nbsp;↨` $nameLabel)      "date" "allbydateasc" "dateText" (printf `%s&nbsp;↨` $dateLabel) "size" "allbysize"    "sizeText" (printf `%s&nbsp;<b>↓</b>` $sizeLabel) "path" "allbypath"    "pathText" (printf `%s&nbsp;↨` $pathLabel)))
   }}
   {{ $cfg = index $config $mode }}
-  {{ if not $cfg }}{{ $cfg = index $config "allbynameasc" }}{{ end }}
+  {{ if not $cfg }}{{ $cfg = index $config "allbydate" }}{{ end }}
 {{ else if eq $variant "tree" }}
   {{ $config := dict
     "bynameasc"  (dict "sortField" "title"  "sortOrder" "asc"  "controls" (dict "name" "byname"    "nameText" (printf `%s&nbsp;<b>↓</b>` $nameLabel)  "date" "bydateasc"  "dateText" (printf `%s&nbsp;↨` $dateLabel)         "count" "bycount"    "countText" (printf `%s&nbsp;↨` $countLabel)))
@@ -41,7 +41,7 @@
     "bycount"    (dict "sortField" "cnt"    "sortOrder" "desc" "controls" (dict "name" "byname"    "nameText" (printf `%s&nbsp;↨` $nameLabel)        "date" "bydateasc"  "dateText" (printf `%s&nbsp;↨` $dateLabel)         "count" "bycountasc" "countText" (printf `%s&nbsp;<b>↑</b>` $countLabel)))
   }}
   {{ $cfg = index $config $mode }}
-  {{ if not $cfg }}{{ $cfg = index $config "bynameasc" }}{{ end }}
+  {{ if not $cfg }}{{ $cfg = index $config "bydate" }}{{ end }}
 {{ else if eq $variant "udc" }}
   {{ $config := dict
     "bynameasc"  (dict "sortField" "title"     "sortOrder" "asc"  "timeFmt" "bydateasc" "timeText" (printf `%s&nbsp;↨` $dateLabel)         "countFmt" "bycount"    "countText" (printf `%s&nbsp;↨` $countLabel)        "nameFmt" "byname"    "nameText" (printf `%s&nbsp;<b>↓</b>` $nameLabel))
@@ -52,7 +52,7 @@
     "bycount"    (dict "sortField" "cnt"       "sortOrder" "desc" "timeFmt" "bydate"    "timeText" (printf `%s&nbsp;↨` $dateLabel)         "countFmt" "bycountasc" "countText" (printf `%s&nbsp;<b>↑</b>` $countLabel) "nameFmt" "byname"    "nameText" (printf `%s&nbsp;↨` $nameLabel))
   }}
   {{ $cfg = index $config $mode }}
-  {{ if not $cfg }}{{ $cfg = index $config "bynameasc" }}{{ end }}
+  {{ if not $cfg }}{{ $cfg = index $config "bydate" }}{{ end }}
 {{ end }}
 
 {{ return $cfg }}

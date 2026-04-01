@@ -1,3 +1,5 @@
+import { bindListSortRoots } from './list-sort.shared.js';
+
 // 针对微信安卓版：通过 WeixinJSBridge 强制覆盖字体大小并禁止用户修改，缓解字体缩放导致的页面跳变
 (function () {
     if (typeof WeixinJSBridge == "object" && typeof WeixinJSBridge.invoke == "function") {
@@ -27,9 +29,16 @@ const html = document.documentElement;
 
 let runtimeManifestPromise = null;
 let runtimeManifestCache = null;
+let desktopWorkspaceRuntimePromise = null;
 
 function readRuntimeManifestUrl() {
     return document.body?.dataset.assetManifestUrl || '';
+}
+
+function readDesktopWorkspaceDataset(name) {
+    const body = document.body;
+    if (!body) return '';
+    return body.dataset[`desktopWorkspace${name}`] || '';
 }
 
 function getRuntimeManifest() {
@@ -71,6 +80,57 @@ function getRuntimeI18nUrl(manifest, lang, homeUrl) {
     }
 
     return '';
+}
+
+function desktopWorkspaceMediaMatches() {
+    const wide = window.matchMedia ? window.matchMedia('(min-width: 72rem)').matches : false;
+    const hover = window.matchMedia ? window.matchMedia('(hover: hover)').matches : false;
+    const fine = window.matchMedia ? window.matchMedia('(pointer: fine)').matches : false;
+    return wide && hover && fine;
+}
+
+function loadDeferredScript(src, attrName) {
+    return new Promise((resolve, reject) => {
+        if (!src) {
+            reject(new Error('missing script src'));
+            return;
+        }
+
+        const existing = document.querySelector(`script[${attrName}="${src}"]`);
+        if (existing) {
+            if (existing.getAttribute('data-loaded') === 'true') {
+                resolve();
+                return;
+            }
+            existing.addEventListener('load', () => resolve(), { once: true });
+            existing.addEventListener('error', () => reject(new Error('script load failed')), { once: true });
+            return;
+        }
+
+        const script = document.createElement('script');
+        script.src = src;
+        script.defer = true;
+        script.setAttribute(attrName, src);
+        script.addEventListener('load', () => {
+            script.setAttribute('data-loaded', 'true');
+            resolve();
+        }, { once: true });
+        script.addEventListener('error', () => reject(new Error('script load failed')), { once: true });
+        document.head.appendChild(script);
+    });
+}
+
+function maybeBootDesktopWorkspace() {
+    const body = document.body;
+    if (!body || readDesktopWorkspaceDataset('Enabled') !== 'true') return;
+    if (!desktopWorkspaceMediaMatches()) return;
+
+    const runtimeUrl = readDesktopWorkspaceDataset('RuntimeUrl');
+    if (!runtimeUrl) return;
+
+    if (!desktopWorkspaceRuntimePromise) {
+        desktopWorkspaceRuntimePromise = loadDeferredScript(runtimeUrl, 'data-desktop-workspace-runtime').catch(() => null);
+    }
 }
 
 
@@ -144,6 +204,21 @@ async function injectSiteManifest() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    bindListSortRoots(document);
+    maybeBootDesktopWorkspace();
+    if (window.matchMedia) {
+        const queries = [
+            window.matchMedia('(min-width: 72rem)'),
+            window.matchMedia('(hover: hover)'),
+            window.matchMedia('(pointer: fine)')
+        ];
+        const handleDesktopWorkspaceMedia = () => maybeBootDesktopWorkspace();
+        queries.forEach((query) => {
+            if (query.addEventListener) query.addEventListener('change', handleDesktopWorkspaceMedia);
+            else if (query.addListener) query.addListener(handleDesktopWorkspaceMedia);
+        });
+    }
+
     injectSiteManifest();
     const themeSelect = document.getElementById('theme-select');
     const langSelect = document.getElementById('lang-select');

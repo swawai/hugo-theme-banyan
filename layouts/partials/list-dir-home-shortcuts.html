@@ -19,15 +19,13 @@
 {{ end }}
 
 {{ $directoryTitle := i18n "home_shortcut_directory" | default "Directory" }}
-{{ $directoryHref := "/d/" | relLangURL }}
+{{ $directoryHref := partial "sort-url.html" (dict "href" ("/d/" | relLangURL) "mode" $mode) }}
 {{ $directoryCount := 0 }}
 {{ $directoryDateKey := $siteDateKey }}
 {{ $directoryDateText := $siteDateText }}
 {{ with $ctx.Site.GetPage "section" "d" }}
   {{ $directoryTitle = .Title }}
-  {{ with .OutputFormats.Get $mode }}
-    {{ $directoryHref = .RelPermalink }}
-  {{ end }}
+  {{ $directoryHref = partial "sort-url.html" (dict "href" .RelPermalink "mode" $mode) }}
   {{ $directoryCount = len .RegularPagesRecursive }}
   {{ if gt $directoryCount 0 }}
     {{ with first 1 (.RegularPagesRecursive.ByLastmod.Reverse) }}
@@ -68,7 +66,7 @@
 {{ $entries = $entries | append (dict
   "kind" "section"
   "title" (i18n "home_shortcut_tags" | default "Tags")
-  "href" ("/tags/" | relLangURL)
+  "href" (partial "sort-url.html" (dict "href" ("/tags/" | relLangURL) "mode" $mode))
   "icon" "folder"
   "prefetchKind" "nav"
   "cnt" $tagCount
@@ -80,7 +78,7 @@
 {{ $entries = $entries | append (dict
   "kind" "section"
   "title" (i18n "home_shortcut_udc_index" | default "UDC Index")
-  "href" ("/udc/" | relLangURL)
+  "href" (partial "sort-url.html" (dict "href" ("/udc/" | relLangURL) "mode" $mode))
   "icon" "folder"
   "prefetchKind" "nav"
   "cnt" $udcCount

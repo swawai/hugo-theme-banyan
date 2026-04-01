@@ -13,7 +13,7 @@
 {{/* 视图：顶层 Level 1 —— 参照 UDC：把每个一级 term 折算为 items 并用 list 视图输出 */}}
 {{ $items := partial "tags-data-items.html" (dict "kind" "root" "ctx" $ctx "mode" $mode) }}
 
-<div class="grid-list">
+<div class="grid-list" data-list-sort-root data-sortable-list data-current-sort="{{ $mode }}" data-list-sort-mode="{{ $mode }}" data-list-sort-base-href="{{ $ctx.RelPermalink }}" data-list-sort-sync-url="true">
   {{ partial "udc-list-view.html" (dict "ctx" $ctx "mode" $mode "items" $items) }}
   {{/* 上面 partial 输出的是若干 <span>，这里用容器承载以应用 .grid-list 样式（与 UDC 一致） */}}
 </div>

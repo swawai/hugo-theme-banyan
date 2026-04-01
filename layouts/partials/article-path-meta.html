@@ -1,0 +1,49 @@
+{{ $page := .ctx | default . }}
+<nav class="post-dir breadcrumb-nav" aria-label="Breadcrumb">{{ $rendered := false }}{{ range (where $page.Ancestors.Reverse "IsHome" "ne" true) }}{{ if $rendered }}<span class="sep">/</span>{{ end }}{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "text" .LinkTitle "textClass" "crumb-text" "linkSlot" "nav") }}{{ $rendered = true }}{{ end }}{{ if $rendered }}<span class="sep">/</span>{{ end }}{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "text" .Title "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}</nav>
+
+{{ with $page.Params.udc }}
+<nav class="post-udc" aria-label="UDC">
+  {{ $udcLabel := (i18n "menu_udc") | default "UDC" }}
+<span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "udc") 0) }}{{ partial "link.html" (dict "ctx" $page "href" (.URL | relLangURL) "title" "Universal Decimal Classification" "text" (i18n (printf "menu_%s" .Identifier) | default .Name) "linkSlot" "nav") }}{{ else }}{{ $udcLabel }}{{ end }}</span>
+  {{ $terms := . }}
+  {{ if not (reflect.IsSlice $terms) }}{{ $terms = slice $terms }}{{ end }}
+  {{ $deepest := dict }}
+  {{ range $t := $terms }}
+    {{ $s := printf "%v" $t }}
+    {{ $root := index (split $s "/") 0 }}
+    {{ $cur := index $deepest $root | default "" }}
+    {{ $curDepth := len (cond (ne $cur "") (split $cur "/") (slice)) }}
+    {{ $newDepth := len (split $s "/") }}
+    {{ if or (eq $cur "") (gt $newDepth $curDepth) }}
+      {{ $deepest = merge $deepest (dict $root $s) }}
+    {{ end }}
+  {{ end }}
+  {{ range $root, $deep := $deepest }}
+{{ partial "link.html" (dict "ctx" $page "href" (printf "%s%s/" ("/udc/" | relLangURL) ($deep | urlize)) "text" $deep "linkSlot" "nav") }}
+  {{ end }}
+</nav>
+{{ end }}
+
+{{ with $page.Params.tags }}
+<nav class="post-tags" aria-label="Tags">
+<span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "tags") 0) }}{{ partial "link.html" (dict "ctx" $page "href" (.URL | relLangURL) "text" (i18n (printf "menu_%s" .Identifier) | default .Name) "linkSlot" "nav") }}{{ else }}{{ (i18n "menu_tags") | default "TAGS" }}{{ end }}</span>
+  {{ $terms := . }}
+  {{ if not (reflect.IsSlice $terms) }}{{ $terms = slice $terms }}{{ end }}
+  {{ $deepest := dict }}
+  {{ range $t := $terms }}
+    {{ $s := printf "%v" $t }}
+    {{ $root := index (split $s "/") 0 }}
+    {{ $cur := index $deepest $root | default "" }}
+    {{ $curDepth := len (cond (ne $cur "") (split $cur "/") (slice)) }}
+    {{ $newDepth := len (split $s "/") }}
+    {{ if or (eq $cur "") (gt $newDepth $curDepth) }}
+      {{ $deepest = merge $deepest (dict $root $s) }}
+    {{ end }}
+  {{ end }}
+  {{ range $root, $deep := $deepest }}
+    {{ $disp := $deep }}
+    {{ if eq (lower $deep) "untagged" }}{{ $disp = "--untagged--" }}{{ end }}
+{{ partial "link.html" (dict "ctx" $page "href" (printf "%s%s/" ("/tags/" | relLangURL) ($deep | urlize)) "rel" "tag" "text" $disp "linkSlot" "nav") }}
+  {{ end }}
+</nav>
+{{ end }}

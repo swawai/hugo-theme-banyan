@@ -38,15 +38,15 @@
   {{ else }}
     {{ $items = partial "tags-data-items.html" (dict "kind" "term" "ctx" $ctx "mode" $mode) }}
   {{ end }}
-  <div class="grid-list">{{ partial "udc-list-view.html" (dict "ctx" $ctx "mode" $mode "items" $items) }}</div>
+  <div class="grid-list" data-list-sort-root data-sortable-list data-current-sort="{{ $mode }}" data-list-sort-mode="{{ $mode }}" data-list-sort-base-href="{{ $ctx.RelPermalink }}" data-list-sort-sync-url="true">{{ partial "udc-list-view.html" (dict "ctx" $ctx "mode" $mode "items" $items) }}</div>
 {{ else if eq (len $parts) 2 }}
   {{/* level 3 目录 + 文章（文章仅在最大深度==2时出现，逻辑在 data-items 内部处理） */}}
   {{ $items := partial "tags-data-items.html" (dict "kind" "term" "ctx" $ctx "mode" $mode) }}
-  <div class="grid-list">{{ partial "udc-list-view.html" (dict "ctx" $ctx "mode" $mode "items" $items) }}</div>
+  <div class="grid-list" data-list-sort-root data-sortable-list data-current-sort="{{ $mode }}" data-list-sort-mode="{{ $mode }}" data-list-sort-base-href="{{ $ctx.RelPermalink }}" data-list-sort-sync-url="true">{{ partial "udc-list-view.html" (dict "ctx" $ctx "mode" $mode "items" $items) }}</div>
 {{ else if eq (len $parts) 3 }}
   {{/* 第三层：目录+文章（文章仅在最大深度==3时出现，逻辑在 data-items 内部处理） */}}
   {{ $items := partial "tags-data-items.html" (dict "kind" "term" "ctx" $ctx "mode" $mode) }}
-  <div class="grid-list">{{ partial "udc-list-view.html" (dict "ctx" $ctx "mode" $mode "items" $items) }}</div>
+  <div class="grid-list" data-list-sort-root data-sortable-list data-current-sort="{{ $mode }}" data-list-sort-mode="{{ $mode }}" data-list-sort-base-href="{{ $ctx.RelPermalink }}" data-list-sort-sync-url="true">{{ partial "udc-list-view.html" (dict "ctx" $ctx "mode" $mode "items" $items) }}</div>
 {{ else }}
   {{/* 第四层及更深：仅显示该精确 term 下的文章（且文章最大深度==当前层），由 data-items 处理 */}}
   {{ $items := slice }}
@@ -64,7 +64,7 @@
   {{ else }}
     {{ $items = partial "tags-data-items.html" (dict "kind" "term" "ctx" $ctx "mode" $mode) }}
   {{ end }}
-  <div class="grid-list">{{ partial "udc-list-view.html" (dict "ctx" $ctx "mode" $mode "items" $items) }}</div>
+  <div class="grid-list" data-list-sort-root data-sortable-list data-current-sort="{{ $mode }}" data-list-sort-mode="{{ $mode }}" data-list-sort-base-href="{{ $ctx.RelPermalink }}" data-list-sort-sync-url="true">{{ partial "udc-list-view.html" (dict "ctx" $ctx "mode" $mode "items" $items) }}</div>
 {{ end }}
 
 

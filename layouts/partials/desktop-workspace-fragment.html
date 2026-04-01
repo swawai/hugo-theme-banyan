@@ -1,0 +1,11 @@
+{{ $ctx := .ctx }}
+{{ $mode := .mode }}
+{{ $pageKind := .pageKind | default "branch" }}
+{{ $axis := .axis | default "dir" }}
+
+<div data-region="columns">
+  {{ partial "desktop-workspace-columns-region.html" (dict "ctx" $ctx "mode" $mode "axis" $axis "pageKind" $pageKind) }}
+</div>
+<div data-region="meta">
+  {{ partial "desktop-workspace-meta-region.html" (dict "ctx" $ctx "pageKind" $pageKind) }}
+</div>

@@ -1,0 +1,32 @@
+{{ $ctx := .ctx }}
+{{ $title := .title }}
+{{ $entries := .entries }}
+{{ $selectedHref := .selectedHref }}
+{{ $key := .key }}
+
+<section class="desktop-workspace-column desktop-workspace-column-compact" data-col-key="{{ $key }}" data-col-variant="compact" data-sortable="false">
+  <header class="desktop-workspace-column-title">{{ $title }}</header>
+  <div class="desktop-workspace-column-body" data-sortable-list>
+    {{ range $entries }}
+      {{ $selected := eq .href $selectedHref }}
+      {{ $iconHtml := partial "icon" (dict "name" (.icon | default "file")) }}
+      {{ $rowClass := "desktop-workspace-row desktop-workspace-row-compact" }}
+      {{ if $selected }}{{ $rowClass = printf "%s is-selected" $rowClass }}{{ end }}
+      {{ $rowText := printf `<span class="desktop-workspace-row-icon">%s</span><span class="desktop-workspace-row-label">%s</span>` $iconHtml .title }}
+      {{ partial "link.html" (dict
+        "ctx" $ctx
+        "href" .href
+        "text" $rowText
+        "safeHTML" true
+        "class" $rowClass
+        "dataAttrs" (dict
+          "selected" (cond $selected "true" "false")
+          "sortable-row" "true"
+          "kind" .kind
+          "title" .title
+          "date-key" .dateKey
+          "count" .cnt)
+        "linkSlot" (.prefetchKind | default "nav")) }}
+    {{ end }}
+  </div>
+</section>
