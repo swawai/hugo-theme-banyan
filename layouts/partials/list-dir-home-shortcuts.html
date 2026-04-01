@@ -46,8 +46,8 @@
 {{ $udcCount := 0 }}
 {{ with $ctx.Site.Taxonomies.udc }}{{ $udcCount = len . }}{{ end }}
 
-{{ $allHref := "/all-by-date/" | relLangURL }}
-{{ with $ctx.Site.Home.OutputFormats.Get "allbydate" }}
+{{ $allHref := "/all/" | relLangURL }}
+{{ with $ctx.Site.Home.OutputFormats.Get "all" }}
   {{ $allHref = .RelPermalink }}
 {{ end }}
 

@@ -200,10 +200,19 @@
     if (!hasSpec && !hasLink && !hasSw) return;
 
     {{ if or .has_link_module .has_sw_module }}
+    function stripNavigationStateParams(url) {
+        if (url instanceof URL) {
+            // Sort state is client-only; prefetching distinct ?sort= URLs would duplicate the same HTML.
+            url.searchParams.delete('sort');
+        }
+        return url;
+    }
+
     function normalizeNavigationUrl(rawUrl) {
         try {
             const url = new URL(rawUrl, window.location.href);
             url.hash = '';
+            stripNavigationStateParams(url);
             return url.toString();
         } catch (error) {
             return '';

@@ -1,0 +1,91 @@
+{{ $ctx := .ctx }}
+{{ $sitesByWeight := sort $ctx.Site.Sites "Language.Weight" }}
+{{ $currentLang := $ctx.Site.Language.Lang }}
+{{ $defaultLang := "" }}
+{{ with index $sitesByWeight 0 }}{{ $defaultLang = .Language.Lang }}{{ end }}
+{{ $langRank := dict $currentLang 0 }}
+{{ $nextRank := 1 }}
+{{ if and $defaultLang (ne $defaultLang $currentLang) }}
+  {{ $langRank = merge $langRank (dict $defaultLang $nextRank) }}
+  {{ $nextRank = add $nextRank 1 }}
+{{ end }}
+{{ range $sitesByWeight }}
+  {{ $lang := .Language.Lang }}
+  {{ if not (isset $langRank $lang) }}
+    {{ $langRank = merge $langRank (dict $lang $nextRank) }}
+    {{ $nextRank = add $nextRank 1 }}
+  {{ end }}
+{{ end }}
+
+{{ $resourceCandidates := slice }}
+{{ range $sitesByWeight }}
+  {{ $site := . }}
+  {{ $siteLang := $site.Language.Lang }}
+  {{ $siteLangRank := index $langRank $siteLang }}
+  {{ range where $site.RegularPages "Params.resource" true }}
+    {{ if not (isset .Params "resource_price") }}
+      {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 resource=true，但缺少 resource_price。" .File.Path .Title }}
+    {{ end }}
+    {{ $valueRaw := index .Params "resource_value" | default "" }}
+    {{ $valueText := printf "%v" $valueRaw }}
+    {{ if eq $valueText "" }}
+      {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 resource=true，但缺少 resource_value。" .File.Path .Title }}
+    {{ end }}
+    {{ $familyKey := printf "%v" .TranslationKey }}
+    {{ if eq $familyKey "" }}{{ $familyKey = .File.Path }}{{ end }}
+    {{ $dateValue := .Lastmod }}
+    {{ if eq ($dateValue.Format "2006") "0001" }}{{ $dateValue = .Date }}{{ end }}
+    {{ $resourceCandidates = $resourceCandidates | append (dict
+      "familyKey" $familyKey
+      "langRank" $siteLangRank
+      "page" .
+      "priceRaw" (index .Params "resource_price")
+      "valueText" $valueText
+      "dateKey" ($dateValue.Format "20060102150405")
+      "dateText" ($dateValue.Format "2006-01-02")) }}
+  {{ end }}
+{{ end }}
+
+{{ $selectedCandidates := slice }}
+{{ $selectedFamilies := dict }}
+{{ range sort $resourceCandidates "langRank" "asc" }}
+  {{ $familyKey := .familyKey }}
+  {{ if not (isset $selectedFamilies $familyKey) }}
+    {{ $selectedFamilies = merge $selectedFamilies (dict $familyKey true) }}
+    {{ $selectedCandidates = $selectedCandidates | append . }}
+  {{ end }}
+{{ end }}
+
+{{ $entries := slice }}
+{{ $latestKey := "00010101000000" }}
+{{ $latestText := "--" }}
+{{ range $selectedCandidates }}
+  {{ $page := .page }}
+  {{ $priceRaw := .priceRaw }}
+  {{ $priceText := printf "%v" $priceRaw }}
+  {{ if eq $priceRaw 0 }}{{ $priceText = i18n "resources_free" }}{{ end }}
+  {{ if gt .dateKey $latestKey }}
+    {{ $latestKey = .dateKey }}
+    {{ $latestText = .dateText }}
+  {{ end }}
+  {{ $entries = $entries | append (dict
+    "kind" "page"
+    "icon" "file"
+    "prefetchKind" "post"
+    "href" $page.RelPermalink
+    "title" $page.Title
+    "sort_name" $page.Title
+    "sort_price" $priceRaw
+    "sort_value" .valueText
+    "priceText" $priceText
+    "valueText" .valueText
+    "dateKey" .dateKey
+    "dateText" .dateText) }}
+{{ end }}
+
+{{ return dict
+  "entries" (sort $entries "sort_name" "asc")
+  "count" (len $entries)
+  "latestKey" $latestKey
+  "latestText" $latestText
+}}

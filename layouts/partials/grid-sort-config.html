@@ -18,19 +18,6 @@
   }}
   {{ $cfg = index $config $mode }}
   {{ if not $cfg }}{{ $cfg = index $config "bydate" }}{{ end }}
-{{ else if eq $variant "all" }}
-  {{ $config := dict
-    "allbynameasc" (dict "sortField" "Title"    "sortOrder" "asc"  "controls" (dict "name" "allbyname"    "nameText" (printf `%s&nbsp;<b>↓</b>` $nameLabel) "date" "allbydateasc" "dateText" (printf `%s&nbsp;↨` $dateLabel) "size" "allbysize"    "sizeText" (printf `%s&nbsp;↨` $sizeLabel) "path" "allbypath"    "pathText" (printf `%s&nbsp;↨` $pathLabel)))
-    "allbyname"    (dict "sortField" "Title"    "sortOrder" "desc" "controls" (dict "name" "allbynameasc" "nameText" (printf `%s&nbsp;<b>↑</b>` $nameLabel) "date" "allbydateasc" "dateText" (printf `%s&nbsp;↨` $dateLabel) "size" "allbysize"    "sizeText" (printf `%s&nbsp;↨` $sizeLabel) "path" "allbypath"    "pathText" (printf `%s&nbsp;↨` $pathLabel)))
-    "allbydate"    (dict "sortField" "Date"     "sortOrder" "desc" "controls" (dict "name" "allbyname"    "nameText" (printf `%s&nbsp;↨` $nameLabel)      "date" "allbydateasc" "dateText" (printf `%s&nbsp;<b>↑</b>` $dateLabel) "size" "allbysize"    "sizeText" (printf `%s&nbsp;↨` $sizeLabel) "path" "allbypath"    "pathText" (printf `%s&nbsp;↨` $pathLabel)))
-    "allbydateasc" (dict "sortField" "Date"     "sortOrder" "asc"  "controls" (dict "name" "allbyname"    "nameText" (printf `%s&nbsp;↨` $nameLabel)      "date" "allbydate"    "dateText" (printf `%s&nbsp;<b>↓</b>` $dateLabel) "size" "allbysize"    "sizeText" (printf `%s&nbsp;↨` $sizeLabel) "path" "allbypath"    "pathText" (printf `%s&nbsp;↨` $pathLabel)))
-    "allbypathasc" (dict "sortField" "File.Dir" "sortOrder" "asc"  "controls" (dict "name" "allbyname"    "nameText" (printf `%s&nbsp;↨` $nameLabel)      "date" "allbydateasc" "dateText" (printf `%s&nbsp;↨` $dateLabel) "size" "allbysize" "sizeText" (printf `%s&nbsp;↨` $sizeLabel) "path" "allbypath"    "pathText" (printf `%s&nbsp;<b>↓</b>` $pathLabel)))
-    "allbypath"    (dict "sortField" "File.Dir" "sortOrder" "desc" "controls" (dict "name" "allbyname"    "nameText" (printf `%s&nbsp;↨` $nameLabel)      "date" "allbydateasc" "dateText" (printf `%s&nbsp;↨` $dateLabel) "size" "allbysize" "sizeText" (printf `%s&nbsp;↨` $sizeLabel) "path" "allbypathasc" "pathText" (printf `%s&nbsp;<b>↑</b>` $pathLabel)))
-    "allbysize"    (dict "sortField" "_size"    "sortOrder" "desc" "controls" (dict "name" "allbyname"    "nameText" (printf `%s&nbsp;↨` $nameLabel)      "date" "allbydateasc" "dateText" (printf `%s&nbsp;↨` $dateLabel) "size" "allbysizeasc" "sizeText" (printf `%s&nbsp;<b>↑</b>` $sizeLabel) "path" "allbypath"    "pathText" (printf `%s&nbsp;↨` $pathLabel)))
-    "allbysizeasc" (dict "sortField" "_size"    "sortOrder" "asc"  "controls" (dict "name" "allbyname"    "nameText" (printf `%s&nbsp;↨` $nameLabel)      "date" "allbydateasc" "dateText" (printf `%s&nbsp;↨` $dateLabel) "size" "allbysize"    "sizeText" (printf `%s&nbsp;<b>↓</b>` $sizeLabel) "path" "allbypath"    "pathText" (printf `%s&nbsp;↨` $pathLabel)))
-  }}
-  {{ $cfg = index $config $mode }}
-  {{ if not $cfg }}{{ $cfg = index $config "allbydate" }}{{ end }}
 {{ else if eq $variant "tree" }}
   {{ $config := dict
     "bynameasc"  (dict "sortField" "title"  "sortOrder" "asc"  "controls" (dict "name" "byname"    "nameText" (printf `%s&nbsp;<b>↓</b>` $nameLabel)  "date" "bydateasc"  "dateText" (printf `%s&nbsp;↨` $dateLabel)         "count" "bycount"    "countText" (printf `%s&nbsp;↨` $countLabel)))

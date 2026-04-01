@@ -1,126 +1,76 @@
 {{ $ctx := .ctx }}
 {{ $mode := .mode }}
-{{ $cfg := partial "resources-sort-config.html" (dict "mode" $mode) }}
-{{ $ctrl := index $cfg "controls" }}
-{{ $sortField := index $cfg "sortField" }}
-{{ $sortOrder := index $cfg "sortOrder" }}
+{{ $pageHref := $ctx.RelPermalink }}
+{{ $resourceData := partial "resources-entries.html" (dict "ctx" $ctx) }}
+{{ $ordered := index $resourceData "entries" }}
+{{ $resourceSortModes := slice "resourcesbynameasc" "resourcesbyname" "resourcesbyprice" "resourcesbypriceasc" "resourcesbyvalue" "resourcesbyvalueasc" }}
+{{ $nameLabel := i18n "resources_col_name" }}
+{{ $priceLabel := i18n "resources_col_price" }}
+{{ $valueLabel := i18n "resources_col_value" }}
+{{ $nameActive := or (eq $mode "resourcesbyname") (eq $mode "resourcesbynameasc") }}
+{{ $priceActive := or (eq $mode "resourcesbyprice") (eq $mode "resourcesbypriceasc") }}
+{{ $valueActive := or (eq $mode "resourcesbyvalue") (eq $mode "resourcesbyvalueasc") }}
+{{ $nameDirection := "none" }}
+{{ if eq $mode "resourcesbynameasc" }}{{ $nameDirection = "asc" }}{{ else if eq $mode "resourcesbyname" }}{{ $nameDirection = "desc" }}{{ end }}
+{{ $priceDirection := "none" }}
+{{ if eq $mode "resourcesbypriceasc" }}{{ $priceDirection = "asc" }}{{ else if eq $mode "resourcesbyprice" }}{{ $priceDirection = "desc" }}{{ end }}
+{{ $valueDirection := "none" }}
+{{ if eq $mode "resourcesbyvalueasc" }}{{ $valueDirection = "asc" }}{{ else if eq $mode "resourcesbyvalue" }}{{ $valueDirection = "desc" }}{{ end }}
+{{ $nextNameMode := cond (eq $mode "resourcesbyname") "resourcesbynameasc" "resourcesbyname" }}
+{{ $nextPriceMode := cond (eq $mode "resourcesbyprice") "resourcesbypriceasc" "resourcesbyprice" }}
+{{ $nextValueMode := cond (eq $mode "resourcesbyvalue") "resourcesbyvalueasc" "resourcesbyvalue" }}
+{{ $nameSortTitle := cond (eq $nextNameMode "resourcesbynameasc") (i18n "resources_sort_name_asc") (i18n "resources_sort_name_desc") }}
+{{ $priceSortTitle := cond (eq $nextPriceMode "resourcesbypriceasc") (i18n "resources_sort_price_asc") (i18n "resources_sort_price_desc") }}
+{{ $valueSortTitle := cond (eq $nextValueMode "resourcesbyvalueasc") (i18n "resources_sort_value_asc") (i18n "resources_sort_value_desc") }}
 
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
-  {{ with $ctx.OutputFormats.Get $mode }}
-    {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" (i18n "menu_resources") "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
-  {{ end }}
+  {{ partial "link.html" (dict "ctx" $ctx "href" (partial "sort-url.html" (dict "href" $pageHref "mode" $mode "default" "resourcesbynameasc" "allowed" $resourceSortModes)) "text" (i18n "menu_resources") "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
 </nav>
 
 {{ partial "page-list-intro.html" (dict "ctx" $ctx) }}
 
-<div class="grid-list grid-resources">
-  {{ with $ctx.OutputFormats.Get (index $ctrl "name") }}
-    {{ partial "grid-sort-cell.html" (dict
-      "class" "cell-title"
-      "ctx" $ctx
-      "href" .RelPermalink
-      "title" (cond (and (eq $sortField "sort_name") (eq $sortOrder "asc")) (i18n "resources_sort_name_desc") (i18n "resources_sort_name_asc"))
-      "label" (cond (and (eq $sortField "sort_name") (eq $sortOrder "asc")) (i18n "resources_sort_name_desc") (i18n "resources_sort_name_asc"))
-      "text" (index $ctrl "nameText")) }}
-  {{ end }}
-
-  {{ with $ctx.OutputFormats.Get (index $ctrl "price") }}
-    {{ partial "grid-sort-cell.html" (dict
-      "class" "cell-price"
-      "ctx" $ctx
-      "href" .RelPermalink
-      "title" (cond (and (eq $sortField "sort_price") (eq $sortOrder "asc")) (i18n "resources_sort_price_desc") (i18n "resources_sort_price_asc"))
-      "label" (cond (and (eq $sortField "sort_price") (eq $sortOrder "asc")) (i18n "resources_sort_price_desc") (i18n "resources_sort_price_asc"))
-      "text" (index $ctrl "priceText")) }}
-  {{ end }}
-
-  {{ with $ctx.OutputFormats.Get (index $ctrl "value") }}
-    {{ partial "grid-sort-cell.html" (dict
-      "class" "cell-value"
-      "ctx" $ctx
-      "href" .RelPermalink
-      "title" (cond (and (eq $sortField "sort_value") (eq $sortOrder "asc")) (i18n "resources_sort_value_desc") (i18n "resources_sort_value_asc"))
-      "label" (cond (and (eq $sortField "sort_value") (eq $sortOrder "asc")) (i18n "resources_sort_value_desc") (i18n "resources_sort_value_asc"))
-      "text" (index $ctrl "valueText")) }}
-  {{ end }}
-
-  {{ $entries := slice }}
-  {{ $sitesByWeight := sort $ctx.Site.Sites "Language.Weight" }}
-  {{ $currentLang := $ctx.Site.Language.Lang }}
-  {{ $defaultLang := "" }}
-  {{ with index $sitesByWeight 0 }}{{ $defaultLang = .Language.Lang }}{{ end }}
-  {{ $langRank := dict $currentLang 0 }}
-  {{ $nextRank := 1 }}
-  {{ if and $defaultLang (ne $defaultLang $currentLang) }}
-    {{ $langRank = merge $langRank (dict $defaultLang $nextRank) }}
-    {{ $nextRank = add $nextRank 1 }}
-  {{ end }}
-  {{ range $sitesByWeight }}
-    {{ $lang := .Language.Lang }}
-    {{ if not (isset $langRank $lang) }}
-      {{ $langRank = merge $langRank (dict $lang $nextRank) }}
-      {{ $nextRank = add $nextRank 1 }}
-    {{ end }}
-  {{ end }}
-
-  {{ $resourceCandidates := slice }}
-  {{ range $sitesByWeight }}
-    {{ $site := . }}
-    {{ $siteLang := $site.Language.Lang }}
-    {{ $siteLangRank := index $langRank $siteLang }}
-    {{ range where $site.RegularPages "Params.resource" true }}
-      {{ if not (isset .Params "resource_price") }}
-        {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 resource=true，但缺少 resource_price。" .File.Path .Title }}
-      {{ end }}
-      {{ $valueRaw := index .Params "resource_value" | default "" }}
-      {{ $valueText := printf "%v" $valueRaw }}
-      {{ if eq $valueText "" }}
-        {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 resource=true，但缺少 resource_value。" .File.Path .Title }}
-      {{ end }}
-      {{ $familyKey := printf "%v" .TranslationKey }}
-      {{ if eq $familyKey "" }}{{ $familyKey = .File.Path }}{{ end }}
-      {{ $resourceCandidates = $resourceCandidates | append (dict
-        "familyKey" $familyKey
-        "langRank" $siteLangRank
-        "page" .
-        "priceRaw" (index .Params "resource_price")
-        "valueText" $valueText) }}
-    {{ end }}
-  {{ end }}
-
-  {{ $selectedCandidates := slice }}
-  {{ $selectedFamilies := dict }}
-  {{ range sort $resourceCandidates "langRank" "asc" }}
-    {{ $familyKey := .familyKey }}
-    {{ if not (isset $selectedFamilies $familyKey) }}
-      {{ $selectedFamilies = merge $selectedFamilies (dict $familyKey true) }}
-      {{ $selectedCandidates = $selectedCandidates | append . }}
-    {{ end }}
-  {{ end }}
-
-  {{ range $selectedCandidates }}
-    {{ $page := .page }}
-    {{ $priceRaw := .priceRaw }}
-    {{ $priceText := printf "%v" $priceRaw }}
-    {{ if eq $priceRaw 0 }}{{ $priceText = i18n "resources_free" }}{{ end }}
-    {{ $entries = $entries | append (dict
-      "href" $page.RelPermalink
-      "title" $page.Title
-      "sort_name" $page.Title
-      "sort_price" $priceRaw
-      "sort_value" .valueText
-      "priceText" $priceText
-      "valueText" .valueText) }}
-  {{ end }}
-
-  {{ $ordered := sort $entries "sort_name" "asc" }}
-  {{ $ordered = sort $ordered $sortField $sortOrder }}
+<div class="grid-list grid-resources" data-list-sort-root data-sortable-list data-list-sort-variant="resources" data-current-sort="{{ $mode }}" data-list-sort-mode="{{ $mode }}" data-list-sort-base-href="{{ $pageHref }}" data-list-sort-sync-url="true">
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-title"
+    "ctx" $ctx
+    "href" (partial "sort-url.html" (dict "href" $pageHref "mode" $nextNameMode "default" "resourcesbynameasc" "allowed" $resourceSortModes))
+    "title" $nameSortTitle
+    "label" $nameSortTitle
+    "text" $nameLabel
+    "field" "title"
+    "active" (cond $nameActive "true" "false")
+    "direction" $nameDirection
+    "linkSlot" "") }}
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-price"
+    "ctx" $ctx
+    "href" (partial "sort-url.html" (dict "href" $pageHref "mode" $nextPriceMode "default" "resourcesbynameasc" "allowed" $resourceSortModes))
+    "title" $priceSortTitle
+    "label" $priceSortTitle
+    "text" $priceLabel
+    "field" "price"
+    "active" (cond $priceActive "true" "false")
+    "direction" $priceDirection
+    "linkSlot" "") }}
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-value"
+    "ctx" $ctx
+    "href" (partial "sort-url.html" (dict "href" $pageHref "mode" $nextValueMode "default" "resourcesbynameasc" "allowed" $resourceSortModes))
+    "title" $valueSortTitle
+    "label" $valueSortTitle
+    "text" $valueLabel
+    "field" "value"
+    "active" (cond $valueActive "true" "false")
+    "direction" $valueDirection
+    "linkSlot" "") }}
 
   {{ if gt (len $ordered) 0 }}
     {{ range $ordered }}
-      {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .href "title" .title "icon" "file" "prefetchKind" "post") }}
-      <span class="cell-price">{{ .priceText }}</span>
-      <span class="cell-value">{{ .valueText }}</span>
+      <div class="grid-list-row" data-sortable-row data-kind="page" data-title="{{ .title }}" data-price="{{ .sort_price }}" data-value="{{ .sort_value }}">
+        {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .href "title" .title "icon" "file" "prefetchKind" "post") }}
+        <span class="cell-price">{{ .priceText }}</span>
+        <span class="cell-value">{{ .valueText }}</span>
+      </div>
     {{ end }}
   {{ else }}
     <span class="cell-title">{{ i18n "resources_empty" }}</span>

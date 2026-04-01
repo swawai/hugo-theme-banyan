@@ -1,0 +1,28 @@
+{{ $ctx := .ctx }}
+{{ $mode := .mode | default "resourcesbynameasc" }}
+{{ $columns := slice }}
+{{ $resourceSortModes := slice "resourcesbynameasc" "resourcesbyname" "resourcesbyprice" "resourcesbypriceasc" "resourcesbyvalue" "resourcesbyvalueasc" }}
+{{ $resourceData := partial "resources-entries.html" (dict "ctx" $ctx) }}
+{{ $homeEntries := partial "list-dir-home-shortcuts.html" (dict "ctx" $ctx "mode" $mode) }}
+{{ $pageHref := $ctx.RelPermalink | default ("/resources/" | relLangURL) }}
+{{ $resourcesHref := partial "sort-url.html" (dict "href" $pageHref "mode" $mode "default" "resourcesbynameasc" "allowed" $resourceSortModes) }}
+{{ $resourcesTitle := i18n "menu_resources" | default $ctx.Title }}
+{{ $homeEntries = $homeEntries | append (dict
+  "kind" "section"
+  "title" $resourcesTitle
+  "href" $resourcesHref
+  "icon" "folder"
+  "prefetchKind" "nav"
+  "cnt" (index $resourceData "count")
+  "countText" (index $resourceData "count")
+  "countUnit" ""
+  "dateKey" (index $resourceData "latestKey")
+  "dateText" (index $resourceData "latestText")) }}
+{{ $columns = $columns | append (dict
+  "key" "home"
+  "title" ((i18n "menu_home") | default "Home")
+  "entries" $homeEntries
+  "selectedHref" $resourcesHref
+  "variant" "compact") }}
+
+{{ return $columns }}
