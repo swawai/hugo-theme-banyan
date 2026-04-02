@@ -6,8 +6,6 @@
 {{ $columns := slice }}
 {{ if eq $axis "tags" }}
   {{ $columns = partial "tags-desktop-columns-data.html" (dict "ctx" $ctx "mode" $mode "pageKind" $pageKind "term" $term) }}
-{{ else if eq $axis "resources" }}
-  {{ $columns = partial "resources-desktop-columns-data.html" (dict "ctx" $ctx "mode" $mode) }}
 {{ else if eq $axis "udc" }}
   {{ $columns = partial "udc-desktop-columns-data.html" (dict "ctx" $ctx "mode" $mode "pageKind" $pageKind "term" $term) }}
 {{ else }}

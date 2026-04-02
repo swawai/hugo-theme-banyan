@@ -17,6 +17,7 @@
 {{ if not (and $ctx.IsHome $homeShortcutsOnly) }}
   {{ range $ctx.Sections }}
     {{ $section := . }}
+    {{ if $section.Params.listing_exclude }}{{ continue }}{{ end }}
     {{ if and $ctx.IsHome (eq $section.Section "d") }}{{ continue }}{{ end }}
     {{ $cnt := len $section.RegularPagesRecursive }}
     {{ $d := $section.Lastmod }}
@@ -45,6 +46,7 @@
 
   {{ range $ctx.RegularPages }}
     {{ $page := . }}
+    {{ if $page.Params.listing_exclude }}{{ continue }}{{ end }}
     {{ $bytes := len $page.RawContent }}
     {{ $kb := div (add $bytes 1023) 1024 }}
     {{ $d := $page.Lastmod }}

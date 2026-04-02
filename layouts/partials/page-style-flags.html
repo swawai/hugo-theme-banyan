@@ -10,10 +10,10 @@
 {{ with index $ctx.OutputFormats 0 }}{{ $primaryOutputName = .Name }}{{ end }}
 {{ $isLanguageHome := and $ctx.IsHome (eq $currentOutputName $primaryOutputName) }}
 {{ $allGridOutputNames := slice "all" }}
-{{ $isResourcesSection := and (eq $currentOutputName "html") (eq $ctx.Kind "section") (eq $ctx.Section "resources") }}
+{{ $isProductsPage := and (eq $currentOutputName "html") $ctx.IsPage (or (eq $ctx.Section "products") (eq $ctx.Type "products")) }}
 {{ $isCanonicalGrid := and (eq $currentOutputName "html") (or $ctx.IsHome (eq $ctx.Kind "section") (and (or (eq $ctx.Kind "taxonomy") (eq $ctx.Kind "term")) (or (eq $ctx.Data.Plural "tags") (eq $ctx.Data.Plural "udc")))) }}
-{{ $needsGridResources := $isResourcesSection }}
-{{ $needsGrid := or (in $allGridOutputNames $currentOutputName) $needsGridResources $isCanonicalGrid }}
+{{ $needsGridProducts := $isProductsPage }}
+{{ $needsGrid := or (in $allGridOutputNames $currentOutputName) $needsGridProducts $isCanonicalGrid }}
 {{ $needsGridAll := eq $currentOutputName "all" }}
 {{ $isHomeGrid := and $ctx.IsHome $needsGrid }}
 {{ $defaultVariant := "page-crumb" }}
@@ -21,8 +21,8 @@
 {{ $defaultVariant = "home" }}
 {{ else if $needsGridAll }}
 {{ $defaultVariant = "all" }}
-{{ else if $needsGridResources }}
-{{ $defaultVariant = "resources" }}
+{{ else if $needsGridProducts }}
+{{ $defaultVariant = "products" }}
 {{ else if $isHomeGrid }}
 {{ $defaultVariant = "home-list" }}
 {{ else if $needsGrid }}
@@ -35,6 +35,6 @@
     "isHomeGrid" $isHomeGrid
     "needsGrid" $needsGrid
     "needsGridAll" $needsGridAll
-    "needsGridResources" $needsGridResources
+    "needsGridProducts" $needsGridProducts
     "defaultVariant" $defaultVariant
 }}
