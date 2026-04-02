@@ -25,26 +25,6 @@ panicOnWarning = true
 [frontmatter]
 lastmod = ["lastmod", ":git", ":fileModTime", ":default"]
 
-[menu]
-[[menu.main]]
-identifier = "home"
-url = "/"
-weight = 1
-[[menu.main]]
-identifier = "products"
-url = "/products/"
-weight = 2
-[[menu.main]]
-identifier = "signals"
-url = "/signals/"
-weight = 3
-[[menu.main]]
-identifier = "about"
-url = "/about/"
-weight = 4
-
-
-
 [languages]
 [languages.en]
 languageName = "English"

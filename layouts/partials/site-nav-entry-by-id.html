@@ -1,0 +1,13 @@
+{{ $ctx := .ctx }}
+{{ $targetId := lower (printf "%v" (.id | default "")) }}
+{{ $entry := dict }}
+
+{{ if $targetId }}
+  {{ range partial "site-nav-registry.html" (dict "ctx" $ctx) }}
+    {{ if eq .id $targetId }}
+      {{ $entry = . }}
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ return $entry }}

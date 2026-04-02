@@ -1,0 +1,19 @@
+{{ $ctx := .ctx }}
+<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+  {{ partial "link.html" (dict
+    "ctx" $ctx
+    "href" $ctx.Site.Home.RelPermalink
+    "text" ($ctx.Site.Home.LinkTitle | default ((i18n "menu_home") | default "Home"))
+    "textClass" "crumb-text"
+    "linkSlot" "nav") }}
+  {{ if not $ctx.IsHome }}
+    <span class="sep">/</span>
+    {{ partial "link.html" (dict
+      "ctx" $ctx
+      "href" $ctx.RelPermalink
+      "text" ($ctx.LinkTitle | default $ctx.Title)
+      "textClass" "crumb-text"
+      "dataAttrs" (dict "site-update-anchor" "true")
+      "linkSlot" "nav") }}
+  {{ end }}
+</nav>

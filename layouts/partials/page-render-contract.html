@@ -1,0 +1,98 @@
+{{ $ctx := . }}
+{{ if reflect.IsMap . }}{{ with .ctx }}{{ $ctx = . }}{{ end }}{{ end }}
+{{ $outputFlags := partial "page-output-flags.html" (dict "ctx" $ctx) }}
+{{ $currentOutputName := printf "%v" (index $outputFlags "currentOutputName" | default "") }}
+
+{{ $main := lower (printf "%v" ($ctx.Params.render_main | default "")) }}
+{{ $breadcrumb := lower (printf "%v" ($ctx.Params.render_breadcrumb | default "")) }}
+{{ $stylesVariant := lower (printf "%v" ($ctx.Params.render_styles_variant | default "")) }}
+{{ $workspace := lower (printf "%v" ($ctx.Params.render_workspace | default "")) }}
+{{ $mode := lower (printf "%v" ($ctx.Params.render_mode | default "")) }}
+
+{{ $isProductsPage := and $ctx.IsPage (or (eq $ctx.Section "products") (eq $ctx.Type "products")) }}
+{{ $isTagsTaxonomy := and (eq $ctx.Kind "taxonomy") (eq $ctx.Data.Plural "tags") }}
+{{ $isTagsTerm := and (eq $ctx.Kind "term") (eq $ctx.Data.Plural "tags") }}
+{{ $isUdcTaxonomy := and (eq $ctx.Kind "taxonomy") (eq $ctx.Data.Plural "udc") }}
+{{ $isUdcTerm := and (eq $ctx.Kind "term") (eq $ctx.Data.Plural "udc") }}
+{{ $isDirSection := and (eq $ctx.Kind "section") (eq $ctx.Section "d") }}
+{{ $isDirPage := and $ctx.IsPage (eq $ctx.Section "d") }}
+
+{{ if eq $main "" }}
+  {{ if eq $currentOutputName "all" }}
+    {{ $main = "all-list" }}
+  {{ else if $isProductsPage }}
+    {{ $main = "products-list" }}
+  {{ else if $isTagsTaxonomy }}
+    {{ $main = "tags-taxonomy" }}
+  {{ else if $isTagsTerm }}
+    {{ $main = "tags-term" }}
+  {{ else if $isUdcTaxonomy }}
+    {{ $main = "udc-taxonomy" }}
+  {{ else if $isUdcTerm }}
+    {{ $main = "udc-term" }}
+  {{ else if or $ctx.IsHome (eq $ctx.Kind "section") }}
+    {{ $main = "dir-list" }}
+  {{ else }}
+    {{ $main = "article" }}
+  {{ end }}
+{{ end }}
+
+{{ if eq $breadcrumb "" }}
+  {{ if or (eq $main "dir-list") (eq $main "all-list") (eq $main "products-list") }}
+    {{ $breadcrumb = "none" }}
+  {{ else if or $isTagsTaxonomy $isTagsTerm }}
+    {{ $breadcrumb = "tags" }}
+  {{ else if or $isUdcTaxonomy $isUdcTerm }}
+    {{ $breadcrumb = "udc" }}
+  {{ else if eq $main "article" }}
+    {{ $breadcrumb = "article-path" }}
+  {{ else }}
+    {{ $breadcrumb = "none" }}
+  {{ end }}
+{{ end }}
+
+{{ if eq $stylesVariant "" }}
+  {{ if $ctx.IsHome }}
+    {{ $stylesVariant = "home" }}
+  {{ else if eq $currentOutputName "all" }}
+    {{ $stylesVariant = "all" }}
+  {{ else if eq $main "products-list" }}
+    {{ $stylesVariant = "products" }}
+  {{ else if or (eq $main "dir-list") (eq $main "tags-taxonomy") (eq $main "tags-term") (eq $main "udc-taxonomy") (eq $main "udc-term") }}
+    {{ $stylesVariant = "list" }}
+  {{ else if eq $main "article" }}
+    {{ $stylesVariant = "page-crumb" }}
+  {{ end }}
+{{ end }}
+
+{{ if eq $workspace "" }}
+  {{ if or $ctx.IsHome $isDirSection $isDirPage }}
+    {{ $workspace = "dir" }}
+  {{ else if eq $main "products-list" }}
+    {{ $workspace = "products" }}
+  {{ else if or $isTagsTaxonomy $isTagsTerm }}
+    {{ $workspace = "tags" }}
+  {{ else if or $isUdcTaxonomy $isUdcTerm }}
+    {{ $workspace = "udc" }}
+  {{ else }}
+    {{ $workspace = "none" }}
+  {{ end }}
+{{ end }}
+
+{{ if eq $mode "" }}
+  {{ if eq $main "all-list" }}
+    {{ $mode = "allbydate" }}
+  {{ else if eq $main "products-list" }}
+    {{ $mode = "productsbynameasc" }}
+  {{ else }}
+    {{ $mode = "bydate" }}
+  {{ end }}
+{{ end }}
+
+{{ return dict
+  "main" $main
+  "breadcrumb" $breadcrumb
+  "stylesVariant" $stylesVariant
+  "workspace" $workspace
+  "mode" $mode
+}}

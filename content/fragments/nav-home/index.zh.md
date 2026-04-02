@@ -1,25 +1,23 @@
 ---
-title: "首頁"
-linkTitle: "首頁"
+title: "首页导航默认项"
 build:
   list: never
   render: never
 listing_exclude: true
-nav_href: "/"
 desktop_children:
-  - title: "目錄"
+  - title: "目录"
     href: "/d/"
     icon: "folder"
     kind: "section"
-  - title: "標籤"
+  - title: "标签"
     href: "/tags/"
     icon: "folder"
     kind: "section"
-  - title: "學科索引"
+  - title: "学科索引"
     href: "/udc/"
     icon: "folder"
     kind: "section"
-  - title: "全部內容"
+  - title: "全部内容"
     href: "/all/"
     icon: "folder"
     kind: "section"

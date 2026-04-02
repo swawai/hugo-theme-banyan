@@ -8,7 +8,14 @@ page_css:
   - page.css
 outputs:
   - html
+nav_id: "products"
+nav_slot: "primary"
+nav_weight: 2
 nav_menu_id: "products"
+render_main: "products-list"
+render_styles_variant: "products"
+render_workspace: "products"
+render_mode: "productsbynameasc"
 desktop_children:
   - title: "Overview"
     href: "/products/"
