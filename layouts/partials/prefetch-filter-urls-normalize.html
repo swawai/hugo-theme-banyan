@@ -1,8 +1,7 @@
 {{- $raw := printf "%v" . -}}
 {{- $url := "" -}}
 {{- if and $raw (not (hasPrefix $raw "http://")) (not (hasPrefix $raw "https://")) -}}
-  {{- $trimmed := partial "strip-sort-query.html" $raw -}}
-  {{- $trimmed = index (split $trimmed "#") 0 -}}
+  {{- $trimmed := index (split $raw "#") 0 -}}
   {{- if and $trimmed (hasPrefix $trimmed "/") -}}
     {{- $url = $trimmed -}}
   {{- end -}}
