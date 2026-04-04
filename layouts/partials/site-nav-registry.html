@@ -1,0 +1,160 @@
+{{ $ctx := .ctx }}
+{{ $entries := slice }}
+{{ $seenIds := dict }}
+{{ $fallbackHome := $ctx.Site.GetPage "/fragments/nav-home" }}
+{{ $candidates := slice $ctx.Site.Home }}
+
+{{ range $ctx.Site.AllPages }}
+  {{ if ne .Site.Language.Lang $ctx.Site.Language.Lang }}{{ continue }}{{ end }}
+  {{ $candidates = $candidates | append . }}
+{{ end }}
+
+{{ range $candidates }}
+  {{ if not (isset .Params "nav_id") }}{{ continue }}{{ end }}
+
+  {{ $id := lower (printf "%v" .Params.nav_id) }}
+  {{ if or (eq $id "") (isset $seenIds $id) }}{{ continue }}{{ end }}
+
+  {{ $seenIds = merge $seenIds (dict $id true) }}
+  {{ $slot := lower (printf "%v" (.Params.nav_slot | default "primary")) }}
+  {{ $weight := int (.Params.nav_weight | default 999) }}
+  {{ $title := printf "%v" (.Params.nav_title | default "") }}
+  {{ if eq $title "" }}
+    {{ $title = .LinkTitle | default .Title | default "" }}
+  {{ end }}
+  {{ if and (eq $title "") (eq $id "home") $fallbackHome }}
+    {{ $title = $fallbackHome.LinkTitle | default $fallbackHome.Title | default "" }}
+  {{ end }}
+  {{ if eq $title "" }}
+    {{ $title = humanize $id }}
+  {{ end }}
+  {{ $href := "" }}
+  {{ $hrefRaw := printf "%v" (.Params.nav_href | default "") }}
+
+  {{ if $hrefRaw }}
+    {{ if or (hasPrefix $hrefRaw "http://") (hasPrefix $hrefRaw "https://") }}
+      {{ $href = $hrefRaw }}
+    {{ else if hasPrefix $hrefRaw "/" }}
+      {{ $href = $hrefRaw | relLangURL }}
+    {{ else }}
+      {{ $href = (printf "/%s" $hrefRaw) | relLangURL }}
+    {{ end }}
+  {{ else }}
+    {{ $href = .RelPermalink | default "" }}
+  {{ end }}
+
+  {{ $desktopChildrenSource := . }}
+  {{ if and (eq $id "home") (eq (len (.Params.desktop_children | default slice)) 0) $fallbackHome }}
+    {{ $desktopChildrenSource = $fallbackHome }}
+  {{ end }}
+
+  {{ $children := slice }}
+  {{ $declaredChildren := slice }}
+  {{ $includeSelfChild := false }}
+  {{ with .Params.nav_include_self_child }}{{ $includeSelfChild = . }}{{ end }}
+  {{ if $includeSelfChild }}
+    {{ $selfChildTitle := printf "%v" (.Params.nav_child_title | default "") }}
+    {{ if eq $selfChildTitle "" }}
+      {{ $selfChildTitle = .LinkTitle | default .Title | default $title }}
+    {{ end }}
+    {{ $selfChildDescription := printf "%v" (.Params.nav_child_description | default .Description | default "") }}
+    {{ $selfChildHref := .RelPermalink | default "" }}
+    {{ $selfChildHrefRaw := printf "%v" (.Params.nav_child_href | default .Params.nav_href | default "") }}
+    {{ if $selfChildHrefRaw }}
+      {{ if or (hasPrefix $selfChildHrefRaw "http://") (hasPrefix $selfChildHrefRaw "https://") }}
+        {{ $selfChildHref = $selfChildHrefRaw }}
+      {{ else if hasPrefix $selfChildHrefRaw "/" }}
+        {{ $selfChildHref = $selfChildHrefRaw | relLangURL }}
+      {{ else }}
+        {{ $selfChildHref = (printf "/%s" $selfChildHrefRaw) | relLangURL }}
+      {{ end }}
+    {{ end }}
+    {{ $declaredChildren = $declaredChildren | append (dict
+      "title" $selfChildTitle
+      "description" $selfChildDescription
+      "href" $selfChildHref
+      "icon" (printf "%v" (.Params.nav_child_icon | default "file"))
+      "kind" (printf "%v" (.Params.nav_child_kind | default "page"))
+      "target" (printf "%v" (.Params.nav_child_target | default ""))
+      "rel" (printf "%v" (.Params.nav_child_rel | default ""))
+      "prefetchKind" (printf "%v" (.Params.nav_child_prefetch_kind | default "nav"))
+      "weight" (int (.Params.nav_child_weight | default 1))) }}
+  {{ end }}
+  {{ range $ctx.Site.AllPages }}
+    {{ if ne .Site.Language.Lang $ctx.Site.Language.Lang }}{{ continue }}{{ end }}
+    {{ if not (isset .Params "nav_parent_id") }}{{ continue }}{{ end }}
+    {{ $parentId := lower (printf "%v" .Params.nav_parent_id) }}
+    {{ if ne $parentId $id }}{{ continue }}{{ end }}
+    {{ $childTitle := printf "%v" (.Params.nav_title | default "") }}
+    {{ if eq $childTitle "" }}
+      {{ $childTitle = .LinkTitle | default .Title | default .RelPermalink }}
+    {{ end }}
+    {{ $childHref := .RelPermalink | default "" }}
+    {{ $childHrefRaw := printf "%v" (.Params.nav_href | default "") }}
+    {{ if $childHrefRaw }}
+      {{ if or (hasPrefix $childHrefRaw "http://") (hasPrefix $childHrefRaw "https://") }}
+        {{ $childHref = $childHrefRaw }}
+      {{ else if hasPrefix $childHrefRaw "/" }}
+        {{ $childHref = $childHrefRaw | relLangURL }}
+      {{ else }}
+        {{ $childHref = (printf "/%s" $childHrefRaw) | relLangURL }}
+      {{ end }}
+    {{ end }}
+    {{ $declaredChildren = $declaredChildren | append (dict
+      "title" $childTitle
+      "description" (printf "%v" (.Params.nav_description | default .Description | default ""))
+      "href" $childHref
+      "icon" (printf "%v" (.Params.nav_icon | default "file"))
+      "kind" (printf "%v" (.Params.nav_kind | default "page"))
+      "target" (printf "%v" (.Params.nav_target | default ""))
+      "rel" (printf "%v" (.Params.nav_rel | default ""))
+      "prefetchKind" (printf "%v" (.Params.nav_prefetch_kind | default "nav"))
+      "weight" (int (.Params.nav_weight | default 999))) }}
+  {{ end }}
+  {{ if gt (len $declaredChildren) 0 }}
+    {{ range sort $declaredChildren "weight" "asc" }}
+      {{ $children = $children | append (dict
+        "title" .title
+        "description" .description
+        "href" .href
+        "icon" .icon
+        "kind" .kind
+        "target" .target
+        "rel" .rel
+        "prefetchKind" .prefetchKind) }}
+    {{ end }}
+  {{ else }}
+    {{ with $desktopChildrenSource.Params.desktop_children }}
+      {{ range . }}
+        {{ $childHrefRaw := printf "%v" (index . "href" | default "") }}
+        {{ $childHref := $childHrefRaw }}
+        {{ if and $childHrefRaw (not (hasPrefix $childHrefRaw "http://")) (not (hasPrefix $childHrefRaw "https://")) }}
+          {{ if hasPrefix $childHrefRaw "/" }}
+            {{ $childHref = $childHrefRaw | relLangURL }}
+          {{ else }}
+            {{ $childHref = (printf "/%s" $childHrefRaw) | relLangURL }}
+          {{ end }}
+        {{ end }}
+        {{ $children = $children | append (dict
+          "title" (printf "%v" (index . "title" | default ""))
+          "description" (printf "%v" (index . "description" | default ""))
+          "href" $childHref
+          "icon" (printf "%v" (index . "icon" | default "file"))
+          "kind" (printf "%v" (index . "kind" | default "page"))
+          "target" (printf "%v" (index . "target" | default ""))
+          "rel" (printf "%v" (index . "rel" | default ""))
+          "prefetchKind" (printf "%v" (index . "prefetchKind" | default "nav"))) }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+
+  {{ $entries = $entries | append (dict
+    "id" $id
+    "slot" $slot
+    "weight" $weight
+    "title" $title
+    "href" $href
+    "children" $children) }}
+{{ end }}
+
+{{ return sort $entries "weight" "asc" }}

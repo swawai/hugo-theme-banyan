@@ -1,0 +1,3 @@
+{{ $ctx := .ctx }}
+{{ $mode := index .contract "mode" }}
+{{ partial "list-all-common.html" (dict "ctx" $ctx "mode" $mode) }}

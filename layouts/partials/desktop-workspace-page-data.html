@@ -1,17 +1,16 @@
 {{ $ctx := . }}
 {{ with .ctx }}{{ $ctx = . }}{{ end }}
 
-{{ $flags := partial "page-style-flags.html" (dict "ctx" $ctx) }}
-{{ $currentOutputName := printf "%v" (index $flags "currentOutputName" | default "") }}
+{{ $outputFlags := partial "page-output-flags.html" (dict "ctx" $ctx) }}
+{{ $currentOutputName := printf "%v" (index $outputFlags "currentOutputName" | default "") }}
 {{ $isDesktopOutput := eq $currentOutputName "desktop" }}
-{{ $isDirSection := and (eq $ctx.Kind "section") (eq $ctx.Section "d") }}
-{{ $isDirPage := and $ctx.IsPage (eq $ctx.Section "d") }}
-{{ $isProductsPage := and $ctx.IsPage (or (eq $ctx.Section "products") (eq $ctx.Type "products")) }}
-{{ $isTagsTaxonomy := and (eq $ctx.Kind "taxonomy") (eq $ctx.Data.Plural "tags") }}
-{{ $isTagsTerm := and (eq $ctx.Kind "term") (eq $ctx.Data.Plural "tags") }}
-{{ $isUdcTaxonomy := and (eq $ctx.Kind "taxonomy") (eq $ctx.Data.Plural "udc") }}
-{{ $isUdcTerm := and (eq $ctx.Kind "term") (eq $ctx.Data.Plural "udc") }}
-{{ $enabled := and (not $isDesktopOutput) (or $ctx.IsHome $isDirSection $isDirPage $isProductsPage $isTagsTaxonomy $isTagsTerm $isUdcTaxonomy $isUdcTerm) }}
+{{ $contract := partial "page-render-contract.html" (dict "ctx" $ctx) }}
+{{ $workspaceProfile := lower (printf "%v" (index $contract "workspace" | default "none")) }}
+{{ $allowedProfiles := slice "none" "dir" "products" "tags" "udc" }}
+{{ if not (in $allowedProfiles $workspaceProfile) }}
+  {{ errorf "编译失败: 页面 %q 配置了不支持的 render_workspace=%q。" $ctx.RelPermalink $workspaceProfile }}
+{{ end }}
+{{ $enabled := and (not $isDesktopOutput) (ne $workspaceProfile "none") }}
 
 {{ $desktopUrl := "" }}
 {{ if $enabled }}
@@ -27,26 +26,30 @@
 
 {{ $pageKind := "" }}
 {{ if $enabled }}
-  {{ if or $ctx.IsHome $isDirSection $isProductsPage $isTagsTaxonomy $isTagsTerm $isUdcTaxonomy $isUdcTerm }}
+  {{ if eq $workspaceProfile "dir" }}
+    {{ if $ctx.IsPage }}
+      {{ $pageKind = "leaf" }}
+    {{ else }}
+      {{ $pageKind = "branch" }}
+    {{ end }}
+  {{ else if or (eq $workspaceProfile "products") (eq $workspaceProfile "tags") (eq $workspaceProfile "udc") }}
     {{ $pageKind = "branch" }}
-  {{ else if $isDirPage }}
-    {{ $pageKind = "leaf" }}
   {{ end }}
 {{ end }}
 
 {{ $axis := "" }}
 {{ if $enabled }}
-  {{ if or $ctx.IsHome $isDirSection $isDirPage }}
+  {{ if eq $workspaceProfile "dir" }}
     {{ $axis = "dir" }}
-  {{ else if or $isTagsTaxonomy $isTagsTerm }}
+  {{ else if eq $workspaceProfile "tags" }}
     {{ $axis = "tags" }}
-  {{ else if or $isUdcTaxonomy $isUdcTerm }}
+  {{ else if eq $workspaceProfile "udc" }}
     {{ $axis = "udc" }}
   {{ end }}
 {{ end }}
 
 {{ $currentSort := "bydate" }}
-{{ if $isProductsPage }}{{ $currentSort = "productsbynameasc" }}{{ end }}
+{{ if eq $workspaceProfile "products" }}{{ $currentSort = "productsbynameasc" }}{{ end }}
 
 {{ return dict
   "enabled" $enabled

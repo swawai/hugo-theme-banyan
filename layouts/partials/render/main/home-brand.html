@@ -1,0 +1,52 @@
+{{ $ctx := .ctx }}
+{{ $mode := index .contract "mode" }}
+{{ $homeEntry := partial "site-nav-entry-by-id.html" (dict "ctx" $ctx "id" "home") }}
+{{ $sections := slice }}
+{{ with index $homeEntry "children" }}{{ $sections = . }}{{ end }}
+
+{{ partial "page-list-intro.html" (dict "ctx" $ctx) }}
+
+{{ if gt (len $sections) 0 }}
+  <section class="home-brand-sections" aria-labelledby="home-brand-sections-title">
+    <header class="home-brand-sections-header">
+      <h2 id="home-brand-sections-title" class="home-brand-sections-title">{{ i18n "home_brand_sections_title" | default "Home Sections" }}</h2>
+    </header>
+
+    <div class="home-brand-section-grid">
+      {{ range $index, $section := $sections }}
+        {{ $sectionHref := index $section "href" | default "" }}
+        {{ $sectionTitle := index $section "title" | default "" }}
+        {{ $sectionDescription := index $section "description" | default "" }}
+        {{ $sectionPrefetchKind := index $section "prefetchKind" | default "nav" }}
+        {{ $sectionTarget := index $section "target" | default "" }}
+        {{ $sectionRel := index $section "rel" | default "" }}
+        {{ $isSelected := eq $sectionHref $ctx.RelPermalink }}
+        {{ $cardClass := "home-brand-card" }}
+        {{ if $isSelected }}{{ $cardClass = printf "%s is-selected" $cardClass }}{{ end }}
+        {{ if and $ctx $sectionHref }}{{ partial "link-collect-url.html" (dict "ctx" $ctx "slot" $sectionPrefetchKind "url" $sectionHref) }}{{ end }}
+        <a href="{{ $sectionHref }}" class="{{ $cardClass }}"{{ if $isSelected }} aria-current="page"{{ end }}{{ with $sectionTarget }} target="{{ . }}"{{ end }}{{ with $sectionRel }} rel="{{ . }}"{{ end }}>
+          <span class="home-brand-card-index">{{ printf "%02d" (add $index 1) }}</span>
+          <span class="home-brand-card-body">
+            <span class="home-brand-card-title">{{ $sectionTitle }}</span>
+            {{ with $sectionDescription }}
+              <span class="home-brand-card-description">{{ . }}</span>
+            {{ end }}
+          </span>
+          <span class="home-brand-card-arrow" aria-hidden="true">↗</span>
+        </a>
+      {{ end }}
+    </div>
+  </section>
+{{ end }}
+
+{{ partial "home-footer-grid.html" (dict "ctx" $ctx "mode" $mode) }}
+
+{{ $entries := slice }}
+{{ range $sections }}
+  {{ $entries = $entries | append (dict
+    "url" (index . "href")
+    "name" (index . "title")) }}
+{{ end }}
+{{ if gt (len $entries) 0 }}
+  {{ partial "schema-itemlist.html" (dict "entries" $entries) }}
+{{ end }}

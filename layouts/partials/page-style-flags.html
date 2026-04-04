@@ -1,13 +1,8 @@
 {{ $ctx := . }}
 {{ with .ctx }}{{ $ctx = . }}{{ end }}
-{{ $alternativeOutputNames := slice }}
-{{ range $ctx.AlternativeOutputFormats }}{{ $alternativeOutputNames = $alternativeOutputNames | append .Name }}{{ end }}
-{{ $currentOutputName := "" }}
-{{ range $ctx.OutputFormats }}
-{{ if not (in $alternativeOutputNames .Name) }}{{ $currentOutputName = .Name }}{{ end }}
-{{ end }}
-{{ $primaryOutputName := "" }}
-{{ with index $ctx.OutputFormats 0 }}{{ $primaryOutputName = .Name }}{{ end }}
+{{ $outputFlags := partial "page-output-flags.html" (dict "ctx" $ctx) }}
+{{ $currentOutputName := printf "%v" (index $outputFlags "currentOutputName" | default "") }}
+{{ $primaryOutputName := printf "%v" (index $outputFlags "primaryOutputName" | default "") }}
 {{ $isLanguageHome := and $ctx.IsHome (eq $currentOutputName $primaryOutputName) }}
 {{ $allGridOutputNames := slice "all" }}
 {{ $isProductsPage := and (eq $currentOutputName "html") $ctx.IsPage (or (eq $ctx.Section "products") (eq $ctx.Type "products")) }}
@@ -16,17 +11,25 @@
 {{ $needsGrid := or (in $allGridOutputNames $currentOutputName) $needsGridProducts $isCanonicalGrid }}
 {{ $needsGridAll := eq $currentOutputName "all" }}
 {{ $isHomeGrid := and $ctx.IsHome $needsGrid }}
-{{ $defaultVariant := "page-crumb" }}
-{{ if $isLanguageHome }}
-{{ $defaultVariant = "home" }}
-{{ else if $needsGridAll }}
-{{ $defaultVariant = "all" }}
-{{ else if $needsGridProducts }}
-{{ $defaultVariant = "products" }}
-{{ else if $isHomeGrid }}
-{{ $defaultVariant = "home-list" }}
-{{ else if $needsGrid }}
-{{ $defaultVariant = "list" }}
+{{ $defaultVariant := lower (printf "%v" ($ctx.Params.render_styles_variant | default "")) }}
+{{ $allowedVariants := slice "" "home" "home-list" "all" "products" "list" "page" "page-crumb" }}
+{{ if and $defaultVariant (not (in $allowedVariants $defaultVariant)) }}
+{{ errorf "编译失败: 页面 %q 配置了不支持的 render_styles_variant=%q。" $ctx.RelPermalink $defaultVariant }}
+{{ end }}
+{{ if eq $defaultVariant "" }}
+  {{ if $isLanguageHome }}
+    {{ $defaultVariant = "home" }}
+  {{ else if $needsGridAll }}
+    {{ $defaultVariant = "all" }}
+  {{ else if $needsGridProducts }}
+    {{ $defaultVariant = "products" }}
+  {{ else if $isHomeGrid }}
+    {{ $defaultVariant = "home-list" }}
+  {{ else if $needsGrid }}
+    {{ $defaultVariant = "list" }}
+  {{ else }}
+    {{ $defaultVariant = "page-crumb" }}
+  {{ end }}
 {{ end }}
 {{ return dict
     "currentOutputName" $currentOutputName
