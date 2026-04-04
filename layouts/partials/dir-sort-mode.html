@@ -1,0 +1,14 @@
+{{ $ctx := . }}
+{{ with .ctx }}{{ $ctx = . }}{{ end }}
+{{ $flags := partial "page-style-flags.html" (dict "ctx" $ctx) }}
+{{ $currentOutputName := printf "%v" (index $flags "currentOutputName" | default "") }}
+{{ $allowed := slice "byname" "bynameasc" "bydate" "bydateasc" "bycount" "bycountasc" }}
+{{ $mode := "bydate" }}
+{{ with .mode }}
+  {{ $candidate := lower (printf "%v" .) }}
+  {{ if in $allowed $candidate }}{{ $mode = $candidate }}{{ end }}
+{{ end }}
+{{ if in $allowed $currentOutputName }}
+  {{ $mode = $currentOutputName }}
+{{ end }}
+{{ return $mode }}

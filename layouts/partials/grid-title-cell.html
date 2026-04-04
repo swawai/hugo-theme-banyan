@@ -10,7 +10,7 @@
 {{ $rel := .rel }}
 {{ if and $ctx $linkSlot }}{{ partial "link-collect-url.html" (dict "ctx" $ctx "slot" $linkSlot "url" $href) }}{{ end }}
 <span class="cell-title">
-  <a class="title-link" href="{{ $href }}"{{ with $label }} aria-label="{{ . }}"{{ end }}{{ with $target }} target="{{ . }}"{{ end }}{{ with $rel }} rel="{{ . }}"{{ end }}>
+  <a class="title-link" href="{{ $href }}"{{ with $label }} aria-label="{{ . }}"{{ end }}{{ with $target }} target="{{ . }}"{{ end }}{{ with $rel }} rel="{{ . }}"{{ end }}{{ with .dataAttrs }}{{ range $name, $value := . }} {{ printf "data-%s=%q" $name (printf "%v" $value) | safeHTMLAttr }}{{ end }}{{ end }}>
     <span class="title-icon{{ if $iconText }} title-icon-text{{ end }}">{{ if $iconText }}{{ $iconText }}{{ else }}{{ partial "icon" (dict "name" $icon) }}{{ end }}</span>
     <span class="title-text">{{ $text }}</span>
   </a>

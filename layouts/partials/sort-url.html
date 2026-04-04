@@ -1,0 +1,17 @@
+{{- $href := printf "%v" (.href | default "") -}}
+{{- $allowed := slice "byname" "bynameasc" "bydate" "bydateasc" "bycount" "bycountasc" -}}
+{{- $mode := lower (printf "%v" (.mode | default "")) -}}
+{{- $defaultMode := lower (printf "%v" (.default | default "bydate")) -}}
+{{- $result := $href -}}
+{{- if and (ne $href "") (in $allowed $mode) (ne $mode $defaultMode) -}}
+  {{- $parts := split $href "#" -}}
+  {{- $base := index $parts 0 -}}
+  {{- $hash := "" -}}
+  {{- if gt (len $parts) 1 -}}
+    {{- $hash = printf "#%s" (delimit (after 1 $parts) "#") -}}
+  {{- end -}}
+  {{- $sep := "?" -}}
+  {{- if in $base "?" -}}{{- $sep = "&" -}}{{- end -}}
+  {{- $result = printf "%s%ssort=%s%s" $base $sep $mode $hash -}}
+{{- end -}}
+{{- return $result -}}

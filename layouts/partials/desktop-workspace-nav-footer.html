@@ -1,0 +1,27 @@
+{{ $ctx := .ctx }}
+{{ $entries := partial "home-footer-shortcuts.html" (dict "ctx" $ctx) }}
+
+{{ if gt (len $entries) 0 }}
+  <footer class="desktop-workspace-nav-footer" aria-label="Site footer shortcuts">
+    <div class="desktop-workspace-nav-footer-list">
+      {{ range $entries }}
+        {{ $iconMarkup := "" }}
+        {{ if .iconText }}
+          {{ $iconMarkup = printf `<span class="desktop-workspace-nav-footer-icon desktop-workspace-nav-footer-icon-text">%s</span>` .iconText }}
+        {{ else }}
+          {{ $iconMarkup = printf `<span class="desktop-workspace-nav-footer-icon">%s</span>` (partial "icon" (dict "name" (.icon | default "file"))) }}
+        {{ end }}
+        {{ $linkText := printf `%s<span class="desktop-workspace-nav-footer-label">%s</span>` $iconMarkup .title }}
+        {{ partial "link.html" (dict
+          "ctx" $ctx
+          "href" .href
+          "text" $linkText
+          "safeHTML" true
+          "class" "desktop-workspace-nav-footer-link"
+          "target" .target
+          "rel" .rel
+          "linkSlot" "nav") }}
+      {{ end }}
+    </div>
+  </footer>
+{{ end }}

@@ -8,41 +8,54 @@
 {{ $ctx := .ctx }}
 {{ $mode := .mode }}
 {{ $items := .items }}
+{{ $pageHref := $ctx.RelPermalink }}
+{{ $nameLabel := i18n "list_col_name" }}
+{{ $dateLabel := i18n "list_col_date" }}
+{{ $countLabel := i18n "list_col_count" }}
+{{ $nameActive := or (eq $mode "byname") (eq $mode "bynameasc") }}
+{{ $dateActive := or (eq $mode "bydate") (eq $mode "bydateasc") }}
+{{ $countActive := or (eq $mode "bycount") (eq $mode "bycountasc") }}
+{{ $nameDirection := "none" }}
+{{ if eq $mode "bynameasc" }}{{ $nameDirection = "asc" }}{{ else if eq $mode "byname" }}{{ $nameDirection = "desc" }}{{ end }}
+{{ $dateDirection := "none" }}
+{{ if eq $mode "bydateasc" }}{{ $dateDirection = "asc" }}{{ else if eq $mode "bydate" }}{{ $dateDirection = "desc" }}{{ end }}
+{{ $countDirection := "none" }}
+{{ if eq $mode "bycountasc" }}{{ $countDirection = "asc" }}{{ else if eq $mode "bycount" }}{{ $countDirection = "desc" }}{{ end }}
 
 {{ $cfg := partial "grid-sort-config.html" (dict "variant" "udc" "mode" $mode) }}
-
-{{ $sf := index $cfg "sortField" }}
-{{ $so := index $cfg "sortOrder" }}
-{{ $nameSortText := cond (and (eq $sf "title") (eq $so "asc")) (i18n "list_sort_name_desc") (i18n "list_sort_name_asc") }}
-{{ $dateSortText := cond (and (eq $sf "latestKey") (eq $so "asc")) (i18n "list_sort_date_desc") (i18n "list_sort_date_asc") }}
-{{ $countSortText := cond (and (eq $sf "cnt") (eq $so "asc")) (i18n "list_sort_count_desc") (i18n "list_sort_count_asc") }}
-{{ with $ctx.OutputFormats.Get (index $cfg "nameFmt") }}
-  {{ partial "grid-sort-cell.html" (dict
-    "class" "cell-title"
-    "ctx" $ctx
-    "href" .RelPermalink
-    "title" $nameSortText
-    "label" $nameSortText
-    "text" (index $cfg "nameText")) }}
-{{ end }}
-{{ with $ctx.OutputFormats.Get (index $cfg "timeFmt") }}
-  {{ partial "grid-sort-cell.html" (dict
-    "class" "cell-date"
-    "ctx" $ctx
-    "href" .RelPermalink
-    "title" $dateSortText
-    "label" $dateSortText
-    "text" (index $cfg "timeText")) }}
-{{ end }}
-{{ with $ctx.OutputFormats.Get (index $cfg "countFmt") }}
-  {{ partial "grid-sort-cell.html" (dict
-    "class" "cell-count"
-    "ctx" $ctx
-    "href" .RelPermalink
-    "title" $countSortText
-    "label" $countSortText
-    "text" (index $cfg "countText")) }}
-{{ end }}
+{{ partial "grid-sort-cell.html" (dict
+  "class" "cell-title"
+  "ctx" $ctx
+  "href" (partial "sort-url.html" (dict "href" $pageHref "mode" (cond (eq $mode "bynameasc") "byname" "bynameasc")))
+  "title" $nameLabel
+  "label" $nameLabel
+  "text" $nameLabel
+  "field" "title"
+  "active" (cond $nameActive "true" "false")
+  "direction" $nameDirection
+  "linkSlot" "") }}
+{{ partial "grid-sort-cell.html" (dict
+  "class" "cell-date"
+  "ctx" $ctx
+  "href" (partial "sort-url.html" (dict "href" $pageHref "mode" (cond (eq $mode "bydateasc") "bydate" "bydateasc")))
+  "title" $dateLabel
+  "label" $dateLabel
+  "text" $dateLabel
+  "field" "date"
+  "active" (cond $dateActive "true" "false")
+  "direction" $dateDirection
+  "linkSlot" "") }}
+{{ partial "grid-sort-cell.html" (dict
+  "class" "cell-count"
+  "ctx" $ctx
+  "href" (partial "sort-url.html" (dict "href" $pageHref "mode" (cond (eq $mode "bycountasc") "bycount" "bycountasc")))
+  "title" $countLabel
+  "label" $countLabel
+  "text" $countLabel
+  "field" "count"
+  "active" (cond $countActive "true" "false")
+  "direction" $countDirection
+  "linkSlot" "") }}
 
 {{ $sortField := index $cfg "sortField" }}
 {{ $sortOrder := index $cfg "sortOrder" }}
@@ -62,15 +75,23 @@
 {{ range $ordered }}
   {{ $isCat := eq .kind "cat" }}
   {{ $icon := cond $isCat "folder" "file" }}
-  {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .url "title" (or .display .title) "icon" $icon "prefetchKind" (cond $isCat "desc" "post")) }}
-  <span class="cell-date">{{ cond (ne .latest "") .latest "." }}</span>
-  {{ if $isCat }}
-  <span class="cell-count"><span>{{ cond (ne .cnt "") .cnt "." }}</span><span class="unit"></span></span>
-  {{ else }}
-    {{ $bytes := .bytes }}
-    {{ $kb := div (add $bytes 1023) 1024 }}
-    <span class="cell-count"><span>{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>
-  {{ end }}
+  <div class="grid-list-row" data-sortable-row data-kind="{{ cond $isCat `cat` `page` }}" data-title="{{ .title }}" data-date-key="{{ .latestKey | default `00010101` }}" data-count="{{ cond $isCat .cnt (.bytes | default 0) }}">
+    {{ partial "grid-title-cell.html" (dict
+      "ctx" $ctx
+      "href" .url
+      "title" (or .display .title)
+      "icon" $icon
+      "prefetchKind" (cond $isCat "desc" "post")
+      "dataAttrs" (dict "workspace-kind" (cond $isCat "section" "page"))) }}
+    <span class="cell-date">{{ cond (ne .latest "") .latest "." }}</span>
+    {{ if $isCat }}
+    <span class="cell-count"><span>{{ cond (ne .cnt "") .cnt "." }}</span><span class="unit"></span></span>
+    {{ else }}
+      {{ $bytes := .bytes }}
+      {{ $kb := div (add $bytes 1023) 1024 }}
+      <span class="cell-count"><span>{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>
+    {{ end }}
+  </div>
 {{ end }}
 
 {{- $entries := slice -}}

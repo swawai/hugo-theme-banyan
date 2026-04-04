@@ -1,0 +1,49 @@
+{{ $ctx := .ctx }}
+{{ $title := .title }}
+{{ $entries := .entries }}
+{{ $selectedHref := .selectedHref }}
+{{ $key := .key }}
+{{ $currentSort := .currentSort | default "bydate" }}
+{{ $titleActive := or (eq $currentSort "byname") (eq $currentSort "bynameasc") }}
+{{ $dateActive := or (eq $currentSort "bydate") (eq $currentSort "bydateasc") }}
+{{ $countActive := or (eq $currentSort "bycount") (eq $currentSort "bycountasc") }}
+{{ $titleDirection := "none" }}
+{{ if eq $currentSort "bynameasc" }}{{ $titleDirection = "asc" }}{{ else if eq $currentSort "byname" }}{{ $titleDirection = "desc" }}{{ end }}
+{{ $dateDirection := "none" }}
+{{ if eq $currentSort "bydateasc" }}{{ $dateDirection = "asc" }}{{ else if eq $currentSort "bydate" }}{{ $dateDirection = "desc" }}{{ end }}
+{{ $countDirection := "none" }}
+{{ if eq $currentSort "bycountasc" }}{{ $countDirection = "asc" }}{{ else if eq $currentSort "bycount" }}{{ $countDirection = "desc" }}{{ end }}
+
+<section class="desktop-workspace-column desktop-workspace-column-full" data-col-key="{{ $key }}" data-col-variant="full" data-sortable="true" data-list-sort-root data-current-sort="{{ $currentSort }}" data-list-sort-mode="{{ $currentSort }}" data-list-sort-base-href="{{ $ctx.RelPermalink }}" data-list-sort-sync-url="true">
+  <header class="desktop-workspace-column-header">
+    <span class="desktop-workspace-column-title">{{ $title }}</span>
+    <div class="desktop-workspace-column-controls">
+      <button type="button" class="desktop-workspace-sort-btn" data-sort-field="title" data-sort-active="{{ cond $titleActive `true` `false` }}" data-sort-direction="{{ $titleDirection }}">{{ i18n "list_col_name" | default "Name" }}</button>
+      <button type="button" class="desktop-workspace-sort-btn" data-sort-field="date" data-sort-active="{{ cond $dateActive `true` `false` }}" data-sort-direction="{{ $dateDirection }}">{{ i18n "list_col_date" | default "Date" }}</button>
+      <button type="button" class="desktop-workspace-sort-btn" data-sort-field="count" data-sort-active="{{ cond $countActive `true` `false` }}" data-sort-direction="{{ $countDirection }}">{{ i18n "list_col_count" | default "Count" }}</button>
+    </div>
+  </header>
+  <div class="desktop-workspace-column-full-list" data-sortable-list>
+    {{ range $entries }}
+      {{ $selected := eq .href $selectedHref }}
+      {{ $rowClass := "desktop-workspace-row desktop-workspace-row-full" }}
+      {{ if $selected }}{{ $rowClass = printf "%s is-selected" $rowClass }}{{ end }}
+      <a
+        class="{{ $rowClass }}"
+        href="{{ .href }}"
+        data-sortable-row
+        data-kind="{{ .kind }}"
+        data-title="{{ .title }}"
+        data-date-key="{{ .dateKey }}"
+        data-count="{{ .cnt }}"
+        data-selected="{{ cond $selected `true` `false` }}">
+        <span class="desktop-workspace-row-main">
+          <span class="desktop-workspace-row-icon">{{ partial "icon" (dict "name" (.icon | default "file")) }}</span>
+          <span class="desktop-workspace-row-label">{{ .title }}</span>
+        </span>
+        <span class="desktop-workspace-row-date">{{ .dateText }}</span>
+        <span class="desktop-workspace-row-count"><span>{{ .countText }}</span><span class="unit">{{ .countUnit | safeHTML }}</span></span>
+      </a>
+    {{ end }}
+  </div>
+</section>
