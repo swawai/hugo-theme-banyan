@@ -11,9 +11,7 @@
   {{ $entries = $entries | append (dict
     "title" (printf "%s %s" (now.Format "2006") ((printf "%v" .) | htmlUnescape))
     "href" $homeHref
-    "iconText" "©"
-    "dateKey" "20260323030000"
-    "cnt" 3) }}
+    "iconText" "©") }}
 {{ end }}
 {{ with site.Params.icp }}
   {{ $icpValue := printf "%v" . }}
@@ -22,9 +20,7 @@
     "href" "https://beian.miit.gov.cn/"
     "iconText" (substr $icpValue 0 1)
     "target" "_blank"
-    "rel" "noopener noreferrer"
-    "dateKey" "20260323020000"
-    "cnt" 2) }}
+    "rel" "noopener noreferrer") }}
 {{ end }}
 {{ with site.Params.social.github }}
   {{ $entries = $entries | append (dict
@@ -32,15 +28,26 @@
     "href" .
     "icon" "github"
     "target" "_blank"
-    "rel" "noopener noreferrer"
-    "dateKey" "20260323010000"
-    "cnt" 1) }}
+    "rel" "noopener noreferrer") }}
 {{ end }}
 {{ $entries = $entries | append (dict
   "title" $aboutLabel
   "href" $aboutHref
-  "iconText" "i"
-  "dateKey" "00000000000000"
-  "cnt" 0
-  "isAbout" true) }}
-{{ return $entries }}
+  "iconText" "i") }}
+
+{{ if gt (len $entries) 0 }}
+  <footer class="home-footer-shortcuts" aria-label="Site footer shortcuts">
+    <div class="grid-list grid-list-meta">
+      {{ range $entries }}
+        {{ partial "grid-title-cell.html" (dict
+          "ctx" $ctx
+          "href" .href
+          "title" .title
+          "icon" (.icon | default "file")
+          "iconText" .iconText
+          "target" .target
+          "rel" .rel) }}
+      {{ end }}
+    </div>
+  </footer>
+{{ end }}

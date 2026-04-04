@@ -150,7 +150,7 @@
 </div>
 
 {{ if $ctx.IsHome }}
-  {{ partial "home-footer-grid.html" (dict "ctx" $ctx "mode" $mode) }}
+  {{ partial "home-footer-shortcuts.html" (dict "ctx" $ctx) }}
 {{ end }}
 
 {{- $entries := slice -}}
