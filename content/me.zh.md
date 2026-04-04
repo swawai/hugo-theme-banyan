@@ -3,10 +3,6 @@ draft: false
 title: "我"
 slug: "me"
 type: "me"
-page_css:
-  - page.css
-page_js:
-  - page.js
 build:
   list: "never"
 back_label: "返回上一页"

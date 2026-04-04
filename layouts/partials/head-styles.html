@@ -12,7 +12,6 @@
 {{ $gridResources := resources.Get "css/grid-resources.css" }}
 {{ $navBreadcrumb := resources.Get "css/nav-breadcrumb.css" }}
 {{ $navPrimary := resources.Get "css/nav-primary.css" }}
-{{ $pageListIntro := resources.Get "css/page-list-intro.css" }}
 {{ $siteHeader := resources.Get "css/site-header.css" }}
 {{ $swUpdateAnchor := resources.Get "css/sw-update-anchor.css" }}
 {{ $swModeRaw := $ctx.Site.Params.service_worker.mode | default "off" }}
@@ -46,10 +45,6 @@
 {{ if not $resolvedVariant }}
 {{ $resolvedVariant = index $flags "defaultVariant" }}
 {{ end }}
-{{ $needsIntroStyles := false }}
-{{ with $ctx.Content }}
-  {{ if index $flags "needsGrid" }}{{ $needsIntroStyles = true }}{{ end }}
-{{ end }}
 {{ if eq $resolvedVariant "home" }}
 <style>{{ $homeCritical.Content | safeCSS }}</style>
 <link rel="preload" href="{{ $homeAddon.RelPermalink }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
@@ -66,9 +61,4 @@
 <link rel="stylesheet" href="{{ $pageBundle.RelPermalink }}">
 {{ else }}
 <link rel="stylesheet" href="{{ $pageCrumbBundle.RelPermalink }}">
-{{ end }}
-{{ if $needsIntroStyles }}
-{{ partial "article-styles.html" (dict "ctx" $ctx) }}
-{{ $pageListIntro = partial "css-process.html" (dict "resource" $pageListIntro "fingerprint" true) }}
-<link rel="stylesheet" href="{{ $pageListIntro.RelPermalink }}">
 {{ end }}

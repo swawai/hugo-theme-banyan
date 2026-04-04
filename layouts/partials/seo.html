@@ -17,7 +17,6 @@
 {{- with $desc -}}<meta name="description" content="{{ . }}">{{ end }}
 
 {{- $pageUrl := .Permalink -}}
-{{- $seoTitle := default site.Title .Title -}}
 {{- $defaultSite := index (sort site.Sites "Language.Weight") 0 -}}
 {{- $defaultLang := $defaultSite.Language.Lang -}}
 {{- $xDefault := $pageUrl -}}
@@ -29,7 +28,7 @@
   {{- end -}}
 {{- end -}}
 
-<meta property="og:title" content="{{ $seoTitle }}">
+<meta property="og:title" content="{{ .Title }}">
 <meta property="og:description" content="{{ $desc }}">
 <meta property="og:type" content="{{ if .IsPage }}article{{ else }}website{{ end }}">
 <meta property="og:url" content="{{ $pageUrl }}">
@@ -43,7 +42,7 @@
 {{- end -}}
 {{- with $img -}}<meta property="og:image" content="{{ . }}">{{ end }}
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{{ $seoTitle }}">
+<meta name="twitter:title" content="{{ .Title }}">
 <meta name="twitter:description" content="{{ $desc }}">
 {{ with $img }}<meta name="twitter:image" content="{{ . }}">{{ end }}
 

@@ -5,8 +5,6 @@ title: "離線瀏覽"
 slug: "offline"
 type: "page"
 layout: "offline"
-page_inline_css:
-  - page.inline.css
 params:
   retry_label: "重試"
   home_label: "返回首頁"

@@ -1,9 +1,0 @@
-{{ $ctx := . }}
-{{ with .ctx }}{{ $ctx = . }}{{ end }}
-{{ with $ctx.Content }}
-<article class="article page-list-intro">
-    <div class="prose">
-        {{ . }}
-    </div>
-</article>
-{{ end }}
