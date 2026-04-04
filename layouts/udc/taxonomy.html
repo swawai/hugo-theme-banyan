@@ -1,7 +1,7 @@
 {{ define "breadcrumb" }}
-{{ partial "render-breadcrumb.html" . }}
+{{ partial "udc-breadcrumb.html" (dict "ctx" . "mode" "bydate") }}
 {{ end }}
 
 {{ define "main" }}
-{{ partial "render-main.html" . }}
+{{ partial "udc-taxonomy-common.html" (dict "ctx" . "mode" "bydate") }}
 {{ end }}

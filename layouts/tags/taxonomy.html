@@ -1,7 +1,7 @@
 {{ define "breadcrumb" }}
-{{ partial "render-breadcrumb.html" . }}
+{{ partial "tags-breadcrumb.html" (dict "ctx" . "mode" "bydate") }}
 {{ end }}
 
 {{ define "main" }}
-{{ partial "render-main.html" . }}
+{{ partial "tags-taxonomy-common.html" (dict "ctx" . "mode" "bydate") }}
 {{ end }}

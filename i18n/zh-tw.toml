@@ -75,9 +75,6 @@ other = "標籤"
 other = "學科索引"
 [home_shortcut_all_content]
 other = "全部內容"
-
-[home_brand_sections_title]
-other = "首頁分段"
 [label_theme]
 other = "主題"
 [theme_auto]

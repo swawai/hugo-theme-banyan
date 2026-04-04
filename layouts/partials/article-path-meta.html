@@ -1,10 +1,10 @@
 {{ $page := .ctx | default . }}
-<nav class="post-dir breadcrumb-nav" aria-label="Breadcrumb">{{ $rendered := false }}{{ range (where $page.Ancestors.Reverse "IsHome" "ne" true) }}{{ if $rendered }}<span class="sep">/</span>{{ end }}{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "text" .LinkTitle "textClass" "crumb-text" "linkSlot" "nav") }}{{ $rendered = true }}{{ end }}{{ if $rendered }}<span class="sep">/</span>{{ end }}{{ partial "link.html" (dict "ctx" $page "href" $page.RelPermalink "text" $page.Title "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}</nav>
+<nav class="post-dir breadcrumb-nav" aria-label="Breadcrumb">{{ $rendered := false }}{{ range (where $page.Ancestors.Reverse "IsHome" "ne" true) }}{{ if $rendered }}<span class="sep">/</span>{{ end }}{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "text" .LinkTitle "textClass" "crumb-text" "linkSlot" "nav") }}{{ $rendered = true }}{{ end }}{{ if $rendered }}<span class="sep">/</span>{{ end }}{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "text" .Title "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}</nav>
 
 {{ with $page.Params.udc }}
 <nav class="post-udc" aria-label="UDC">
   {{ $udcLabel := (i18n "menu_udc") | default "UDC" }}
-<span class="label">{{ partial "link.html" (dict "ctx" $page "href" ("/udc/" | relLangURL) "title" "Universal Decimal Classification" "text" $udcLabel "linkSlot" "nav") }}</span>
+<span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "udc") 0) }}{{ partial "link.html" (dict "ctx" $page "href" (.URL | relLangURL) "title" "Universal Decimal Classification" "text" (i18n (printf "menu_%s" .Identifier) | default .Name) "linkSlot" "nav") }}{{ else }}{{ $udcLabel }}{{ end }}</span>
   {{ $terms := . }}
   {{ if not (reflect.IsSlice $terms) }}{{ $terms = slice $terms }}{{ end }}
   {{ $deepest := dict }}
@@ -26,7 +26,7 @@
 
 {{ with $page.Params.tags }}
 <nav class="post-tags" aria-label="Tags">
-<span class="label">{{ partial "link.html" (dict "ctx" $page "href" ("/tags/" | relLangURL) "text" ((i18n "menu_tags") | default "TAGS") "linkSlot" "nav") }}</span>
+<span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "tags") 0) }}{{ partial "link.html" (dict "ctx" $page "href" (.URL | relLangURL) "text" (i18n (printf "menu_%s" .Identifier) | default .Name) "linkSlot" "nav") }}{{ else }}{{ (i18n "menu_tags") | default "TAGS" }}{{ end }}</span>
   {{ $terms := . }}
   {{ if not (reflect.IsSlice $terms) }}{{ $terms = slice $terms }}{{ end }}
   {{ $deepest := dict }}

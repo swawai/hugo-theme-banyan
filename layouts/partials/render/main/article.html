@@ -1,9 +1,0 @@
-{{ $ctx := .ctx }}
-<article class="article">
-    {{ partial "article-time-meta.html" (dict "ctx" $ctx) }}
-    <div class="prose">
-{{ $ctx.Content }}
-    </div>
-</article>
-{{ partial "schema-article.html" $ctx }}
-{{ partial "schema-breadcrumbs.html" $ctx }}

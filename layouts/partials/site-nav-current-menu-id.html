@@ -3,10 +3,6 @@
 
 {{ if and $ctx.IsPage $ctx.Params.nav_menu_id }}
   {{ $currentId = lower (printf "%v" $ctx.Params.nav_menu_id) }}
-{{ else if and $ctx.IsPage $ctx.Params.nav_parent_id }}
-  {{ $currentId = lower (printf "%v" $ctx.Params.nav_parent_id) }}
-{{ else if and $ctx.IsPage $ctx.Params.nav_id }}
-  {{ $currentId = lower (printf "%v" $ctx.Params.nav_id) }}
 {{ else if and $ctx.IsPage (or (eq $ctx.Section "products") (eq $ctx.Type "products")) }}
   {{ $currentId = "products" }}
 {{ else if and $ctx.IsPage (or (eq $ctx.Section "signals") (eq $ctx.Type "signals")) }}

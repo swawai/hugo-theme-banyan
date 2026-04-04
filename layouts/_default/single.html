@@ -1,11 +1,26 @@
+{{ define "styles" }}
+{{ partial "head-styles.html" (dict "ctx" . "variant" "page-crumb") }}
+{{ end }}
+
 {{ define "head-extra" }}
-{{ partial "render-head-extra.html" . }}
+{{ partial "article-styles.html" (dict "ctx" . "with_meta" true) }}
 {{ end }}
 
 
 {{ define "breadcrumb" }}
-{{ partial "render-breadcrumb.html" . }}
+{{ partial "article-path-meta.html" (dict "ctx" .) }}
 {{ end }}
 {{ define "main" }}
-{{ partial "render-main.html" . }}
+    <article class="article">
+        {{/*  <h1>{{ .Title }}</h1>  */}}
+        {{/* 发布与更新：合并为一行，仅在 Lastmod 不同于 Date 时追加 Updated */}}
+        {{ partial "article-time-meta.html" (dict "ctx" .) }}
+        <div class="prose">
+    {{ .Content }}
+        </div>
+
+
+    </article>
+    {{ partial "schema-article.html" . }}
+    {{ partial "schema-breadcrumbs.html" . }}
 {{ end }}

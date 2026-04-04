@@ -1,6 +1,0 @@
-{{ $ctx := . }}
-{{ if reflect.IsMap . }}{{ with .ctx }}{{ $ctx = . }}{{ end }}{{ end }}
-{{ $contract := partial "page-render-contract.html" (dict "ctx" $ctx) }}
-{{ if eq (index $contract "main") "article" }}
-  {{ partial "article-styles.html" (dict "ctx" $ctx "with_meta" true) }}
-{{ end }}

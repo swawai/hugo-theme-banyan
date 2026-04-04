@@ -1,3 +1,4 @@
 {{ define "main" }}
-{{ partial "render-main.html" . }}
+
+{{ partial "list-all-common.html" (dict "ctx" . "mode" "allbydate") }}
 {{ end }}
