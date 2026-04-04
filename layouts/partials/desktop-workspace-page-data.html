@@ -6,12 +6,12 @@
 {{ $isDesktopOutput := eq $currentOutputName "desktop" }}
 {{ $isDirSection := and (eq $ctx.Kind "section") (eq $ctx.Section "d") }}
 {{ $isDirPage := and $ctx.IsPage (eq $ctx.Section "d") }}
-{{ $isProductsPage := and $ctx.IsPage (or (eq $ctx.Section "products") (eq $ctx.Type "products")) }}
+{{ $isResourcesSection := and (eq $ctx.Kind "section") (eq $ctx.Section "resources") }}
 {{ $isTagsTaxonomy := and (eq $ctx.Kind "taxonomy") (eq $ctx.Data.Plural "tags") }}
 {{ $isTagsTerm := and (eq $ctx.Kind "term") (eq $ctx.Data.Plural "tags") }}
 {{ $isUdcTaxonomy := and (eq $ctx.Kind "taxonomy") (eq $ctx.Data.Plural "udc") }}
 {{ $isUdcTerm := and (eq $ctx.Kind "term") (eq $ctx.Data.Plural "udc") }}
-{{ $enabled := and (not $isDesktopOutput) (or $ctx.IsHome $isDirSection $isDirPage $isProductsPage $isTagsTaxonomy $isTagsTerm $isUdcTaxonomy $isUdcTerm) }}
+{{ $enabled := and (not $isDesktopOutput) (or $ctx.IsHome $isDirSection $isDirPage $isResourcesSection $isTagsTaxonomy $isTagsTerm $isUdcTaxonomy $isUdcTerm) }}
 
 {{ $desktopUrl := "" }}
 {{ if $enabled }}
@@ -27,7 +27,7 @@
 
 {{ $pageKind := "" }}
 {{ if $enabled }}
-  {{ if or $ctx.IsHome $isDirSection $isProductsPage $isTagsTaxonomy $isTagsTerm $isUdcTaxonomy $isUdcTerm }}
+  {{ if or $ctx.IsHome $isDirSection $isResourcesSection $isTagsTaxonomy $isTagsTerm $isUdcTaxonomy $isUdcTerm }}
     {{ $pageKind = "branch" }}
   {{ else if $isDirPage }}
     {{ $pageKind = "leaf" }}
@@ -38,6 +38,8 @@
 {{ if $enabled }}
   {{ if or $ctx.IsHome $isDirSection $isDirPage }}
     {{ $axis = "dir" }}
+  {{ else if $isResourcesSection }}
+    {{ $axis = "resources" }}
   {{ else if or $isTagsTaxonomy $isTagsTerm }}
     {{ $axis = "tags" }}
   {{ else if or $isUdcTaxonomy $isUdcTerm }}
@@ -46,7 +48,7 @@
 {{ end }}
 
 {{ $currentSort := "bydate" }}
-{{ if $isProductsPage }}{{ $currentSort = "productsbynameasc" }}{{ end }}
+{{ if $isResourcesSection }}{{ $currentSort = "resourcesbynameasc" }}{{ end }}
 
 {{ return dict
   "enabled" $enabled

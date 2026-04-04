@@ -39,21 +39,21 @@ const SORT_VARIANT_CONFIG = {
             allbypath: { field: 'path', order: 'desc' }
         }
     },
-    products: {
-        defaultMode: 'productsbynameasc',
+    resources: {
+        defaultMode: 'resourcesbynameasc',
         groupRows: false,
         fieldModes: {
-            title: ['productsbyname', 'productsbynameasc'],
-            price: ['productsbyprice', 'productsbypriceasc'],
-            value: ['productsbyvalue', 'productsbyvalueasc']
+            title: ['resourcesbyname', 'resourcesbynameasc'],
+            price: ['resourcesbyprice', 'resourcesbypriceasc'],
+            value: ['resourcesbyvalue', 'resourcesbyvalueasc']
         },
         modes: {
-            productsbynameasc: { field: 'title', order: 'asc' },
-            productsbyname: { field: 'title', order: 'desc' },
-            productsbypriceasc: { field: 'price', order: 'asc' },
-            productsbyprice: { field: 'price', order: 'desc' },
-            productsbyvalueasc: { field: 'value', order: 'asc' },
-            productsbyvalue: { field: 'value', order: 'desc' }
+            resourcesbynameasc: { field: 'title', order: 'asc' },
+            resourcesbyname: { field: 'title', order: 'desc' },
+            resourcesbypriceasc: { field: 'price', order: 'asc' },
+            resourcesbyprice: { field: 'price', order: 'desc' },
+            resourcesbyvalueasc: { field: 'value', order: 'asc' },
+            resourcesbyvalue: { field: 'value', order: 'desc' }
         }
     }
 };

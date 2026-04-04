@@ -1,9 +1,7 @@
 [menu_home]
 other = "首页"
-[menu_products]
-other = "产品"
-[menu_signals]
-other = "动态"
+[menu_resources]
+other = "资源"
 [menu_about]
 other = "关于"
 [menu_tags]
@@ -44,27 +42,27 @@ other = "按路径升序排序"
 [list_sort_path_desc]
 other = "按路径降序排序"
 
-[products_col_name]
+[resources_col_name]
 other = "名称"
-[products_col_price]
+[resources_col_price]
 other = "价格"
-[products_col_value]
+[resources_col_value]
 other = "价值点"
-[products_free]
+[resources_free]
 other = "免费"
-[products_empty]
-other = "还没有产品。"
-[products_sort_name_asc]
+[resources_empty]
+other = "还没有资源。"
+[resources_sort_name_asc]
 other = "按名称升序排序"
-[products_sort_name_desc]
+[resources_sort_name_desc]
 other = "按名称降序排序"
-[products_sort_price_asc]
+[resources_sort_price_asc]
 other = "按价格升序排序"
-[products_sort_price_desc]
+[resources_sort_price_desc]
 other = "按价格降序排序"
-[products_sort_value_asc]
+[resources_sort_value_asc]
 other = "按价值点升序排序"
-[products_sort_value_desc]
+[resources_sort_value_desc]
 other = "按价值点降序排序"
 
 [home_shortcut_directory]

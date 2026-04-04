@@ -1,9 +1,7 @@
 [menu_home]
 other = "Home"
-[menu_products]
-other = "Products"
-[menu_signals]
-other = "Signals"
+[menu_resources]
+other = "Resources"
 [menu_about]
 other = "About"
 [menu_tags]
@@ -44,27 +42,27 @@ other = "Sort by path ascending"
 [list_sort_path_desc]
 other = "Sort by path descending"
 
-[products_col_name]
+[resources_col_name]
 other = "Name"
-[products_col_price]
+[resources_col_price]
 other = "Price"
-[products_col_value]
+[resources_col_value]
 other = "Value"
-[products_free]
+[resources_free]
 other = "Free"
-[products_empty]
-other = "No products yet."
-[products_sort_name_asc]
+[resources_empty]
+other = "No resources yet."
+[resources_sort_name_asc]
 other = "Sort by name ascending"
-[products_sort_name_desc]
+[resources_sort_name_desc]
 other = "Sort by name descending"
-[products_sort_price_asc]
+[resources_sort_price_asc]
 other = "Sort by price ascending"
-[products_sort_price_desc]
+[resources_sort_price_desc]
 other = "Sort by price descending"
-[products_sort_value_asc]
+[resources_sort_value_asc]
 other = "Sort by value ascending"
-[products_sort_value_desc]
+[resources_sort_value_desc]
 other = "Sort by value descending"
 
 [home_shortcut_directory]
