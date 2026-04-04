@@ -15,8 +15,6 @@
       {{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" $ctx.Title "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}{{ end }}{{ end }}
 </nav>
 
-{{ partial "page-list-intro.html" (dict "ctx" $ctx) }}
-
 <div class="grid-list grid-all">
   {{ $cfg := partial "grid-sort-config.html" (dict "variant" "all" "mode" $mode) }}
 

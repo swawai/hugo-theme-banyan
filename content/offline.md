@@ -5,8 +5,6 @@ title: "Offline"
 slug: "offline"
 type: "page"
 layout: "offline"
-page_inline_css:
-  - page.inline.css
 params:
   retry_label: "Try again"
   home_label: "Go to home"
