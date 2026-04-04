@@ -17,29 +17,29 @@
   {{ end }}
 {{ end }}
 
-{{ $resourceCandidates := slice }}
+{{ $productCandidates := slice }}
 {{ range $sitesByWeight }}
   {{ $site := . }}
   {{ $siteLang := $site.Language.Lang }}
   {{ $siteLangRank := index $langRank $siteLang }}
-  {{ range where $site.RegularPages "Params.resource" true }}
-    {{ if not (isset .Params "resource_price") }}
-      {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 resource=true，但缺少 resource_price。" .File.Path .Title }}
+  {{ range where $site.RegularPages "Params.product" true }}
+    {{ if not (isset .Params "product_price") }}
+      {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 product=true，但缺少 product_price。" .File.Path .Title }}
     {{ end }}
-    {{ $valueRaw := index .Params "resource_value" | default "" }}
+    {{ $valueRaw := index .Params "product_value" | default "" }}
     {{ $valueText := printf "%v" $valueRaw }}
     {{ if eq $valueText "" }}
-      {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 resource=true，但缺少 resource_value。" .File.Path .Title }}
+      {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 product=true，但缺少 product_value。" .File.Path .Title }}
     {{ end }}
     {{ $familyKey := printf "%v" .TranslationKey }}
     {{ if eq $familyKey "" }}{{ $familyKey = .File.Path }}{{ end }}
     {{ $dateValue := .Lastmod }}
     {{ if eq ($dateValue.Format "2006") "0001" }}{{ $dateValue = .Date }}{{ end }}
-    {{ $resourceCandidates = $resourceCandidates | append (dict
+    {{ $productCandidates = $productCandidates | append (dict
       "familyKey" $familyKey
       "langRank" $siteLangRank
       "page" .
-      "priceRaw" (index .Params "resource_price")
+      "priceRaw" (index .Params "product_price")
       "valueText" $valueText
       "dateKey" ($dateValue.Format "20060102150405")
       "dateText" ($dateValue.Format "2006-01-02")) }}
@@ -48,7 +48,7 @@
 
 {{ $selectedCandidates := slice }}
 {{ $selectedFamilies := dict }}
-{{ range sort $resourceCandidates "langRank" "asc" }}
+{{ range sort $productCandidates "langRank" "asc" }}
   {{ $familyKey := .familyKey }}
   {{ if not (isset $selectedFamilies $familyKey) }}
     {{ $selectedFamilies = merge $selectedFamilies (dict $familyKey true) }}
@@ -63,7 +63,7 @@
   {{ $page := .page }}
   {{ $priceRaw := .priceRaw }}
   {{ $priceText := printf "%v" $priceRaw }}
-  {{ if eq $priceRaw 0 }}{{ $priceText = i18n "resources_free" }}{{ end }}
+  {{ if eq $priceRaw 0 }}{{ $priceText = i18n "products_free" }}{{ end }}
   {{ if gt .dateKey $latestKey }}
     {{ $latestKey = .dateKey }}
     {{ $latestText = .dateText }}

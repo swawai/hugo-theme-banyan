@@ -1,16 +1,25 @@
 {{ $ctx := .ctx }}
 {{ $entries := slice }}
-{{ $aboutHref := $ctx.Site.Home.RelPermalink }}
+{{ $aboutHref := "/about/" | relLangURL }}
+{{ $aboutTitle := i18n "menu_about" | default "About" }}
 {{ range $ctx.Site.Menus.main }}
   {{ if eq .Identifier "about" }}
     {{ $aboutHref = .URL | relLangURL }}
+    {{ $aboutTitle = i18n "menu_about" | default .Name }}
   {{ end }}
 {{ end }}
+
+{{ $entries = $entries | append (dict
+  "title" $aboutTitle
+  "href" $aboutHref
+  "icon" "file"
+  "dateKey" "20260323040000"
+  "cnt" 4) }}
 
 {{ with site.Params.copyright }}
   {{ $entries = $entries | append (dict
     "title" (printf "%s %s" (now.Format "2006") ((printf "%v" .) | htmlUnescape))
-    "href" $aboutHref
+    "href" $ctx.Site.Home.RelPermalink
     "iconText" "©"
     "dateKey" "20260323030000"
     "cnt" 3) }}

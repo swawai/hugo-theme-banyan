@@ -1,0 +1,12 @@
+{{ $ctx := .ctx }}
+{{ $items := partial "site-nav-primary-items.html" (dict "ctx" $ctx) }}
+{{ $currentId := partial "site-nav-current-menu-id.html" (dict "ctx" $ctx) }}
+{{ $entries := slice }}
+
+{{ range $items }}
+  {{ if eq .id $currentId }}
+    {{ $entries = .children }}
+  {{ end }}
+{{ end }}
+
+{{ return $entries }}

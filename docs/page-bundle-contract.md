@@ -53,7 +53,7 @@ page_js:
 ## Headless Fragments
 
 - Use headless bundles for reusable content blocks, not for site shell or dynamic navigation.
-- A minimal fragment bundle can live under `content/fragments/...` with:
+- A minimal fragment bundle can live under `themes/banyan/content/fragments/...` with:
 
 ```yaml
 build:
@@ -73,12 +73,12 @@ build:
 
 ## Current Trial Pages
 
-- `content/prefetch-debug/index.md`
-- `content/me/index.md`
-- `content/offline/index.md`
-- site root `content/about/index.md`
+- `themes/banyan/content/prefetch-debug/index.md`
+- `themes/banyan/content/me/index.md`
+- `themes/banyan/content/offline/index.md`
+- `themes/banyan/content/about/index.md`
 - site root `content/_index.md`
-- site root `content/resources/_index.md`
+- `themes/banyan/content/products/index.md`
 
 ## Next Candidates
 
