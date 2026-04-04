@@ -4,12 +4,12 @@ draft: false
 title: "關於"
 slug: "about"
 type: "page"
-layout: "article"
+layout: "system-info"
 build:
   list: "never"
 ---
 
-## 關於 Banyan 主題
+# 關於 Banyan 主題
 
 Banyan 是一個類似資源管理器的極簡 Hugo 主題，專為清晰的組織和分類管理（如 UDC、多級標籤）而設計。
 

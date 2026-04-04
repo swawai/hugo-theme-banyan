@@ -4,12 +4,12 @@ draft: false
 title: "About"
 slug: "about"
 type: "page"
-layout: "article"
+layout: "system-info"
 build:
   list: "never"
 ---
 
-## About Banyan Theme
+# About Banyan Theme
 
 Banyan is a minimalist, Explorer-like Hugo theme designed for clear organization and taxonomy management (e.g., UDC, multilevel tags).
 

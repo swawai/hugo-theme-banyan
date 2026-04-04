@@ -39,12 +39,12 @@ html {
     scrollbar-gutter: stable;
     overscroll-behavior-x: none;
     overscroll-behavior-y: auto;
+    font-size: 15px;
 }
 
 body {
     margin: 0;
     padding: var(--page-edge-block-start) var(--page-edge-inline) 0;
-    font-size: 15px;
     -webkit-text-size-adjust: 100% !important;
     text-size-adjust: 100% !important;
     overscroll-behavior-x: none;
