@@ -1,4 +1,4 @@
 {{ partial "desktop-workspace-fragment.html" (dict
   "ctx" .
-  "mode" "bydate"
+  "mode" (partial "dir-sort-mode.html" (dict "ctx" .))
   "pageKind" "branch") }}

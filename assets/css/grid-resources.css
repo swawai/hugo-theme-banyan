@@ -2,23 +2,19 @@
     grid-template-columns: 13rem minmax(4.5rem, max-content) minmax(18rem, max-content);
 }
 
-.grid-resources > :is(.cell-title, .cell-price, .cell-value),
-.grid-list-row > :is(.cell-title, .cell-price, .cell-value) {
+.grid-resources > :is(.cell-title, .cell-price, .cell-value) {
     pointer-events: none;
 }
 
-.grid-resources > :is(.cell-title, .cell-price, .cell-value) a,
-.grid-list-row > :is(.cell-title, .cell-price, .cell-value) a {
+.grid-resources > :is(.cell-title, .cell-price, .cell-value) a {
     pointer-events: auto;
 }
 
-.grid-resources > :is(.cell-price, .cell-value),
-.grid-list-row > :is(.cell-price, .cell-value) {
+.grid-resources > :is(.cell-price, .cell-value) {
     color: var(--link-visited);
 }
 
-.grid-resources > .cell-price,
-.grid-list-row > .cell-price {
+.grid-resources > .cell-price {
     justify-self: end;
     text-align: right;
 }
