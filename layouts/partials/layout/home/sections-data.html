@@ -1,0 +1,6 @@
+{{ $ctx := .ctx | default . }}
+{{ $homeEntry := partial "site-nav-entry-by-id.html" (dict "ctx" $ctx "id" "home") }}
+{{ $sections := slice }}
+{{ with index $homeEntry "children" }}{{ $sections = . }}{{ end }}
+
+{{ return $sections }}
