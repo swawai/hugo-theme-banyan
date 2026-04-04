@@ -2,6 +2,10 @@
 {{ partial "head-styles.html" (dict "ctx" . "variant" "list") }}
 {{ end }}
 
+{{ define "head-extra" }}
+{{ partial "head-sort-script.html" . }}
+{{ end }}
+
 {{ define "breadcrumb" }}
 {{ partial "tags-breadcrumb.html" (dict "ctx" .) }}
 {{ end }}

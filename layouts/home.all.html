@@ -2,6 +2,10 @@
 {{ partial "head-styles.html" (dict "ctx" . "variant" "all") }}
 {{ end }}
 
+{{ define "head-extra" }}
+{{ partial "head-sort-script.html" . }}
+{{ end }}
+
 {{ define "main" }}
 {{ partial "list-all-common.html" (dict "ctx" .) }}
 {{ end }}

@@ -2,6 +2,10 @@
 {{ partial "head-styles.html" (dict "ctx" . "variant" "home") }}
 {{ end }}
 
+{{ define "head-extra" }}
+{{ partial "head-sort-script.html" . }}
+{{ end }}
+
 {{ define "main" }}
 {{ partial "list-dir-common.html" (dict "ctx" .) }}
 {{ end }}
