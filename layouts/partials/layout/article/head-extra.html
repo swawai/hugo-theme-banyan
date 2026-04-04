@@ -1,0 +1,7 @@
+{{ partial "article-styles.html" (dict "ctx" . "with_meta" true) }}
+{{ if eq (lower (printf "%v" (.Params.nav_parent_id | default ""))) "home" }}
+  {{ $layoutCss := resources.Get "css/layout/article-home-sections.css" }}
+  {{ if not $layoutCss }}{{ errorf "编译失败: 缺少资源 %q。" "css/layout/article-home-sections.css" }}{{ end }}
+  {{ $layoutCss = partial "css-process.html" (dict "resource" $layoutCss "fingerprint" true) }}
+  <link rel="stylesheet" href="{{ $layoutCss.RelPermalink }}">
+{{ end }}

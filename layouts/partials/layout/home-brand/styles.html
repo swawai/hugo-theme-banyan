@@ -1,0 +1,5 @@
+{{ partial "head-styles.html" (dict "ctx" . "variant" "home") }}
+{{ $layoutCss := resources.Get "css/layout/home-brand.css" }}
+{{ if not $layoutCss }}{{ errorf "编译失败: 缺少资源 %q。" "css/layout/home-brand.css" }}{{ end }}
+{{ $layoutCss = partial "css-process.html" (dict "resource" $layoutCss "fingerprint" true) }}
+<link rel="stylesheet" href="{{ $layoutCss.RelPermalink }}">

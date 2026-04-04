@@ -1,0 +1,5 @@
+{{ if eq (lower (printf "%v" (.Params.nav_parent_id | default ""))) "home" }}
+  {{ partial "render/breadcrumb/home-sections.html" (dict "ctx" .) }}
+{{ else }}
+  {{ partial "article-path-meta.html" (dict "ctx" .) }}
+{{ end }}

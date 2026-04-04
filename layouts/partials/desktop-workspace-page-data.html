@@ -4,8 +4,25 @@
 {{ $outputFlags := partial "page-output-flags.html" (dict "ctx" $ctx) }}
 {{ $currentOutputName := printf "%v" (index $outputFlags "currentOutputName" | default "") }}
 {{ $isDesktopOutput := eq $currentOutputName "desktop" }}
-{{ $contract := partial "page-render-contract.html" (dict "ctx" $ctx) }}
-{{ $workspaceProfile := lower (printf "%v" (index $contract "workspace" | default "none")) }}
+{{ $layoutName := lower (printf "%v" ($ctx.Layout | default "")) }}
+{{ $navId := lower (printf "%v" ($ctx.Params.nav_id | default "")) }}
+{{ $navParentId := lower (printf "%v" ($ctx.Params.nav_parent_id | default "")) }}
+{{ $workspaceProfile := "none" }}
+{{ if or $ctx.IsHome (eq $layoutName "home-brand") (eq $navId "home") (eq $navParentId "home") }}
+  {{ $workspaceProfile = "dir" }}
+{{ else if or (eq $layoutName "catalog") (and $ctx.IsPage (or (eq $ctx.Section "products") (eq $ctx.Type "products"))) }}
+  {{ $workspaceProfile = "products" }}
+{{ else if and (eq $ctx.Kind "taxonomy") (eq $ctx.Data.Plural "tags") }}
+  {{ $workspaceProfile = "tags" }}
+{{ else if and (eq $ctx.Kind "term") (eq $ctx.Data.Plural "tags") }}
+  {{ $workspaceProfile = "tags" }}
+{{ else if and (eq $ctx.Kind "taxonomy") (eq $ctx.Data.Plural "udc") }}
+  {{ $workspaceProfile = "udc" }}
+{{ else if and (eq $ctx.Kind "term") (eq $ctx.Data.Plural "udc") }}
+  {{ $workspaceProfile = "udc" }}
+{{ else if or (eq $ctx.Kind "section") (eq $ctx.Section "d") }}
+  {{ $workspaceProfile = "dir" }}
+{{ end }}
 {{ $allowedProfiles := slice "none" "dir" "products" "tags" "udc" }}
 {{ if not (in $allowedProfiles $workspaceProfile) }}
   {{ errorf "编译失败: 页面 %q 配置了不支持的 render_workspace=%q。" $ctx.RelPermalink $workspaceProfile }}
