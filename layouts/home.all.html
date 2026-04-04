@@ -1,0 +1,7 @@
+{{ define "styles" }}
+{{ partial "head-styles.html" (dict "ctx" . "variant" "all") }}
+{{ end }}
+
+{{ define "main" }}
+{{ partial "list-all-common.html" (dict "ctx" .) }}
+{{ end }}

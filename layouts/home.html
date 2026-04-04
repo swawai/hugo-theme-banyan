@@ -1,0 +1,7 @@
+{{ define "styles" }}
+{{ partial "head-styles.html" (dict "ctx" . "variant" "home") }}
+{{ end }}
+
+{{ define "main" }}
+{{ partial "list-dir-common.html" (dict "ctx" .) }}
+{{ end }}

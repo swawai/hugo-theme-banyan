@@ -163,91 +163,26 @@ unsafe = true
 disableXML = true
 
 [outputFormats]
-[outputFormats.byname]
+[outputFormats.all]
 mediaType = "text/html"
 isHTML    = true
 baseName  = "index"
-path      = "by-name"
-[outputFormats.bynameasc]
-mediaType = "text/html"
-isHTML    = true
-baseName  = "index"
-path      = "by-name-asc"
-[outputFormats.bydate]
-mediaType = "text/html"
-isHTML    = true
-baseName  = "index"
-#path      = "by-date"
-[outputFormats.bydateasc]
-mediaType = "text/html"
-isHTML    = true
-baseName  = "index"
-path      = "by-date-asc"
-[outputFormats.bycount]
-mediaType = "text/html"
-isHTML    = true
-baseName  = "index"
-path      = "by-count"
-[outputFormats.bycountasc]
-mediaType = "text/html"
-isHTML    = true
-baseName  = "index"
-path      = "by-count-asc"
-[outputFormats.allbydate]
-mediaType = "text/html"
-isHTML    = true
-baseName  = "index"
-path      = "all-by-date"
-[outputFormats.allbydateasc]
-mediaType = "text/html"
-isHTML    = true
-baseName  = "index"
-path      = "all-by-date-asc"
-[outputFormats.allbypath]
-mediaType = "text/html"
-isHTML    = true
-baseName  = "index"
-path      = "all-by-path"
-[outputFormats.allbypathasc]
-mediaType = "text/html"
-isHTML    = true
-baseName  = "index"
-path      = "all-by-path-asc"
-[outputFormats.allbyname]
-mediaType = "text/html"
-isHTML    = true
-baseName  = "index"
-path      = "all-by-name"
-[outputFormats.allbynameasc]
-mediaType = "text/html"
-isHTML    = true
-baseName  = "index"
-path      = "all-by-name-asc"
-[outputFormats.allbysize]
-mediaType = "text/html"
-isHTML    = true
-baseName  = "index"
-path      = "all-by-size"
-[outputFormats.allbysizeasc]
-mediaType = "text/html"
-isHTML    = true
-baseName  = "index"
-path      = "all-by-size-asc"
+path      = "all"
 [outputs]
-section  = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
-home     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
-taxonomy = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
-term     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
+section  = ["HTML","all","RSS"]
+home     = ["HTML","all","RSS"]
+taxonomy = ["HTML","RSS"]
+term     = ["HTML","RSS"]
 
 [languages]
 [languages.en]
 languageName = "English"
 weight = 1
 [languages.en.outputs]
-section  = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
-home     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","allbyname","allbynameasc","allbydate","allbydateasc","allbypath","allbypathasc","allbysize","allbysizeasc","rss"]
-taxonomy = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
-term     = ["byname","bynameasc","bydate","bydateasc","bycount","bycountasc","rss"]
+section  = ["HTML","all","RSS"]
+home     = ["HTML","all","RSS"]
+taxonomy = ["HTML","RSS"]
+term     = ["HTML","RSS"]
 [languages.en.params]
 description = "Your English site description here."
 locale = "en_US"

@@ -1,0 +1,11 @@
+{{ define "styles" }}
+{{ partial "head-styles.html" (dict "ctx" . "variant" "list") }}
+{{ end }}
+
+{{ define "breadcrumb" }}
+{{ partial "udc-breadcrumb.html" (dict "ctx" .) }}
+{{ end }}
+
+{{ define "main" }}
+{{ partial "udc-taxonomy-common.html" (dict "ctx" .) }}
+{{ end }}

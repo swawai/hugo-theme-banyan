@@ -1,0 +1,10 @@
+{{- $ctx := .ctx -}}
+{{- $sort := printf "%v" (.sort | default "") -}}
+{{- $href := printf "%v" (.baseHref | default $ctx.RelPermalink) -}}
+{{- if ne $sort "" -}}
+  {{- $href = printf "%s?sort=%s" $href $sort -}}
+{{- end -}}
+{{- with .fragment -}}
+  {{- $href = printf "%s#%s" $href . -}}
+{{- end -}}
+{{- return $href -}}

@@ -1,11 +1,30 @@
 {{ $class := .class }}
-{{ $href := .href }}
-{{ $title := .title }}
-{{ $label := .label }}
-{{ $text := .text }}
 {{ $ctx := .ctx }}
-{{ with $href }}
+{{ $field := printf "%v" (.field | default "") }}
+{{ $label := printf "%v" (.label | default "") }}
+{{ $defaultOrder := lower (printf "%v" (.defaultOrder | default "asc")) }}
+{{ $currentField := printf "%v" (.currentField | default "") }}
+{{ $currentOrder := lower (printf "%v" (.currentOrder | default $defaultOrder)) }}
+{{ $titleAsc := printf "%v" (.titleAsc | default "") }}
+{{ $titleDesc := printf "%v" (.titleDesc | default "") }}
+{{ $isActive := eq $field $currentField }}
+{{ $nextOrder := $defaultOrder }}
+{{ if $isActive }}{{ $nextOrder = cond (eq $currentOrder "asc") "desc" "asc" }}{{ end }}
+{{ $indicator := "↨" }}
+{{ if $isActive }}{{ $indicator = cond (eq $currentOrder "asc") "↑" "↓" }}{{ end }}
+{{ $actionLabel := cond (eq $nextOrder "asc") $titleAsc $titleDesc }}
+{{ $href := partial "sort-query-url.html" (dict "ctx" $ctx "baseHref" .baseHref "sort" (printf "%s-%s" $field $nextOrder) "fragment" .fragment) }}
 <span class="{{ $class }} header">
-  {{ partial "link.html" (dict "ctx" $ctx "href" . "label" $label "text" $text "safeHTML" true "linkSlot" "sort") }}
+  <a
+    href="{{ $href }}"
+    title="{{ $actionLabel }}"
+    aria-label="{{ $actionLabel }}"
+    data-sort-control="true"
+    data-sort-field="{{ $field }}"
+    data-sort-default-order="{{ $defaultOrder }}"
+    data-sort-title-asc="{{ $titleAsc }}"
+    data-sort-title-desc="{{ $titleDesc }}"
+    data-sort-active="{{ cond $isActive "true" "false" }}">
+    <span class="sort-label">{{ $label }}</span>&nbsp;<span class="sort-indicator" aria-hidden="true">{{ $indicator }}</span>
+  </a>
 </span>
-{{ end }}

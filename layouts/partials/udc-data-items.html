@@ -1,7 +1,6 @@
 {{/* 统一生成 items：kind=term/root；依赖 udc-data-pages-dedup-latest 与 udc-url */}}
 {{ $kind := .kind }}
 {{ $ctx := .ctx }}
-{{ $mode := (.mode | default "byname") }}
 {{ $dateFmt := "2006-01-02" }}
 {{ $items := slice }}
 {{ if eq $kind "term" }}
@@ -26,7 +25,7 @@
   {{ end }}
   {{ $cats := $scratch.Get "cats" }}
   {{ range $cats }}
-    {{ $items = $items | append (dict "kind" "cat" "title" .name "latest" .latest "latestKey" .latestKey "cnt" .cnt "url" (partial "udc-url.html" (dict "ctx" $ctx "mode" $mode "value" .full))) }}
+    {{ $items = $items | append (dict "kind" "cat" "title" .name "latest" .latest "latestKey" .latestKey "cnt" .cnt "url" (partial "udc-url.html" (dict "ctx" $ctx "value" .full))) }}
   {{ end }}
   {{ $termDepth := len (split $term "/") }}
   {{ $root := index (split $term "/") 0 }}
@@ -46,7 +45,7 @@
         {{ $bytes := len .RawContent }}
         {{ $d := .Lastmod }}
         {{ if eq ($d.Format "2006") "0001" }}{{ $d = .Date }}{{ end }}
-        {{ $items = $items | append (dict "kind" "page" "title" .Title "latest" ($d.Format $dateFmt) "latestKey" ($d.Format "20060102") "cnt" 1 "bytes" $bytes "url" .RelPermalink) }}
+        {{ $items = $items | append (dict "kind" "page" "title" .Title "latest" ($d.Format $dateFmt) "latestKey" ($d.Format "20060102") "cnt" $bytes "bytes" $bytes "url" .RelPermalink) }}
       {{ end }}
     {{ end }}
   {{ end }}
@@ -65,7 +64,7 @@
     {{ $root := . }}
     {{ $pagesAll := partial "udc-data-collect-subtree.html" (dict "ctx" $ctx "prefix" $root "mode" "subtree") }}
     {{ $agg := partial "udc-data-pages-dedup-latest.html" (dict "pages" $pagesAll) }}
-    {{ $items = $items | append (dict "kind" "cat" "title" $root "latest" (index $agg "latest") "latestKey" (index $agg "latestKey") "cnt" (index $agg "cnt") "url" (partial "udc-url.html" (dict "ctx" $ctx "mode" $mode "value" $root))) }}
+    {{ $items = $items | append (dict "kind" "cat" "title" $root "latest" (index $agg "latest") "latestKey" (index $agg "latestKey") "cnt" (index $agg "cnt") "url" (partial "udc-url.html" (dict "ctx" $ctx "value" $root))) }}
   {{ end }}
   {{/* root 分支完成 */}}
 {{ end }}

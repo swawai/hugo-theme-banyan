@@ -1,39 +1,9 @@
 {{ $ctx := . }}
 {{ with .ctx }}{{ $ctx = . }}{{ end }}
-{{ $alternativeOutputNames := slice }}
-{{ range $ctx.AlternativeOutputFormats }}{{ $alternativeOutputNames = $alternativeOutputNames | append .Name }}{{ end }}
-{{ $currentOutputName := "" }}
-{{ range $ctx.OutputFormats }}
-{{ if not (in $alternativeOutputNames .Name) }}{{ $currentOutputName = .Name }}{{ end }}
-{{ end }}
-{{ $primaryOutputName := "" }}
-{{ with index $ctx.OutputFormats 0 }}{{ $primaryOutputName = .Name }}{{ end }}
-{{ $isLanguageHome := and $ctx.IsHome (eq $currentOutputName $primaryOutputName) }}
-{{ $gridOutputNames := slice "byname" "bynameasc" "bydate" "bydateasc" "bycount" "bycountasc" "allbyname" "allbynameasc" "allbydate" "allbydateasc" "allbypath" "allbypathasc" "allbysize" "allbysizeasc" }}
-{{ $productOutputNames := slice "productsbynameasc" "productsbyname" "productsbyprice" "productsbypriceasc" "productsbyvalue" "productsbyvalueasc" }}
-{{ $needsGridProducts := in $productOutputNames $currentOutputName }}
-{{ $needsGrid := or (in $gridOutputNames $currentOutputName) $needsGridProducts }}
-{{ $needsGridAll := hasPrefix $currentOutputName "allby" }}
-{{ $isHomeGrid := and $ctx.IsHome $needsGrid }}
 {{ $defaultVariant := "page-crumb" }}
-{{ if $isLanguageHome }}
+{{ if $ctx.IsHome }}
 {{ $defaultVariant = "home" }}
-{{ else if $needsGridAll }}
-{{ $defaultVariant = "all" }}
-{{ else if $needsGridProducts }}
-{{ $defaultVariant = "products" }}
-{{ else if $isHomeGrid }}
-{{ $defaultVariant = "home-list" }}
-{{ else if $needsGrid }}
-{{ $defaultVariant = "list" }}
 {{ end }}
 {{ return dict
-    "currentOutputName" $currentOutputName
-    "primaryOutputName" $primaryOutputName
-    "isLanguageHome" $isLanguageHome
-    "isHomeGrid" $isHomeGrid
-    "needsGrid" $needsGrid
-    "needsGridAll" $needsGridAll
-    "needsGridProducts" $needsGridProducts
     "defaultVariant" $defaultVariant
 }}

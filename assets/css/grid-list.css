@@ -96,6 +96,16 @@
     text-decoration: none;
 }
 
+.grid-list .header a[data-sort-active="true"] {
+    font-weight: 700;
+}
+
+.grid-list .sort-indicator {
+    display: inline-block;
+    min-width: 1.5ch;
+    text-align: center;
+}
+
 .grid-list .header {
     color: var(--link-visited);
     font-size: small;
@@ -115,9 +125,3 @@
 /* .grid-list .cell-title.header a {
     padding-left: 0.8rem;
 } */
-
-.grid-list .cell-count.header a::after {
-    content: "";
-    display: inline-block;
-    width: 3ch;
-}

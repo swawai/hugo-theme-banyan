@@ -1,5 +1,4 @@
 {{ $ctx := .ctx }}
-{{ $mode := .mode }}
 {{ $entries := slice }}
 
 {{ $siteLatest := "" }}
@@ -25,9 +24,7 @@
 {{ $directoryDateText := $siteDateText }}
 {{ with $ctx.Site.GetPage "section" "d" }}
   {{ $directoryTitle = .Title }}
-  {{ with .OutputFormats.Get $mode }}
-    {{ $directoryHref = .RelPermalink }}
-  {{ end }}
+  {{ $directoryHref = .RelPermalink }}
   {{ $directoryCount = len .RegularPagesRecursive }}
   {{ if gt $directoryCount 0 }}
     {{ with first 1 (.RegularPagesRecursive.ByLastmod.Reverse) }}
@@ -48,8 +45,8 @@
 {{ $udcCount := 0 }}
 {{ with $ctx.Site.Taxonomies.udc }}{{ $udcCount = len . }}{{ end }}
 
-{{ $allHref := "/all-by-date/" | relLangURL }}
-{{ with $ctx.Site.Home.OutputFormats.Get "allbydate" }}
+{{ $allHref := "/all/" | relLangURL }}
+{{ with $ctx.Site.Home.OutputFormats.Get "all" }}
   {{ $allHref = .RelPermalink }}
 {{ end }}
 

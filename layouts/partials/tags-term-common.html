@@ -1,14 +1,4 @@
-{{/* 通用：TAGS term 渲染（在 term 页中渲染第 2/3 层与 facet）
-参数：
-  ctx: 页面上下文 (.)
-  mode: bynameasc | byname | bydate | bydateasc | bycountasc | bycount
-*/}}
 {{ $ctx := .ctx }}
-{{ $mode := .mode }}
-
-{{/* 面包屑 */}}
-
-{{/*  {{ partial "list-header.html" $ctx }}  */}}
 
 {{/* 根据 term 的层级推断 sel：按约定 term 值形如 t1 或 t1/t2 或 t1/t2/t3 */}}
 {{ $parts := split $ctx.Title "/" }}
@@ -32,21 +22,21 @@
       {{ $arr := .Params.tags }}
       {{ if or (not (isset .Params "tags")) (not $arr) (eq (len $arr) 0) }}
         {{ $bytes := len .RawContent }}
-        {{ $items = $items | append (dict "kind" "page" "title" .Title "latest" (.Date.Format "2006-01-02") "latestKey" (.Date.Format "20060102") "cnt" 1 "bytes" $bytes "url" .RelPermalink) }}
+        {{ $items = $items | append (dict "kind" "page" "title" .Title "latest" (.Date.Format "2006-01-02") "latestKey" (.Date.Format "20060102") "cnt" $bytes "bytes" $bytes "url" .RelPermalink) }}
       {{ end }}
     {{ end }}
   {{ else }}
-    {{ $items = partial "tags-data-items.html" (dict "kind" "term" "ctx" $ctx "mode" $mode) }}
+    {{ $items = partial "tags-data-items.html" (dict "kind" "term" "ctx" $ctx) }}
   {{ end }}
-  <div class="grid-list">{{ partial "udc-list-view.html" (dict "ctx" $ctx "mode" $mode "items" $items) }}</div>
+  <div class="grid-list" data-sortable="true" data-sort-variant="tree" data-sort-columns="3" data-sort-default="date-desc">{{ partial "udc-list-view.html" (dict "ctx" $ctx "items" $items) }}</div>
 {{ else if eq (len $parts) 2 }}
   {{/* level 3 目录 + 文章（文章仅在最大深度==2时出现，逻辑在 data-items 内部处理） */}}
-  {{ $items := partial "tags-data-items.html" (dict "kind" "term" "ctx" $ctx "mode" $mode) }}
-  <div class="grid-list">{{ partial "udc-list-view.html" (dict "ctx" $ctx "mode" $mode "items" $items) }}</div>
+  {{ $items := partial "tags-data-items.html" (dict "kind" "term" "ctx" $ctx) }}
+  <div class="grid-list" data-sortable="true" data-sort-variant="tree" data-sort-columns="3" data-sort-default="date-desc">{{ partial "udc-list-view.html" (dict "ctx" $ctx "items" $items) }}</div>
 {{ else if eq (len $parts) 3 }}
   {{/* 第三层：目录+文章（文章仅在最大深度==3时出现，逻辑在 data-items 内部处理） */}}
-  {{ $items := partial "tags-data-items.html" (dict "kind" "term" "ctx" $ctx "mode" $mode) }}
-  <div class="grid-list">{{ partial "udc-list-view.html" (dict "ctx" $ctx "mode" $mode "items" $items) }}</div>
+  {{ $items := partial "tags-data-items.html" (dict "kind" "term" "ctx" $ctx) }}
+  <div class="grid-list" data-sortable="true" data-sort-variant="tree" data-sort-columns="3" data-sort-default="date-desc">{{ partial "udc-list-view.html" (dict "ctx" $ctx "items" $items) }}</div>
 {{ else }}
   {{/* 第四层及更深：仅显示该精确 term 下的文章（且文章最大深度==当前层），由 data-items 处理 */}}
   {{ $items := slice }}
@@ -58,13 +48,13 @@
       {{ $arr := .Params.tags }}
       {{ if or (not (isset .Params "tags")) (not $arr) (eq (len $arr) 0) }}
         {{ $bytes := len .RawContent }}
-        {{ $items = $items | append (dict "kind" "page" "title" .Title "latest" (.Date.Format "2006-01-02") "latestKey" (.Date.Format "20060102") "cnt" 1 "bytes" $bytes "url" .RelPermalink) }}
+        {{ $items = $items | append (dict "kind" "page" "title" .Title "latest" (.Date.Format "2006-01-02") "latestKey" (.Date.Format "20060102") "cnt" $bytes "bytes" $bytes "url" .RelPermalink) }}
       {{ end }}
     {{ end }}
   {{ else }}
-    {{ $items = partial "tags-data-items.html" (dict "kind" "term" "ctx" $ctx "mode" $mode) }}
+    {{ $items = partial "tags-data-items.html" (dict "kind" "term" "ctx" $ctx) }}
   {{ end }}
-  <div class="grid-list">{{ partial "udc-list-view.html" (dict "ctx" $ctx "mode" $mode "items" $items) }}</div>
+  <div class="grid-list" data-sortable="true" data-sort-variant="tree" data-sort-columns="3" data-sort-default="date-desc">{{ partial "udc-list-view.html" (dict "ctx" $ctx "items" $items) }}</div>
 {{ end }}
 
 

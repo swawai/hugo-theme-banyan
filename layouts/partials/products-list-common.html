@@ -1,46 +1,43 @@
 {{ $ctx := .ctx }}
-{{ $mode := .mode }}
-{{ $cfg := partial "products-sort-config.html" (dict "mode" $mode) }}
-{{ $ctrl := index $cfg "controls" }}
-{{ $sortField := index $cfg "sortField" }}
-{{ $sortOrder := index $cfg "sortOrder" }}
+{{ $nameLabel := i18n "products_col_name" }}
+{{ $priceLabel := i18n "products_col_price" }}
+{{ $valueLabel := i18n "products_col_value" }}
 
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
-  {{ with $ctx.OutputFormats.Get $mode }}
-    {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" (i18n "menu_products") "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
-  {{ end }}
+  {{ partial "link.html" (dict "ctx" $ctx "href" $ctx.RelPermalink "text" (i18n "menu_products") "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
 </nav>
 
-<div class="grid-list grid-products">
-  {{ with $ctx.OutputFormats.Get (index $ctrl "name") }}
-    {{ partial "grid-sort-cell.html" (dict
-      "class" "cell-title"
-      "ctx" $ctx
-      "href" .RelPermalink
-      "title" (cond (and (eq $sortField "sort_name") (eq $sortOrder "asc")) (i18n "products_sort_name_desc") (i18n "products_sort_name_asc"))
-      "label" (cond (and (eq $sortField "sort_name") (eq $sortOrder "asc")) (i18n "products_sort_name_desc") (i18n "products_sort_name_asc"))
-      "text" (index $ctrl "nameText")) }}
-  {{ end }}
-
-  {{ with $ctx.OutputFormats.Get (index $ctrl "price") }}
-    {{ partial "grid-sort-cell.html" (dict
-      "class" "cell-price"
-      "ctx" $ctx
-      "href" .RelPermalink
-      "title" (cond (and (eq $sortField "sort_price") (eq $sortOrder "asc")) (i18n "products_sort_price_desc") (i18n "products_sort_price_asc"))
-      "label" (cond (and (eq $sortField "sort_price") (eq $sortOrder "asc")) (i18n "products_sort_price_desc") (i18n "products_sort_price_asc"))
-      "text" (index $ctrl "priceText")) }}
-  {{ end }}
-
-  {{ with $ctx.OutputFormats.Get (index $ctrl "value") }}
-    {{ partial "grid-sort-cell.html" (dict
-      "class" "cell-value"
-      "ctx" $ctx
-      "href" .RelPermalink
-      "title" (cond (and (eq $sortField "sort_value") (eq $sortOrder "asc")) (i18n "products_sort_value_desc") (i18n "products_sort_value_asc"))
-      "label" (cond (and (eq $sortField "sort_value") (eq $sortOrder "asc")) (i18n "products_sort_value_desc") (i18n "products_sort_value_asc"))
-      "text" (index $ctrl "valueText")) }}
-  {{ end }}
+<div class="grid-list grid-products" data-sortable="true" data-sort-variant="products" data-sort-columns="3" data-sort-default="name-asc">
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-title"
+    "ctx" $ctx
+    "field" "name"
+    "label" $nameLabel
+    "defaultOrder" "asc"
+    "currentField" "name"
+    "currentOrder" "asc"
+    "titleAsc" (i18n "products_sort_name_asc")
+    "titleDesc" (i18n "products_sort_name_desc")) }}
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-price"
+    "ctx" $ctx
+    "field" "price"
+    "label" $priceLabel
+    "defaultOrder" "desc"
+    "currentField" "name"
+    "currentOrder" "asc"
+    "titleAsc" (i18n "products_sort_price_asc")
+    "titleDesc" (i18n "products_sort_price_desc")) }}
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-value"
+    "ctx" $ctx
+    "field" "value"
+    "label" $valueLabel
+    "defaultOrder" "asc"
+    "currentField" "name"
+    "currentOrder" "asc"
+    "titleAsc" (i18n "products_sort_value_asc")
+    "titleDesc" (i18n "products_sort_value_desc")) }}
 
   {{ $entries := slice }}
   {{ $sitesByWeight := sort $ctx.Site.Sites "Language.Weight" }}
@@ -64,8 +61,7 @@
   {{ $productCandidates := slice }}
   {{ range $sitesByWeight }}
     {{ $site := . }}
-    {{ $siteLang := $site.Language.Lang }}
-    {{ $siteLangRank := index $langRank $siteLang }}
+    {{ $siteLangRank := index $langRank $site.Language.Lang }}
     {{ range where $site.RegularPages "Params.product" true }}
       {{ if not (isset .Params "product_price") }}
         {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 product=true，但缺少 product_price。" .File.Path .Title }}
@@ -112,14 +108,20 @@
   {{ end }}
 
   {{ $ordered := sort $entries "sort_name" "asc" }}
-  {{ $ordered = sort $ordered $sortField $sortOrder }}
-
-  {{ if gt (len $ordered) 0 }}
-    {{ range $ordered }}
-      {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .href "title" .title "icon" "file" "prefetchKind" "post") }}
-      <span class="cell-price">{{ .priceText }}</span>
-      <span class="cell-value">{{ .valueText }}</span>
-    {{ end }}
+  {{ range $ordered }}
+    {{ partial "grid-title-cell.html" (dict
+      "ctx" $ctx
+      "href" .href
+      "title" .title
+      "icon" "file"
+      "prefetchKind" "post"
+      "dataAttrs" (dict
+        "sort-group" "0"
+        "sort-name" .sort_name
+        "sort-price" (printf "%v" .sort_price)
+        "sort-value" .sort_value)) }}
+    <span class="cell-price">{{ .priceText }}</span>
+    <span class="cell-value">{{ .valueText }}</span>
   {{ else }}
     <span class="cell-title">{{ i18n "products_empty" }}</span>
     <span class="cell-price"></span>

@@ -34,7 +34,8 @@ cp themes/banyan/exampleSite/data/cache-policy.toml ./data/cache-policy.toml
 
 - Built-in multi-language switcher (English, Simplified Chinese, Traditional Chinese)
 - Dark / Light / Auto mode toggle
-- Advanced custom output formats (sort by name/size/date/count)
+- Default SSR list pages with client-side sorting via URL params
+- Optional recursive `all/` list views for home and sections
 - Minimalist CSS architecture
 
 ## License
