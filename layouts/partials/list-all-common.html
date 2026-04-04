@@ -1,97 +1,113 @@
-{{/* 通用：_default list.all* 列表渲染
+{{/* 通用：_default list.all 列表渲染
 参数：
   ctx: 页面上下文 (.)
-  mode: allbynameasc | allbyname | allbydate | allbydateasc | allbypathasc | allbypath
+  mode: allbynameasc | allbyname | allbydate | allbydateasc | allbypathasc | allbypath | allbysizeasc | allbysize
 */}}
 {{ $ctx := .ctx }}
 {{ $mode := .mode }}
+{{ $allOutputName := "all" }}
+{{ $pageHref := $ctx.RelPermalink }}
+{{ with $ctx.OutputFormats.Get $allOutputName }}{{ $pageHref = .RelPermalink }}{{ end }}
+{{ $allSortModes := slice "allbyname" "allbynameasc" "allbydate" "allbydateasc" "allbypath" "allbypathasc" "allbysize" "allbysizeasc" }}
+{{ $nameLabel := i18n "list_col_name" }}
+{{ $dateLabel := i18n "list_col_date" }}
+{{ $sizeLabel := i18n "list_col_size" }}
+{{ $pathLabel := i18n "list_col_path" }}
+{{ $nameActive := or (eq $mode "allbyname") (eq $mode "allbynameasc") }}
+{{ $dateActive := or (eq $mode "allbydate") (eq $mode "allbydateasc") }}
+{{ $sizeActive := or (eq $mode "allbysize") (eq $mode "allbysizeasc") }}
+{{ $pathActive := or (eq $mode "allbypath") (eq $mode "allbypathasc") }}
+{{ $nameDirection := "none" }}
+{{ if eq $mode "allbynameasc" }}{{ $nameDirection = "asc" }}{{ else if eq $mode "allbyname" }}{{ $nameDirection = "desc" }}{{ end }}
+{{ $dateDirection := "none" }}
+{{ if eq $mode "allbydateasc" }}{{ $dateDirection = "asc" }}{{ else if eq $mode "allbydate" }}{{ $dateDirection = "desc" }}{{ end }}
+{{ $sizeDirection := "none" }}
+{{ if eq $mode "allbysizeasc" }}{{ $sizeDirection = "asc" }}{{ else if eq $mode "allbysize" }}{{ $sizeDirection = "desc" }}{{ end }}
+{{ $pathDirection := "none" }}
+{{ if eq $mode "allbypathasc" }}{{ $pathDirection = "asc" }}{{ else if eq $mode "allbypath" }}{{ $pathDirection = "desc" }}{{ end }}
 
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
-      {{ with $ctx.OutputFormats.Get $mode }}{{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" (i18n "menu_all") "textClass" "crumb-text" "dataAttrs" (cond $ctx.IsHome (dict "site-update-anchor" "true") (dict)) "linkSlot" "nav") }}{{ end }}
+      {{ with $ctx.OutputFormats.Get $allOutputName }}{{ partial "link.html" (dict "ctx" $ctx "href" (partial "sort-url.html" (dict "href" .RelPermalink "mode" $mode "default" "allbydate" "allowed" $allSortModes)) "text" (i18n "menu_all") "textClass" "crumb-text" "dataAttrs" (cond $ctx.IsHome (dict "site-update-anchor" "true") (dict)) "linkSlot" "nav") }}{{ end }}
 {{ range (where $ctx.Ancestors.Reverse "IsHome" "ne" true) }}
   {{ $p := . }}
-          {{ with $p.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" $p.LinkTitle "textClass" "crumb-text" "linkSlot" "nav") }}{{ end }}
+          {{ with $p.OutputFormats.Get $allOutputName }} ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" (partial "sort-url.html" (dict "href" .RelPermalink "mode" $mode "default" "allbydate" "allowed" $allSortModes)) "text" $p.LinkTitle "textClass" "crumb-text" "linkSlot" "nav") }}{{ end }}
 {{ end }}
-      {{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $mode }} ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" $ctx.Title "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}{{ end }}{{ end }}
+      {{ if not $ctx.IsHome }}{{ with $ctx.OutputFormats.Get $allOutputName }} ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" (partial "sort-url.html" (dict "href" .RelPermalink "mode" $mode "default" "allbydate" "allowed" $allSortModes)) "text" $ctx.Title "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}{{ end }}{{ end }}
 </nav>
 
 {{ partial "page-list-intro.html" (dict "ctx" $ctx) }}
 
-<div class="grid-list grid-all">
-  {{ $cfg := partial "grid-sort-config.html" (dict "variant" "all" "mode" $mode) }}
-
-  {{ $ctrl := index $cfg "controls" }}
-  {{ $sf := index $cfg "sortField" }}
-  {{ $so := index $cfg "sortOrder" }}
-  {{ $nameSortText := cond (and (eq $sf "Title") (eq $so "asc")) (i18n "list_sort_name_desc") (i18n "list_sort_name_asc") }}
-  {{ $dateSortText := cond (and (eq $sf "Date") (eq $so "asc")) (i18n "list_sort_date_desc") (i18n "list_sort_date_asc") }}
-  {{ $sizeSortText := cond (and (eq $sf "_size") (eq $so "asc")) (i18n "list_sort_size_desc") (i18n "list_sort_size_asc") }}
-  {{ $pathSortText := cond (and (eq $sf "File.Dir") (eq $so "asc")) (i18n "list_sort_path_desc") (i18n "list_sort_path_asc") }}
-
-  {{ with $ctx.OutputFormats.Get (index $ctrl "name") }}
-    {{ partial "grid-sort-cell.html" (dict
-      "class" "cell-title"
-      "ctx" $ctx
-      "href" .RelPermalink
-      "title" $nameSortText
-      "label" $nameSortText
-      "text" (index $ctrl "nameText")) }}
-  {{ end }}
-  {{ with $ctx.OutputFormats.Get (index $ctrl "date") }}
-    {{ partial "grid-sort-cell.html" (dict
-      "class" "cell-date"
-      "ctx" $ctx
-      "href" .RelPermalink
-      "title" $dateSortText
-      "label" $dateSortText
-      "text" (index $ctrl "dateText")) }}
-  {{ end }}
-  {{ with $ctx.OutputFormats.Get (index $ctrl "size") }}
-    {{ partial "grid-sort-cell.html" (dict
-      "class" "cell-count"
-      "ctx" $ctx
-      "href" .RelPermalink
-      "title" $sizeSortText
-      "label" $sizeSortText
-      "text" (index $ctrl "sizeText")) }}
-  {{ end }}
-  {{ with $ctx.OutputFormats.Get (index $ctrl "path") }}
-    {{ partial "grid-sort-cell.html" (dict
-      "class" "cell-path"
-      "ctx" $ctx
-      "href" .RelPermalink
-      "title" $pathSortText
-      "label" $pathSortText
-      "text" (index $ctrl "pathText")) }}
-  {{ end }}
+<div class="grid-list grid-all" data-list-sort-root data-sortable-list data-list-sort-variant="all" data-current-sort="{{ $mode }}" data-list-sort-mode="{{ $mode }}" data-list-sort-base-href="{{ $pageHref }}" data-list-sort-sync-url="true">
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-title"
+    "ctx" $ctx
+    "href" (partial "sort-url.html" (dict "href" $pageHref "mode" (cond (eq $mode "allbynameasc") "allbyname" "allbynameasc") "default" "allbydate" "allowed" $allSortModes))
+    "title" $nameLabel
+    "label" $nameLabel
+    "text" $nameLabel
+    "field" "title"
+    "active" (cond $nameActive "true" "false")
+    "direction" $nameDirection
+    "linkSlot" "") }}
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-date"
+    "ctx" $ctx
+    "href" (partial "sort-url.html" (dict "href" $pageHref "mode" (cond (eq $mode "allbydateasc") "allbydate" "allbydateasc") "default" "allbydate" "allowed" $allSortModes))
+    "title" $dateLabel
+    "label" $dateLabel
+    "text" $dateLabel
+    "field" "date"
+    "active" (cond $dateActive "true" "false")
+    "direction" $dateDirection
+    "linkSlot" "") }}
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-count"
+    "ctx" $ctx
+    "href" (partial "sort-url.html" (dict "href" $pageHref "mode" (cond (eq $mode "allbysizeasc") "allbysize" "allbysizeasc") "default" "allbydate" "allowed" $allSortModes))
+    "title" $sizeLabel
+    "label" $sizeLabel
+    "text" $sizeLabel
+    "field" "bytes"
+    "active" (cond $sizeActive "true" "false")
+    "direction" $sizeDirection
+    "linkSlot" "") }}
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-path"
+    "ctx" $ctx
+    "href" (partial "sort-url.html" (dict "href" $pageHref "mode" (cond (eq $mode "allbypathasc") "allbypath" "allbypathasc") "default" "allbydate" "allowed" $allSortModes))
+    "title" $pathLabel
+    "label" $pathLabel
+    "text" $pathLabel
+    "field" "path"
+    "active" (cond $pathActive "true" "false")
+    "direction" $pathDirection
+    "linkSlot" "") }}
 
   {{ $pagesToShow := $ctx.RegularPagesRecursive }}
   {{ if eq $ctx.Kind "home" }}
     {{ $pagesToShow = $ctx.Site.RegularPages }}
   {{ end }}
 
-  {{ $sortedPages := $pagesToShow }}
-  {{ if ne (index $cfg "sortField") "_size" }}
-    {{ $sortedPages = sort $pagesToShow (index $cfg "sortField") (index $cfg "sortOrder") }}
-  {{ end }}
-  {{ if eq (index $cfg "sortField") "_size" }}
-    {{ $aug := slice }}
-    {{ range $pagesToShow }}
-      {{ $aug = $aug | append (dict "p" . "_size" (len .RawContent)) }}
-    {{ end }}
-    {{ $aug = sort $aug "_size" (index $cfg "sortOrder") }}
-    {{ $sortedPages = slice }}
-    {{ range $aug }}{{ $sortedPages = $sortedPages | append .p }}{{ end }}
-  {{ end }}
+  {{ $sortedPages := sort $pagesToShow "Date" "desc" }}
 
   {{ range $sortedPages }}
-    {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .RelPermalink "title" .Title "icon" "file" "prefetchKind" "post") }}
-    <span class="cell-date">{{ .Date.Format "2006-01-02" }}</span>
     {{ $bytes := len .RawContent }}
     {{ $kb := div (add $bytes 1023) 1024 }}
+    {{ $pathDir := path.Clean .File.Dir }}
+    {{ $pathText := "/" }}
+    {{ if and $pathDir (ne $pathDir ".") }}{{ $pathText = printf "/%s" $pathDir }}{{ end }}
+    {{ $sectionHref := "" }}
+    {{ with .CurrentSection }}
+      {{ with .OutputFormats.Get $allOutputName }}
+        {{ $sectionHref = partial "sort-url.html" (dict "href" .RelPermalink "mode" $mode "default" "allbydate" "allowed" $allSortModes) }}
+      {{ end }}
+    {{ end }}
+    <div class="grid-list-row" data-sortable-row data-kind="page" data-title="{{ .Title }}" data-date-key="{{ .Date.Format `20060102150405` }}" data-bytes="{{ $bytes }}" data-path="{{ $pathText }}">
+    {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .RelPermalink "title" .Title "icon" "file" "prefetchKind" "post") }}
+    <span class="cell-date">{{ .Date.Format "2006-01-02" }}</span>
     <span class="cell-count"><span>{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>
-    {{ $d := path.Clean .File.Dir }}
-    <span class="cell-path">{{ with .CurrentSection }}{{ with .OutputFormats.Get "allbynameasc" }}{{ partial "link.html" (dict "href" .RelPermalink "text" (printf "/%s" $d)) }}{{ end }}{{ end }}</span>
+    <span class="cell-path">{{ if $sectionHref }}{{ partial "link.html" (dict "ctx" $ctx "href" $sectionHref "text" $pathText "linkSlot" "nav") }}{{ else }}{{ $pathText }}{{ end }}</span>
+    </div>
   {{ end }}
 </div>
 
