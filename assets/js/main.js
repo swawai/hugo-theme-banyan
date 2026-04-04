@@ -238,6 +238,12 @@ function readRowValue(rowHead, fieldConfig) {
     return String(raw);
 }
 
+function readOriginalRowIndex(row) {
+    const raw = row?.head?.dataset?.sortOriginalIndex ?? '';
+    const numeric = Number(raw);
+    return Number.isFinite(numeric) ? numeric : row.index;
+}
+
 function compareRowValues(left, right, fieldConfig, order) {
     const leftValue = readRowValue(left.head, fieldConfig);
     const rightValue = readRowValue(right.head, fieldConfig);
@@ -252,24 +258,31 @@ function compareRowValues(left, right, fieldConfig, order) {
         });
     }
 
-    if (result === 0) {
-        result = left.index - right.index;
-    }
+    if (result !== 0) return order === 'asc' ? result : -result;
 
-    return order === 'asc' ? result : -result;
+    // Keep ties in the original SSR order so default descending sorts do not
+    // reshuffle same-value rows on page load.
+    return readOriginalRowIndex(left) - readOriginalRowIndex(right);
+}
+
+function isGridCell(node) {
+    return !!node && node.nodeType === 1 && Array.from(node.classList || []).some((className) => className.startsWith('cell-'));
 }
 
 function collectSortableRows(grid, columnCount) {
-    const children = Array.from(grid.children);
-    const rowCells = children.slice(columnCount);
+    const rowCells = Array.from(grid.children).filter((child) => isGridCell(child) && !child.classList.contains('header'));
     const rows = [];
 
     for (let index = 0, offset = 0; offset + columnCount <= rowCells.length; index += 1, offset += columnCount) {
         const cells = rowCells.slice(offset, offset + columnCount);
-        rows.push({ index, head: cells[0], cells });
+        const head = cells[0];
+        if (head?.dataset && head.dataset.sortOriginalIndex === undefined) {
+            head.dataset.sortOriginalIndex = String(index);
+        }
+        rows.push({ index, head, cells });
     }
 
-    return rows;
+    return { rows, rowCells };
 }
 
 function updateSortControls(grid, variantName, currentToken) {
@@ -312,13 +325,13 @@ function applySortableGrid(grid) {
     const fieldConfig = variant.fields[current.field];
     if (!fieldConfig) return;
 
-    const rows = collectSortableRows(grid, columnCount);
+    const { rows, rowCells } = collectSortableRows(grid, columnCount);
     if (!rows.length) {
         updateSortControls(grid, variantName, currentToken);
         return;
     }
 
-    rows.sort((left, right) => {
+    const sortedRows = rows.slice().sort((left, right) => {
         if (variant.grouped) {
             const leftGroup = Number(left.head?.dataset?.sortGroup || 0);
             const rightGroup = Number(right.head?.dataset?.sortGroup || 0);
@@ -330,11 +343,18 @@ function applySortableGrid(grid) {
         return compareRowValues(left, right, fieldConfig, current.order);
     });
 
-    const fragment = document.createDocumentFragment();
-    rows.forEach((row) => {
-        row.cells.forEach((cell) => fragment.appendChild(cell));
+    const nextCells = [];
+    sortedRows.forEach((row) => {
+        row.cells.forEach((cell) => nextCells.push(cell));
     });
-    grid.appendChild(fragment);
+
+    const orderChanged = nextCells.length !== rowCells.length || nextCells.some((cell, index) => cell !== rowCells[index]);
+    if (orderChanged) {
+        const fragment = document.createDocumentFragment();
+        nextCells.forEach((cell) => fragment.appendChild(cell));
+        grid.appendChild(fragment);
+    }
+
     updateSortControls(grid, variantName, currentToken);
 }
 
