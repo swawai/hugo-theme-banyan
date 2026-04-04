@@ -10,9 +10,9 @@
 {{ with index $ctx.OutputFormats 0 }}{{ $primaryOutputName = .Name }}{{ end }}
 {{ $isLanguageHome := and $ctx.IsHome (eq $currentOutputName $primaryOutputName) }}
 {{ $gridOutputNames := slice "byname" "bynameasc" "bydate" "bydateasc" "bycount" "bycountasc" "allbyname" "allbynameasc" "allbydate" "allbydateasc" "allbypath" "allbypathasc" "allbysize" "allbysizeasc" }}
-{{ $resourceOutputNames := slice "resourcesbynameasc" "resourcesbyname" "resourcesbyprice" "resourcesbypriceasc" "resourcesbyvalue" "resourcesbyvalueasc" }}
-{{ $needsGridResources := in $resourceOutputNames $currentOutputName }}
-{{ $needsGrid := or (in $gridOutputNames $currentOutputName) $needsGridResources }}
+{{ $productOutputNames := slice "productsbynameasc" "productsbyname" "productsbyprice" "productsbypriceasc" "productsbyvalue" "productsbyvalueasc" }}
+{{ $needsGridProducts := in $productOutputNames $currentOutputName }}
+{{ $needsGrid := or (in $gridOutputNames $currentOutputName) $needsGridProducts }}
 {{ $needsGridAll := hasPrefix $currentOutputName "allby" }}
 {{ $isHomeGrid := and $ctx.IsHome $needsGrid }}
 {{ $defaultVariant := "page-crumb" }}
@@ -20,8 +20,8 @@
 {{ $defaultVariant = "home" }}
 {{ else if $needsGridAll }}
 {{ $defaultVariant = "all" }}
-{{ else if $needsGridResources }}
-{{ $defaultVariant = "resources" }}
+{{ else if $needsGridProducts }}
+{{ $defaultVariant = "products" }}
 {{ else if $isHomeGrid }}
 {{ $defaultVariant = "home-list" }}
 {{ else if $needsGrid }}
@@ -34,6 +34,6 @@
     "isHomeGrid" $isHomeGrid
     "needsGrid" $needsGrid
     "needsGridAll" $needsGridAll
-    "needsGridResources" $needsGridResources
+    "needsGridProducts" $needsGridProducts
     "defaultVariant" $defaultVariant
 }}

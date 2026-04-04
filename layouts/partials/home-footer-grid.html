@@ -5,7 +5,19 @@
   {{ $cfg := partial "grid-sort-config.html" (dict "variant" "dir" "mode" $mode) }}
   {{ $sortField := index $cfg "sortField" }}
   {{ $sortOrder := index $cfg "sortOrder" }}
-  {{ $ordered := sort $entries $sortField $sortOrder }}
+  {{ $regularEntries := slice }}
+  {{ $aboutEntries := slice }}
+  {{ range $entries }}
+    {{ if .isAbout }}
+      {{ $aboutEntries = $aboutEntries | append . }}
+    {{ else }}
+      {{ $regularEntries = $regularEntries | append . }}
+    {{ end }}
+  {{ end }}
+  {{ $ordered := sort $regularEntries $sortField $sortOrder }}
+  {{ range $aboutEntries }}
+    {{ $ordered = $ordered | append . }}
+  {{ end }}
   <footer class="home-footer-shortcuts" aria-label="Site footer shortcuts">
     <div class="grid-list grid-list-meta">
       {{ range $ordered }}

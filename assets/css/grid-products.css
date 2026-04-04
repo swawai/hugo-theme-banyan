@@ -1,0 +1,24 @@
+.grid-products {
+    grid-template-columns: 13rem minmax(4.5rem, max-content) minmax(18rem, max-content);
+}
+
+.grid-products > :is(.cell-title, .cell-price, .cell-value) {
+    pointer-events: none;
+}
+
+.grid-products > :is(.cell-title, .cell-price, .cell-value) a {
+    pointer-events: auto;
+}
+
+.grid-products > :is(.cell-price, .cell-value) {
+    color: var(--link-visited);
+}
+
+.grid-products > .cell-price {
+    justify-self: end;
+    text-align: right;
+}
+
+.grid-products > .cell-price.header {
+    justify-self: stretch;
+}

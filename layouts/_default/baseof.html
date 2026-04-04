@@ -227,12 +227,7 @@
             {{ $key := printf "menu_%s" .Identifier }}
             {{ $menuText := i18n $key | default .Name }}
             {{ $menuTitle := cond (eq .Identifier "udc") "Universal Decimal Classification" "" }}
-            {{ if eq .Identifier "about" }}
-                {{ $aboutText := printf `<span>%s</span><img src="%s" alt="" class="nav-about-logo" aria-hidden="true" fetchpriority="low" />` $menuText $faviconSvg.RelPermalink }}
-                {{ partial "link.html" (dict "ctx" $ "href" (.URL | relLangURL) "title" $menuTitle "text" $aboutText "safeHTML" true "class" "nav-about-link" "linkSlot" "menu") }}
-            {{ else }}
-                {{ partial "link.html" (dict "ctx" $ "href" (.URL | relLangURL) "title" $menuTitle "text" $menuText "linkSlot" "menu") }}
-            {{ end }}
+            {{ partial "link.html" (dict "ctx" $ "href" (.URL | relLangURL) "title" $menuTitle "text" $menuText "linkSlot" "menu") }}
             {{ end }}
 
             {{ $meLinkRaw := site.Params.me_url | default (site.Params.account_url | default "") }}

@@ -9,7 +9,7 @@
 {{ $gridAll := resources.Get "css/grid-all.css" }}
 {{ $gridHomeFooter := resources.Get "css/grid-home-footer.css" }}
 {{ $gridList := resources.Get "css/grid-list.css" }}
-{{ $gridResources := resources.Get "css/grid-resources.css" }}
+{{ $gridProducts := resources.Get "css/grid-products.css" }}
 {{ $navBreadcrumb := resources.Get "css/nav-breadcrumb.css" }}
 {{ $navPrimary := resources.Get "css/nav-primary.css" }}
 {{ $siteHeader := resources.Get "css/site-header.css" }}
@@ -29,9 +29,9 @@
 {{ $homeListBundleParts := $listBundleParts | append $gridHomeFooter }}
 {{ $homeListBundle := $homeListBundleParts | resources.Concat "css/bundle-home-list.css" }}
 {{ $homeListBundle = partial "css-process.html" (dict "resource" $homeListBundle "fingerprint" true) }}
-{{ $resourcesBundleParts := $listBundleParts | append $gridResources }}
-{{ $resourcesBundle := $resourcesBundleParts | resources.Concat "css/bundle-resources.css" }}
-{{ $resourcesBundle = partial "css-process.html" (dict "resource" $resourcesBundle "fingerprint" true) }}
+{{ $productsBundleParts := $listBundleParts | append $gridProducts }}
+{{ $productsBundle := $productsBundleParts | resources.Concat "css/bundle-products.css" }}
+{{ $productsBundle = partial "css-process.html" (dict "resource" $productsBundle "fingerprint" true) }}
 {{ $allBundleParts := $listBundleParts | append $gridAll }}
 {{ $allBundle := $allBundleParts | resources.Concat "css/bundle-all.css" }}
 {{ $allBundle = partial "css-process.html" (dict "resource" $allBundle "fingerprint" true) }}
@@ -53,8 +53,8 @@
 <link rel="stylesheet" href="{{ $homeListBundle.RelPermalink }}">
 {{ else if eq $resolvedVariant "all" }}
 <link rel="stylesheet" href="{{ $allBundle.RelPermalink }}">
-{{ else if eq $resolvedVariant "resources" }}
-<link rel="stylesheet" href="{{ $resourcesBundle.RelPermalink }}">
+{{ else if eq $resolvedVariant "products" }}
+<link rel="stylesheet" href="{{ $productsBundle.RelPermalink }}">
 {{ else if eq $resolvedVariant "list" }}
 <link rel="stylesheet" href="{{ $listBundle.RelPermalink }}">
 {{ else if eq $resolvedVariant "page" }}

@@ -1,7 +1,9 @@
 [menu_home]
 other = "首頁"
-[menu_resources]
-other = "資源"
+[menu_products]
+other = "產品"
+[menu_signals]
+other = "信號"
 [menu_about]
 other = "關於"
 [menu_tags]
@@ -42,27 +44,27 @@ other = "按路徑升冪排序"
 [list_sort_path_desc]
 other = "按路徑降冪排序"
 
-[resources_col_name]
+[products_col_name]
 other = "名稱"
-[resources_col_price]
+[products_col_price]
 other = "價格"
-[resources_col_value]
+[products_col_value]
 other = "價值點"
-[resources_free]
+[products_free]
 other = "免費"
-[resources_empty]
-other = "還沒有資源。"
-[resources_sort_name_asc]
+[products_empty]
+other = "還沒有產品。"
+[products_sort_name_asc]
 other = "按名稱升冪排序"
-[resources_sort_name_desc]
+[products_sort_name_desc]
 other = "按名稱降冪排序"
-[resources_sort_price_asc]
+[products_sort_price_asc]
 other = "按價格升冪排序"
-[resources_sort_price_desc]
+[products_sort_price_desc]
 other = "按價格降冪排序"
-[resources_sort_value_asc]
+[products_sort_value_asc]
 other = "按價值點升冪排序"
-[resources_sort_value_desc]
+[products_sort_value_desc]
 other = "按價值點降冪排序"
 
 [home_shortcut_directory]

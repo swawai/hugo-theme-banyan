@@ -1,69 +1,69 @@
 {{ $mode := .mode }}
-{{ $nameLabel := i18n "resources_col_name" }}
-{{ $priceLabel := i18n "resources_col_price" }}
-{{ $valueLabel := i18n "resources_col_value" }}
+{{ $nameLabel := i18n "products_col_name" }}
+{{ $priceLabel := i18n "products_col_price" }}
+{{ $valueLabel := i18n "products_col_value" }}
 {{ $config := dict
-  "resourcesbynameasc" (dict
+  "productsbynameasc" (dict
     "sortField" "sort_name"
     "sortOrder" "asc"
     "controls" (dict
-      "name" "resourcesbyname"
+      "name" "productsbyname"
       "nameText" (printf `%s&nbsp;<b>↓</b>` $nameLabel)
-      "price" "resourcesbyprice"
+      "price" "productsbyprice"
       "priceText" (printf `%s&nbsp;↨` $priceLabel)
-      "value" "resourcesbyvalue"
+      "value" "productsbyvalue"
       "valueText" (printf `%s&nbsp;↨` $valueLabel)))
-  "resourcesbyname" (dict
+  "productsbyname" (dict
     "sortField" "sort_name"
     "sortOrder" "desc"
     "controls" (dict
-      "name" "resourcesbynameasc"
+      "name" "productsbynameasc"
       "nameText" (printf `%s&nbsp;<b>↑</b>` $nameLabel)
-      "price" "resourcesbyprice"
+      "price" "productsbyprice"
       "priceText" (printf `%s&nbsp;↨` $priceLabel)
-      "value" "resourcesbyvalue"
+      "value" "productsbyvalue"
       "valueText" (printf `%s&nbsp;↨` $valueLabel)))
-  "resourcesbyprice" (dict
+  "productsbyprice" (dict
     "sortField" "sort_price"
     "sortOrder" "desc"
     "controls" (dict
-      "name" "resourcesbyname"
+      "name" "productsbyname"
       "nameText" (printf `%s&nbsp;↨` $nameLabel)
-      "price" "resourcesbypriceasc"
+      "price" "productsbypriceasc"
       "priceText" (printf `%s&nbsp;<b>↑</b>` $priceLabel)
-      "value" "resourcesbyvalue"
+      "value" "productsbyvalue"
       "valueText" (printf `%s&nbsp;↨` $valueLabel)))
-  "resourcesbypriceasc" (dict
+  "productsbypriceasc" (dict
     "sortField" "sort_price"
     "sortOrder" "asc"
     "controls" (dict
-      "name" "resourcesbyname"
+      "name" "productsbyname"
       "nameText" (printf `%s&nbsp;↨` $nameLabel)
-      "price" "resourcesbyprice"
+      "price" "productsbyprice"
       "priceText" (printf `%s&nbsp;<b>↓</b>` $priceLabel)
-      "value" "resourcesbyvalue"
+      "value" "productsbyvalue"
       "valueText" (printf `%s&nbsp;↨` $valueLabel)))
-  "resourcesbyvalue" (dict
+  "productsbyvalue" (dict
     "sortField" "sort_value"
     "sortOrder" "desc"
     "controls" (dict
-      "name" "resourcesbyname"
+      "name" "productsbyname"
       "nameText" (printf `%s&nbsp;↨` $nameLabel)
-      "price" "resourcesbyprice"
+      "price" "productsbyprice"
       "priceText" (printf `%s&nbsp;↨` $priceLabel)
-      "value" "resourcesbyvalueasc"
+      "value" "productsbyvalueasc"
       "valueText" (printf `%s&nbsp;<b>↑</b>` $valueLabel)))
-  "resourcesbyvalueasc" (dict
+  "productsbyvalueasc" (dict
     "sortField" "sort_value"
     "sortOrder" "asc"
     "controls" (dict
-      "name" "resourcesbyname"
+      "name" "productsbyname"
       "nameText" (printf `%s&nbsp;↨` $nameLabel)
-      "price" "resourcesbyprice"
+      "price" "productsbyprice"
       "priceText" (printf `%s&nbsp;↨` $priceLabel)
-      "value" "resourcesbyvalue"
+      "value" "productsbyvalue"
       "valueText" (printf `%s&nbsp;<b>↓</b>` $valueLabel)))
 }}
 {{ $cfg := index $config $mode }}
-{{ if not $cfg }}{{ $cfg = index $config "resourcesbynameasc" }}{{ end }}
+{{ if not $cfg }}{{ $cfg = index $config "productsbynameasc" }}{{ end }}
 {{ return $cfg }}

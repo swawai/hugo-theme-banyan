@@ -46,7 +46,6 @@
 } */
 
 .site-nav .icon-select-wrapper > .icon,
-.site-nav .nav-about-link .nav-about-logo,
 .site-nav .nav-me-btn :is(.default-me-icon, .me-avatar) {
     display: block;
     width: 1em;

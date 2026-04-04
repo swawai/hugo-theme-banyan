@@ -31,12 +31,12 @@ identifier = "home"
 url = "/"
 weight = 1
 [[menu.main]]
-identifier = "resources"
-url = "/resources/"
+identifier = "products"
+url = "/products/"
 weight = 2
 [[menu.main]]
-identifier = "about"
-url = "/about/"
+identifier = "signals"
+url = "/d/"
 weight = 3
 
 

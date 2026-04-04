@@ -1,24 +1,24 @@
 {{ $ctx := .ctx }}
 {{ $mode := .mode }}
-{{ $cfg := partial "resources-sort-config.html" (dict "mode" $mode) }}
+{{ $cfg := partial "products-sort-config.html" (dict "mode" $mode) }}
 {{ $ctrl := index $cfg "controls" }}
 {{ $sortField := index $cfg "sortField" }}
 {{ $sortOrder := index $cfg "sortOrder" }}
 
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
   {{ with $ctx.OutputFormats.Get $mode }}
-    {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" (i18n "menu_resources") "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
+    {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" (i18n "menu_products") "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
   {{ end }}
 </nav>
 
-<div class="grid-list grid-resources">
+<div class="grid-list grid-products">
   {{ with $ctx.OutputFormats.Get (index $ctrl "name") }}
     {{ partial "grid-sort-cell.html" (dict
       "class" "cell-title"
       "ctx" $ctx
       "href" .RelPermalink
-      "title" (cond (and (eq $sortField "sort_name") (eq $sortOrder "asc")) (i18n "resources_sort_name_desc") (i18n "resources_sort_name_asc"))
-      "label" (cond (and (eq $sortField "sort_name") (eq $sortOrder "asc")) (i18n "resources_sort_name_desc") (i18n "resources_sort_name_asc"))
+      "title" (cond (and (eq $sortField "sort_name") (eq $sortOrder "asc")) (i18n "products_sort_name_desc") (i18n "products_sort_name_asc"))
+      "label" (cond (and (eq $sortField "sort_name") (eq $sortOrder "asc")) (i18n "products_sort_name_desc") (i18n "products_sort_name_asc"))
       "text" (index $ctrl "nameText")) }}
   {{ end }}
 
@@ -27,8 +27,8 @@
       "class" "cell-price"
       "ctx" $ctx
       "href" .RelPermalink
-      "title" (cond (and (eq $sortField "sort_price") (eq $sortOrder "asc")) (i18n "resources_sort_price_desc") (i18n "resources_sort_price_asc"))
-      "label" (cond (and (eq $sortField "sort_price") (eq $sortOrder "asc")) (i18n "resources_sort_price_desc") (i18n "resources_sort_price_asc"))
+      "title" (cond (and (eq $sortField "sort_price") (eq $sortOrder "asc")) (i18n "products_sort_price_desc") (i18n "products_sort_price_asc"))
+      "label" (cond (and (eq $sortField "sort_price") (eq $sortOrder "asc")) (i18n "products_sort_price_desc") (i18n "products_sort_price_asc"))
       "text" (index $ctrl "priceText")) }}
   {{ end }}
 
@@ -37,8 +37,8 @@
       "class" "cell-value"
       "ctx" $ctx
       "href" .RelPermalink
-      "title" (cond (and (eq $sortField "sort_value") (eq $sortOrder "asc")) (i18n "resources_sort_value_desc") (i18n "resources_sort_value_asc"))
-      "label" (cond (and (eq $sortField "sort_value") (eq $sortOrder "asc")) (i18n "resources_sort_value_desc") (i18n "resources_sort_value_asc"))
+      "title" (cond (and (eq $sortField "sort_value") (eq $sortOrder "asc")) (i18n "products_sort_value_desc") (i18n "products_sort_value_asc"))
+      "label" (cond (and (eq $sortField "sort_value") (eq $sortOrder "asc")) (i18n "products_sort_value_desc") (i18n "products_sort_value_asc"))
       "text" (index $ctrl "valueText")) }}
   {{ end }}
 
@@ -61,34 +61,34 @@
     {{ end }}
   {{ end }}
 
-  {{ $resourceCandidates := slice }}
+  {{ $productCandidates := slice }}
   {{ range $sitesByWeight }}
     {{ $site := . }}
     {{ $siteLang := $site.Language.Lang }}
     {{ $siteLangRank := index $langRank $siteLang }}
-    {{ range where $site.RegularPages "Params.resource" true }}
-      {{ if not (isset .Params "resource_price") }}
-        {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 resource=true，但缺少 resource_price。" .File.Path .Title }}
+    {{ range where $site.RegularPages "Params.product" true }}
+      {{ if not (isset .Params "product_price") }}
+        {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 product=true，但缺少 product_price。" .File.Path .Title }}
       {{ end }}
-      {{ $valueRaw := index .Params "resource_value" | default "" }}
+      {{ $valueRaw := index .Params "product_value" | default "" }}
       {{ $valueText := printf "%v" $valueRaw }}
       {{ if eq $valueText "" }}
-        {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 resource=true，但缺少 resource_value。" .File.Path .Title }}
+        {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 product=true，但缺少 product_value。" .File.Path .Title }}
       {{ end }}
       {{ $familyKey := printf "%v" .TranslationKey }}
       {{ if eq $familyKey "" }}{{ $familyKey = .File.Path }}{{ end }}
-      {{ $resourceCandidates = $resourceCandidates | append (dict
+      {{ $productCandidates = $productCandidates | append (dict
         "familyKey" $familyKey
         "langRank" $siteLangRank
         "page" .
-        "priceRaw" (index .Params "resource_price")
+        "priceRaw" (index .Params "product_price")
         "valueText" $valueText) }}
     {{ end }}
   {{ end }}
 
   {{ $selectedCandidates := slice }}
   {{ $selectedFamilies := dict }}
-  {{ range sort $resourceCandidates "langRank" "asc" }}
+  {{ range sort $productCandidates "langRank" "asc" }}
     {{ $familyKey := .familyKey }}
     {{ if not (isset $selectedFamilies $familyKey) }}
       {{ $selectedFamilies = merge $selectedFamilies (dict $familyKey true) }}
@@ -100,7 +100,7 @@
     {{ $page := .page }}
     {{ $priceRaw := .priceRaw }}
     {{ $priceText := printf "%v" $priceRaw }}
-    {{ if eq $priceRaw 0 }}{{ $priceText = i18n "resources_free" }}{{ end }}
+    {{ if eq $priceRaw 0 }}{{ $priceText = i18n "products_free" }}{{ end }}
     {{ $entries = $entries | append (dict
       "href" $page.RelPermalink
       "title" $page.Title
@@ -121,7 +121,7 @@
       <span class="cell-value">{{ .valueText }}</span>
     {{ end }}
   {{ else }}
-    <span class="cell-title">{{ i18n "resources_empty" }}</span>
+    <span class="cell-title">{{ i18n "products_empty" }}</span>
     <span class="cell-price"></span>
     <span class="cell-value"></span>
   {{ end }}
