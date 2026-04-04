@@ -60,7 +60,7 @@ body {
     min-height: var(--page-shell-min-block);
     width: var(--page-shell-min-inline);
     max-width: 100%;
-    margin-inline: auto;
+    margin-inline: 0;
     padding-bottom: var(--page-edge-block-end);
     line-height: 1.7;
 }
