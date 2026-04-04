@@ -11,6 +11,8 @@
   {{ end }}
 </nav>
 
+{{ partial "page-list-intro.html" (dict "ctx" $ctx) }}
+
 <div class="grid-list grid-resources">
   {{ with $ctx.OutputFormats.Get (index $ctrl "name") }}
     {{ partial "grid-sort-cell.html" (dict

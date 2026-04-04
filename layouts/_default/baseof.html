@@ -117,6 +117,9 @@
     <script>(function(){try{var pref=localStorage.getItem('theme-preference');var media=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');var theme=(!pref||pref==='auto')?((media&&media.matches)?'dark':'light'):pref;document.documentElement.setAttribute('data-theme',theme);}catch(e){}})();</script>
     {{ block "styles" . }}{{ partial "head-styles.html" (dict "ctx" .) }}{{ end }}
     {{ block "head-extra" . }}{{ end }}
+    {{ partial "page-bundle-resources.html" (dict "ctx" . "kind" "inline-css") }}
+    {{ partial "page-bundle-resources.html" (dict "ctx" . "kind" "primary-inline-css") }}
+    {{ partial "page-bundle-resources.html" (dict "ctx" . "kind" "css") }}
     {{ $prefetchConfig := site.Params.link_prefetch | default dict }}
     {{ $prefetchLabels := slice "menu" "nav" "sort_siblings" "descendants" "post" }}
     {{ range $label := $prefetchLabels }}
@@ -157,6 +160,7 @@
     {{ if not hugo.IsServer }}{{ $js = $js | minify }}{{ end }}
     {{ $js = $js | fingerprint }}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+    {{ partial "page-bundle-resources.html" (dict "ctx" . "kind" "js") }}
     {{ if and (ne $swMode "off") (not $isOfflineLayout) }}
         {{/* 源文件命名约定：含模板语法的资源用 .tmpl，纯 JS 用 .js。 */}}
         {{ if eq $swMode "enable" }}

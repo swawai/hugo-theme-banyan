@@ -32,6 +32,8 @@
   {{ end }}
 </nav>
 
+{{ partial "page-list-intro.html" (dict "ctx" $ctx) }}
+
 <div class="grid-list">
   {{ $cfg := partial "grid-sort-config.html" (dict "variant" "dir" "mode" $mode) }}
   {{ $ctrl := index $cfg "controls" }}

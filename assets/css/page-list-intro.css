@@ -1,0 +1,11 @@
+.page-list-intro {
+    margin: 0.9rem 0 1.15rem;
+}
+
+.page-list-intro .prose > :first-child {
+    margin-top: 0;
+}
+
+.page-list-intro .prose > :last-child {
+    margin-bottom: 0;
+}

@@ -1,0 +1,28 @@
+{{ $ctx := .ctx | default . }}
+{{ $path := printf "%v" (.path | default "") }}
+{{ if eq $path "" }}
+  {{ errorf "编译失败: partial %q 缺少 path 参数。" "content-fragment.html" }}
+{{ end }}
+{{ $fragment := $ctx.Site.GetPage $path }}
+{{ if not $fragment }}
+  {{ errorf "编译失败: 找不到 headless fragment %q。" $path }}
+{{ end }}
+{{ $wrapper := printf "%v" (.wrapper | default "div") }}
+{{ $class := printf "%v" (.class | default "") }}
+{{ if eq $wrapper "aside" }}
+<aside{{ with $class }} class="{{ . }}"{{ end }} data-fragment-path="{{ $path }}">
+  {{ $fragment.Content }}
+</aside>
+{{ else if eq $wrapper "section" }}
+<section{{ with $class }} class="{{ . }}"{{ end }} data-fragment-path="{{ $path }}">
+  {{ $fragment.Content }}
+</section>
+{{ else if eq $wrapper "article" }}
+<article{{ with $class }} class="{{ . }}"{{ end }} data-fragment-path="{{ $path }}">
+  {{ $fragment.Content }}
+</article>
+{{ else }}
+<div{{ with $class }} class="{{ . }}"{{ end }} data-fragment-path="{{ $path }}">
+  {{ $fragment.Content }}
+</div>
+{{ end }}

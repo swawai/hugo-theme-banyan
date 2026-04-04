@@ -37,7 +37,7 @@ $customInlinePages = @(
     (Join-Path $publicPath "me\index.html"),
     (Join-Path $publicPath "zh\me\index.html"),
     (Join-Path $publicPath "zh-tw\me\index.html"),
-    (Join-Path $publicPath "prefetchdebug\index.html")
+    (Join-Path $publicPath "prefetch-debug\index.html")
 ) | ForEach-Object { [System.IO.Path]::GetFullPath($_) }
 
 $htmlFiles = Get-ChildItem -Path $publicPath -Recurse -File -Filter *.html
@@ -58,6 +58,7 @@ foreach ($file in $htmlFiles) {
     $path = [System.IO.Path]::GetFullPath($file.FullName)
     $text = Get-Content $path -Raw
 
+    $isAliasPage = Test-Pattern $text '<meta[^>]+http-equiv=(?:"refresh"|refresh)'
     $hasInline = Test-Pattern $text '<style(?:\s[^>]*)?>'
     $hasExternal = Test-Pattern $text '<link[^>]+rel=(?:"stylesheet"|stylesheet)|<link[^>]+rel=(?:"preload"|preload)[^>]+as=(?:"style"|style)'
     $hasMainJs = Test-Pattern $text '/js/main(\.min)?\.[^"'' >]+'
@@ -68,6 +69,13 @@ foreach ($file in $htmlFiles) {
     if (-not $hasInline -and $hasExternal) { $summary.ExternalOnly++ }
     if ($hasInline -and $hasExternal) { $summary.Both++ }
     if (-not $hasInline -and -not $hasExternal) { $summary.Neither++ }
+
+    if ($isAliasPage) {
+        if (-not $hasCanonical) {
+            $issues.Add("Missing canonical link: $path")
+        }
+        continue
+    }
 
     $isHomeInlinePage = $homeInlinePages -contains $path
     $isOfflineInlinePage = $offlineInlinePages -contains $path

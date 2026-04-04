@@ -1,0 +1,11 @@
+{{ $path := .Get "path" }}
+{{ if not $path }}{{ $path = .Get 0 }}{{ end }}
+{{ $class := .Get "class" }}
+{{ if not $class }}{{ $class = .Get 1 }}{{ end }}
+{{ $wrapper := .Get "wrapper" }}
+{{ partial "content-fragment.html" (dict
+  "ctx" .Page
+  "path" $path
+  "class" $class
+  "wrapper" $wrapper
+) | safeHTML }}
