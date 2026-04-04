@@ -4,14 +4,8 @@
 {{ $label := .label }}
 {{ $text := .text }}
 {{ $ctx := .ctx }}
-{{ $linkSlot := .linkSlot }}
-{{ if and (not $linkSlot) (not .field) }}{{ $linkSlot = "sort" }}{{ end }}
-{{ $dataAttrs := .dataAttrs | default dict }}
-{{ with .field }}{{ $dataAttrs = merge $dataAttrs (dict "sort-field" (printf "%v" .)) }}{{ end }}
-{{ with .active }}{{ $dataAttrs = merge $dataAttrs (dict "sort-active" (printf "%v" .)) }}{{ end }}
-{{ with .direction }}{{ $dataAttrs = merge $dataAttrs (dict "sort-direction" (printf "%v" .)) }}{{ end }}
 {{ with $href }}
 <span class="{{ $class }} header">
-  {{ partial "link.html" (dict "ctx" $ctx "href" . "title" $title "label" $label "text" $text "safeHTML" true "linkSlot" $linkSlot "dataAttrs" $dataAttrs) }}
+  {{ partial "link.html" (dict "ctx" $ctx "href" . "label" $label "text" $text "safeHTML" true "linkSlot" "sort") }}
 </span>
 {{ end }}

@@ -14,35 +14,26 @@
     column-gap: 0.6rem;
 }
 
-.grid-list-row {
-    display: contents;
-}
-
-.grid-list > *,
-.grid-list-row > * {
+.grid-list > * {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-.grid-list > :not(.cell-title),
-.grid-list-row > :not(.cell-title) {
+.grid-list > :not(.cell-title) {
     font-size: small;
 }
 
-.grid-list > :is(.cell-date, .cell-count),
-.grid-list-row > :is(.cell-date, .cell-count) {
+.grid-list > :is(.cell-date, .cell-count) {
     color: var(--link-visited);
 }
 
-.grid-list > :is(.cell-title, .cell-date, .cell-count),
-.grid-list-row > :is(.cell-title, .cell-date, .cell-count) {
+.grid-list > :is(.cell-title, .cell-date, .cell-count) {
     pointer-events: none;
 }
 
-.grid-list > :is(.cell-title, .cell-date, .cell-count) a,
-.grid-list-row > :is(.cell-title, .cell-date, .cell-count) a {
+.grid-list > :is(.cell-title, .cell-date, .cell-count) a {
     pointer-events: auto;
 }
 
@@ -108,18 +99,6 @@
 .grid-list .header {
     color: var(--link-visited);
     font-size: small;
-}
-
-.grid-list .header a[data-sort-active="true"] {
-    color: var(--focus);
-}
-
-.grid-list .header a[data-sort-direction="asc"]::after {
-    content: " \2191";
-}
-
-.grid-list .header a[data-sort-direction="desc"]::after {
-    content: " \2193";
 }
 
 .grid-list::after {

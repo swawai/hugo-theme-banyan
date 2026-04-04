@@ -1,12 +1,11 @@
 {{/* 统一生成 items：kind=term/root；参考 UDC 版本 */}}
 {{ $kind := .kind }}
 {{ $ctx := .ctx }}
-{{ $mode := (.mode | default "bydate") }}
+{{ $mode := (.mode | default "byname") }}
 {{ $dateFmt := "2006-01-02" }}
 {{ $items := slice }}
 {{ if eq $kind "term" }}
   {{ $term := printf "%v" $ctx.Data.Term }}
-  {{ with .term }}{{ $term = printf "%v" . }}{{ end }}
   {{ $termNorm := partial "tags-normalize-term.html" $term }}
   {{ $termDepth := len (split $term "/") }}
   {{ $root := index (split $term "/") 0 }}

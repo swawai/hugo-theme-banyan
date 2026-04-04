@@ -1,9 +1,9 @@
-{{/* 构建 UDC term 的 canonical 链接，并按需附带 sort query。 */}}
+{{/* 构建 UDC term 的链接，保留当前 by-* 模式段 */}}
 {{- $ctx := .ctx -}}
-{{- $mode := .mode | default "bydate" -}}
-{{- $plural := printf "%v" (.plural | default "") -}}
-{{- if eq $plural "" -}}{{- $plural = printf "%v" ($ctx.Data.Plural | default "udc") -}}{{- end -}}
-{{- $href := printf "%s%s/" (printf "/%s/" $plural | relLangURL) (urlize .value) -}}
-{{- return (partial "sort-url.html" (dict "href" $href "mode" $mode)) -}}
+{{- $mode := .mode -}}
+{{- $of := $ctx.OutputFormats.Get $mode -}}
+{{- $curr := cond $of $of.RelPermalink (printf "/%s/" $ctx.Data.Plural | relLangURL) -}}
+{{- $root := replaceRE (printf "(/%s/).*$" $ctx.Data.Plural) (printf "/%s/" $ctx.Data.Plural) $curr -}}
+{{- return (printf "%s%s/" $root (urlize .value)) -}}
 
 

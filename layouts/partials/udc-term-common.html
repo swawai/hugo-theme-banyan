@@ -11,7 +11,7 @@
 
 {{ $items := partial "udc-data-items.html" (dict "kind" "term" "ctx" $ctx "mode" .mode) }}
 
-<div class="grid-list" data-list-sort-root data-sortable-list data-current-sort="{{ .mode }}" data-list-sort-mode="{{ .mode }}" data-list-sort-base-href="{{ $ctx.RelPermalink }}" data-list-sort-sync-url="true">
+<div class="grid-list">
   {{ partial "udc-list-view.html" (dict "ctx" $ctx "mode" .mode "items" $items) }}
 </div>
 

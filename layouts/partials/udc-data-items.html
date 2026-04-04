@@ -1,12 +1,11 @@
 {{/* 统一生成 items：kind=term/root；依赖 udc-data-pages-dedup-latest 与 udc-url */}}
 {{ $kind := .kind }}
 {{ $ctx := .ctx }}
-{{ $mode := (.mode | default "bydate") }}
+{{ $mode := (.mode | default "byname") }}
 {{ $dateFmt := "2006-01-02" }}
 {{ $items := slice }}
 {{ if eq $kind "term" }}
   {{ $term := $ctx.Title }}
-  {{ with .term }}{{ $term = printf "%v" . }}{{ end }}
   {{ $children := slice }}
   {{ range $t, $pages := site.Taxonomies.udc }}
     {{ if and (hasPrefix $t (printf "%s/" $term)) (ne $t $term) }}
