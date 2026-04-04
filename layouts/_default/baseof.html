@@ -160,7 +160,8 @@
     {{ if index $desktopWorkspaceData "enabled" }}
     <style>
         [data-desktop-workspace-columns],
-        [data-desktop-workspace-meta] {
+        [data-desktop-workspace-meta],
+        .desktop-workspace-nav-footer {
             display: none;
         }
     </style>
@@ -282,27 +283,20 @@
     {{ end }}
     <div class="page">
         <a class="skip" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
-        {{ $primaryNavItems := partial "site-nav-primary-items.html" (dict "ctx" .) }}
-        {{ $selectedPrimaryNavId := partial "site-nav-current-menu-id.html" (dict "ctx" .) }}
-        {{ $secondaryNavEntries := slice }}
-        {{ if index $desktopWorkspaceData "enabled" }}
-            {{ $secondaryNavEntries = partial "site-nav-secondary-entries.html" (dict "ctx" .) }}
-        {{ end }}
         <nav class="site-nav" aria-label="Primary">
-            <div class="site-nav-primary">
-                {{ range $primaryNavItems }}
-                    {{ $linkClass := "site-nav-primary-link" }}
-                    {{ if eq .id $selectedPrimaryNavId }}{{ $linkClass = printf "%s is-selected" $linkClass }}{{ end }}
-                    {{ partial "link.html" (dict
-                        "ctx" $
-                        "href" .href
-                        "text" .title
-                        "class" $linkClass
-                        "linkSlot" "menu") }}
-                {{ end }}
-            </div>
 
-            <div class="site-nav-tools">
+            {{ range .Site.Menus.main }}
+            {{ $key := printf "menu_%s" .Identifier }}
+            {{ $menuText := i18n $key | default .Name }}
+            {{ $menuTitle := cond (eq .Identifier "udc") "Universal Decimal Classification" "" }}
+            {{ if eq .Identifier "about" }}
+                {{ $aboutText := printf `<span>%s</span><img src="%s" alt="" class="nav-about-logo" aria-hidden="true" fetchpriority="low" />` $menuText $faviconSvg.RelPermalink }}
+                {{ partial "link.html" (dict "ctx" $ "href" (.URL | relLangURL) "title" $menuTitle "text" $aboutText "safeHTML" true "class" "nav-about-link" "linkSlot" "menu") }}
+            {{ else }}
+                {{ partial "link.html" (dict "ctx" $ "href" (.URL | relLangURL) "title" $menuTitle "text" $menuText "linkSlot" "menu") }}
+            {{ end }}
+            {{ end }}
+
             {{ $meLinkRaw := site.Params.me_url | default (site.Params.account_url | default "") }}
             {{ $meLink := "" }}
             {{ $meIsInternal := false }}
@@ -356,39 +350,9 @@
                     <option value="dark">{{ i18n "theme_dark" | default "Dark" }}</option>
                 </select>
             </span>
-            </div>
 
             {{ if index $desktopWorkspaceData "enabled" }}
-                {{ if gt (len $secondaryNavEntries) 0 }}
-                    <section class="site-nav-secondary" aria-label="Primary section links">
-                        <header class="desktop-workspace-column-title">{{ i18n "list_col_name" | default "Name" }}</header>
-                        <div class="desktop-workspace-column-body">
-                            {{ range $secondaryNavEntries }}
-                                {{ $selected := eq .href $.RelPermalink }}
-                                {{ $rowClass := "desktop-workspace-row desktop-workspace-row-compact" }}
-                                {{ if $selected }}{{ $rowClass = printf "%s is-selected" $rowClass }}{{ end }}
-                                {{ $iconHtml := partial "icon" (dict "name" (.icon | default "file")) }}
-                                {{ $rowText := printf `<span class="desktop-workspace-row-icon">%s</span><span class="desktop-workspace-row-label">%s</span>` $iconHtml .title }}
-                                {{ partial "link.html" (dict
-                                    "ctx" $
-                                    "href" .href
-                                    "text" $rowText
-                                    "safeHTML" true
-                                    "class" $rowClass
-                                    "target" .target
-                                    "rel" .rel
-                                    "dataAttrs" (dict
-                                        "selected" (cond $selected "true" "false")
-                                        "kind" .kind
-                                        "title" .title)
-                                    "linkSlot" (.prefetchKind | default "nav")) }}
-                            {{ end }}
-                        </div>
-                    </section>
-                {{ end }}
-                <div class="site-nav-footer">
-                    {{ partial "home-footer-grid.html" (dict "ctx" . "mode" "bydate") }}
-                </div>
+                {{ partial "desktop-workspace-nav-footer.html" (dict "ctx" .) }}
             {{ end }}
 
         </nav>

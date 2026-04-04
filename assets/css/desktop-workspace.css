@@ -14,58 +14,58 @@ body[data-desktop-workspace-active="true"] .page > .site-nav {
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    row-gap: 0.9rem;
+    row-gap: 0.65rem;
     margin-bottom: 0;
     padding-top: 0.35rem;
-    width: 100%;
-    min-height: calc(100vh - 1.5rem);
 }
 
-body[data-desktop-workspace-active="true"] .page > .site-nav > .site-nav-tools {
-    order: -1;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    width: 100%;
-}
-
-body[data-desktop-workspace-active="true"] .page > .site-nav > .site-nav-primary {
-    display: grid;
-    gap: 0.55rem;
-    width: 100%;
-}
-
-body[data-desktop-workspace-active="true"] .page > .site-nav > .site-nav-primary > .site-nav-primary-link {
-    width: 100%;
-    justify-content: flex-start;
-}
-
-body[data-desktop-workspace-active="true"] .page > .site-nav > .site-nav-tools :is(a, .icon-select-wrapper) {
-    align-items: center;
-}
-
-body[data-desktop-workspace-active="true"] .page > .site-nav > .site-nav-secondary {
-    display: grid;
-    width: 100%;
-}
-
-body[data-desktop-workspace-active="true"] .page > .site-nav > .site-nav-secondary .desktop-workspace-column-title {
-    margin-bottom: 0.55rem;
-}
-
-body[data-desktop-workspace-active="true"] .page > .site-nav > .site-nav-footer {
+body[data-desktop-workspace-active="true"] .desktop-workspace-nav-footer {
     display: block;
     width: 100%;
-    margin-top: auto;
-    padding-top: 0.3rem;
-}
-
-body[data-desktop-workspace-active="true"] .page > .site-nav > .site-nav-footer .home-footer-shortcuts {
-    margin: 0;
-}
-
-body[data-desktop-workspace-active="true"] .page > .site-nav > .site-nav-footer .grid-list.grid-list-meta {
+    margin-top: 0.9rem;
     padding-top: 0.85rem;
+    border-top: 1px solid color-mix(in srgb, var(--focus), transparent 88%);
+}
+
+body[data-desktop-workspace-active="true"] .desktop-workspace-nav-footer-list {
+    display: grid;
+    gap: 0.45rem;
+}
+
+body[data-desktop-workspace-active="true"] .desktop-workspace-nav-footer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--link-visited);
+    text-decoration: none;
+    font-size: 0.84rem;
+    line-height: 1.45;
+}
+
+body[data-desktop-workspace-active="true"] .desktop-workspace-nav-footer-link:visited {
+    color: var(--link-visited);
+}
+
+body[data-desktop-workspace-active="true"] .desktop-workspace-nav-footer-link:hover {
+    color: var(--link);
+}
+
+body[data-desktop-workspace-active="true"] .desktop-workspace-nav-footer-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1rem;
+    min-width: 1rem;
+    color: var(--link-visited);
+}
+
+body[data-desktop-workspace-active="true"] .desktop-workspace-nav-footer-icon-text {
+    font-weight: 600;
+    line-height: 1;
+}
+
+body[data-desktop-workspace-active="true"] .desktop-workspace-nav-footer-label {
+    min-width: 0;
 }
 
 body[data-desktop-workspace-kind="leaf"][data-desktop-workspace-active="true"] .desktop-workspace-main-column > :is(.breadcrumb-nav, .post-dir, .post-udc, .post-tags) {

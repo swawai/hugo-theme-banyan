@@ -1,7 +1,19 @@
 {{ $ctx := .ctx }}
 {{ $mode := .mode }}
 {{ $columns := slice }}
-{{ if not $ctx.IsHome }}
+{{ $dirRoot := $ctx.Site.GetPage "section" "d" }}
+{{ if and (not $ctx.IsHome) $dirRoot }}
+  {{ $homeEntries := partial "dir-entries.html" (dict "ctx" $ctx.Site.Home "mode" $mode "home_shortcuts_only" true) }}
+  {{ $homeSelectedHref := partial "sort-url.html" (dict "href" $dirRoot.RelPermalink "mode" $mode) }}
+  {{ $columns = $columns | append (dict
+    "key" "home"
+    "title" ((i18n "menu_home") | default "Home")
+    "entries" $homeEntries
+    "selectedHref" $homeSelectedHref
+    "variant" "compact"
+    "sortable" false
+    "currentSort" $mode) }}
+
   {{ $sectionChain := slice }}
   {{ if eq $ctx.Kind "section" }}
     {{ range where $ctx.Ancestors.Reverse "Section" "d" }}
