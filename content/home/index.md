@@ -1,23 +1,25 @@
 ---
-title: "首頁導覽預設項"
+title: "Home"
+linkTitle: "Home"
 build:
   list: never
   render: never
 listing_exclude: true
+nav_href: "/"
 desktop_children:
-  - title: "目錄"
+  - title: "Directory"
     href: "/d/"
     icon: "folder"
     kind: "section"
-  - title: "標籤"
+  - title: "Tags"
     href: "/tags/"
     icon: "folder"
     kind: "section"
-  - title: "學科索引"
+  - title: "UDC Index"
     href: "/udc/"
     icon: "folder"
     kind: "section"
-  - title: "全部內容"
+  - title: "All Content"
     href: "/all/"
     icon: "folder"
     kind: "section"

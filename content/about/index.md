@@ -5,15 +5,7 @@ title: "About"
 slug: "about"
 type: "page"
 build:
-  render: "always"
-listing_exclude: true
-nav_id: "about"
-nav_slot: "footer"
-nav_weight: 1
-render_main: "article"
-render_breadcrumb: "article-path"
-render_styles_variant: "page-crumb"
-render_workspace: "none"
+  list: "never"
 ---
 
 ## About Banyan Theme

@@ -1,9 +1,0 @@
-{{ $ctx := . }}
-{{ if reflect.IsMap . }}{{ with .ctx }}{{ $ctx = . }}{{ end }}{{ end }}
-{{ $contract := partial "page-render-contract.html" (dict "ctx" $ctx) }}
-{{ $renderer := index $contract "main" }}
-{{ $template := printf "partials/render/main/%s.html" $renderer }}
-{{ if not (templates.Exists $template) }}
-  {{ errorf "编译失败: 页面 %q 声明的 render_main=%q 未找到模板 %q。" $ctx.RelPermalink $renderer $template }}
-{{ end }}
-{{ partial (printf "render/main/%s.html" $renderer) (dict "ctx" $ctx "contract" $contract) }}

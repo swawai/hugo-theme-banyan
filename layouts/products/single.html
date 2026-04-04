@@ -1,7 +1,7 @@
-{{ define "breadcrumb" }}
-{{ partial "render-breadcrumb.html" . }}
+{{ define "styles" }}
+{{ partial "head-styles.html" (dict "ctx" . "variant" "products") }}
 {{ end }}
 
 {{ define "main" }}
-{{ partial "render-main.html" . }}
+{{ partial "products-list-common.html" (dict "ctx" . "mode" "productsbynameasc") }}
 {{ end }}

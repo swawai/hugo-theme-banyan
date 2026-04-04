@@ -1,15 +1,20 @@
 {{ $ctx := .ctx }}
 {{ $entries := slice }}
-
-{{ range partial "site-nav-registry.html" (dict "ctx" $ctx) }}
-  {{ if ne .slot "footer" }}{{ continue }}{{ end }}
-  {{ $entries = $entries | append (dict
-    "title" .title
-    "href" .href
-    "icon" "file"
-    "dateKey" (printf "20260323%02d0000" (sub 100 .weight))
-    "cnt" .weight) }}
+{{ $aboutHref := "/about/" | relLangURL }}
+{{ $aboutTitle := i18n "menu_about" | default "About" }}
+{{ range $ctx.Site.Menus.main }}
+  {{ if eq .Identifier "about" }}
+    {{ $aboutHref = .URL | relLangURL }}
+    {{ $aboutTitle = i18n "menu_about" | default .Name }}
+  {{ end }}
 {{ end }}
+
+{{ $entries = $entries | append (dict
+  "title" $aboutTitle
+  "href" $aboutHref
+  "icon" "file"
+  "dateKey" "20260323040000"
+  "cnt" 4) }}
 
 {{ with site.Params.copyright }}
   {{ $entries = $entries | append (dict

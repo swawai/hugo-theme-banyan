@@ -1,23 +1,25 @@
 ---
-title: "Home Navigation Defaults"
+title: "首页"
+linkTitle: "首页"
 build:
   list: never
   render: never
 listing_exclude: true
+nav_href: "/"
 desktop_children:
-  - title: "Directory"
+  - title: "目录"
     href: "/d/"
     icon: "folder"
     kind: "section"
-  - title: "Tags"
+  - title: "标签"
     href: "/tags/"
     icon: "folder"
     kind: "section"
-  - title: "UDC Index"
+  - title: "学科索引"
     href: "/udc/"
     icon: "folder"
     kind: "section"
-  - title: "All Content"
+  - title: "全部内容"
     href: "/all/"
     icon: "folder"
     kind: "section"
