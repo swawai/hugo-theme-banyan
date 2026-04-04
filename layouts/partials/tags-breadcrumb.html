@@ -1,8 +1,10 @@
-{{/* TAGS 分类通用面包屑导航：保持当前排序 query，并始终指向 canonical taxonomy/term URL。 */}}
+{{/* TAGS 分类通用面包屑导航：保持当前排序模式（by-*）前缀；不使用 Site.GetPage 以兼容性生成链接 */}}
 {{ $ctx := .ctx | default . }}
-{{ $mode := (.mode | default "bydate") }}
-{{ $root := partial "sort-url.html" (dict "href" (printf "/%s/" $ctx.Data.Plural | relLangURL) "mode" $mode) }}
+{{ $mode := (.mode | default "byname") }}
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+{{ $of := $ctx.OutputFormats.Get $mode }}
+{{ $curr := cond $of $of.RelPermalink (printf "/%s/" $ctx.Data.Plural | relLangURL) }}
+{{ $root := $curr | replaceRE (printf "(/%s/).*$" $ctx.Data.Plural) (printf "/%s/" $ctx.Data.Plural) }}
 {{ partial "link.html" (dict "ctx" $ctx "href" $root "text" (i18n "menu_tags") "textClass" "crumb-text" "dataAttrs" (cond (ne $ctx.Kind "term") (dict "site-update-anchor" "true") (dict)) "linkSlot" "nav") }}
 
 {{ if eq $ctx.Kind "term" }}
@@ -13,7 +15,7 @@
       {{ $path = $path | append $seg }}
       {{ $disp := $seg }}
       {{ if eq (lower $seg) "misc" }}{{ $disp = "untagged..." }}{{ end }}
-      {{ $href := partial "tags-url.html" (dict "ctx" $ctx "mode" $mode "value" (delimit $path "/")) }}
+      {{ $href := printf "%s%s/" $root (urlize (delimit $path "/")) }}
     ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" $href "text" $disp "textClass" "crumb-text" "dataAttrs" (cond (eq $i (sub (len $segments) 1)) (dict "site-update-anchor" "true") (dict)) "linkSlot" "nav") }}
     {{ end }}
   {{ end }}

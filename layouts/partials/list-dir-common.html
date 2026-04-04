@@ -5,88 +5,149 @@
 */}}
 {{ $ctx := .ctx }}
 {{ $mode := .mode }}
-{{ $pageHref := $ctx.RelPermalink }}
-{{ $nameLabel := i18n "list_col_name" }}
-{{ $dateLabel := i18n "list_col_date" }}
-{{ $countLabel := i18n "list_col_count" }}
-{{ $nameActive := or (eq $mode "byname") (eq $mode "bynameasc") }}
-{{ $dateActive := or (eq $mode "bydate") (eq $mode "bydateasc") }}
-{{ $countActive := or (eq $mode "bycount") (eq $mode "bycountasc") }}
-{{ $nameDirection := "none" }}
-{{ if eq $mode "bynameasc" }}{{ $nameDirection = "asc" }}{{ else if eq $mode "byname" }}{{ $nameDirection = "desc" }}{{ end }}
-{{ $dateDirection := "none" }}
-{{ if eq $mode "bydateasc" }}{{ $dateDirection = "asc" }}{{ else if eq $mode "bydate" }}{{ $dateDirection = "desc" }}{{ end }}
-{{ $countDirection := "none" }}
-{{ if eq $mode "bycountasc" }}{{ $countDirection = "asc" }}{{ else if eq $mode "bycount" }}{{ $countDirection = "desc" }}{{ end }}
 
 {{/* 面包屑：仅 /d/ 根页显示 DIR；其余 d 下页面直接走祖先链 */}}
 {{ $isDirectoryRoot := and (eq $ctx.Kind "section") (eq $ctx.Section "d") (eq $ctx.RelPermalink $ctx.FirstSection.RelPermalink) }}
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
   {{ if $ctx.IsHome }}
-    {{ partial "link.html" (dict "ctx" $ctx "href" (partial "sort-url.html" (dict "href" $ctx.Site.Home.RelPermalink "mode" $mode)) "text" ((i18n "menu_home") | default "HOME") "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
+    {{ with $ctx.Site.Home.OutputFormats.Get $mode }}
+      {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" ((i18n "menu_home") | default "HOME") "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
+    {{ end }}
   {{ else if $isDirectoryRoot }}
-    {{ partial "link.html" (dict "ctx" $ctx "href" (partial "sort-url.html" (dict "href" $ctx.RelPermalink "mode" $mode)) "text" ($ctx.LinkTitle | default $ctx.Title) "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
+    {{ partial "link.html" (dict "ctx" $ctx "href" $ctx.RelPermalink "text" ($ctx.LinkTitle | default $ctx.Title) "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
   {{ else }}
     {{ $rendered := false }}
     {{ range (where $ctx.Ancestors.Reverse "IsHome" "ne" true) }}
       {{ $p := . }}
-      {{ if $rendered }} ﹥ {{ end }}
-      {{ partial "link.html" (dict "ctx" $ctx "href" (partial "sort-url.html" (dict "href" $p.RelPermalink "mode" $mode)) "text" $p.LinkTitle "textClass" "crumb-text" "linkSlot" "nav") }}
-      {{ $rendered = true }}
+      {{ with $p.OutputFormats.Get $mode }}
+        {{ if $rendered }} ﹥ {{ end }}
+        {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" $p.LinkTitle "textClass" "crumb-text" "linkSlot" "nav") }}
+        {{ $rendered = true }}
+      {{ end }}
     {{ end }}
-    {{ if $rendered }} ﹥ {{ end }}
-    {{ partial "link.html" (dict "ctx" $ctx "href" (partial "sort-url.html" (dict "href" $ctx.RelPermalink "mode" $mode)) "text" $ctx.Title "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
+    {{ with $ctx.OutputFormats.Get $mode }}
+      {{ if $rendered }} ﹥ {{ end }}
+      {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" $ctx.Title "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
+    {{ end }}
   {{ end }}
 </nav>
 
 {{ partial "page-list-intro.html" (dict "ctx" $ctx) }}
 
-<div class="grid-list" data-list-sort-root data-sortable-list data-current-sort="{{ $mode }}" data-list-sort-mode="{{ $mode }}" data-list-sort-base-href="{{ $pageHref }}" data-list-sort-sync-url="true">
+<div class="grid-list">
   {{ $cfg := partial "grid-sort-config.html" (dict "variant" "dir" "mode" $mode) }}
-  {{ partial "grid-sort-cell.html" (dict
-    "class" "cell-title"
-    "ctx" $ctx
-    "href" (partial "sort-url.html" (dict "href" $pageHref "mode" (cond (eq $mode "bynameasc") "byname" "bynameasc")))
-    "title" $nameLabel
-    "label" $nameLabel
-    "text" $nameLabel
-    "field" "title"
-    "active" (cond $nameActive "true" "false")
-    "direction" $nameDirection
-    "linkSlot" "") }}
+  {{ $ctrl := index $cfg "controls" }}
+  {{ $sf := index $cfg "sortField" }}
+  {{ $so := index $cfg "sortOrder" }}
+  {{ $nameAsc := and (eq $sf "title") (eq $so "asc") }}
+  {{ $dateAsc := and (eq $sf "dateKey") (eq $so "asc") }}
+  {{ $countAsc := and (eq $sf "cnt") (eq $so "asc") }}
+  {{ $nameSortText := cond $nameAsc (i18n "list_sort_name_desc") (i18n "list_sort_name_asc") }}
+  {{ $dateSortText := cond $dateAsc (i18n "list_sort_date_desc") (i18n "list_sort_date_asc") }}
+  {{ $countSortText := cond $countAsc (i18n "list_sort_count_desc") (i18n "list_sort_count_asc") }}
 
-  {{ partial "grid-sort-cell.html" (dict
-    "class" "cell-date"
-    "ctx" $ctx
-    "href" (partial "sort-url.html" (dict "href" $pageHref "mode" (cond (eq $mode "bydateasc") "bydate" "bydateasc")))
-    "title" $dateLabel
-    "label" $dateLabel
-    "text" $dateLabel
-    "field" "date"
-    "active" (cond $dateActive "true" "false")
-    "direction" $dateDirection
-    "linkSlot" "") }}
+  {{ with $ctx.OutputFormats.Get (index $ctrl "name") }}
+    {{ partial "grid-sort-cell.html" (dict
+      "class" "cell-title"
+      "ctx" $ctx
+      "href" .RelPermalink
+      "title" $nameSortText
+      "label" $nameSortText
+      "text" (index $ctrl "nameText")) }}
+  {{ end }}
 
-  {{ partial "grid-sort-cell.html" (dict
-    "class" "cell-count"
-    "ctx" $ctx
-    "href" (partial "sort-url.html" (dict "href" $pageHref "mode" (cond (eq $mode "bycountasc") "bycount" "bycountasc")))
-    "title" $countLabel
-    "label" $countLabel
-    "text" $countLabel
-    "field" "count"
-    "active" (cond $countActive "true" "false")
-    "direction" $countDirection
-    "linkSlot" "") }}
+  {{ with $ctx.OutputFormats.Get (index $ctrl "date") }}
+    {{ partial "grid-sort-cell.html" (dict
+      "class" "cell-date"
+      "ctx" $ctx
+      "href" .RelPermalink
+      "title" $dateSortText
+      "label" $dateSortText
+      "text" (index $ctrl "dateText")) }}
+  {{ end }}
 
-  {{ $ordered := partial "dir-entries.html" (dict "ctx" $ctx "mode" $mode) }}
+  {{ with $ctx.OutputFormats.Get (index $ctrl "count") }}
+    {{ partial "grid-sort-cell.html" (dict
+      "class" "cell-count"
+      "ctx" $ctx
+      "href" .RelPermalink
+      "title" $countSortText
+      "label" $countSortText
+      "text" (index $ctrl "countText")) }}
+  {{ end }}
+
+  {{ $dirEntries := slice }}
+  {{ if $ctx.IsHome }}
+    {{ range partial "list-dir-home-shortcuts.html" (dict "ctx" $ctx "mode" $mode) }}
+      {{ $dirEntries = $dirEntries | append . }}
+    {{ end }}
+  {{ end }}
+  {{ range $ctx.Sections }}
+    {{ $section := . }}
+    {{ if and $ctx.IsHome (eq $section.Section "d") }}{{ continue }}{{ end }}
+    {{ $cnt := len $section.RegularPagesRecursive }}
+    {{ $d := $section.Lastmod }}
+    {{ with first 1 ($section.RegularPagesRecursive.ByLastmod.Reverse) }}
+      {{ $p := index . 0 }}
+      {{ $d = $p.Lastmod }}
+    {{ else }}
+      {{ with first 1 ($section.RegularPagesRecursive.ByDate.Reverse) }}
+        {{ $p := index . 0 }}
+        {{ $d = $p.Date }}
+      {{ end }}
+    {{ end }}
+    {{ if eq ($d.Format "2006") "0001" }}{{ $d = $section.Date }}{{ end }}
+    {{ with $section.OutputFormats.Get $mode }}
+      {{ $dirEntries = $dirEntries | append (dict
+        "kind" "section"
+        "title" $section.Title
+        "href" .RelPermalink
+        "icon" "folder"
+        "prefetchKind" "desc"
+        "cnt" $cnt
+        "countText" $cnt
+        "countUnit" ""
+        "dateKey" ($d.Format "20060102150405")
+        "dateText" ($d.Format "2006-01-02")) }}
+    {{ end }}
+  {{ end }}
+
+  {{ range $ctx.RegularPages }}
+    {{ $page := . }}
+    {{ $bytes := len $page.RawContent }}
+    {{ $kb := div (add $bytes 1023) 1024 }}
+    {{ $d := $page.Lastmod }}
+    {{ if eq ($d.Format "2006") "0001" }}{{ $d = $page.Date }}{{ end }}
+    {{ $dirEntries = $dirEntries | append (dict
+      "kind" "page"
+      "title" $page.Title
+      "href" $page.RelPermalink
+      "icon" "file"
+      "prefetchKind" "post"
+      "cnt" $bytes
+      "countText" $kb
+      "countUnit" "&thinsp;KB"
+      "dateKey" ($d.Format "20060102150405")
+      "dateText" ($d.Format "2006-01-02")) }}
+  {{ end }}
+
+  {{ $sortField := index $cfg "sortField" }}
+  {{ $sortOrder := index $cfg "sortOrder" }}
+  {{ $sectionEntries := sort (where $dirEntries "kind" "section") $sortField $sortOrder }}
+  {{ $pageEntries := sort (where $dirEntries "kind" "page") $sortField $sortOrder }}
+  {{ $ordered := slice }}
+  {{ if eq $sortOrder "asc" }}
+    {{ range $sectionEntries }}{{ $ordered = $ordered | append . }}{{ end }}
+    {{ range $pageEntries }}{{ $ordered = $ordered | append . }}{{ end }}
+  {{ else }}
+    {{ range $pageEntries }}{{ $ordered = $ordered | append . }}{{ end }}
+    {{ range $sectionEntries }}{{ $ordered = $ordered | append . }}{{ end }}
+  {{ end }}
 
 {{ range $ordered }}
-    <div class="grid-list-row" data-sortable-row data-kind="{{ .kind }}" data-title="{{ .title }}" data-date-key="{{ .dateKey }}" data-count="{{ .cnt }}">
-      {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .href "title" .title "icon" .icon "prefetchKind" .prefetchKind) }}
-      <span class="cell-date">{{ .dateText }}</span>
-      <span class="cell-count"><span>{{ .countText }}</span><span class="unit">{{ .countUnit | safeHTML }}</span></span>
-    </div>
+    {{ partial "grid-title-cell.html" (dict "ctx" $ctx "href" .href "title" .title "icon" .icon "prefetchKind" .prefetchKind) }}
+    <span class="cell-date">{{ .dateText }}</span>
+    <span class="cell-count"><span>{{ .countText }}</span><span class="unit">{{ .countUnit | safeHTML }}</span></span>
   {{ end }}
 </div>
 

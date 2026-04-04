@@ -7,27 +7,6 @@
     {{ errorf "编译失败: params.service_worker.mode 仅支持 enable/disable/off，当前值为 %q。" $swModeRaw }}
 {{ end }}
 {{ $swVersion := partialCached "service-worker-version.html" . "service-worker-version" }}
-{{ $desktopWorkspaceData := partial "desktop-workspace-page-data.html" (dict "ctx" .) }}
-{{ $desktopWorkspaceColumns := "" }}
-{{ $desktopWorkspaceMeta := "" }}
-{{ $desktopWorkspaceAxisFragments := "" }}
-{{ if index $desktopWorkspaceData "enabled" }}
-    {{ $desktopWorkspaceColumns = partial "desktop-workspace-columns-region.html" (dict
-        "ctx" .
-        "mode" (index $desktopWorkspaceData "currentSort")
-        "axis" (index $desktopWorkspaceData "axis")) }}
-    {{ $desktopWorkspaceMeta = partial "desktop-workspace-meta-region.html" (dict
-        "ctx" .
-        "pageKind" (index $desktopWorkspaceData "pageKind")) }}
-    {{ if eq (index $desktopWorkspaceData "pageKind") "leaf" }}
-        {{ $desktopWorkspaceAxisFragments = partial "desktop-workspace-axis-fragments.html" (dict
-            "ctx" .
-            "mode" (index $desktopWorkspaceData "currentSort")) }}
-    {{ end }}
-{{ end }}
-{{ $desktopWorkspaceColumnsHasContent := gt (len (replaceRE "\\s+" "" (printf "%s" $desktopWorkspaceColumns))) 0 }}
-{{ $desktopWorkspaceMetaHasContent := gt (len (replaceRE "\\s+" "" (printf "%s" $desktopWorkspaceMeta))) 0 }}
-{{ $desktopWorkspaceAxisFragmentsHasContent := gt (len (replaceRE "\\s+" "" (printf "%s" $desktopWorkspaceAxisFragments))) 0 }}
 {{ with index $swConfig "cache_first_extensions" }}
     {{ errorf "编译失败: params.service_worker.cache_first_extensions 已迁移到 data/cache-policy.toml（或主题默认缓存策略）的 routes[].sw 配置，请勿继续在 hugo.toml 中设置。" }}
 {{ end }}
@@ -141,32 +120,6 @@
     {{ partial "page-bundle-resources.html" (dict "ctx" . "kind" "inline-css") }}
     {{ partial "page-bundle-resources.html" (dict "ctx" . "kind" "primary-inline-css") }}
     {{ partial "page-bundle-resources.html" (dict "ctx" . "kind" "css") }}
-    {{ $desktopWorkspaceCss := "" }}
-    {{ $desktopWorkspaceRuntime := "" }}
-    {{ if index $desktopWorkspaceData "enabled" }}
-        {{ $desktopWorkspaceCssSource := resources.Get "css/desktop-workspace.css" }}
-        {{ if not $desktopWorkspaceCssSource }}{{ errorf "编译失败: 缺少资源 %q。" "css/desktop-workspace.css" }}{{ end }}
-        {{ $desktopWorkspaceCssAsset := partial "css-process.html" (dict "resource" $desktopWorkspaceCssSource "fingerprint" true) }}
-        {{ $desktopWorkspaceCss = $desktopWorkspaceCssAsset.RelPermalink }}
-        {{ $desktopWorkspaceRuntimeSource := resources.Get "js/desktop-workspace.runtime.js" }}
-        {{ if not $desktopWorkspaceRuntimeSource }}{{ errorf "编译失败: 缺少资源 %q。" "js/desktop-workspace.runtime.js" }}{{ end }}
-        {{ $desktopWorkspaceRuntimeAsset := $desktopWorkspaceRuntimeSource | js.Build (dict
-            "targetPath" "js/desktop-workspace.runtime.js"
-            "minify" (not hugo.IsServer)
-        ) }}
-        {{ $desktopWorkspaceRuntimeAsset = $desktopWorkspaceRuntimeAsset | fingerprint }}
-        {{ $desktopWorkspaceRuntime = $desktopWorkspaceRuntimeAsset.RelPermalink }}
-    {{ end }}
-    {{ if index $desktopWorkspaceData "enabled" }}
-    <style>
-        [data-desktop-workspace-columns],
-        [data-desktop-workspace-meta],
-        .desktop-workspace-nav-footer {
-            display: none;
-        }
-    </style>
-    <link rel="stylesheet" href="{{ $desktopWorkspaceCss }}" data-desktop-workspace-css="{{ $desktopWorkspaceCss }}" media="screen and (min-width: 72rem) and (hover: hover) and (pointer: fine)">
-    {{ end }}
     {{ $prefetchConfig := site.Params.link_prefetch | default dict }}
     {{ $prefetchLabels := slice "menu" "nav" "sort_siblings" "descendants" "post" }}
     {{ range $label := $prefetchLabels }}
@@ -265,18 +218,7 @@
         {{ end }}
     {{ end }}
 </head>
-<body
-    data-asset-manifest-url="{{ $assetManifest.RelPermalink }}"
-    data-desktop-workspace-active="{{ if index $desktopWorkspaceData "enabled" }}true{{ else }}false{{ end }}"
-    data-desktop-workspace-enabled="{{ if index $desktopWorkspaceData "enabled" }}true{{ else }}false{{ end }}"
-    data-desktop-workspace-axis="{{ index $desktopWorkspaceData "axis" }}"
-    data-desktop-workspace-kind="{{ index $desktopWorkspaceData "pageKind" }}"
-    data-desktop-workspace-context="{{ index $desktopWorkspaceData "context" }}"
-    data-desktop-workspace-sort="{{ index $desktopWorkspaceData "currentSort" }}"
-    data-desktop-workspace-url="{{ index $desktopWorkspaceData "desktopUrl" }}"
-    data-desktop-workspace-build="{{ $swVersion }}"
-    data-desktop-workspace-css-url="{{ $desktopWorkspaceCss }}"
-    data-desktop-workspace-runtime-url="{{ $desktopWorkspaceRuntime }}">
+<body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}">
     {{ partialCached "icon-sprite.html" . "icon-sprite" }}
     {{ if and .IsPage (not .Params.slug) }}
         {{ errorf "编译失败: 页面 %q (标题: %q) 未配置 slug 字段。" .File.Path .Title }}
@@ -351,26 +293,15 @@
                 </select>
             </span>
 
-            {{ if index $desktopWorkspaceData "enabled" }}
-                {{ partial "desktop-workspace-nav-footer.html" (dict "ctx" .) }}
-            {{ end }}
 
         </nav>
 
-        <div class="desktop-workspace-main-column" data-desktop-workspace-main-column>
-            {{ block "breadcrumb" . }}{{ end }}
+        {{ block "breadcrumb" . }}{{ end }}
+        
 
-            <div class="desktop-workspace-shell" data-desktop-workspace-shell>
-                <div class="desktop-workspace-columns" data-desktop-workspace-columns{{ if not $desktopWorkspaceColumnsHasContent }} hidden{{ end }}>{{ $desktopWorkspaceColumns }}</div>
-                <main id="main">
-                    {{ block "main" . }}{{ end }}
-                </main>
-                <aside class="desktop-workspace-meta" data-desktop-workspace-meta{{ if not $desktopWorkspaceMetaHasContent }} hidden{{ end }}>{{ $desktopWorkspaceMeta }}</aside>
-            </div>
-            {{ if $desktopWorkspaceAxisFragmentsHasContent }}
-                <div class="desktop-workspace-axis-fragments" data-desktop-workspace-axis-fragments hidden>{{ $desktopWorkspaceAxisFragments }}</div>
-            {{ end }}
-        </div>
+        <main id="main">
+            {{ block "main" . }}{{ end }}
+        </main>
     </div>
     {{ if not $isOfflineLayout }}
     {{ partial "prefetch-runtime-embed.html" (dict "ctx" . "sw_mode" $swMode "env_config_map" $prefetchEnvConfig) }}
@@ -378,4 +309,3 @@
 </body>
 
 </html>
-
