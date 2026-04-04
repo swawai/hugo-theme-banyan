@@ -1,8 +1,0 @@
-<article class="article">
-  <div class="prose">
-    {{ .Content }}
-  </div>
-</article>
-{{ if eq (lower (printf "%v" (.Params.nav_parent_id | default ""))) "home" }}
-  {{ partial "layout/article/home-sections-nav.html" . }}
-{{ end }}
