@@ -95,6 +95,7 @@ other = "Updated"
 [label_me]
 other = "Me"
 
+
 [no_trans_msg]
 other = "This page does not yet have a [{lang}] version.\nGo to the [{lang}] homepage?"
 

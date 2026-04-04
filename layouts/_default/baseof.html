@@ -1,7 +1,17 @@
 {{ $swConfig := site.Params.service_worker | default dict }}
 {{ $swModeRaw := index $swConfig "mode" | default "off" }}
 {{ $swMode := lower (printf "%v" $swModeRaw) }}
-{{ $isOfflineLayout := eq .Layout "offline" }}
+{{ $offlineNoticePathRaw := printf "%v" (index $swConfig "offline_notice_path" | default "offline/") }}
+{{ $offlineNoticePath := trim $offlineNoticePathRaw "/" }}
+{{ if eq $offlineNoticePath "" }}
+    {{ errorf "编译失败: params.service_worker.offline_notice_path 不能为空。" }}
+{{ end }}
+{{ $offlineNoticeRelPermalinks := slice }}
+{{ range sort .Sites "Language.Weight" }}
+    {{ $offlineNoticeRelPermalinks = $offlineNoticeRelPermalinks | append (lower (printf "%s%s/" .Home.RelPermalink $offlineNoticePath)) }}
+{{ end }}
+{{ $isOfflinePage := in $offlineNoticeRelPermalinks (lower .RelPermalink) }}
+{{ .Scratch.Set "is_offline_page" $isOfflinePage }}
 {{ $allowedSwModes := slice "enable" "disable" "off" }}
 {{ if not (in $allowedSwModes $swMode) }}
     {{ errorf "编译失败: params.service_worker.mode 仅支持 enable/disable/off，当前值为 %q。" $swModeRaw }}
@@ -53,7 +63,7 @@
 {{ range sort .Sites "Language.Weight" }}
     {{ $offlineFallbacks = $offlineFallbacks | append (dict
         "path_prefix" (lower (printf "%v" .Home.RelPermalink))
-        "url" (printf "%soffline/" .Home.RelPermalink)
+        "url" (printf "%s%s/" .Home.RelPermalink $offlineNoticePath)
     ) }}
 {{ end }}
 {{ $primarySite := index (sort .Sites "Language.Weight") 0 }}
@@ -117,6 +127,7 @@
     <script>(function(){try{var pref=localStorage.getItem('theme-preference');var media=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');var theme=(!pref||pref==='auto')?((media&&media.matches)?'dark':'light'):pref;document.documentElement.setAttribute('data-theme',theme);}catch(e){}})();</script>
     {{ block "styles" . }}{{ partial "head-styles.html" (dict "ctx" .) }}{{ end }}
     {{ block "head-extra" . }}{{ end }}
+    {{ partial "page-resources-head.html" . }}
     {{ $prefetchConfig := site.Params.link_prefetch | default dict }}
     {{ $prefetchLabels := slice "menu" "nav" "sort_siblings" "descendants" "post" }}
     {{ range $label := $prefetchLabels }}
@@ -157,7 +168,7 @@
     {{ if not hugo.IsServer }}{{ $js = $js | minify }}{{ end }}
     {{ $js = $js | fingerprint }}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
-    {{ if and (ne $swMode "off") (not $isOfflineLayout) }}
+    {{ if and (ne $swMode "off") (not $isOfflinePage) }}
         {{/* 源文件命名约定：含模板语法的资源用 .tmpl，纯 JS 用 .js。 */}}
         {{ if eq $swMode "enable" }}
             {{ $swScriptTemplatePath := "js/sw.enable.js.tmpl" }}
@@ -294,7 +305,8 @@
             {{ block "main" . }}{{ end }}
         </main>
     </div>
-    {{ if not $isOfflineLayout }}
+    {{ partial "page-resources-body.html" . }}
+    {{ if not $isOfflinePage }}
     {{ partial "prefetch-runtime-embed.html" (dict "ctx" . "sw_mode" $swMode "env_config_map" $prefetchEnvConfig) }}
     {{ end }}
 </body>

@@ -9,7 +9,6 @@
     color: var(--code-block-text);
     background: var(--code-block-bg);
     overscroll-behavior-x: none;
-    overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: thin;
     scrollbar-color: var(--code-scrollbar-thumb) var(--code-scrollbar-track);
