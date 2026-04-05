@@ -1,0 +1,36 @@
+{{ $host := .Page }}
+{{ $target := $host }}
+{{ with .Get "page" }}
+  {{ $path := printf "%v" . }}
+  {{ with $host.Site.GetPage $path }}
+    {{ $target = . }}
+  {{ else }}
+    {{ errorf "编译失败: 页面 %q 的 collection-list shortcode 找不到 page=%q 对应页面。" $host.File.Path $path }}
+  {{ end }}
+{{ end }}
+{{ if eq $target.RelPermalink $host.RelPermalink }}
+  {{ $host.Scratch.Set "collection_list_rendered" true }}
+{{ end }}
+{{ if not (eq ($host.Scratch.Get "collection_list_assets_rendered") true) }}
+  {{ $host.Scratch.Set "collection_list_assets_rendered" true }}
+  {{ $gridList := resources.Get "css/grid-list.css" }}
+  {{ $gridVariant := resources.Get (printf "css/grid-%s.css" (printf "%v" ($target.Params.collection.variant | default ""))) }}
+  {{ if not $gridList }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-list.css" }}{{ end }}
+  {{ if not $gridVariant }}{{ errorf "编译失败: 页面 %q 的 collection.variant=%q 缺少对应样式资源。" $target.File.Path ($target.Params.collection.variant | default "") }}{{ end }}
+  {{ $gridCss := slice $gridList $gridVariant | resources.Concat (printf "css/collection-list.%s.embed.css" ($target.Params.collection.variant | default "flat")) }}
+  {{ if not hugo.IsServer }}{{ $gridCss = $gridCss | minify }}{{ end }}
+<style>{{ $gridCss.Content | safeCSS }}</style>
+  {{ $sortJs := resources.Get "js/sortable-grids.js" | js.Build }}
+  {{ if not hugo.IsServer }}{{ $sortJs = $sortJs | minify }}{{ end }}
+<script>{{ $sortJs.Content | safeJS }}</script>
+{{ end }}
+{{ $collection := $target.Params.collection | default dict }}
+{{ $builder := printf "%v" (index $collection "item_builder" | default "") }}
+{{ if eq $builder "" }}{{ errorf "编译失败: 页面 %q 缺少 collection.item_builder。" $target.File.Path }}{{ end }}
+{{ $items := partial (printf "collection-items/%s.html" $builder) (dict "ctx" $target "collection" $collection) }}
+{{ partial "collection-grid.html" (dict
+  "ctx" $host
+  "page" $target
+  "collection" $collection
+  "items" $items
+  "emptyLabel" (printf "%v" (index $collection "empty_label" | default ""))) }}

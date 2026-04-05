@@ -1,0 +1,76 @@
+{{ $ctx := .ctx }}
+{{ $entries := slice }}
+{{ $sitesByWeight := sort $ctx.Site.Sites "Language.Weight" }}
+{{ $currentLang := $ctx.Site.Language.Lang }}
+{{ $defaultLang := "" }}
+{{ with index $sitesByWeight 0 }}{{ $defaultLang = .Language.Lang }}{{ end }}
+{{ $langRank := dict $currentLang 0 }}
+{{ $nextRank := 1 }}
+{{ if and $defaultLang (ne $defaultLang $currentLang) }}
+  {{ $langRank = merge $langRank (dict $defaultLang $nextRank) }}
+  {{ $nextRank = add $nextRank 1 }}
+{{ end }}
+{{ range $sitesByWeight }}
+  {{ $lang := .Language.Lang }}
+  {{ if not (isset $langRank $lang) }}
+    {{ $langRank = merge $langRank (dict $lang $nextRank) }}
+    {{ $nextRank = add $nextRank 1 }}
+  {{ end }}
+{{ end }}
+
+{{ $productCandidates := slice }}
+{{ range $sitesByWeight }}
+  {{ $site := . }}
+  {{ $siteLangRank := index $langRank $site.Language.Lang }}
+  {{ range where $site.RegularPages "Params.product" true }}
+    {{ if not (isset .Params "product_price") }}
+      {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 product=true，但缺少 product_price。" .File.Path .Title }}
+    {{ end }}
+    {{ $valueRaw := index .Params "product_value" | default "" }}
+    {{ $valueText := printf "%v" $valueRaw }}
+    {{ if eq $valueText "" }}
+      {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 product=true，但缺少 product_value。" .File.Path .Title }}
+    {{ end }}
+    {{ $familyKey := printf "%v" .TranslationKey }}
+    {{ if eq $familyKey "" }}{{ $familyKey = .File.Path }}{{ end }}
+    {{ $productCandidates = $productCandidates | append (dict
+      "familyKey" $familyKey
+      "langRank" $siteLangRank
+      "page" .
+      "priceRaw" (index .Params "product_price")
+      "valueText" $valueText) }}
+  {{ end }}
+{{ end }}
+
+{{ $selectedCandidates := slice }}
+{{ $selectedFamilies := dict }}
+{{ range sort $productCandidates "langRank" "asc" }}
+  {{ $familyKey := .familyKey }}
+  {{ if not (isset $selectedFamilies $familyKey) }}
+    {{ $selectedFamilies = merge $selectedFamilies (dict $familyKey true) }}
+    {{ $selectedCandidates = $selectedCandidates | append . }}
+  {{ end }}
+{{ end }}
+
+{{ range $selectedCandidates }}
+  {{ $page := .page }}
+  {{ $priceRaw := .priceRaw }}
+  {{ $priceText := printf "%v" $priceRaw }}
+  {{ if eq $priceRaw 0 }}{{ $priceText = i18n "products_free" }}{{ end }}
+  {{ $entries = $entries | append (dict
+    "href" $page.RelPermalink
+    "title" $page.Title
+    "icon" "file"
+    "prefetch_kind" "post"
+    "sort" (dict
+      "group" "0"
+      "name" $page.Title
+      "price" (printf "%v" $priceRaw)
+      "value" .valueText)
+    "display" (dict
+      "name" $page.Title
+      "price" $priceText
+      "value" .valueText)) }}
+{{ end }}
+
+{{ return sort $entries "title" "asc" }}

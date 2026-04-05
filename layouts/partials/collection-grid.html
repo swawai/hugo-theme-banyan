@@ -1,0 +1,93 @@
+{{ $ctx := .ctx }}
+{{ $page := .page | default $ctx }}
+{{ $collection := .collection | default dict }}
+{{ $columns := index $collection "columns" | default (slice) }}
+{{ $items := .items | default (slice) }}
+{{ $variant := printf "%v" (index $collection "variant" | default "") }}
+{{ if eq $variant "" }}{{ errorf "编译失败: 页面 %q 缺少 collection.variant。" $page.File.Path }}{{ end }}
+{{ if eq (len $columns) 0 }}{{ errorf "编译失败: 页面 %q 缺少 collection.columns。" $page.File.Path }}{{ end }}
+{{ $defaultSort := lower (printf "%v" (index $collection "default_sort" | default "")) }}
+{{ if eq $defaultSort "" }}{{ errorf "编译失败: 页面 %q 缺少 collection.default_sort。" $page.File.Path }}{{ end }}
+{{ $sortParts := split $defaultSort "-" }}
+{{ if ne (len $sortParts) 2 }}{{ errorf "编译失败: 页面 %q 的 collection.default_sort=%q 非法，应形如 field-asc。" $page.File.Path $defaultSort }}{{ end }}
+{{ $currentField := index $sortParts 0 }}
+{{ $currentOrder := index $sortParts 1 }}
+{{ $baseHref := printf "%v" (.baseHref | default $ctx.RelPermalink) }}
+{{ $emptyLabel := printf "%v" (.emptyLabel | default "") }}
+<div class="grid-list grid-{{ $variant }}" data-sortable="true" data-sort-variant="{{ $variant }}" data-sort-columns="{{ len $columns }}" data-sort-default="{{ $defaultSort }}">
+  {{ range $column := $columns }}
+    {{ $field := printf "%v" (index $column "key" | default "") }}
+    {{ if eq $field "" }}{{ errorf "编译失败: 页面 %q 的 collection.columns 存在缺少 key 的列定义。" $page.File.Path }}{{ end }}
+    {{ $class := printf "%v" (index $column "class" | default (printf "cell-%s" $field)) }}
+    {{ $label := printf "%v" (index $column "label" | default "") }}
+    {{ if eq $label "" }}
+      {{ with index $column "label_i18n" }}{{ $label = i18n (printf "%v" .) }}{{ end }}
+    {{ end }}
+    {{ $defaultOrder := lower (printf "%v" (index $column "default_order" | default "asc")) }}
+    {{ $titleAsc := printf "%v" (index $column "title_asc" | default "") }}
+    {{ if eq $titleAsc "" }}
+      {{ with index $column "title_asc_i18n" }}{{ $titleAsc = i18n (printf "%v" .) }}{{ end }}
+    {{ end }}
+    {{ $titleDesc := printf "%v" (index $column "title_desc" | default "") }}
+    {{ if eq $titleDesc "" }}
+      {{ with index $column "title_desc_i18n" }}{{ $titleDesc = i18n (printf "%v" .) }}{{ end }}
+    {{ end }}
+    {{ partial "grid-sort-cell.html" (dict
+      "class" $class
+      "ctx" $ctx
+      "baseHref" $baseHref
+      "field" $field
+      "label" $label
+      "defaultOrder" $defaultOrder
+      "currentField" $currentField
+      "currentOrder" $currentOrder
+      "titleAsc" $titleAsc
+      "titleDesc" $titleDesc) }}
+  {{ end }}
+
+  {{ range $item := $items }}
+    {{ $sortData := index $item "sort" | default dict }}
+    {{ $displayData := index $item "display" | default dict }}
+    {{ $dataAttrs := dict "sort-group" (printf "%v" (index $sortData "group" | default "0")) }}
+    {{ range $column := $columns }}
+      {{ $field := printf "%v" (index $column "key" | default "") }}
+      {{ $dataAttrs = merge $dataAttrs (dict (printf "sort-%s" $field) (printf "%v" (index $sortData $field | default ""))) }}
+    {{ end }}
+    {{ range $column := $columns }}
+      {{ $field := printf "%v" (index $column "key" | default "") }}
+      {{ $class := printf "%v" (index $column "class" | default (printf "cell-%s" $field)) }}
+      {{ $cellType := printf "%v" (index $column "cell" | default "text") }}
+      {{ if eq $cellType "title" }}
+        {{ partial "grid-title-cell.html" (dict
+          "ctx" $ctx
+          "href" (index $item "href")
+          "title" (index $item "title")
+          "text" (index $displayData $field)
+          "icon" (index $item "icon")
+          "iconText" (index $item "icon_text")
+          "label" (index $item "label")
+          "prefetchKind" (index $item "prefetch_kind")
+          "dataAttrs" $dataAttrs) }}
+      {{ else if eq $cellType "html" }}
+    <span class="{{ $class }}">{{ (printf "%v" (index $displayData $field | default "")) | safeHTML }}</span>
+      {{ else }}
+    <span class="{{ $class }}">{{ printf "%v" (index $displayData $field | default "") }}</span>
+      {{ end }}
+    {{ end }}
+  {{ else }}
+    {{ range $index, $column := $columns }}
+      {{ $class := printf "%v" (index $column "class" | default (printf "cell-%d" $index)) }}
+      {{ if eq $index 0 }}
+    <span class="{{ $class }}">{{ $emptyLabel }}</span>
+      {{ else }}
+    <span class="{{ $class }}"></span>
+      {{ end }}
+    {{ end }}
+  {{ end }}
+</div>
+
+{{- $schemaEntries := slice -}}
+{{- range $item := $items -}}
+  {{- $schemaEntries = $schemaEntries | append (dict "url" (index $item "href") "name" (index $item "title")) -}}
+{{- end -}}
+{{ partial "schema-itemlist.html" (dict "entries" $schemaEntries) }}

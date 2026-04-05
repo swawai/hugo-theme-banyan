@@ -77,6 +77,6 @@
     {{ .Content }}
         </div>
     </article>
-    {{ partial "schema-article.html" . }}
+    {{ if .IsPage }}{{ partial "schema-article.html" . }}{{ end }}
     {{ partial "schema-breadcrumbs.html" . }}
 {{ end }}
