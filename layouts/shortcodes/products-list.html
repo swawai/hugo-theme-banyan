@@ -1,0 +1,150 @@
+{{ $host := .Page }}
+{{ with $host.Site.GetPage "/products" }}
+  {{ $target := . }}
+  {{ if not (eq ($host.Scratch.Get "products_list_assets_rendered") true) }}
+    {{ $host.Scratch.Set "products_list_assets_rendered" true }}
+    {{ $gridList := resources.Get "css/grid-list.css" }}
+    {{ $gridProducts := resources.Get "css/grid-products.css" }}
+    {{ if not $gridList }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-list.css" }}{{ end }}
+    {{ if not $gridProducts }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-products.css" }}{{ end }}
+    {{ $gridCss := slice $gridList $gridProducts | resources.Concat "css/products-list.embed.css" }}
+    {{ if not hugo.IsServer }}{{ $gridCss = $gridCss | minify }}{{ end }}
+<style>{{ $gridCss.Content | safeCSS }}</style>
+    {{ $sortJs := resources.Get "js/sortable-grids.js" | js.Build }}
+    {{ if not hugo.IsServer }}{{ $sortJs = $sortJs | minify }}{{ end }}
+<script>{{ $sortJs.Content | safeJS }}</script>
+  {{ end }}
+
+  {{ $entries := slice }}
+  {{ $sitesByWeight := sort $target.Site.Sites "Language.Weight" }}
+  {{ $currentLang := $target.Site.Language.Lang }}
+  {{ $defaultLang := "" }}
+  {{ with index $sitesByWeight 0 }}{{ $defaultLang = .Language.Lang }}{{ end }}
+  {{ $langRank := dict $currentLang 0 }}
+  {{ $nextRank := 1 }}
+  {{ if and $defaultLang (ne $defaultLang $currentLang) }}
+    {{ $langRank = merge $langRank (dict $defaultLang $nextRank) }}
+    {{ $nextRank = add $nextRank 1 }}
+  {{ end }}
+  {{ range $sitesByWeight }}
+    {{ $lang := .Language.Lang }}
+    {{ if not (isset $langRank $lang) }}
+      {{ $langRank = merge $langRank (dict $lang $nextRank) }}
+      {{ $nextRank = add $nextRank 1 }}
+    {{ end }}
+  {{ end }}
+
+  {{ $productCandidates := slice }}
+  {{ range $sitesByWeight }}
+    {{ $site := . }}
+    {{ $siteLangRank := index $langRank $site.Language.Lang }}
+    {{ range where $site.RegularPages "Params.product" true }}
+      {{ if not (isset .Params "product_price") }}
+        {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 product=true，但缺少 product_price。" .File.Path .Title }}
+      {{ end }}
+      {{ $valueRaw := index .Params "product_value" | default "" }}
+      {{ $valueText := printf "%v" $valueRaw }}
+      {{ if eq $valueText "" }}
+        {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 product=true，但缺少 product_value。" .File.Path .Title }}
+      {{ end }}
+      {{ $familyKey := printf "%v" .TranslationKey }}
+      {{ if eq $familyKey "" }}{{ $familyKey = .File.Path }}{{ end }}
+      {{ $productCandidates = $productCandidates | append (dict
+        "familyKey" $familyKey
+        "langRank" $siteLangRank
+        "page" .
+        "priceRaw" (index .Params "product_price")
+        "valueText" $valueText) }}
+    {{ end }}
+  {{ end }}
+
+  {{ $selectedCandidates := slice }}
+  {{ $selectedFamilies := dict }}
+  {{ range sort $productCandidates "langRank" "asc" }}
+    {{ $familyKey := .familyKey }}
+    {{ if not (isset $selectedFamilies $familyKey) }}
+      {{ $selectedFamilies = merge $selectedFamilies (dict $familyKey true) }}
+      {{ $selectedCandidates = $selectedCandidates | append . }}
+    {{ end }}
+  {{ end }}
+
+  {{ range $selectedCandidates }}
+    {{ $page := .page }}
+    {{ $priceRaw := .priceRaw }}
+    {{ $priceText := printf "%v" $priceRaw }}
+    {{ if eq $priceRaw 0 }}{{ $priceText = i18n "products_free" }}{{ end }}
+    {{ $entries = $entries | append (dict
+      "href" $page.RelPermalink
+      "title" $page.Title
+      "sort_name" $page.Title
+      "sort_price" (printf "%v" $priceRaw)
+      "sort_value" .valueText
+      "price_text" $priceText
+      "value_text" .valueText) }}
+  {{ end }}
+  {{ $entries = sort $entries "title" "asc" }}
+
+<div class="grid-list grid-products" data-sortable="true" data-sort-variant="products" data-sort-columns="3" data-sort-default="name-asc">
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-title"
+    "ctx" $host
+    "baseHref" $host.RelPermalink
+    "field" "name"
+    "label" (i18n "products_col_name")
+    "defaultOrder" "asc"
+    "currentField" "name"
+    "currentOrder" "asc"
+    "titleAsc" (i18n "products_sort_name_asc")
+    "titleDesc" (i18n "products_sort_name_desc")) }}
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-price"
+    "ctx" $host
+    "baseHref" $host.RelPermalink
+    "field" "price"
+    "label" (i18n "products_col_price")
+    "defaultOrder" "desc"
+    "currentField" "name"
+    "currentOrder" "asc"
+    "titleAsc" (i18n "products_sort_price_asc")
+    "titleDesc" (i18n "products_sort_price_desc")) }}
+  {{ partial "grid-sort-cell.html" (dict
+    "class" "cell-value"
+    "ctx" $host
+    "baseHref" $host.RelPermalink
+    "field" "value"
+    "label" (i18n "products_col_value")
+    "defaultOrder" "asc"
+    "currentField" "name"
+    "currentOrder" "asc"
+    "titleAsc" (i18n "products_sort_value_asc")
+    "titleDesc" (i18n "products_sort_value_desc")) }}
+
+  {{ range $entries }}
+    {{ partial "grid-title-cell.html" (dict
+      "ctx" $host
+      "href" .href
+      "title" .title
+      "icon" "file"
+      "prefetchKind" "post"
+      "dataAttrs" (dict
+        "sort-group" "0"
+        "sort-name" .sort_name
+        "sort-price" .sort_price
+        "sort-value" .sort_value)) }}
+    <span class="cell-price">{{ .price_text }}</span>
+    <span class="cell-value">{{ .value_text }}</span>
+  {{ else }}
+    <span class="cell-title">{{ i18n "products_empty" }}</span>
+    <span class="cell-price"></span>
+    <span class="cell-value"></span>
+  {{ end }}
+</div>
+
+  {{- $schemaEntries := slice -}}
+  {{- range $entries -}}
+    {{- $schemaEntries = $schemaEntries | append (dict "url" .href "name" .title) -}}
+  {{- end -}}
+  {{ partial "schema-itemlist.html" (dict "entries" $schemaEntries) }}
+{{ else }}
+  {{ errorf "编译失败: 页面 %q 的 products-list shortcode 找不到 /products 对应页面。" $host.File.Path }}
+{{ end }}
