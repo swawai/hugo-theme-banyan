@@ -3,7 +3,9 @@ draft: false
 title: "我"
 slug: "me"
 type: "me"
-layout: "system-info"
+layout: "article"
+show_breadcrumb: false
+show_meta: false
 build:
   list: "never"
 page_js: "page.js"

@@ -4,7 +4,9 @@ draft: false
 title: "離線瀏覽"
 slug: "offline"
 type: "page"
-layout: "system-info"
+layout: "article"
+show_breadcrumb: false
+show_meta: false
 page_js: "page.js"
 build:
   list: "never"

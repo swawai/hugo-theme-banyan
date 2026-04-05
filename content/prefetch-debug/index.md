@@ -5,7 +5,9 @@ title: "Prefetch Debug"
 slug: "prefetchdebug"
 url: "prefetchdebug"
 type: "page"
-layout: "system-info"
+layout: "article"
+show_breadcrumb: false
+show_meta: false
 page_js: "page.js"
 build:
   list: "never"

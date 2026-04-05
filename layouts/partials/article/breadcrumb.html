@@ -1,24 +1,12 @@
-{{ define "styles" }}
-{{ partial "head-styles.html" (dict "ctx" . "variant" "page-crumb") }}
-{{ end }}
-
-{{ define "head-extra" }}
-{{ partial "article-styles.html" (dict "ctx" . "with_meta" true) }}
-{{ end }}
-
-
-{{ define "breadcrumb" }}
 {{ $page := . }}
 <nav class="post-dir breadcrumb-nav" aria-label="Breadcrumb">{{ $rendered := false }}{{ range (where .Ancestors.Reverse "IsHome" "ne" true) }}{{ if $rendered }}<span class="sep">/</span>{{ end }}{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "text" .LinkTitle "textClass" "crumb-text" "linkSlot" "nav") }}{{ $rendered = true }}{{ end }}{{ if $rendered }}<span class="sep">/</span>{{ end }}{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "text" .Title "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}</nav>
 
-{{/* UDC 精简显示：按分支只显示最深层 term */}}
 {{ with .Params.udc }}
 <nav class="post-udc" aria-label="UDC">
   {{ $udcLabel := (i18n "menu_udc") | default "UDC" }}
 <span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "udc") 0) }}{{ partial "link.html" (dict "ctx" $page "href" (.URL | relLangURL) "title" "Universal Decimal Classification" "text" (i18n (printf "menu_%s" .Identifier) | default .Name) "linkSlot" "nav") }}{{ else }}{{ $udcLabel }}{{ end }}</span>
   {{ $terms := . }}
   {{ if not (reflect.IsSlice $terms) }}{{ $terms = slice $terms }}{{ end }}
-  {{/* 以根前缀选择最深 term（用 map 存字符串避免 append 类型问题） */}}
   {{ $deepest := dict }}
   {{ range $t := $terms }}
     {{ $s := printf "%v" $t }}
@@ -36,7 +24,6 @@
 </nav>
 {{ end }}
 
-{{/* TAGS 精简显示：按分支只显示最深层 term；显示名对 untagged 做映射 */}}
 {{ with .Params.tags }}
 <nav class="post-tags" aria-label="Tags">
 <span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "tags") 0) }}{{ partial "link.html" (dict "ctx" $page "href" (.URL | relLangURL) "text" (i18n (printf "menu_%s" .Identifier) | default .Name) "linkSlot" "nav") }}{{ else }}{{ (i18n "menu_tags") | default "TAGS" }}{{ end }}</span>
@@ -59,31 +46,4 @@
 {{ partial "link.html" (dict "ctx" $page "href" (printf "%s%s/" ("/tags/" | relLangURL) ($deep | urlize)) "rel" "tag" "text" $disp "linkSlot" "nav") }}
   {{ end }}
 </nav>
-{{ end }}
-{{ end }}
-{{ define "main" }}
-    <article class="article">
-        {{/*  <h1>{{ .Title }}</h1>  */}}
-        {{/* 发布与更新：合并为一行，仅在 Lastmod 不同于 Date 时追加 Updated */}}
-        <div class="article-meta">
-          {{ if .Date }}
-            <time datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
-              {{ i18n "label_published" | default "Published" }} {{ .Date.Format "2006-01-02" }}
-            </time>
-          {{ end }}
-          {{ if and .Lastmod (ne (.Lastmod.Format "2006-01-02") (.Date.Format "2006-01-02")) }}
-            <span class="sep"> · </span>
-            <time class="article-updated" datetime="{{ .Lastmod.Format "2006-01-02T15:04:05Z07:00" }}">
-              {{ i18n "label_updated" | default "Updated" }} {{ .Lastmod.Format "2006-01-02" }}
-            </time>
-          {{ end }}
-        </div>
-        <div class="prose">
-    {{ .Content }}
-        </div>
-
-
-    </article>
-    {{ partial "schema-article.html" . }}
-    {{ partial "schema-breadcrumbs.html" . }}
 {{ end }}

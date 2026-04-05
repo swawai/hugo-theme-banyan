@@ -4,7 +4,9 @@ draft: false
 title: "关于"
 slug: "about"
 type: "page"
-layout: "system-info"
+layout: "article"
+show_breadcrumb: false
+show_meta: false
 build:
   list: "never"
 ---

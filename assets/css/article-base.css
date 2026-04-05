@@ -64,8 +64,8 @@
 
 
 
-/* 迁移自 article-meta.css：文章元信息（发布/更新时间）样式 */
-.article .article-meta {
+/* 文章日期信息（发布时间 / 更新时间）样式 */
+.article .article-dates {
     margin: 1px 0;
     font-size: small; /* 已按要求改为 1rem */
     color: var(--link-visited);
