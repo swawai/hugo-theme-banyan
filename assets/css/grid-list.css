@@ -78,6 +78,12 @@
     text-align: left;
 }
 
+.grid-list a {
+    text-decoration: underline;
+    word-break: normal;
+    border-bottom: none; /* 移除 .prose a 可能造成的 border-bottom 穿透（导致下划线贯穿图标的状况） */
+}
+
 .grid-list a:focus-visible {
     outline-offset: -2px;
 }
