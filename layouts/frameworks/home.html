@@ -1,0 +1,23 @@
+{{ define "styles" }}
+{{ partial "head-styles.html" (dict "ctx" . "variant" "page-crumb") }}
+{{ end }}
+
+{{ define "head-extra" }}
+{{ partial "article/styles.html" (dict "ctx" . "with_meta" true) }}
+{{ end }}
+
+{{ define "main" }}
+  {{ $content := .Content }}
+  {{ $showBreadcrumb := true }}
+  {{ if isset .Params "show_breadcrumb" }}{{ $showBreadcrumb = .Params.show_breadcrumb }}{{ end }}
+  {{ $showMeta := true }}
+  {{ if isset .Params "show_meta" }}{{ $showMeta = .Params.show_meta }}{{ end }}
+  <article class="article">
+    <div class="prose">
+      {{ if $showBreadcrumb }}{{ partial "article/breadcrumb.html" . }}{{ end }}
+      {{ if $showMeta }}{{ partial "article/dates.html" . }}{{ end }}
+      {{ $content }}
+    </div>
+  </article>
+  {{ partial "schema-breadcrumbs.html" . }}
+{{ end }}

@@ -1,0 +1,40 @@
+.home-footer-shortcuts {
+    margin: 24px 4px 0;
+    color: var(--link-visited);
+    font-size: 12px;
+}
+
+.home-footer-shortcuts p {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin: 0 0 4px;
+}
+
+.home-footer-shortcuts p:last-child {
+    margin-bottom: 0;
+}
+
+.home-footer-shortcuts a {
+    color: inherit;
+    text-decoration: underline;
+    border-bottom: none;
+}
+
+.home-footer-shortcuts p > a:first-child {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1em;
+    min-width: 1em;
+    line-height: 1;
+    flex: none;
+    text-align: center;
+    font-weight: bold;
+}
+
+.home-footer-shortcuts p > a:first-child svg {
+    width: 1em;
+    height: 1em;
+    vertical-align: -3px;
+}

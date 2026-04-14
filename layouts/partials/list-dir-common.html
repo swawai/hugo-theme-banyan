@@ -66,7 +66,7 @@
 
   {{ range $ctx.Sections }}
     {{ $section := . }}
-    {{ if and $ctx.IsHome (eq $section.Section "d") }}{{ continue }}{{ end }}
+    {{ if and $ctx.IsHome (or (eq $section.Section "d") (eq $section.Section "fragments")) }}{{ continue }}{{ end }}
     {{ $cnt := len $section.RegularPagesRecursive }}
     {{ $d := $section.Lastmod }}
     {{ with first 1 ($section.RegularPagesRecursive.ByLastmod.Reverse) }}
@@ -133,10 +133,6 @@
     <span class="cell-count"><span>{{ .countText }}</span><span class="unit">{{ .countUnit | safeHTML }}</span></span>
   {{ end }}
 </div>
-
-{{ if $ctx.IsHome }}
-  {{ partial "home-footer-shortcuts.html" (dict "ctx" $ctx) }}
-{{ end }}
 
 {{- $entries := slice -}}
 {{- range $ordered -}}

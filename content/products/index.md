@@ -8,14 +8,8 @@ show_breadcrumb: false
 show_meta: false
 ---
 
-# Products
 
-This page is a leaf bundle page.
-
-The introduction, explanation text, and list placement are controlled directly in this bundle page.
 
 {{< products-list >}}
 
-You can move the shortcode anywhere in this Markdown body, and the product list will follow that position.
 
-Other bundle pages can also embed this same list with `{{</* products-list */>}}`.
