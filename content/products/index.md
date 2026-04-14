@@ -13,3 +13,4 @@ show_meta: false
 {{< products-list >}}
 
 
+{{< fragment "/fragments/home-footer-shortcuts" >}}

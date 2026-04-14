@@ -15,4 +15,4 @@ Swaw is a small brand page that introduces the ideas, products, and related entr
 
 This home page now behaves like a content-driven article page instead of a manually assembled list page.
 
-{{< home-footer-shortcuts >}}
+{{< fragment "/fragments/home-footer-shortcuts" >}}

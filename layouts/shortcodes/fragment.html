@@ -1,7 +1,9 @@
 {{ $host := .Page }}
-{{ $source := $host.Site.GetPage "/fragments/home-footer-shortcuts" }}
+{{ $src := .Get 0 | default (.Get "src") }}
+{{ if not $src }}{{ errorf "编译失败: 页面 %q 的 fragment shortcode 缺少 src 参数。" $host.File.Path }}{{ end }}
+{{ $source := $host.Site.GetPage $src }}
 {{ if not $source }}
-  {{ errorf "编译失败: 页面 %q 的 home-footer-shortcuts shortcode 找不到 /fragments/home-footer-shortcuts 对应页面。" $host.File.Path }}
+  {{ errorf "编译失败: 页面 %q 的 fragment shortcode 找不到 %q 对应页面。" $host.File.Path $src }}
 {{ end }}
 {{ $scratchKey := printf "fragment_resources:%s" $source.File.Path }}
 {{ if not ($host.Scratch.Get $scratchKey) }}
@@ -17,7 +19,10 @@
   {{ end }}
   {{ range $spec := $pageCssSpecs }}
     {{ $pageCss := $source.Resources.GetMatch $spec }}
-    {{ if not $pageCss }}{{ errorf "编译失败: 页面 %q 找不到 page_css=%q 对应的 bundle 资源。" $source.File.Path $spec }}{{ end }}
+    {{ if not $pageCss }}
+      {{ $pageCss = resources.Get (printf "css/%s" $spec) }}
+    {{ end }}
+    {{ if not $pageCss }}{{ errorf "编译失败: 页面 %q 找不到 page_css=%q 对应的 bundle 或全局 assets 资源。" $source.File.Path $spec }}{{ end }}
     {{ if not hugo.IsServer }}{{ $pageCss = $pageCss | minify }}{{ end }}
     {{ $pageCss = $pageCss | fingerprint }}
 <link rel="stylesheet" href="{{ $pageCss.RelPermalink }}">
@@ -45,7 +50,10 @@
   {{ end }}
   {{ range $spec := $pageJsSpecs }}
     {{ $pageJs := $source.Resources.GetMatch $spec }}
-    {{ if not $pageJs }}{{ errorf "编译失败: 页面 %q 找不到 page_js=%q 对应的 bundle 资源。" $source.File.Path $spec }}{{ end }}
+    {{ if not $pageJs }}
+      {{ $pageJs = resources.Get (printf "js/%s" $spec) }}
+    {{ end }}
+    {{ if not $pageJs }}{{ errorf "编译失败: 页面 %q 找不到 page_js=%q 对应的 bundle 或全局 assets 资源。" $source.File.Path $spec }}{{ end }}
     {{ if not hugo.IsServer }}{{ $pageJs = $pageJs | minify }}{{ end }}
     {{ $pageJs = $pageJs | fingerprint }}
 <script src="{{ $pageJs.RelPermalink }}"></script>

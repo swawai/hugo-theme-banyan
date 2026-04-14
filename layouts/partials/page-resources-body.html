@@ -17,7 +17,10 @@
 {{ end }}
 {{ range $spec := $pageJsSpecs }}
     {{ $pageJs := $.Resources.GetMatch $spec }}
-    {{ if not $pageJs }}{{ errorf "编译失败: 页面 %q 找不到 page_js=%q 对应的 bundle 资源。" $.File.Path $spec }}{{ end }}
+    {{ if not $pageJs }}
+        {{ $pageJs = resources.Get (printf "js/%s" $spec) }}
+    {{ end }}
+    {{ if not $pageJs }}{{ errorf "编译失败: 页面 %q 找不到 page_js=%q 对应的 bundle 或全局 assets 资源。" $.File.Path $spec }}{{ end }}
     {{ if not hugo.IsServer }}{{ $pageJs = $pageJs | minify }}{{ end }}
     {{ if $isOfflinePage }}
 <script>{{ $pageJs.Content | safeJS }}</script>

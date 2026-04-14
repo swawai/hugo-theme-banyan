@@ -17,7 +17,10 @@
 {{ end }}
 {{ range $spec := $pageCssSpecs }}
     {{ $pageCss := $.Resources.GetMatch $spec }}
-    {{ if not $pageCss }}{{ errorf "编译失败: 页面 %q 找不到 page_css=%q 对应的 bundle 资源。" $.File.Path $spec }}{{ end }}
+    {{ if not $pageCss }}
+        {{ $pageCss = resources.Get (printf "css/%s" $spec) }}
+    {{ end }}
+    {{ if not $pageCss }}{{ errorf "编译失败: 页面 %q 找不到 page_css=%q 对应的 bundle 或全局 assets 资源。" $.File.Path $spec }}{{ end }}
     {{ if not hugo.IsServer }}{{ $pageCss = $pageCss | minify }}{{ end }}
     {{ if $isOfflinePage }}
 <style>{{ $pageCss.Content | safeCSS }}</style>
