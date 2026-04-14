@@ -7,7 +7,6 @@ type: frameworks
 layout: home
 ---
 
-# swaw
 
 Systems Work, And We.
 

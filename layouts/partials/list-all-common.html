@@ -6,16 +6,21 @@
 {{ $currentAllHref := "/all/" | relLangURL }}
 {{ with $ctx.OutputFormats.Get "all" }}{{ $currentAllHref = .RelPermalink }}{{ end }}
 
+{{ $host := .host | default $ctx }}
+
+{{ if ne $host.Params.show_breadcrumb false }}
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
-  {{ with $ctx.OutputFormats.Get "all" }}{{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" (i18n "menu_all") "textClass" "crumb-text" "dataAttrs" (cond $ctx.IsHome (dict "site-update-anchor" "true") (dict)) "linkSlot" "nav") }}{{ end }}
+  {{ $rendered := false }}
   {{ range (where $ctx.Ancestors.Reverse "IsHome" "ne" true) }}
     {{ $p := . }}
-    {{ with $p.OutputFormats.Get "all" }} ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" .RelPermalink "text" $p.LinkTitle "textClass" "crumb-text" "linkSlot" "nav") }}{{ end }}
+    {{ if $rendered }} ﹥ {{ end }}
+    {{ partial "link.html" (dict "ctx" $ctx "href" $p.RelPermalink "text" $p.LinkTitle "textClass" "crumb-text" "linkSlot" "nav") }}
+    {{ $rendered = true }}
   {{ end }}
-  {{ if not $ctx.IsHome }}
-    ﹥ {{ partial "link.html" (dict "ctx" $ctx "href" $currentAllHref "text" $ctx.Title "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
-  {{ end }}
+  {{ if $rendered }} ﹥ {{ end }}
+  {{ partial "link.html" (dict "ctx" $ctx "href" $host.RelPermalink "text" $host.Title "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
 </nav>
+{{ end }}
 
 <div class="grid-list grid-all" data-sortable="true" data-sort-variant="all" data-sort-columns="4" data-sort-default="date-desc">
   {{ partial "grid-sort-cell.html" (dict
@@ -87,7 +92,7 @@
     <span class="cell-date">{{ .Date.Format "2006-01-02" }}</span>
     {{ $kb := div (add $bytes 1023) 1024 }}
     <span class="cell-count"><span>{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>
-    <span class="cell-path">{{ with .CurrentSection }}{{ with .OutputFormats.Get "all" }}{{ partial "link.html" (dict "href" .RelPermalink "text" (printf "/%s" $pathValue)) }}{{ end }}{{ end }}</span>
+    <span class="cell-path">{{ with .CurrentSection }}{{ partial "link.html" (dict "href" .RelPermalink "text" (printf "/%s" $pathValue)) }}{{ end }}</span>
   {{ end }}
 </div>
 

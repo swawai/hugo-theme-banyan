@@ -1,0 +1,15 @@
+{{ $host := .Page }}
+
+{{ if not (eq ($host.Scratch.Get "dir_list_assets_rendered") true) }}
+  {{ $host.Scratch.Set "dir_list_assets_rendered" true }}
+  {{ $gridList := resources.Get "css/grid-list.css" }}
+  {{ if not $gridList }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-list.css" }}{{ end }}
+  {{ $gridCss := slice $gridList | resources.Concat "css/dir-list.embed.css" }}
+  {{ if not hugo.IsServer }}{{ $gridCss = $gridCss | minify }}{{ end }}
+<style>{{ $gridCss.Content | safeCSS }}</style>
+  {{ $sortJs := resources.Get "js/sortable-grids.js" | js.Build }}
+  {{ if not hugo.IsServer }}{{ $sortJs = $sortJs | minify }}{{ end }}
+<script>{{ $sortJs.Content | safeJS }}</script>
+{{ end }}
+
+{{ partial "list-dir-common.html" (dict "ctx" $host) }}
