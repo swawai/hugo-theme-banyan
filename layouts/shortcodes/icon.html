@@ -1,0 +1,4 @@
+{{- $name := .Get 0 -}}
+{{- $class := .Get "class" -}}
+{{- $label := .Get "label" -}}
+{{- partial "icon" (dict "name" $name "class" $class "label" $label) -}}

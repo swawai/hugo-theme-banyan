@@ -1,0 +1,13 @@
+{{- $used := page.Store.Get "used_icons" -}}
+{{- if $used -}}
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false">
+  {{- range $name, $true := $used -}}
+    {{- $iconData := index site.Data.icons $name -}}
+    {{- if $iconData -}}
+  <symbol id="icon-{{ $name }}" viewBox="{{ $iconData.viewBox | default `0 0 24 24` }}"{{ with index $iconData "fill" }} fill="{{ . }}"{{ end }}{{ with index $iconData "stroke" }} stroke="{{ . }}"{{ end }}{{ with index $iconData "stroke_linecap" }} stroke-linecap="{{ . }}"{{ end }}{{ with index $iconData "stroke_linejoin" }} stroke-linejoin="{{ . }}"{{ end }}{{ with index $iconData "stroke_width" }} stroke-width="{{ . }}"{{ end }}>
+    {{ $iconData.body | safeHTML }}
+  </symbol>
+    {{- end -}}
+  {{- end -}}
+</svg>
+{{- end -}}

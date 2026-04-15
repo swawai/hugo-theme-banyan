@@ -1,0 +1,64 @@
+<nav class="site-nav" aria-label="Primary">
+
+    {{ range .Site.Menus.main }}
+    {{ $key := printf "menu_%s" .Identifier }}
+    {{ $menuText := i18n $key | default .Name }}
+    {{ $menuTitle := cond (eq .Identifier "udc") "Universal Decimal Classification" "" }}
+    {{ partial "link.html" (dict "ctx" $ "href" (.URL | relLangURL) "title" $menuTitle "text" $menuText "linkSlot" "menu") }}
+    {{ end }}
+
+    {{ $meLinkRaw := site.Params.me_url | default (site.Params.account_url | default "") }}
+    {{ $meLink := "" }}
+    {{ $meIsInternal := false }}
+    {{ $hasMe := true }}
+    {{ if $meLinkRaw }}
+        {{ if or (hasPrefix $meLinkRaw "/") (and (not (hasPrefix $meLinkRaw "http://")) (not (hasPrefix $meLinkRaw "https://")) (not (hasPrefix $meLinkRaw "//"))) }}
+            {{ $meIsInternal = true }}
+            {{ if hasPrefix $meLinkRaw "/" }}
+                {{ $meLink = $meLinkRaw | relLangURL }}
+            {{ else }}
+                {{ $meLink = (printf "/%s" $meLinkRaw) | relLangURL }}
+            {{ end }}
+        {{ else }}
+            {{ $meLink = $meLinkRaw }}
+        {{ end }}
+    {{ else }}
+        {{ $meLink = "https://github.com/swawai/hugo-theme-banyan" }}
+        {{ $hasMe = false }}
+    {{ end }}
+    {{ if $meIsInternal }}{{ partial "link-collect-url.html" (dict "ctx" . "slot" "menu" "url" $meLink) }}{{ end }}
+    <a href="{{ $meLink }}"{{ if not $meIsInternal }} target="_blank" rel="noopener noreferrer"{{ end }} aria-label="{{ if $hasMe }}{{ i18n `label_me` | default `Me` }}{{ else }}Banyan Theme GitHub{{ end }}" class="nav-me-btn">
+        <span class="sr-only">{{ if $hasMe }}{{ i18n "label_me" | default "Me" }}{{ else }}Banyan Theme GitHub{{ end }}</span>
+        {{ partial "icon" (dict "name" "me" "class" "default-me-icon") }}
+        <img alt="Me Avatar" class="me-avatar" />
+    </a>
+
+    {{ $cur := .Language.Lang }}
+    {{- $transLangs := slice $cur -}}
+    {{- range .AllTranslations -}}
+        {{- $transLangs = $transLangs | append .Language.Lang -}}
+    {{- end -}}
+    {{- $transLangs = $transLangs | uniq -}}
+    <span class="icon-select-wrapper" title="{{ i18n `label_language` | default `Language` }}">
+        <span class="sr-only">{{ i18n "label_language" | default "Language" }}</span>
+        {{ partial "icon" (dict "name" "language") }}
+        <select
+            id="lang-select"
+            class="icon-select"
+            aria-label="{{ i18n `label_language` | default `Language` }}"
+            data-cur-lang="{{ $cur }}"
+            data-trans-langs="{{ delimit $transLangs "," }}">
+        </select>
+    </span>
+
+    <span class="icon-select-wrapper" title="{{ i18n `label_theme` | default `Theme` }}">
+        <span class="sr-only">{{ i18n "label_theme" | default "Theme" }}</span>
+        {{ partial "icon" (dict "name" "theme") }}
+        <select id="theme-select" class="icon-select" aria-label="{{ i18n `label_theme` | default `Theme` }}">
+            <option value="auto">{{ i18n "theme_auto" | default "Auto" }}</option>
+            <option value="light">{{ i18n "theme_light" | default "Light" }}</option>
+            <option value="dark">{{ i18n "theme_dark" | default "Dark" }}</option>
+        </select>
+    </span>
+
+</nav>

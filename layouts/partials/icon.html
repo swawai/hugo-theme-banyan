@@ -1,7 +1,10 @@
 {{- $name := .name -}}
-{{- $supported := slice "file" "folder" "github" "language" "theme" "me" -}}
-{{- if not (in $supported $name) -}}
-  {{- errorf "编译失败: 未定义 sprite 图标 %q。" $name -}}
+{{- $iconData := index site.Data.icons $name -}}
+{{- if not $iconData -}}
+  {{- errorf "编译失败: 未定义图标 %q。" $name -}}
+{{- end -}}
+{{- if page -}}
+  {{- page.Store.SetInMap "used_icons" $name true -}}
 {{- end -}}
 {{- $classes := slice "icon" (printf "icon-%s" $name) -}}
 {{- with .class }}{{ $classes = $classes | append . }}{{ end -}}
