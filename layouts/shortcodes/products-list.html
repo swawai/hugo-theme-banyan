@@ -47,13 +47,21 @@
       {{ if eq $valueText "" }}
         {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 product=true，但缺少 product_value。" .File.Path .Title }}
       {{ end }}
+      {{ $priceRaw := index .Params "product_price" }}
+      {{ $filter := $host.Scratch.Get "products_filter" | default ($.Get "filter") }}
+      {{ if eq $filter "free" }}
+        {{ if ne (printf "%v" $priceRaw) "0" }}{{ continue }}{{ end }}
+      {{ else if eq $filter "paid" }}
+        {{ if eq (printf "%v" $priceRaw) "0" }}{{ continue }}{{ end }}
+      {{ end }}
+
       {{ $familyKey := printf "%v" .TranslationKey }}
       {{ if eq $familyKey "" }}{{ $familyKey = .File.Path }}{{ end }}
       {{ $productCandidates = $productCandidates | append (dict
         "familyKey" $familyKey
         "langRank" $siteLangRank
         "page" .
-        "priceRaw" (index .Params "product_price")
+        "priceRaw" $priceRaw
         "valueText" $valueText) }}
     {{ end }}
   {{ end }}
