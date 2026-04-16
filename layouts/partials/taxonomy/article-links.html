@@ -1,0 +1,49 @@
+{{ $page := .ctx | default . }}
+{{ $taxonomySpecs := partial "taxonomy/enabled.html" (dict "ctx" $page) }}
+{{ range sort $taxonomySpecs "article_weight" "asc" }}
+  {{ $spec := . }}
+  {{ $plural := printf "%v" (index $spec "plural") }}
+  {{ $values := partial "taxonomy/values.html" (dict "page" $page "spec" $spec) }}
+  {{ if eq (len $values) 0 }}
+    {{ continue }}
+  {{ end }}
+
+  {{ $label := partial "taxonomy/label.html" (dict "ctx" $page "spec" $spec) }}
+  {{ $articleMode := printf "%v" (index $spec "article_mode") }}
+  {{ if eq $articleMode "none" }}
+    {{ continue }}
+  {{ end }}
+
+<nav class="post-taxonomy post-taxonomy-{{ $plural }}" aria-label="{{ $label }}">
+  <span class="label">{{ $label }}</span>
+  {{ if and (eq (index $spec "mode") "tree") (eq $articleMode "deepest_by_root") }}
+    {{ $separator := printf "%v" (index $spec "separator" | default "/") }}
+    {{ $deepestByRoot := dict }}
+    {{ $rootOrder := slice }}
+    {{ range $value := $values }}
+      {{ $term := printf "%v" $value }}
+      {{ $root := index (split $term $separator) 0 }}
+      {{ if not (in $rootOrder $root) }}
+        {{ $rootOrder = $rootOrder | append $root }}
+      {{ end }}
+      {{ $current := index $deepestByRoot $root | default "" }}
+      {{ $currentDepth := len (cond (ne $current "") (split $current $separator) (slice)) }}
+      {{ $newDepth := len (split $term $separator) }}
+      {{ if or (eq $current "") (gt $newDepth $currentDepth) }}
+        {{ $deepestByRoot = merge $deepestByRoot (dict $root $term) }}
+      {{ end }}
+    {{ end }}
+    {{ range $root := $rootOrder }}
+      {{ $term := index $deepestByRoot $root }}
+      {{ $display := partial "taxonomy/value-label.html" (dict "spec" $spec "value" $term) }}
+{{ partial "link.html" (dict "ctx" $page "href" (partial "taxonomy/url.html" (dict "ctx" $page "spec" $spec "value" $term)) "rel" (index $spec "term_rel") "text" $display "linkSlot" "nav") }}
+    {{ end }}
+  {{ else }}
+    {{ with $page.GetTerms $plural }}
+      {{ range . }}
+{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "rel" (index $spec "term_rel") "text" (.LinkTitle | default .Title) "linkSlot" "nav") }}
+      {{ end }}
+    {{ end }}
+  {{ end }}
+</nav>
+{{ end }}

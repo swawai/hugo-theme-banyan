@@ -17,12 +17,19 @@
   {{ $siteDateText = .Format "2006-01-02" }}
 {{ end }}
 
-{{ $directoryTitle := i18n "home_shortcut_directory" | default "Directory" }}
-{{ $directoryHref := "/d/" | relLangURL }}
+{{ $directoryPage := $ctx.Site.GetPage "section" "d" }}
+{{ if not $directoryPage }}
+  {{ errorf "编译失败: 首页目录快捷入口依赖 section d。请提供 content/d/_index.<lang>.md 或主题等价文件。" }}
+{{ end }}
+{{ $directoryTitle := trim (printf "%v" ($directoryPage.Title | default "")) " \r\n\t" }}
+{{ if eq $directoryTitle "" }}
+  {{ errorf "编译失败: %s 必须提供非空 title，作为首页目录快捷入口的唯一命名来源。" ($directoryPage.File.Path | default "content/d/_index.*") }}
+{{ end }}
+{{ $directoryHref := $directoryPage.RelPermalink }}
 {{ $directoryCount := 0 }}
 {{ $directoryDateKey := $siteDateKey }}
 {{ $directoryDateText := $siteDateText }}
-{{ with $ctx.Site.GetPage "section" "d" }}
+{{ with $directoryPage }}
   {{ $directoryTitle = .Title }}
   {{ $directoryHref = .RelPermalink }}
   {{ $directoryCount = len .RegularPagesRecursive }}
@@ -39,16 +46,15 @@
   {{ end }}
 {{ end }}
 
-{{ $tagCount := 0 }}
-{{ with $ctx.Site.Taxonomies.tags }}{{ $tagCount = len . }}{{ end }}
-
-{{ $udcCount := 0 }}
-{{ with $ctx.Site.Taxonomies.udc }}{{ $udcCount = len . }}{{ end }}
-
-{{ $allHref := "/all/" | relLangURL }}
-{{ with $ctx.Site.Home.OutputFormats.Get "all" }}
-  {{ $allHref = .RelPermalink }}
+{{ $allPage := $ctx.Site.GetPage "/all" }}
+{{ if not $allPage }}
+  {{ errorf "编译失败: 首页全部内容快捷入口依赖 /all/ page bundle。请提供 content/all/index.<lang>.md 或主题等价文件。" }}
 {{ end }}
+{{ $allTitle := trim (printf "%v" ($allPage.Title | default "")) " \r\n\t" }}
+{{ if eq $allTitle "" }}
+  {{ errorf "编译失败: %s 必须提供非空 title，作为首页全部内容快捷入口的唯一命名来源。" ($allPage.File.Path | default "content/all/index.*") }}
+{{ end }}
+{{ $allHref := $allPage.RelPermalink }}
 
 {{ $entries = $entries | append (dict
   "kind" "section"
@@ -62,33 +68,13 @@
   "dateKey" $directoryDateKey
   "dateText" $directoryDateText) }}
 
-{{ $entries = $entries | append (dict
-  "kind" "section"
-  "title" (i18n "home_shortcut_tags" | default "Tags")
-  "href" ("/tags/" | relLangURL)
-  "icon" "folder"
-  "prefetchKind" "nav"
-  "cnt" $tagCount
-  "countText" $tagCount
-  "countUnit" ""
-  "dateKey" $siteDateKey
-  "dateText" $siteDateText) }}
+{{ range partial "taxonomy/home-items.html" (dict "ctx" $ctx) }}
+  {{ $entries = $entries | append . }}
+{{ end }}
 
 {{ $entries = $entries | append (dict
   "kind" "section"
-  "title" (i18n "home_shortcut_udc_index" | default "UDC Index")
-  "href" ("/udc/" | relLangURL)
-  "icon" "folder"
-  "prefetchKind" "nav"
-  "cnt" $udcCount
-  "countText" $udcCount
-  "countUnit" ""
-  "dateKey" $siteDateKey
-  "dateText" $siteDateText) }}
-
-{{ $entries = $entries | append (dict
-  "kind" "section"
-  "title" (i18n "home_shortcut_all_content" | default "All Content")
+  "title" $allTitle
   "href" $allHref
   "icon" "folder"
   "prefetchKind" "nav"

@@ -13,7 +13,7 @@ build:
 
 # About Banyan Theme
 
-Banyan is a minimalist, Explorer-like Hugo theme designed for clear organization and taxonomy management (e.g., UDC, multilevel tags).
+Banyan is a minimalist, Explorer-like Hugo theme designed for clear structure, author-intent signaling, and explorer-style taxonomy navigation (recommended default: `intent + tags`).
 
 As defined in our `theme.toml`:
 - **Name**: banyan

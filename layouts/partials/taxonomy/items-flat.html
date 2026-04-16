@@ -1,0 +1,34 @@
+{{- $kind := .kind -}}
+{{- $ctx := .ctx -}}
+{{- $items := slice -}}
+{{- if eq $kind "root" -}}
+  {{- range $entry := $ctx.Data.Terms.Alphabetical -}}
+    {{- $agg := partial "taxonomy/pages-dedup-latest.html" (dict "pages" $entry.Page.Pages) -}}
+    {{- $items = $items | append (dict
+        "kind" "cat"
+        "title" ($entry.Page.LinkTitle | default $entry.Page.Title)
+        "latest" (index $agg "latest")
+        "latestKey" (index $agg "latestKey")
+        "cnt" $entry.Count
+        "url" $entry.Page.RelPermalink
+    ) -}}
+  {{- end -}}
+{{- else if eq $kind "term" -}}
+  {{- range $page := $ctx.Pages -}}
+    {{- $bytes := len $page.RawContent -}}
+    {{- $d := $page.Lastmod -}}
+    {{- if eq ($d.Format "2006") "0001" -}}{{- $d = $page.Date -}}{{- end -}}
+    {{- $items = $items | append (dict
+        "kind" "page"
+        "title" $page.Title
+        "latest" ($d.Format "2006-01-02")
+        "latestKey" ($d.Format "20060102")
+        "cnt" $bytes
+        "bytes" $bytes
+        "url" $page.RelPermalink
+    ) -}}
+  {{- end -}}
+{{- else -}}
+  {{- errorf "编译失败: taxonomy/items-flat.html 不支持 kind=%q。" $kind -}}
+{{- end -}}
+{{- return $items -}}

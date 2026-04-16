@@ -7,9 +7,9 @@
 {{ end }}
 
 {{ define "breadcrumb" }}
-{{ partial "udc-breadcrumb.html" (dict "ctx" .) }}
+{{ partial "taxonomy/breadcrumb.html" (dict "ctx" .) }}
 {{ end }}
 
 {{ define "main" }}
-{{ partial "udc-term-common.html" (dict "ctx" .) }}
+{{ partial "taxonomy/render.html" (dict "ctx" . "kind" "root") }}
 {{ end }}

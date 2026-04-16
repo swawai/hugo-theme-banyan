@@ -1,12 +1,14 @@
 {{ $ctx := .ctx }}
+{{ $host := .host | default $ctx }}
+{{ $hostTitle := trim (printf "%v" ($host.Title | default "")) " \r\n\t" }}
+{{ if eq $hostTitle "" }}
+  {{ errorf "编译失败: %s 必须提供非空 title，作为 /all/ 页面及其快捷入口的唯一命名来源。" ($host.File.Path | default "content/all/index.*") }}
+{{ end }}
 {{ $nameLabel := i18n "list_col_name" }}
 {{ $dateLabel := i18n "list_col_date" }}
 {{ $sizeLabel := i18n "list_col_size" }}
 {{ $pathLabel := i18n "list_col_path" }}
-{{ $currentAllHref := "/all/" | relLangURL }}
-{{ with $ctx.OutputFormats.Get "all" }}{{ $currentAllHref = .RelPermalink }}{{ end }}
-
-{{ $host := .host | default $ctx }}
+{{ $currentAllHref := $host.RelPermalink }}
 
 {{ if ne $host.Params.show_breadcrumb false }}
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
@@ -18,7 +20,7 @@
     {{ $rendered = true }}
   {{ end }}
   {{ if $rendered }} ﹥ {{ end }}
-  {{ partial "link.html" (dict "ctx" $ctx "href" $host.RelPermalink "text" $host.Title "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
+  {{ partial "link.html" (dict "ctx" $ctx "href" $host.RelPermalink "text" $hostTitle "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
 </nav>
 {{ end }}
 

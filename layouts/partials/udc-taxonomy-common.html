@@ -1,8 +1,0 @@
-{{ $ctx := .ctx }}
-{{ $items := partial "udc-data-items.html" (dict "kind" "root" "ctx" $ctx) }}
-
-<div class="grid-list" data-sortable="true" data-sort-variant="tree" data-sort-columns="3" data-sort-default="date-desc">
-  {{ partial "udc-list-view.html" (dict "ctx" $ctx "items" $items) }}
-</div>
-
-

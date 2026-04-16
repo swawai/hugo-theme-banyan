@@ -13,7 +13,7 @@ build:
 
 # 关于 Banyan 主题
 
-Banyan 是一个类似资源管理器的极简 Hugo 主题，专为清晰的组织和分类管理（如 UDC、多级标签）而设计。
+Banyan 是一个类似资源管理器的极简 Hugo 主题，专为清晰结构、作者意图提示，以及资源管理器式 taxonomy 导航而设计（默认推荐：`intent + tags`）。
 
 正如 `theme.toml` 中所定义的：
 - **名称**: banyan

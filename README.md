@@ -37,6 +37,53 @@ cp themes/banyan/exampleSite/data/cache-policy.toml ./data/cache-policy.toml
 - Default SSR list pages with client-side sorting via URL params
 - Optional recursive `all/` list views for home and sections
 - Minimalist CSS architecture
+- Content-driven taxonomy bundles: recommended `intent` + hierarchical `tags`, with rendering defined in each taxonomy root bundle
+
+## Taxonomies
+
+Declare taxonomies in your site's root `hugo.toml` under `[taxonomies]`.
+Banyan's recommended default is `intent + tags`:
+
+Example:
+
+```toml
+[taxonomies]
+intent = "intent"
+tag = "tags"
+```
+
+`intent` describes why the author wrote the page or what cognitive action it
+should trigger for the reader. `tags` remain supplemental topic keywords.
+
+Each taxonomy must provide an explicit root bundle at
+`content/<plural>/_index.<lang>.md` and define Banyan rendering metadata in
+`[banyan_taxonomy]`.
+
+Example custom tree taxonomy root bundle:
+
+```toml
++++
+title = "UDC"
+
+[banyan_taxonomy]
+mode = "tree"
+show_in_home = true
+home_weight = 40
+article_weight = 40
+article_mode = "deepest_by_root"
++++
+```
+
+Notes:
+
+- Hugo's `[taxonomies]` declaration in the site root is still required to create the taxonomy itself.
+- Banyan no longer reads taxonomy labels or rendering config from theme `i18n` or `params.banyan.taxonomies.<plural>`.
+- The root bundle `title` is the single source of truth for taxonomy naming across home shortcuts, breadcrumbs, and article labels.
+- `linkTitle`, `[banyan_taxonomy].label`, and `[banyan_taxonomy].home_label` are not read for taxonomies.
+- Required `[banyan_taxonomy]` keys are: `mode`, `show_in_home`, `home_weight`, `article_weight`, `normalize`, `article_mode`.
+- You can attach taxonomy metadata and resources with `content/<plural>/_index.<lang>.md` and optional term bundles such as `content/<plural>/<term>/_index.<lang>.md`.
+- Use `themes/banyan/exampleSite/content/intent/` as the sample bundle to copy; avoid treating `themes/banyan/content/` as a template warehouse, because theme content participates in the live build.
+- See [docs/taxonomies.md](docs/taxonomies.md) for intent guidance and the recommended term set.
 
 ## License
 MIT

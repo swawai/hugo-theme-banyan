@@ -1,8 +1,0 @@
-{{- $ctx := .ctx -}}
-{{- $v := printf "%v" .value -}}
-{{- $vNorm := partial "tags-normalize-term.html" $v -}}
-{{- $slug := cond (eq $vNorm "untagged") "untagged" (urlize $v) -}}
-{{- $root := printf "/%s/" $ctx.Data.Plural | relLangURL -}}
-{{- return (printf "%s%s/" $root $slug) -}}
-
-

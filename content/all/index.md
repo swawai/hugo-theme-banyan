@@ -1,6 +1,5 @@
 ---
 title: All
-linkTitle: All
 slug: "all"
 layout: article
 show_breadcrumb: false

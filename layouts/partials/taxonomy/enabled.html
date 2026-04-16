@@ -1,0 +1,8 @@
+{{- $ctx := .ctx | default . -}}
+{{- $entries := slice -}}
+{{- range $page := where $ctx.Site.Pages "Kind" "taxonomy" -}}
+  {{- $plural := printf "%v" $page.Data.Plural -}}
+{{- $spec := partial "taxonomy/spec-get.html" (dict "ctx" $ctx "plural" $plural) -}}
+  {{- $entries = $entries | append (merge $spec (dict "page" $page)) -}}
+{{- end -}}
+{{- return $entries -}}

@@ -1,0 +1,128 @@
+{{- $kind := .kind -}}
+{{- $ctx := .ctx -}}
+{{- $spec := .spec -}}
+{{- $plural := printf "%v" (index $spec "plural") -}}
+{{- $separator := printf "%v" (index $spec "separator" | default "/") -}}
+{{- $dateFmt := "2006-01-02" -}}
+{{- $items := slice -}}
+{{- if eq $kind "term" -}}
+  {{- $term := printf "%v" $ctx.Data.Term -}}
+  {{- $termNorm := partial "taxonomy/normalize.html" (dict "spec" $spec "value" $term) -}}
+  {{- $unassignedTerm := printf "%v" (index $spec "unassigned_term" | default "") -}}
+  {{- $unassignedNorm := partial "taxonomy/normalize.html" (dict "spec" $spec "value" $unassignedTerm) -}}
+  {{- if and (ne $unassignedTerm "") (eq $termNorm $unassignedNorm) -}}
+    {{- range $page := site.RegularPages -}}
+      {{- $values := partial "taxonomy/values.html" (dict "page" $page "spec" $spec) -}}
+      {{- if gt (len $values) 0 -}}
+        {{- continue -}}
+      {{- end -}}
+      {{- $bytes := len $page.RawContent -}}
+      {{- $d := $page.Lastmod -}}
+      {{- if eq ($d.Format "2006") "0001" -}}{{- $d = $page.Date -}}{{- end -}}
+      {{- $items = $items | append (dict
+          "kind" "page"
+          "title" $page.Title
+          "latest" ($d.Format $dateFmt)
+          "latestKey" ($d.Format "20060102")
+          "cnt" $bytes
+          "bytes" $bytes
+          "url" $page.RelPermalink
+      ) -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $termParts := split $term $separator -}}
+    {{- $termDepth := len $termParts -}}
+    {{- $root := index $termParts 0 -}}
+    {{- $rootNorm := partial "taxonomy/normalize.html" (dict "spec" $spec "value" $root) -}}
+    {{- $children := slice -}}
+    {{- range $termValue, $pages := (index site.Taxonomies $plural | default dict) -}}
+      {{- $termValueNorm := partial "taxonomy/normalize.html" (dict "spec" $spec "value" $termValue) -}}
+      {{- if not (and (hasPrefix $termValueNorm (printf "%s%s" $termNorm $separator)) (ne $termValueNorm $termNorm)) -}}
+        {{- continue -}}
+      {{- end -}}
+      {{- $parts := split $termValue $separator -}}
+      {{- $child := index $parts $termDepth -}}
+      {{- if not (in $children $child) -}}
+        {{- $children = $children | append $child -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $children = sort $children -}}
+    {{- range $children -}}
+      {{- $full := printf "%s%s%s" $term $separator . -}}
+      {{- $pagesAll := partial "taxonomy/subtree-pages.html" (dict "ctx" $ctx "spec" $spec "prefix" $full "mode" "subtree") -}}
+      {{- $agg := partial "taxonomy/pages-dedup-latest.html" (dict "pages" $pagesAll) -}}
+      {{- $items = $items | append (dict
+          "kind" "cat"
+          "title" .
+          "display" (partial "taxonomy/value-label.html" (dict "spec" $spec "value" .))
+          "latest" (index $agg "latest")
+          "latestKey" (index $agg "latestKey")
+          "cnt" (index $agg "cnt")
+          "url" (partial "taxonomy/url.html" (dict "ctx" $ctx "spec" $spec "value" $full))
+      ) -}}
+    {{- end -}}
+    {{- $exactPages := partial "taxonomy/subtree-pages.html" (dict "ctx" $ctx "spec" $spec "prefix" $term "mode" "exact") -}}
+    {{- range $page := $exactPages -}}
+      {{- $branchMax := 0 -}}
+      {{- range $value := partial "taxonomy/values.html" (dict "page" $page "spec" $spec) -}}
+        {{- $valueText := printf "%v" $value -}}
+        {{- $segments := split $valueText $separator -}}
+        {{- $first := index $segments 0 -}}
+        {{- if ne (partial "taxonomy/normalize.html" (dict "spec" $spec "value" $first)) $rootNorm -}}
+          {{- continue -}}
+        {{- end -}}
+        {{- $depth := len $segments -}}
+        {{- if gt $depth $branchMax -}}{{- $branchMax = $depth -}}{{- end -}}
+      {{- end -}}
+      {{- if ne $branchMax $termDepth -}}
+        {{- continue -}}
+      {{- end -}}
+      {{- $bytes := len $page.RawContent -}}
+      {{- $d := $page.Lastmod -}}
+      {{- if eq ($d.Format "2006") "0001" -}}{{- $d = $page.Date -}}{{- end -}}
+      {{- $items = $items | append (dict
+          "kind" "page"
+          "title" $page.Title
+          "latest" ($d.Format $dateFmt)
+          "latestKey" ($d.Format "20060102")
+          "cnt" $bytes
+          "bytes" $bytes
+          "url" $page.RelPermalink
+      ) -}}
+    {{- end -}}
+  {{- end -}}
+{{- else if eq $kind "root" -}}
+  {{- $roots := slice -}}
+  {{- range $termValue, $pages := (index site.Taxonomies $plural | default dict) -}}
+    {{- $root := index (split $termValue $separator) 0 -}}
+    {{- if not (in $roots $root) -}}
+      {{- $roots = $roots | append $root -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $roots = sort $roots -}}
+  {{- range $root := $roots -}}
+    {{- $pagesAll := partial "taxonomy/subtree-pages.html" (dict "ctx" $ctx "spec" $spec "prefix" $root "mode" "subtree") -}}
+    {{- $agg := partial "taxonomy/pages-dedup-latest.html" (dict "pages" $pagesAll) -}}
+    {{- $items = $items | append (dict
+        "kind" "cat"
+        "title" $root
+        "display" (partial "taxonomy/value-label.html" (dict "spec" $spec "value" $root))
+        "latest" (index $agg "latest")
+        "latestKey" (index $agg "latestKey")
+        "cnt" (index $agg "cnt")
+        "url" (partial "taxonomy/url.html" (dict "ctx" $ctx "spec" $spec "value" $root))
+    ) -}}
+  {{- end -}}
+{{- else -}}
+  {{- errorf "编译失败: taxonomy/items-tree.html 不支持 kind=%q。" $kind -}}
+{{- end -}}
+{{- $seen := dict -}}
+{{- $dedup := slice -}}
+{{- range $items -}}
+  {{- $key := printf "%s" .url -}}
+  {{- if not (isset $seen $key) -}}
+    {{- $seen = merge $seen (dict $key true) -}}
+    {{- $dedup = $dedup | append . -}}
+  {{- end -}}
+{{- end -}}
+{{- return $dedup -}}

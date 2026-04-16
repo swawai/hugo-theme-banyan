@@ -1,0 +1,17 @@
+{{- $ctx := .ctx | default . -}}
+{{- $spec := .spec | default dict -}}
+{{- $plural := printf "%v" (or .plural (index $spec "plural")) -}}
+{{- $root := printf "/%s/" $plural | relLangURL -}}
+{{- $url := $root -}}
+{{- if isset . "value" -}}
+  {{- $value := trim (printf "%v" .value) " " -}}
+  {{- if ne $value "" -}}
+    {{- $slug := urlize $value -}}
+    {{- $unassignedTerm := printf "%v" (index $spec "unassigned_term" | default "") -}}
+    {{- if and (ne $unassignedTerm "") (eq (partial "taxonomy/normalize.html" (dict "spec" $spec "value" $value)) (partial "taxonomy/normalize.html" (dict "spec" $spec "value" $unassignedTerm))) -}}
+      {{- $slug = urlize $unassignedTerm -}}
+    {{- end -}}
+    {{- $url = printf "%s%s/" $root $slug -}}
+  {{- end -}}
+{{- end -}}
+{{- return $url -}}

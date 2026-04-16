@@ -1,9 +1,5 @@
 [label_home]
 other = "首頁"
-[label_tags]
-other = "標籤"
-[label_udc]
-other = "學科"
 
 [list_col_name]
 other = "名稱"
@@ -59,14 +55,6 @@ other = "按價值點升冪排序"
 [products_sort_value_desc]
 other = "按價值點降冪排序"
 
-[home_shortcut_directory]
-other = "目錄"
-[home_shortcut_tags]
-other = "標籤"
-[home_shortcut_udc_index]
-other = "學科索引"
-[home_shortcut_all_content]
-other = "全部內容"
 [label_published]
 other = "發布於"
 [label_updated]

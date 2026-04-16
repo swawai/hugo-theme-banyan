@@ -1,0 +1,9 @@
+{{- $page := .page | default .ctx -}}
+{{- $plural := printf "%v" (or .plural (index (.spec | default dict) "plural")) -}}
+{{- $values := index $page.Params $plural -}}
+{{- if not $values -}}
+  {{- $values = slice -}}
+{{- else if not (reflect.IsSlice $values) -}}
+  {{- $values = slice $values -}}
+{{- end -}}
+{{- return $values -}}

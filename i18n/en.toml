@@ -1,9 +1,5 @@
 [label_home]
 other = "Home"
-[label_tags]
-other = "Tag"
-[label_udc]
-other = "UDC"
 
 [list_col_name]
 other = "Name"
@@ -58,17 +54,6 @@ other = "Sort by price descending"
 other = "Sort by value ascending"
 [products_sort_value_desc]
 other = "Sort by value descending"
-
-[home_shortcut_directory]
-other = "Directory"
-[home_shortcut_tags]
-other = "Tags"
-[home_shortcut_udc_index]
-other = "UDC Index"
-[home_shortcut_all_content]
-other = "All Content"
-
- 
 
 [label_published]
 other = "Published"

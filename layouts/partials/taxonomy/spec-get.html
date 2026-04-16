@@ -1,0 +1,53 @@
+{{- $ctx := .ctx | default . -}}
+{{- $plural := lower (printf "%v" .plural) -}}
+{{- $page := partial "taxonomy/page-get.html" (dict "ctx" $ctx "plural" $plural) -}}
+{{- $pagePath := $page.File.Path | default (printf "content/%s/_index.*" $plural) -}}
+{{- $pageTitle := trim (printf "%v" ($page.Title | default "")) " \r\n\t" -}}
+{{- if eq $pageTitle "" -}}
+  {{- errorf "编译失败: %s 必须提供非空 title，作为 taxonomy %q 的唯一命名来源。" $pagePath $plural -}}
+{{- end -}}
+{{- if not (isset $page.Params "banyan_taxonomy") -}}
+  {{- errorf "编译失败: %s 缺少 [banyan_taxonomy]。taxonomy %q 的渲染配置只允许定义在 content/%s/_index.<lang>.md 中。" $pagePath $plural $plural -}}
+{{- end -}}
+{{- $taxonomyMeta := index $page.Params "banyan_taxonomy" -}}
+{{- $forbiddenKeys := slice "label" "home_label" -}}
+{{- range $key := $forbiddenKeys -}}
+  {{- if isset $taxonomyMeta $key -}}
+    {{- errorf "编译失败: %s 中 [banyan_taxonomy].%s 已移除。taxonomy %q 的所有展示命名现在只允许来自同一 bundle 的 title。" $pagePath $key $plural -}}
+  {{- end -}}
+{{- end -}}
+{{- $requiredKeys := slice "mode" "show_in_home" "home_weight" "article_weight" "normalize" "article_mode" -}}
+{{- range $key := $requiredKeys -}}
+  {{- if not (isset $taxonomyMeta $key) -}}
+    {{- errorf "编译失败: %s 缺少 [banyan_taxonomy].%s。taxonomy %q 不再提供默认兜底或其他来源。" $pagePath $key $plural -}}
+  {{- end -}}
+{{- end -}}
+{{- $spec := dict
+    "plural" $plural
+    "separator" "/"
+    "term_rel" ""
+    "unassigned_term" ""
+    "unassigned_label" ""
+-}}
+{{- $spec = merge $spec $taxonomyMeta (dict "plural" $plural) -}}
+{{- $allowedModes := slice "flat" "tree" -}}
+{{- $mode := lower (printf "%v" (index $spec "mode")) -}}
+{{- if not (in $allowedModes $mode) -}}
+  {{- errorf "编译失败: %s 中 [banyan_taxonomy].mode 仅支持 flat/tree，当前值为 %q。" $pagePath (index $spec "mode") -}}
+{{- end -}}
+{{- $allowedNormalize := slice "identity" "lower" -}}
+{{- $normalize := lower (printf "%v" (index $spec "normalize")) -}}
+{{- if not (in $allowedNormalize $normalize) -}}
+  {{- errorf "编译失败: %s 中 [banyan_taxonomy].normalize 仅支持 identity/lower，当前值为 %q。" $pagePath (index $spec "normalize") -}}
+{{- end -}}
+{{- $allowedArticleModes := slice "all" "deepest_by_root" "none" -}}
+{{- $articleMode := lower (printf "%v" (index $spec "article_mode")) -}}
+{{- if not (in $allowedArticleModes $articleMode) -}}
+  {{- errorf "编译失败: %s 中 [banyan_taxonomy].article_mode 仅支持 all/deepest_by_root/none，当前值为 %q。" $pagePath (index $spec "article_mode") -}}
+{{- end -}}
+{{- $spec = merge $spec (dict
+    "mode" $mode
+    "normalize" $normalize
+    "article_mode" $articleMode
+) -}}
+{{- return $spec -}}

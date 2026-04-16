@@ -8,14 +8,19 @@ slug: "{{ .File.ContentBaseName }}"
 # aliases:
 # - /old-url-path/
 
-# 标签 (支持层级结构，例如: 父标签/子标签)
+# 先在站点根 hugo.toml 的 [taxonomies] 里声明 plural key，
+# 再按对应 plural front matter 字段填写。
+#
+# 推荐：intent 通常只放 1 个，描述作者为什么写这篇 /
+# 希望读者通过它完成什么认知动作。
+# intent:
+# - reference
+#
+# 标签：补充关键词（支持层级结构，例如: 父标签/子标签）
 # tags:
-# - tag1
-# - tag1/subtag
-
-# 国际十进分类法(UDC)分类号
-# udc:
-# - "100"
-# - "100/110"
+# - taxonomy
+# - taxonomy/intent
+#
+# 其他 taxonomy 只要在站点根 [taxonomies] 中声明后，
+# 就可以继续按对应 plural 字段填写。
 ---
-

@@ -4,6 +4,7 @@ date: {{ .Date }}
 draft: true
 slug: "{{ .File.ContentBaseName }}"
 
-#udc: []
+#intent:
+#- explore
 #tags: []
 ---

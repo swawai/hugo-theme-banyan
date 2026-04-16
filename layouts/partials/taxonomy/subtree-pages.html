@@ -1,0 +1,45 @@
+{{- $page := .ctx -}}
+{{- $spec := .spec -}}
+{{- $plural := printf "%v" (index $spec "plural") -}}
+{{- $prefix := printf "%v" .prefix -}}
+{{- $prefixNorm := partial "taxonomy/normalize.html" (dict "spec" $spec "value" $prefix) -}}
+{{- $mode := cond (isset . "mode") (printf "%v" .mode) "subtree" -}}
+{{- $lang := $page.Site.Language.Lang -}}
+{{- $key := printf "taxonomy:%s:%s:%s:%s" $plural $mode $prefixNorm $lang -}}
+{{- $scr := $page.Scratch -}}
+{{- $uniq := $scr.Get $key -}}
+{{- if not $uniq -}}
+  {{- $pagesAll := slice -}}
+  {{- $taxonomyObject := index site.Taxonomies $plural | default dict -}}
+  {{- $separator := printf "%v" (index $spec "separator" | default "/") -}}
+  {{- if eq $mode "subtree" -}}
+    {{- range $term, $pages := $taxonomyObject -}}
+      {{- $termNorm := partial "taxonomy/normalize.html" (dict "spec" $spec "value" $term) -}}
+      {{- if or (eq $termNorm $prefixNorm) (hasPrefix $termNorm (printf "%s%s" $prefixNorm $separator)) -}}
+        {{- $pagesAll = $pagesAll | append $pages -}}
+      {{- end -}}
+    {{- end -}}
+  {{- else if eq $mode "exact" -}}
+    {{- range $term, $pages := $taxonomyObject -}}
+      {{- if ne (partial "taxonomy/normalize.html" (dict "spec" $spec "value" $term)) $prefixNorm -}}
+        {{- continue -}}
+      {{- end -}}
+      {{- range $pages -}}
+        {{- $hit := false -}}
+        {{- range partial "taxonomy/values.html" (dict "page" . "spec" $spec) -}}
+          {{- if eq (partial "taxonomy/normalize.html" (dict "spec" $spec "value" .)) $prefixNorm -}}
+            {{- $hit = true -}}
+          {{- end -}}
+        {{- end -}}
+        {{- if $hit -}}
+          {{- $pagesAll = $pagesAll | append . -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- else -}}
+    {{- errorf "编译失败: taxonomy/subtree-pages.html 不支持 mode=%q。" $mode -}}
+  {{- end -}}
+  {{- $uniq = index (partial "taxonomy/pages-dedup-latest.html" (dict "pages" $pagesAll)) "uniq" -}}
+  {{- $scr.Set $key $uniq -}}
+{{- end -}}
+{{- return $uniq -}}

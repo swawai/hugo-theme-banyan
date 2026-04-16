@@ -1,9 +1,5 @@
 [label_home]
 other = "首页"
-[label_tags]
-other = "标签"
-[label_udc]
-other = "学科"
 
 [list_col_name]
 other = "名称"
@@ -58,17 +54,6 @@ other = "按价格降序排序"
 other = "按价值点升序排序"
 [products_sort_value_desc]
 other = "按价值点降序排序"
-
-[home_shortcut_directory]
-other = "目录"
-[home_shortcut_tags]
-other = "标签"
-[home_shortcut_udc_index]
-other = "学科索引"
-[home_shortcut_all_content]
-other = "全部内容"
-
- 
 
 [label_published]
 other = "发布于"

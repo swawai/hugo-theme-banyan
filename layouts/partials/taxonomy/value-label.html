@@ -1,0 +1,10 @@
+{{- $spec := .spec | default dict -}}
+{{- $value := printf "%v" (.value | default "") -}}
+{{- $label := $value -}}
+{{- $unassignedTerm := printf "%v" (index $spec "unassigned_term" | default "") -}}
+{{- if and (ne $unassignedTerm "") (eq (partial "taxonomy/normalize.html" (dict "spec" $spec "value" $value)) (partial "taxonomy/normalize.html" (dict "spec" $spec "value" $unassignedTerm))) -}}
+  {{- with index $spec "unassigned_label" -}}
+    {{- $label = printf "%v" . -}}
+  {{- end -}}
+{{- end -}}
+{{- return $label -}}

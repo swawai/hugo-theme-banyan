@@ -1,0 +1,19 @@
+{{ $ctx := .ctx }}
+{{ $kind := .kind }}
+{{ $spec := .spec | default (partial "taxonomy/spec-get.html" (dict "ctx" $ctx "plural" $ctx.Data.Plural)) }}
+{{ $items := slice }}
+{{ if eq (index $spec "mode") "tree" }}
+  {{ $items = partial "taxonomy/items-tree.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) }}
+{{ else }}
+  {{ $items = partial "taxonomy/items-flat.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) }}
+{{ end }}
+{{ $content := trim $ctx.Content " \r\n\t" }}
+
+{{ if ne $content "" }}
+<div class="prose taxonomy-prose">
+  {{ $ctx.Content }}
+</div>
+{{ end }}
+<div class="grid-list" data-sortable="true" data-sort-variant="tree" data-sort-columns="3" data-sort-default="date-desc">
+  {{ partial "taxonomy/list-view.html" (dict "ctx" $ctx "items" $items) }}
+</div>

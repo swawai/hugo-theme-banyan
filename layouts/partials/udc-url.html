@@ -1,5 +1,0 @@
-{{- $ctx := .ctx -}}
-{{- $root := printf "/%s/" $ctx.Data.Plural | relLangURL -}}
-{{- return (printf "%s%s/" $root (urlize .value)) -}}
-
-

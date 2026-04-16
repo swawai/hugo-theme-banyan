@@ -1,0 +1,7 @@
+{{- $spec := .spec | default dict -}}
+{{- $value := trim (printf "%v" (.value | default "")) " " -}}
+{{- $strategy := lower (printf "%v" (index $spec "normalize" | default "identity")) -}}
+{{- if eq $strategy "lower" -}}
+  {{- $value = lower $value -}}
+{{- end -}}
+{{- return $value -}}

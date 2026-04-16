@@ -1,0 +1,39 @@
+{{- $ctx := .ctx | default . -}}
+{{- $entries := slice -}}
+{{- $siteLatest := "" -}}
+{{- with first 1 ($ctx.Site.RegularPages.ByLastmod.Reverse) -}}
+  {{- $siteLatest = (index . 0).Lastmod -}}
+{{- else -}}
+  {{- with first 1 ($ctx.Site.RegularPages.ByDate.Reverse) -}}
+    {{- $siteLatest = (index . 0).Date -}}
+  {{- end -}}
+{{- end -}}
+{{- $siteDateKey := "00010101000000" -}}
+{{- $siteDateText := "--" -}}
+{{- with $siteLatest -}}
+  {{- $siteDateKey = .Format "20060102150405" -}}
+  {{- $siteDateText = .Format "2006-01-02" -}}
+{{- end -}}
+{{- $taxonomySpecs := partial "taxonomy/enabled.html" (dict "ctx" $ctx) -}}
+{{- range sort $taxonomySpecs "home_weight" "asc" -}}
+  {{- if ne (index . "show_in_home") true -}}
+    {{- continue -}}
+  {{- end -}}
+  {{- $page := index . "page" -}}
+  {{- $spec := . -}}
+  {{- $title := partial "taxonomy/label.html" (dict "ctx" $ctx "spec" $spec "kind" "home") -}}
+  {{- $count := len $page.Data.Terms -}}
+  {{- $entries = $entries | append (dict
+    "kind" "section"
+    "title" $title
+    "href" $page.RelPermalink
+    "icon" "folder"
+    "prefetchKind" "nav"
+    "cnt" $count
+    "countText" $count
+    "countUnit" ""
+    "dateKey" $siteDateKey
+    "dateText" $siteDateText
+  ) -}}
+{{- end -}}
+{{- return $entries -}}
