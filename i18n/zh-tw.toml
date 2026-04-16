@@ -1,17 +1,9 @@
-[menu_home]
+[label_home]
 other = "首頁"
-[menu_products]
-other = "產品"
-[menu_signals]
-other = "信號"
-[menu_about]
-other = "關於"
-[menu_tags]
+[label_tags]
 other = "標籤"
-[menu_udc]
+[label_udc]
 other = "學科"
-[menu_all]
-other = "總覽"
 
 [list_col_name]
 other = "名稱"
@@ -75,22 +67,10 @@ other = "標籤"
 other = "學科索引"
 [home_shortcut_all_content]
 other = "全部內容"
-[label_theme]
-other = "主題"
-[theme_auto]
-other = "自動"
-[theme_light]
-other = "亮色"
-[theme_dark]
-other = "深色"
- 
 [label_published]
 other = "發布於"
 [label_updated]
 other = "更新於"
-
-[label_me]
-other = "我"
 
 
 [no_trans_msg]

@@ -1,34 +1,23 @@
 {{ $isOfflinePage := eq (.Scratch.Get "is_offline_page") true }}
-{{ $pageCssSpecs := slice }}
-{{ with .Params.page_css }}
-    {{ if reflect.IsSlice . }}
-        {{ range . }}{{ $pageCssSpecs = $pageCssSpecs | append (printf "%v" .) }}{{ end }}
-    {{ else }}
-        {{ $pageCssSpecs = $pageCssSpecs | append (printf "%v" .) }}
-    {{ end }}
-{{ end }}
-{{ $pageCssInline := slice }}
-{{ with .Params.page_css_inline }}
-    {{ if reflect.IsSlice . }}
-        {{ range . }}{{ $pageCssInline = $pageCssInline | append (printf "%v" .) }}{{ end }}
-    {{ else }}
-        {{ $pageCssInline = $pageCssInline | append (printf "%v" .) }}
-    {{ end }}
-{{ end }}
-{{ range $spec := $pageCssSpecs }}
-    {{ $pageCss := $.Resources.GetMatch $spec }}
-    {{ if not $pageCss }}
-        {{ $pageCss = resources.Get (printf "css/%s" $spec) }}
-    {{ end }}
-    {{ if not $pageCss }}{{ errorf "编译失败: 页面 %q 找不到 page_css=%q 对应的 bundle 或全局 assets 资源。" $.File.Path $spec }}{{ end }}
-    {{ if not hugo.IsServer }}{{ $pageCss = $pageCss | minify }}{{ end }}
-    {{ if $isOfflinePage }}
+{{ $descriptors := partial "page-resource-descriptors.html" . }}
+{{ range $descriptor := $descriptors }}
+    {{ $sourcePage := index $descriptor "page" }}
+    {{ if index $descriptor "page_css" }}
+        {{ $pageCssSpecs := partial "page-resource-specs.html" (dict "source" $sourcePage "key" "page_css") }}
+        {{ range $spec := $pageCssSpecs }}
+            {{ $pageCss := partial "page-resource-resolve.html" (dict "source" $sourcePage "spec" $spec "asset_dir" "css" "kind" "page_css") }}
+            {{ if not hugo.IsServer }}{{ $pageCss = $pageCss | minify }}{{ end }}
+            {{ if $isOfflinePage }}
 <style>{{ $pageCss.Content | safeCSS }}</style>
-    {{ else }}
-        {{ $pageCss = $pageCss | fingerprint }}
+            {{ else }}
+                {{ $pageCss = $pageCss | fingerprint }}
 <link rel="stylesheet" href="{{ $pageCss.RelPermalink }}">
+            {{ end }}
+        {{ end }}
     {{ end }}
-{{ end }}
-{{ range $inlineCss := $pageCssInline }}
+    {{ if index $descriptor "page_css_inline" }}
+        {{ range $inlineCss := partial "page-resource-specs.html" (dict "source" $sourcePage "key" "page_css_inline") }}
 <style>{{ $inlineCss | safeCSS }}</style>
+        {{ end }}
+    {{ end }}
 {{ end }}

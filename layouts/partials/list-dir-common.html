@@ -9,7 +9,7 @@
 {{ $isDirectoryRoot := and (eq $ctx.Kind "section") (eq $ctx.Section "d") (eq $ctx.RelPermalink $ctx.FirstSection.RelPermalink) }}
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
   {{ if $ctx.IsHome }}
-    {{ partial "link.html" (dict "ctx" $ctx "href" $ctx.Site.Home.RelPermalink "text" ((i18n "menu_home") | default "HOME") "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
+{{ partial "link.html" (dict "ctx" $ctx "href" $ctx.Site.Home.RelPermalink "text" ((i18n "label_home") | default "HOME") "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
   {{ else if $isDirectoryRoot }}
     {{ partial "link.html" (dict "ctx" $ctx "href" $ctx.RelPermalink "text" ($ctx.LinkTitle | default $ctx.Title) "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
   {{ else }}

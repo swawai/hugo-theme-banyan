@@ -3,8 +3,8 @@
 
 {{ with .Params.udc }}
 <nav class="post-udc" aria-label="UDC">
-  {{ $udcLabel := (i18n "menu_udc") | default "UDC" }}
-<span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "udc") 0) }}{{ partial "link.html" (dict "ctx" $page "href" (.URL | relLangURL) "title" "Universal Decimal Classification" "text" (i18n (printf "menu_%s" .Identifier) | default .Name) "linkSlot" "nav") }}{{ else }}{{ $udcLabel }}{{ end }}</span>
+  {{ $udcLabel := (i18n "label_udc") | default "UDC" }}
+<span class="label">{{ $udcLabel }}</span>
   {{ $terms := . }}
   {{ if not (reflect.IsSlice $terms) }}{{ $terms = slice $terms }}{{ end }}
   {{ $deepest := dict }}
@@ -26,7 +26,7 @@
 
 {{ with .Params.tags }}
 <nav class="post-tags" aria-label="Tags">
-<span class="label">{{ with (index (where $page.Site.Menus.main "Identifier" "tags") 0) }}{{ partial "link.html" (dict "ctx" $page "href" (.URL | relLangURL) "text" (i18n (printf "menu_%s" .Identifier) | default .Name) "linkSlot" "nav") }}{{ else }}{{ (i18n "menu_tags") | default "TAGS" }}{{ end }}</span>
+<span class="label">{{ (i18n "label_tags") | default "TAGS" }}</span>
   {{ $terms := . }}
   {{ if not (reflect.IsSlice $terms) }}{{ $terms = slice $terms }}{{ end }}
   {{ $deepest := dict }}

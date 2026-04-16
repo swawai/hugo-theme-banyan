@@ -13,4 +13,7 @@ show_meta: false
 {{< products-list >}}
 
 
-{{< fragment "/fragments/products-footer-shortcuts" >}}
+{{< fragment "/fragments/home-footer-shortcuts" >}}
+<!-- [free](/products/free)  
+[paid](/products/paid) -->
+<!-- {{< fragment "/fragments/products-footer-shortcuts" >}} -->

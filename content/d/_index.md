@@ -15,3 +15,5 @@ cascade:
 ---
 
 {{< dir-list >}}
+
+{{< fragment "/fragments/home-footer-shortcuts" >}}

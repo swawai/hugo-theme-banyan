@@ -67,6 +67,35 @@
     ) }}
 {{ end }}
 {{ $primarySite := index (sort .Sites "Language.Weight") 0 }}
+{{ $navEnabled := true }}
+{{ if isset .Params "nav" }}{{ $navEnabled = ne (index .Params "nav") false }}{{ end }}
+{{ $navFragmentSrc := .Site.Params.layout_fragments.nav | default "/fragments/nav-primary" }}
+{{ if isset .Params "nav_fragment" }}
+    {{ $navOverride := index .Params "nav_fragment" }}
+    {{ if eq $navOverride false }}
+        {{ $navEnabled = false }}
+    {{ else }}
+        {{ with $navOverride }}{{ $navFragmentSrc = printf "%v" . }}{{ end }}
+    {{ end }}
+{{ end }}
+{{ $navFragmentPage := "" }}
+{{ if and $navEnabled (ne $navFragmentSrc "") }}
+    {{ $hostPath := printf "%s %s" .Kind .RelPermalink }}
+    {{ with .File }}{{ $hostPath = .Path }}{{ end }}
+    {{ $navFragmentPage = .Site.GetPage $navFragmentSrc }}
+    {{ if not $navFragmentPage }}{{ errorf "编译失败: 页面 %q 找不到 layout fragment %q。" $hostPath $navFragmentSrc }}{{ end }}
+{{ end }}
+{{ with $navFragmentPage }}
+    {{ $.Scratch.Set "layout_fragment_nav_page" . }}
+    {{ partial "layout-fragments/register.html" (dict
+        "ctx" $
+        "source" .
+        "page_css" false
+        "page_css_inline" false
+        "page_js" true
+        "page_js_inline" true
+    ) }}
+{{ end }}
 {{ if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) }}
     {{ $headersBody := partial "cache-policy-cloudflare-headers-body.txt" (dict "routes" $cachePolicyHeaderRoutes) }}
     {{ $headersResource := resources.FromString "_headers" $headersBody }}
@@ -231,7 +260,7 @@
     {{ end }}
     <div class="page">
         <a class="skip" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
-        {{ partial "fragments/nav.html" . }}
+        {{ with (.Scratch.Get "layout_fragment_nav_page") }}{{ partial "fragments/nav.html" (dict "ctx" $ "source" .) }}{{ end }}
 
         {{ block "breadcrumb" . }}{{ end }}
         

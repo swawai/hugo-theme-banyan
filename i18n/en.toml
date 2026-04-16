@@ -1,17 +1,9 @@
-[menu_home]
+[label_home]
 other = "Home"
-[menu_products]
-other = "Products"
-[menu_signals]
-other = "Signals"
-[menu_about]
-other = "About"
-[menu_tags]
+[label_tags]
 other = "Tag"
-[menu_udc]
+[label_udc]
 other = "UDC"
-[menu_all]
-other = "ALL"
 
 [list_col_name]
 other = "Name"
@@ -78,22 +70,10 @@ other = "All Content"
 
  
 
-[label_theme]
-other = "Theme"
-[theme_auto]
-other = "Auto"
-[theme_light]
-other = "Light"
-[theme_dark]
-other = "Dark"
-
 [label_published]
 other = "Published"
 [label_updated]
 other = "Updated"
-
-[label_me]
-other = "Me"
 
 
 [no_trans_msg]

@@ -1,0 +1,7 @@
+{{ $ctx := . }}
+{{ if reflect.IsMap . }}{{ with index . "ctx" }}{{ $ctx = . }}{{ end }}{{ end }}
+{{ $descriptors := slice (dict "page" $ctx "page_css" true "page_css_inline" true "page_js" true "page_js_inline" true) }}
+{{ with $ctx.Scratch.Get "layout_fragment_resource_sources" }}
+    {{ range . }}{{ $descriptors = $descriptors | append . }}{{ end }}
+{{ end }}
+{{ return $descriptors }}

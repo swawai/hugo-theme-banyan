@@ -1,13 +1,79 @@
+{{ $ctx := . }}
+{{ if reflect.IsMap . }}{{ with index . "ctx" }}{{ $ctx = . }}{{ end }}{{ end }}
+{{ $source := .source }}
+{{ if not $source }}{{ $source = $ctx.Scratch.Get "layout_fragment_nav_page" }}{{ end }}
+{{ if not $source }}{{ return }}{{ end }}
+{{ $navConfig := $source.Params.nav | default dict }}
+{{ $items := index $navConfig "items" | default slice }}
+{{ $controls := index $navConfig "controls" | default dict }}
+{{ $meConfig := index $navConfig "me" | default dict }}
+{{ $labelDefaults := dict
+    "language" "Language"
+    "theme" "Theme"
+    "theme_auto" "Auto"
+    "theme_light" "Light"
+    "theme_dark" "Dark"
+    "me" "Me"
+}}
+{{ $labels := merge $labelDefaults (index $navConfig "labels" | default dict) }}
+{{ $showLanguage := true }}
+{{ if isset $controls "language" }}{{ $showLanguage = index $controls "language" }}{{ end }}
+{{ $showTheme := true }}
+{{ if isset $controls "theme" }}{{ $showTheme = index $controls "theme" }}{{ end }}
+{{ $showMe := true }}
+{{ if isset $meConfig "show" }}{{ $showMe = index $meConfig "show" }}{{ end }}
+{{ $labelLanguage := index $labels "language" }}
+{{ $labelTheme := index $labels "theme" }}
+{{ $themeAuto := index $labels "theme_auto" }}
+{{ $themeLight := index $labels "theme_light" }}
+{{ $themeDark := index $labels "theme_dark" }}
+{{ $labelMeDefault := index $labels "me" }}
+
 <nav class="site-nav" aria-label="Primary">
 
-    {{ range .Site.Menus.main }}
-    {{ $key := printf "menu_%s" .Identifier }}
-    {{ $menuText := i18n $key | default .Name }}
-    {{ $menuTitle := cond (eq .Identifier "udc") "Universal Decimal Classification" "" }}
-    {{ partial "link.html" (dict "ctx" $ "href" (.URL | relLangURL) "title" $menuTitle "text" $menuText "linkSlot" "menu") }}
+    {{ range $item := $items }}
+    {{ $hrefRaw := "" }}
+    {{ with index $item "href" }}{{ $hrefRaw = printf "%v" . }}{{ end }}
+    {{ if eq $hrefRaw "" }}{{ with index $item "page" }}{{ $hrefRaw = printf "%v" . }}{{ end }}{{ end }}
+    {{ if eq $hrefRaw "" }}{{ errorf "编译失败: 页面 %q 的 nav.items 缺少 href/page。" $source.File.Path }}{{ end }}
+    {{ $itemText := "" }}
+    {{ with index $item "text" }}{{ $itemText = printf "%v" . }}{{ end }}
+    {{ if eq $itemText "" }}{{ with index $item "name" }}{{ $itemText = printf "%v" . }}{{ end }}{{ end }}
+    {{ if eq $itemText "" }}
+        {{ with index $item "text_key" }}
+            {{ $itemText = i18n (printf "%v" .) | default "" }}
+        {{ end }}
+    {{ end }}
+    {{ if eq $itemText "" }}{{ errorf "编译失败: 页面 %q 的 nav.items 缺少 text/name/text_key。" $source.File.Path }}{{ end }}
+    {{ $itemTitle := "" }}
+    {{ with index $item "title" }}{{ $itemTitle = printf "%v" . }}{{ end }}
+    {{ $href := "" }}
+    {{ $isInternal := false }}
+    {{ if or (hasPrefix $hrefRaw "/") (and (not (hasPrefix $hrefRaw "http://")) (not (hasPrefix $hrefRaw "https://")) (not (hasPrefix $hrefRaw "//"))) }}
+        {{ $isInternal = true }}
+        {{ if hasPrefix $hrefRaw "/" }}
+            {{ $href = $hrefRaw | relLangURL }}
+        {{ else }}
+            {{ $href = (printf "/%s" $hrefRaw) | relLangURL }}
+        {{ end }}
+    {{ else }}
+        {{ $href = $hrefRaw }}
+    {{ end }}
+    {{ partial "link.html" (dict
+        "ctx" $ctx
+        "href" $href
+        "title" $itemTitle
+        "text" $itemText
+        "linkSlot" "menu"
+        "target" (cond $isInternal "" "_blank")
+        "rel" (cond $isInternal "" "noopener noreferrer")
+    ) }}
     {{ end }}
 
-    {{ $meLinkRaw := site.Params.me_url | default (site.Params.account_url | default "") }}
+    {{ if $showMe }}
+    {{ $meLinkRaw := "" }}
+    {{ with index $meConfig "href" }}{{ $meLinkRaw = printf "%v" . }}{{ end }}
+    {{ if eq $meLinkRaw "" }}{{ $meLinkRaw = site.Params.me_url | default (site.Params.account_url | default "") }}{{ end }}
     {{ $meLink := "" }}
     {{ $meIsInternal := false }}
     {{ $hasMe := true }}
@@ -26,39 +92,44 @@
         {{ $meLink = "https://github.com/swawai/hugo-theme-banyan" }}
         {{ $hasMe = false }}
     {{ end }}
-    {{ if $meIsInternal }}{{ partial "link-collect-url.html" (dict "ctx" . "slot" "menu" "url" $meLink) }}{{ end }}
-    <a href="{{ $meLink }}"{{ if not $meIsInternal }} target="_blank" rel="noopener noreferrer"{{ end }} aria-label="{{ if $hasMe }}{{ i18n `label_me` | default `Me` }}{{ else }}Banyan Theme GitHub{{ end }}" class="nav-me-btn">
-        <span class="sr-only">{{ if $hasMe }}{{ i18n "label_me" | default "Me" }}{{ else }}Banyan Theme GitHub{{ end }}</span>
+    {{ $meLabel := $labelMeDefault }}
+    {{ with index $meConfig "label" }}{{ $meLabel = printf "%v" . }}{{ end }}
+    {{ if $meIsInternal }}{{ partial "link-collect-url.html" (dict "ctx" $ctx "slot" "menu" "url" $meLink) }}{{ end }}
+    <a href="{{ $meLink }}"{{ if not $meIsInternal }} target="_blank" rel="noopener noreferrer"{{ end }} aria-label="{{ if $hasMe }}{{ $meLabel }}{{ else }}Banyan Theme GitHub{{ end }}" class="nav-me-btn">
+        <span class="sr-only">{{ if $hasMe }}{{ $meLabel }}{{ else }}Banyan Theme GitHub{{ end }}</span>
         {{ partial "icon" (dict "name" "me" "class" "default-me-icon") }}
         <img alt="Me Avatar" class="me-avatar" />
     </a>
+    {{ end }}
 
-    {{ $cur := .Language.Lang }}
-    {{- $transLangs := slice $cur -}}
-    {{- range .AllTranslations -}}
-        {{- $transLangs = $transLangs | append .Language.Lang -}}
-    {{- end -}}
-    {{- $transLangs = $transLangs | uniq -}}
-    <span class="icon-select-wrapper" title="{{ i18n `label_language` | default `Language` }}">
-        <span class="sr-only">{{ i18n "label_language" | default "Language" }}</span>
+    {{ if $showLanguage }}
+    {{ $cur := $ctx.Language.Lang }}
+    {{ $transLangs := slice $cur }}
+    {{ range $ctx.AllTranslations }}{{ $transLangs = $transLangs | append .Language.Lang }}{{ end }}
+    {{ $transLangs = $transLangs | uniq }}
+    <span class="icon-select-wrapper" title="{{ $labelLanguage }}">
+        <span class="sr-only">{{ $labelLanguage }}</span>
         {{ partial "icon" (dict "name" "language") }}
         <select
             id="lang-select"
             class="icon-select"
-            aria-label="{{ i18n `label_language` | default `Language` }}"
+            aria-label="{{ $labelLanguage }}"
             data-cur-lang="{{ $cur }}"
             data-trans-langs="{{ delimit $transLangs "," }}">
         </select>
     </span>
+    {{ end }}
 
-    <span class="icon-select-wrapper" title="{{ i18n `label_theme` | default `Theme` }}">
-        <span class="sr-only">{{ i18n "label_theme" | default "Theme" }}</span>
+    {{ if $showTheme }}
+    <span class="icon-select-wrapper" title="{{ $labelTheme }}">
+        <span class="sr-only">{{ $labelTheme }}</span>
         {{ partial "icon" (dict "name" "theme") }}
-        <select id="theme-select" class="icon-select" aria-label="{{ i18n `label_theme` | default `Theme` }}">
-            <option value="auto">{{ i18n "theme_auto" | default "Auto" }}</option>
-            <option value="light">{{ i18n "theme_light" | default "Light" }}</option>
-            <option value="dark">{{ i18n "theme_dark" | default "Dark" }}</option>
+        <select id="theme-select" class="icon-select" aria-label="{{ $labelTheme }}">
+            <option value="auto">{{ $themeAuto }}</option>
+            <option value="light">{{ $themeLight }}</option>
+            <option value="dark">{{ $themeDark }}</option>
         </select>
     </span>
+    {{ end }}
 
 </nav>

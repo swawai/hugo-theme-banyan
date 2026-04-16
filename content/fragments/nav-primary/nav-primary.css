@@ -4,7 +4,7 @@
     align-items: flex-end;
     column-gap: 0.8rem;
     white-space: nowrap;
-    margin-bottom: 0.4rem;
+    margin-bottom: 1.4rem;
     line-height: 1;
     color: var(--focus);
     font-weight: bold;
@@ -40,11 +40,6 @@
     border-bottom: 1px solid currentColor;
 }
 
-/* .site-nav select option {
-    background: var(--bg);
-    color: var(--fg);
-} */
-
 .site-nav .icon-select-wrapper > .icon,
 .site-nav .nav-me-btn :is(.default-me-icon, .me-avatar) {
     display: block;
@@ -58,29 +53,12 @@
     display: block;
     line-height: 1;
 }
-/* 
-.site-nav .nav-about-link {
-    gap: 0.22rem;
-}
-
-.site-nav .nav-me-btn {
-    gap: 0;
-} */
 
 .site-nav .nav-me-btn .me-avatar,
 .site-nav .nav-me-btn .me-avatar:not([src]),
 .site-nav .nav-me-btn .me-avatar[src=""] {
     display: none;
 }
-
-/* .site-nav .nav-about-link .nav-about-logo,
-.site-nav .nav-me-btn .default-me-icon {
-    transform: translateY(-0.04em) scale(0.92);
-}
-
-.site-nav .nav-me-btn .me-avatar {
-    transform: translateY(-0.03em);
-} */
 
 .site-nav .icon-select-wrapper select.icon-select {
     position: absolute;
