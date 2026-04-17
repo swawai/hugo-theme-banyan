@@ -1,5 +1,7 @@
 {{ $ctx := .ctx }}
 {{ $kind := .kind }}
+{{ $withContent := true }}
+{{ if isset . "with_content" }}{{ $withContent = .with_content }}{{ end }}
 {{ $spec := .spec | default (partial "taxonomy/spec-get.html" (dict "ctx" $ctx "plural" $ctx.Data.Plural)) }}
 {{ $items := slice }}
 {{ if eq (index $spec "mode") "tree" }}
@@ -7,9 +9,10 @@
 {{ else }}
   {{ $items = partial "taxonomy/items-flat.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) }}
 {{ end }}
-{{ $content := trim $ctx.Content " \r\n\t" }}
+{{ $content := "" }}
+{{ if $withContent }}{{ $content = trim $ctx.Content " \r\n\t" }}{{ end }}
 
-{{ if ne $content "" }}
+{{ if and $withContent (ne $content "") }}
 <div class="prose taxonomy-prose">
   {{ $ctx.Content }}
 </div>

@@ -1,7 +1,6 @@
 ---
 title: swaw
 description: swaw 品牌首页。
-show_breadcrumb: false
 show_meta: false
 type: frameworks
 layout: home

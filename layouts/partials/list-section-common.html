@@ -1,16 +1,14 @@
 {{ $ctx := .ctx }}
+{{ if ne $ctx.Kind "section" }}{{ errorf "编译失败: list-section-common.html 仅支持 kind=section，当前页面 %q 的 kind=%q。" $ctx.RelPermalink $ctx.Kind }}{{ end }}
 {{ $nameLabel := i18n "list_col_name" }}
 {{ $dateLabel := i18n "list_col_date" }}
 {{ $countLabel := i18n "list_col_count" }}
 {{ $sortField := "dateKey" }}
 {{ $sortOrder := "desc" }}
 
-{{/* 面包屑：仅 /d/ 根页显示 DIR；其余 d 下页面直接走祖先链 */}}
-{{ $isDirectoryRoot := and (eq $ctx.Kind "section") (eq $ctx.Section "d") (eq $ctx.RelPermalink $ctx.FirstSection.RelPermalink) }}
+{{ $isRootSection := eq $ctx.RelPermalink $ctx.FirstSection.RelPermalink }}
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
-  {{ if $ctx.IsHome }}
-{{ partial "link.html" (dict "ctx" $ctx "href" $ctx.Site.Home.RelPermalink "text" ((i18n "label_home") | default "HOME") "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
-  {{ else if $isDirectoryRoot }}
+  {{ if $isRootSection }}
     {{ partial "link.html" (dict "ctx" $ctx "href" $ctx.RelPermalink "text" ($ctx.LinkTitle | default $ctx.Title) "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
   {{ else }}
     {{ $rendered := false }}
@@ -25,7 +23,7 @@
   {{ end }}
 </nav>
 
-<div class="grid-list" data-sortable="true" data-sort-variant="dir" data-sort-columns="3" data-sort-default="date-desc">
+<div class="grid-list" data-sortable="true" data-sort-variant="section" data-sort-columns="3" data-sort-default="date-desc">
   {{ partial "grid-sort-cell.html" (dict
     "class" "cell-title"
     "ctx" $ctx
@@ -57,16 +55,9 @@
     "titleAsc" (i18n "list_sort_count_asc")
     "titleDesc" (i18n "list_sort_count_desc")) }}
 
-  {{ $dirEntries := slice }}
-  {{ if $ctx.IsHome }}
-    {{ range partial "list-dir-home-shortcuts.html" (dict "ctx" $ctx) }}
-      {{ $dirEntries = $dirEntries | append . }}
-    {{ end }}
-  {{ end }}
-
+  {{ $sectionEntriesRaw := slice }}
   {{ range $ctx.Sections }}
     {{ $section := . }}
-    {{ if and $ctx.IsHome (or (eq $section.Section "d") (eq $section.Section "fragments")) }}{{ continue }}{{ end }}
     {{ $cnt := len $section.RegularPagesRecursive }}
     {{ $d := $section.Lastmod }}
     {{ with first 1 ($section.RegularPagesRecursive.ByLastmod.Reverse) }}
@@ -79,7 +70,7 @@
       {{ end }}
     {{ end }}
     {{ if eq ($d.Format "2006") "0001" }}{{ $d = $section.Date }}{{ end }}
-    {{ $dirEntries = $dirEntries | append (dict
+    {{ $sectionEntriesRaw = $sectionEntriesRaw | append (dict
       "kind" "section"
       "title" $section.Title
       "href" $section.RelPermalink
@@ -92,13 +83,14 @@
       "dateText" ($d.Format "2006-01-02")) }}
   {{ end }}
 
+  {{ $pageEntriesRaw := slice }}
   {{ range $ctx.RegularPages }}
     {{ $page := . }}
     {{ $bytes := len $page.RawContent }}
     {{ $kb := div (add $bytes 1023) 1024 }}
     {{ $d := $page.Lastmod }}
     {{ if eq ($d.Format "2006") "0001" }}{{ $d = $page.Date }}{{ end }}
-    {{ $dirEntries = $dirEntries | append (dict
+    {{ $pageEntriesRaw = $pageEntriesRaw | append (dict
       "kind" "page"
       "title" $page.Title
       "href" $page.RelPermalink
@@ -111,8 +103,8 @@
       "dateText" ($d.Format "2006-01-02")) }}
   {{ end }}
 
-  {{ $sectionEntries := sort (where $dirEntries "kind" "section") $sortField $sortOrder }}
-  {{ $pageEntries := sort (where $dirEntries "kind" "page") $sortField $sortOrder }}
+  {{ $sectionEntries := sort $sectionEntriesRaw $sortField $sortOrder }}
+  {{ $pageEntries := sort $pageEntriesRaw $sortField $sortOrder }}
   {{ $ordered := slice }}
   {{ range $pageEntries }}{{ $ordered = $ordered | append . }}{{ end }}
   {{ range $sectionEntries }}{{ $ordered = $ordered | append . }}{{ end }}

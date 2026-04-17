@@ -1,6 +1,6 @@
 const SORT_PARAM_KEY = 'sort';
 const SORT_VARIANTS = {
-    dir: {
+    section: {
         defaultToken: 'date-desc',
         grouped: true,
         fields: {

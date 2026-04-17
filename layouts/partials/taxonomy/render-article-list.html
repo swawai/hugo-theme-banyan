@@ -1,0 +1,3 @@
+{{- $ctx := .ctx | default . -}}
+{{- $kind := cond (eq $ctx.Kind "term") "term" "root" -}}
+{{- partial "taxonomy/render.html" (dict "ctx" $ctx "kind" $kind "with_content" false) -}}

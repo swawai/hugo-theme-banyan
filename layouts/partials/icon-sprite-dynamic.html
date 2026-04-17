@@ -1,7 +1,21 @@
-{{- $used := page.Store.Get "used_icons" -}}
-{{- if $used -}}
+{{- $used := dict -}}
+{{- with page.Store.Get "used_icons" -}}
+  {{- range $name, $_ := . -}}
+    {{- $used = merge $used (dict $name true) -}}
+  {{- end -}}
+{{- end -}}
+{{- /* Fragment 内容可能复用 Hugo 的 .Content 缓存，补扫最终 HTML 里的 <use href="#icon-*"> 以兜住这类图标依赖。 */ -}}
+{{- $content := "" -}}
+{{- with .Content -}}
+  {{- $content = replaceRE `(?s)<!--.*?-->` "" . -}}
+{{- end -}}
+{{- range findRE `#icon-[A-Za-z0-9_-]+` $content -}}
+  {{- $name := replace . "#icon-" "" -}}
+  {{- $used = merge $used (dict $name true) -}}
+{{- end -}}
+{{- if gt (len $used) 0 -}}
 <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false">
-  {{- range $name, $true := $used -}}
+  {{- range $name, $_ := $used -}}
     {{- $iconData := index site.Data.icons $name -}}
     {{- if $iconData -}}
   <symbol id="icon-{{ $name }}" viewBox="{{ $iconData.viewBox | default `0 0 24 24` }}"{{ with index $iconData "fill" }} fill="{{ . }}"{{ end }}{{ with index $iconData "stroke" }} stroke="{{ . }}"{{ end }}{{ with index $iconData "stroke_linecap" }} stroke-linecap="{{ . }}"{{ end }}{{ with index $iconData "stroke_linejoin" }} stroke-linejoin="{{ . }}"{{ end }}{{ with index $iconData "stroke_width" }} stroke-width="{{ . }}"{{ end }}>

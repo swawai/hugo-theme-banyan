@@ -2,6 +2,7 @@
 title: Directory
 linkTitle: DIR
 layout: "article"
+banyan_article_section_list: true
 show_breadcrumb: false
 show_meta: false
 cascade:
@@ -12,8 +13,11 @@ cascade:
   - _target:
       kind: "section"
     layout: "article"
+    banyan_article_section_list: true
+    show_breadcrumb: false
+    show_meta: false
 ---
 
-{{< dir-list >}}
+{{< section-list >}}
 
 {{< fragment "/fragments/home-footer-shortcuts" >}}
