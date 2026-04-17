@@ -1,0 +1,19 @@
+{{- $ctx := .ctx | default . -}}
+{{- $src := "" -}}
+{{- $result := dict -}}
+{{- if isset $ctx.Params "breadcrumb_fragment" -}}
+  {{- $raw := index $ctx.Params "breadcrumb_fragment" -}}
+  {{- if ne $raw false -}}{{- $src = printf "%v" $raw -}}{{- end -}}
+{{- end -}}
+{{- if ne $src "" -}}
+  {{- $source := $ctx.Site.GetPage $src -}}
+  {{- if not $source -}}{{- errorf "编译失败: 页面 %q 找不到 breadcrumb_fragment %q。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) $src -}}{{- end -}}
+  {{- $config := index $source.Params "breadcrumb" | default dict -}}
+  {{- if eq (len $config) 0 -}}{{- errorf "编译失败: breadcrumb fragment %q 缺少 [breadcrumb] 配置。" $source.File.Path -}}{{- end -}}
+  {{- $result = dict
+    "source" $source
+    "config" $config
+    "src" $src
+  -}}
+{{- end -}}
+{{- return $result -}}

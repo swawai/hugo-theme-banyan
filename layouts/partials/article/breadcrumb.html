@@ -1,3 +1,1 @@
-{{ $page := . }}
-<nav class="post-dir breadcrumb-nav" aria-label="Breadcrumb">{{ $rendered := false }}{{ range (where .Ancestors.Reverse "IsHome" "ne" true) }}{{ if $rendered }}<span class="sep">/</span>{{ end }}{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "text" .LinkTitle "textClass" "crumb-text" "linkSlot" "nav") }}{{ $rendered = true }}{{ end }}{{ if $rendered }}<span class="sep">/</span>{{ end }}{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "text" .Title "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}</nav>
-{{ partial "taxonomy/article-links.html" (dict "ctx" $page) }}
+{{ partial "breadcrumb/entry.html" (dict "ctx" .) }}

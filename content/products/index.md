@@ -5,6 +5,8 @@ description: Curated products marked with product metadata.
 slug: "products"
 layout: "article"
 show_meta: false
+breadcrumb_fragment: /fragments/breadcrumb-products
+products_scope: all
 ---
 
 

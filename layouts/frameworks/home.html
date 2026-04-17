@@ -14,10 +14,10 @@
   {{ if isset .Params "show_meta" }}{{ $showMeta = .Params.show_meta }}{{ end }}
   <article class="article">
     <div class="prose">
-      {{ if $showBreadcrumb }}{{ partial "article/breadcrumb.html" . }}{{ end }}
+      {{ if $showBreadcrumb }}{{ partial "breadcrumb/entry.html" (dict "ctx" .) }}{{ end }}
       {{ if $showMeta }}{{ partial "article/dates.html" . }}{{ end }}
       {{ $content }}
     </div>
   </article>
-  {{ partial "schema-breadcrumbs.html" . }}
+  {{ partial "breadcrumb/schema.html" (dict "ctx" .) }}
 {{ end }}

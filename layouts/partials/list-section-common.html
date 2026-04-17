@@ -6,23 +6,6 @@
 {{ $sortField := "dateKey" }}
 {{ $sortOrder := "desc" }}
 
-{{ $isRootSection := eq $ctx.RelPermalink $ctx.FirstSection.RelPermalink }}
-<nav class="breadcrumb-nav" aria-label="Breadcrumb">
-  {{ if $isRootSection }}
-    {{ partial "link.html" (dict "ctx" $ctx "href" $ctx.RelPermalink "text" ($ctx.LinkTitle | default $ctx.Title) "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
-  {{ else }}
-    {{ $rendered := false }}
-    {{ range (where $ctx.Ancestors.Reverse "IsHome" "ne" true) }}
-      {{ $p := . }}
-      {{ if $rendered }} ﹥ {{ end }}
-      {{ partial "link.html" (dict "ctx" $ctx "href" $p.RelPermalink "text" $p.LinkTitle "textClass" "crumb-text" "linkSlot" "nav") }}
-      {{ $rendered = true }}
-    {{ end }}
-    {{ if $rendered }} ﹥ {{ end }}
-    {{ partial "link.html" (dict "ctx" $ctx "href" $ctx.RelPermalink "text" $ctx.Title "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
-  {{ end }}
-</nav>
-
 <div class="grid-list" data-sortable="true" data-sort-variant="section" data-sort-columns="3" data-sort-default="date-desc">
   {{ partial "grid-sort-cell.html" (dict
     "class" "cell-title"

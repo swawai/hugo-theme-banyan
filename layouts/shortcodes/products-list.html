@@ -16,6 +16,7 @@
   {{ end }}
 
   {{ $entries := slice }}
+  {{ $scope := lower (printf "%v" ($host.Params.products_scope | default ($.Get "filter") | default "all")) }}
   {{ $sitesByWeight := sort $target.Site.Sites "Language.Weight" }}
   {{ $currentLang := $target.Site.Language.Lang }}
   {{ $defaultLang := "" }}
@@ -48,11 +49,9 @@
         {{ errorf "编译失败: 页面 %q (标题: %q) 标记了 product=true，但缺少 product_value。" .File.Path .Title }}
       {{ end }}
       {{ $priceRaw := index .Params "product_price" }}
-      {{ $filter := $host.Scratch.Get "products_filter" | default ($.Get "filter") }}
-      {{ if eq $filter "free" }}
-        {{ if ne (printf "%v" $priceRaw) "0" }}{{ continue }}{{ end }}
-      {{ else if eq $filter "paid" }}
-        {{ if eq (printf "%v" $priceRaw) "0" }}{{ continue }}{{ end }}
+      {{ $productScope := partial "products/scope-key.html" (dict "page" .) }}
+      {{ if and (ne $scope "") (ne $scope "all") (ne $scope $productScope) }}
+        {{ continue }}
       {{ end }}
 
       {{ $familyKey := printf "%v" .TranslationKey }}

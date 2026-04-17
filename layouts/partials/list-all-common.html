@@ -10,20 +10,6 @@
 {{ $pathLabel := i18n "list_col_path" }}
 {{ $currentAllHref := $host.RelPermalink }}
 
-{{ if ne $host.Params.show_breadcrumb false }}
-<nav class="breadcrumb-nav" aria-label="Breadcrumb">
-  {{ $rendered := false }}
-  {{ range (where $ctx.Ancestors.Reverse "IsHome" "ne" true) }}
-    {{ $p := . }}
-    {{ if $rendered }} ﹥ {{ end }}
-    {{ partial "link.html" (dict "ctx" $ctx "href" $p.RelPermalink "text" $p.LinkTitle "textClass" "crumb-text" "linkSlot" "nav") }}
-    {{ $rendered = true }}
-  {{ end }}
-  {{ if $rendered }} ﹥ {{ end }}
-  {{ partial "link.html" (dict "ctx" $ctx "href" $host.RelPermalink "text" $hostTitle "textClass" "crumb-text" "dataAttrs" (dict "site-update-anchor" "true") "linkSlot" "nav") }}
-</nav>
-{{ end }}
-
 <div class="grid-list grid-all" data-sortable="true" data-sort-variant="all" data-sort-columns="4" data-sort-default="date-desc">
   {{ partial "grid-sort-cell.html" (dict
     "class" "cell-title"

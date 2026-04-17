@@ -3,7 +3,7 @@ title: Directory
 linkTitle: DIR
 layout: "article"
 banyan_article_section_list: true
-show_breadcrumb: false
+show_breadcrumb: true
 show_meta: false
 cascade:
   - _target:
@@ -14,7 +14,7 @@ cascade:
       kind: "section"
     layout: "article"
     banyan_article_section_list: true
-    show_breadcrumb: false
+    show_breadcrumb: true
     show_meta: false
 ---
 

@@ -1,0 +1,15 @@
+{{- $ctx := .ctx | default . -}}
+{{- $homeText := i18n "label_home" | default "Home" -}}
+{{- $homeHref := $ctx.Site.Home.RelPermalink -}}
+{{- $items := slice (dict
+  "text" $homeText
+  "href" $homeHref
+  "current" true
+) -}}
+{{- $result := dict
+  "variant" "trail"
+  "strategy" "home-auto"
+  "items" $items
+  "schema_items" $items
+-}}
+{{- return $result -}}

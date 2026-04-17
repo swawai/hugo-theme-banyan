@@ -1,0 +1,11 @@
+{{- $ctx := .ctx | default . -}}
+{{- $strategy := partial "breadcrumb/strategy-key.html" (dict "ctx" $ctx) -}}
+{{- $model := partial (printf "breadcrumb/%s.html" $strategy) (dict "ctx" $ctx) -}}
+{{- $fragment := partial "breadcrumb/fragment-load.html" (dict "ctx" $ctx) -}}
+{{- if gt (len $fragment) 0 -}}
+  {{- $model = partial "breadcrumb/model-merge-fragment.html" (dict "ctx" $ctx "model" $model "fragment" $fragment) -}}
+{{- end -}}
+{{- if isset $ctx.Params "breadcrumb_variant" -}}
+  {{- $model = merge $model (dict "variant" (lower (printf "%v" (index $ctx.Params "breadcrumb_variant")))) -}}
+{{- end -}}
+{{- return $model -}}

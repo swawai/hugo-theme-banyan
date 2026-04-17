@@ -54,13 +54,8 @@
     <article class="article">
         {{ if or $showBreadcrumb $showMeta (and (not $hasSectionListMarker) (ne $content "")) (and $hasSectionListMarker (ne $contentBefore "")) }}
         <div class="prose">
-    {{ if $showBreadcrumb }}
-      {{ if $isTaxonomyNode }}
-        {{ partial "taxonomy/breadcrumb.html" (dict "ctx" .) }}
-      {{ else }}
-        {{ partial "article/breadcrumb.html" . }}
-      {{ end }}
-    {{ end }}
+    {{ if $showBreadcrumb }}{{ partial "breadcrumb/entry.html" (dict "ctx" .) }}{{ end }}
+    {{ if and $showBreadcrumb .IsPage }}{{ partial "taxonomy/article-links.html" (dict "ctx" .) }}{{ end }}
     {{ if $showMeta }}{{ partial "article/dates.html" . }}{{ end }}
     {{ if $hasSectionListMarker }}
       {{ if ne $contentBefore "" }}{{ $contentBeforeSectionList | safeHTML }}{{ end }}
@@ -78,5 +73,5 @@
         {{ end }}
     </article>
     {{ if and .IsPage (eq .Section "d") }}{{ partial "article/schema.html" . }}{{ end }}
-    {{ partial "schema-breadcrumbs.html" . }}
+    {{ partial "breadcrumb/schema.html" (dict "ctx" .) }}
 {{ end }}

@@ -1,0 +1,24 @@
+{{- $ctx := .ctx | default . -}}
+{{- $model := .model | default (partial "breadcrumb/model.html" (dict "ctx" $ctx)) -}}
+{{- $items := index $model "schema_items" | default (index $model "items" | default slice) -}}
+{{- if gt (len $items) 0 -}}
+  {{- $listItems := slice -}}
+  {{- range $index, $item := $items -}}
+    {{- $href := printf "%v" (index $item "href") -}}
+    {{- if and (not (hasPrefix $href "http://")) (not (hasPrefix $href "https://")) (not (hasPrefix $href "//")) -}}
+      {{- $href = $href | absURL -}}
+    {{- end -}}
+    {{- $listItems = $listItems | append (dict
+      "@type" "ListItem"
+      "position" (add $index 1)
+      "name" (index $item "text")
+      "item" $href
+    ) -}}
+  {{- end -}}
+  {{- $payload := dict
+    "@context" "https://schema.org"
+    "@type" "BreadcrumbList"
+    "itemListElement" $listItems
+  -}}
+<script type="application/ld+json">{{ $payload | jsonify | safeJS }}</script>
+{{- end -}}

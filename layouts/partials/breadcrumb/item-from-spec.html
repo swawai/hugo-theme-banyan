@@ -1,0 +1,42 @@
+{{- $ctx := .ctx -}}
+{{- $spec := .spec | default dict -}}
+{{- $text := "" -}}
+{{- with index $spec "text" }}{{ $text = printf "%v" . }}{{ end -}}
+{{- if eq $text "" -}}{{- with index $spec "name" }}{{ $text = printf "%v" . }}{{ end -}}{{- end -}}
+{{- if eq $text "" -}}
+  {{- with index $spec "text_key" -}}
+    {{- $text = i18n (printf "%v" .) | default "" -}}
+  {{- end -}}
+{{- end -}}
+{{- $href := "" -}}
+{{- with index $spec "page" -}}
+  {{- $pageRef := printf "%v" . -}}
+  {{- $target := $ctx.Site.GetPage $pageRef -}}
+  {{- if not $target -}}{{- errorf "编译失败: 页面 %q 的 breadcrumb 配置找不到 page=%q。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) $pageRef -}}{{- end -}}
+  {{- $href = $target.RelPermalink -}}
+  {{- if eq $text "" -}}{{- $text = $target.LinkTitle | default $target.Title -}}{{- end -}}
+{{- else -}}
+  {{- with index $spec "href" -}}
+    {{- $hrefRaw := printf "%v" . -}}
+    {{- if or (hasPrefix $hrefRaw "/") (and (not (hasPrefix $hrefRaw "http://")) (not (hasPrefix $hrefRaw "https://")) (not (hasPrefix $hrefRaw "//"))) -}}
+      {{- if hasPrefix $hrefRaw "/" -}}
+        {{- $href = $hrefRaw | relLangURL -}}
+      {{- else -}}
+        {{- $href = (printf "/%s" $hrefRaw) | relLangURL -}}
+      {{- end -}}
+    {{- else -}}
+      {{- $href = $hrefRaw -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if eq $text "" -}}{{- errorf "编译失败: 页面 %q 的 breadcrumb item 缺少 text/name/text_key。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}{{- end -}}
+{{- if eq $href "" -}}{{- errorf "编译失败: 页面 %q 的 breadcrumb item 缺少 page/href。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}{{- end -}}
+{{- $currentKey := trim (lower (printf "%v" $ctx.RelPermalink)) "/" -}}
+{{- $hrefKey := trim (lower (printf "%v" $href)) "/" -}}
+{{- $item := dict
+  "text" $text
+  "href" $href
+  "current" (eq $hrefKey $currentKey)
+-}}
+{{- with index $spec "title" }}{{ $item = merge $item (dict "title" (printf "%v" .)) }}{{ end -}}
+{{- return $item -}}

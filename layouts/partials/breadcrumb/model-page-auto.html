@@ -1,0 +1,21 @@
+{{- $ctx := .ctx | default . -}}
+{{- $items := slice -}}
+{{- range (where $ctx.Ancestors.Reverse "IsHome" "ne" true) -}}
+  {{- $items = $items | append (dict
+    "text" (.LinkTitle | default .Title)
+    "href" .RelPermalink
+    "current" false
+  ) -}}
+{{- end -}}
+{{- $items = $items | append (dict
+  "text" ($ctx.Title | default $ctx.LinkTitle)
+  "href" $ctx.RelPermalink
+  "current" true
+) -}}
+{{- $result := dict
+  "variant" "trail"
+  "strategy" "page-auto"
+  "items" $items
+  "schema_items" $items
+-}}
+{{- return $result -}}

@@ -1,0 +1,39 @@
+{{- $ctx := .ctx | default . -}}
+{{- $spec := partial "taxonomy/spec-get.html" (dict "ctx" $ctx "plural" $ctx.Data.Plural) -}}
+{{- $rootHref := partial "taxonomy/url.html" (dict "ctx" $ctx "spec" $spec) -}}
+{{- $rootText := partial "taxonomy/label.html" (dict "ctx" $ctx "spec" $spec) -}}
+{{- $separator := printf "%v" (index $spec "separator" | default "/") -}}
+{{- $items := slice (dict
+  "text" $rootText
+  "href" $rootHref
+  "current" (ne $ctx.Kind "term")
+) -}}
+{{- if eq $ctx.Kind "term" -}}
+  {{- if eq (index $spec "mode") "tree" -}}
+    {{- $segments := split (printf "%v" $ctx.Data.Term) $separator -}}
+    {{- $path := slice -}}
+    {{- $lastIndex := sub (len $segments) 1 -}}
+    {{- range $i, $seg := $segments -}}
+      {{- if eq $seg "" -}}{{- continue -}}{{- end -}}
+      {{- $path = $path | append $seg -}}
+      {{- $items = $items | append (dict
+        "text" (partial "taxonomy/value-label.html" (dict "spec" $spec "value" $seg))
+        "href" (partial "taxonomy/url.html" (dict "ctx" $ctx "spec" $spec "value" (delimit $path $separator)))
+        "current" (eq $i $lastIndex)
+      ) -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $items = $items | append (dict
+      "text" ($ctx.LinkTitle | default $ctx.Title)
+      "href" $ctx.RelPermalink
+      "current" true
+    ) -}}
+  {{- end -}}
+{{- end -}}
+{{- $result := dict
+  "variant" "trail"
+  "strategy" "taxonomy-auto"
+  "items" $items
+  "schema_items" $items
+-}}
+{{- return $result -}}
