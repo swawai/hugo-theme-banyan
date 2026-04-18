@@ -3,7 +3,7 @@ title: swaw
 description: swaw 品牌首頁。
 show_meta: false
 type: frameworks
-layout: home
+layout: article
 ---
 
 

@@ -17,7 +17,7 @@ nav:
     me: Me
   items:
     - href: /
-      text_key: label_home
+      text: Swaw
     - href: /products/
       text: Products
     - href: /d/

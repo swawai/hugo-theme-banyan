@@ -1,6 +1,7 @@
 {{- $ctx := .ctx | default . -}}
-{{- $homeText := i18n "label_home" | default "Home" -}}
-{{- $homeHref := $ctx.Site.Home.RelPermalink -}}
+{{- $homePage := $ctx.Site.Home -}}
+{{- $homeText := $homePage.LinkTitle | default $homePage.Title | default "Home" -}}
+{{- $homeHref := $homePage.RelPermalink -}}
 {{- $items := slice (dict
   "text" $homeText
   "href" $homeHref

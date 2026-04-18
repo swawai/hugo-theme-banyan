@@ -60,9 +60,9 @@
 
 
 
-.breadcrumb-select-wrapper::after {
+/* .breadcrumb-select-wrapper::after {
     border-bottom-color: color-mix(in srgb, var(--focus) 72%, transparent);
-}
+} */
 
 .breadcrumb-link:hover,
 .breadcrumb-select-wrapper:hover {
@@ -77,9 +77,9 @@
     transform-origin: center center;
 } */
 
-.breadcrumb-menu-icon {
+/* .breadcrumb-menu-icon {
     color: var(--focus);
-}
+} */
 
 .breadcrumb-select {
     position: absolute;

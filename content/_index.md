@@ -3,7 +3,7 @@ title: swaw
 description: Systems Work, And We...
 show_meta: false
 type: frameworks
-layout: home
+layout: article
 ---
 
 

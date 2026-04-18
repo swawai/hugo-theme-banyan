@@ -17,7 +17,7 @@ nav:
     me: 我
   items:
     - href: /
-      text_key: label_home
+      text: 人不工
     - href: /products/
       text: 產品
     - href: /d/
