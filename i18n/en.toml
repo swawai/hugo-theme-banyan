@@ -38,6 +38,9 @@ other = "Name"
 other = "Price"
 [products_col_value]
 other = "Value"
+
+[breadcrumb_root_switch]
+other = "Switch root page"
 [products_free]
 other = "Free"
 [products_empty]

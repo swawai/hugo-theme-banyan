@@ -9,14 +9,14 @@
   {{- end -}}
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
   {{- range $index, $item := $visibleItems -}}
-    {{- if gt $index 0 -}}<span class="breadcrumb-sep" aria-hidden="true">/</span>{{- end -}}
+    {{- if gt $index 0 -}}<span class="breadcrumb-sep" aria-hidden="true">﹥</span>{{- end -}}
     {{- $itemMenu := index $item "menu" | default slice -}}
     {{- $itemIsCurrent := eq (index $item "current") true -}}
     {{- $itemClass := "breadcrumb-link" -}}
     {{- if eq $index 0 -}}{{- $itemClass = printf "%s breadcrumb-link-lead" $itemClass -}}{{- end -}}
     {{- if $itemIsCurrent -}}{{- $itemClass = printf "%s is-current" $itemClass -}}{{- end -}}
     {{- if and (eq $index 0) (gt (len $itemMenu) 0) -}}
-      <span class="breadcrumb-item breadcrumb-item-lead">
+      <span class="breadcrumb-item breadcrumb-item-menu">
         <span class="breadcrumb-select-wrapper" title="{{ index $item "menu_button_label" }}">
           {{ partial "icon" (dict "name" "menu" "class" "breadcrumb-menu-icon") }}
           <select class="breadcrumb-select" aria-label="{{ index $item "menu_button_label" }}" onchange="if(this.value){window.location.href=this.value;}">
@@ -25,7 +25,9 @@
             {{- end -}}
           </select>
         </span>
-        <span class="breadcrumb-sep breadcrumb-item-lead-sep" aria-hidden="true">/</span>
+      </span>
+      <span class="breadcrumb-sep" aria-hidden="true">﹥</span>
+      <span class="breadcrumb-item">
         {{ partial "link.html" (dict
           "ctx" $ctx
           "href" (index $item "href")

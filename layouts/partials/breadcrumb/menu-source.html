@@ -1,0 +1,8 @@
+{{- $ctx := .ctx -}}
+{{- $source := .source | default dict -}}
+{{- $key := lower (printf "%v" (index $source "source" | default "")) -}}
+{{- $result := slice -}}
+{{- if ne $key "" -}}
+  {{- $result = partial (printf "breadcrumb/menu-source-%s.html" $key) (dict "ctx" $ctx "source" $source) -}}
+{{- end -}}
+{{- return $result -}}

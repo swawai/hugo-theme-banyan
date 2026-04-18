@@ -38,6 +38,9 @@ other = "名称"
 other = "价格"
 [products_col_value]
 other = "价值点"
+
+[breadcrumb_root_switch]
+other = "切换根页面"
 [products_free]
 other = "免费"
 [products_empty]

@@ -14,4 +14,5 @@ products_scope: all
 {{< products-list >}}
 
 
-{{< fragment "/fragments/products-footer-shortcuts" >}}
+{{< fragment "/fragments/home-footer-shortcuts" >}}
+

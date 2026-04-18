@@ -1,0 +1,29 @@
+{{- $ctx := .ctx -}}
+{{- $dirPage := $ctx.Site.GetPage "/d" -}}
+{{- $allPage := $ctx.Site.GetPage "/all" -}}
+{{- $activeHref := "" -}}
+{{- if or (eq $ctx.Kind "taxonomy") (eq $ctx.Kind "term") -}}
+  {{- $spec := partial "taxonomy/spec-get.html" (dict "ctx" $ctx "plural" $ctx.Data.Plural) -}}
+  {{- $activeHref = partial "taxonomy/url.html" (dict "ctx" $ctx "spec" $spec) -}}
+{{- else if and $allPage (eq $ctx.RelPermalink $allPage.RelPermalink) -}}
+  {{- $activeHref = $allPage.RelPermalink -}}
+{{- else if $dirPage -}}
+  {{- if eq $ctx.RelPermalink $dirPage.RelPermalink -}}
+    {{- $activeHref = $dirPage.RelPermalink -}}
+  {{- else -}}
+    {{- with $ctx.CurrentSection -}}
+      {{- if eq .RelPermalink $dirPage.RelPermalink -}}
+        {{- $activeHref = $dirPage.RelPermalink -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if eq $activeHref "" -}}
+      {{- range $ctx.Ancestors -}}
+        {{- if eq .RelPermalink $dirPage.RelPermalink -}}
+          {{- $activeHref = $dirPage.RelPermalink -}}
+          {{- break -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $activeHref -}}

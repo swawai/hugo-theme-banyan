@@ -1,0 +1,7 @@
+{{- $ctx := .ctx -}}
+{{- $source := lower (printf "%v" (.source | default "")) -}}
+{{- $result := "" -}}
+{{- if ne $source "" -}}
+  {{- $result = partial (printf "breadcrumb/menu-active-href-%s.html" $source) . -}}
+{{- end -}}
+{{- return $result -}}

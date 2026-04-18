@@ -1,0 +1,17 @@
+{{- $ctx := .ctx -}}
+{{- $config := .config | default dict -}}
+{{- $items := slice -}}
+{{- with index $config "menu" -}}
+  {{- range . -}}
+    {{- $items = $items | append (partial "breadcrumb/item-from-spec.html" (dict "ctx" $ctx "spec" .)) -}}
+  {{- end -}}
+{{- end -}}
+{{- with index $config "menu_sources" -}}
+  {{- range . -}}
+    {{- $resolved := partial "breadcrumb/menu-source.html" (dict "ctx" $ctx "source" .) -}}
+    {{- range $resolved -}}
+      {{- $items = $items | append . -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $items -}}

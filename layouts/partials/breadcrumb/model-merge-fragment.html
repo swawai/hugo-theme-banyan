@@ -7,35 +7,43 @@
 {{- $variant := lower (printf "%v" (index $config "variant" | default (index $model "variant" | default "trail"))) -}}
 {{- $autoTail := lower (printf "%v" (index $config "auto_tail" | default "current")) -}}
 {{- $menuMode := lower (printf "%v" (index $config "menu_mode" | default "")) -}}
-{{- $menuItems := slice -}}
+{{- $menuItems := partial "breadcrumb/menu-items-from-config.html" (dict "ctx" $ctx "config" $config) -}}
 {{- $menuTextByHref := dict -}}
-{{- with index $config "menu" -}}
-  {{- range . -}}
-    {{- $menuItem := partial "breadcrumb/item-from-spec.html" (dict "ctx" $ctx "spec" .) -}}
-    {{- $menuItems = $menuItems | append $menuItem -}}
-    {{- $menuKey := trim (lower (printf "%v" (index $menuItem "href"))) "/" -}}
-    {{- $menuTextByHref = merge $menuTextByHref (dict $menuKey (index $menuItem "text")) -}}
-  {{- end -}}
-{{- end -}}
 {{- $currentKey := trim (lower (printf "%v" $ctx.RelPermalink)) "/" -}}
 {{- $activeMenuKey := "" -}}
 {{- $activeMenuDepth := -1 -}}
 {{- $activeMenuItem := dict -}}
+{{- $menuActiveHrefSource := lower (printf "%v" (index $config "menu_active_href_source" | default "")) -}}
+{{- $resolvedMenuActiveHref := "" -}}
+{{- range $menuItems -}}
+  {{- $menuKey := trim (lower (printf "%v" (index . "href"))) "/" -}}
+  {{- $menuTextByHref = merge $menuTextByHref (dict $menuKey (index . "text")) -}}
+{{- end -}}
 {{- if and (eq $menuMode "current-root") (gt (len $menuItems) 0) -}}
-  {{- range $menuItems -}}
-    {{- $menuItem := . -}}
-    {{- $menuKey := trim (lower (printf "%v" (index $menuItem "href"))) "/" -}}
-    {{- $isMatch := false -}}
-    {{- if eq $menuKey $currentKey -}}
-      {{- $isMatch = true -}}
-    {{- else if and (ne $menuKey "") (hasPrefix $currentKey (printf "%s/" $menuKey)) -}}
-      {{- $isMatch = true -}}
+  {{- if ne $menuActiveHrefSource "" -}}
+    {{- $resolvedMenuActiveHref = printf "%v" (partial "breadcrumb/menu-active-href.html" (dict "ctx" $ctx "source" $menuActiveHrefSource "config" $config "menuItems" $menuItems)) -}}
+    {{- $resolvedKey := trim (lower (printf "%v" $resolvedMenuActiveHref)) "/" -}}
+    {{- if ne $resolvedKey "" -}}
+      {{- $activeMenuKey = $resolvedKey -}}
+      {{- $activeMenuDepth = len (split $resolvedKey "/") -}}
     {{- end -}}
-    {{- if $isMatch -}}
-      {{- $menuDepth := len (split $menuKey "/") -}}
-      {{- if gt $menuDepth $activeMenuDepth -}}
-        {{- $activeMenuDepth = $menuDepth -}}
-        {{- $activeMenuKey = $menuKey -}}
+  {{- end -}}
+  {{- if lt $activeMenuDepth 0 -}}
+    {{- range $menuItems -}}
+      {{- $menuItem := . -}}
+      {{- $menuKey := trim (lower (printf "%v" (index $menuItem "href"))) "/" -}}
+      {{- $isMatch := false -}}
+      {{- if eq $menuKey $currentKey -}}
+        {{- $isMatch = true -}}
+      {{- else if and (ne $menuKey "") (hasPrefix $currentKey (printf "%s/" $menuKey)) -}}
+        {{- $isMatch = true -}}
+      {{- end -}}
+      {{- if $isMatch -}}
+        {{- $menuDepth := len (split $menuKey "/") -}}
+        {{- if gt $menuDepth $activeMenuDepth -}}
+          {{- $activeMenuDepth = $menuDepth -}}
+          {{- $activeMenuKey = $menuKey -}}
+        {{- end -}}
       {{- end -}}
     {{- end -}}
   {{- end -}}

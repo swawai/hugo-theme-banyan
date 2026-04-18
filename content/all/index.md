@@ -1,8 +1,10 @@
 ---
 title: All
+linkTitle: ALL
 slug: "all"
 layout: article
-show_breadcrumb: false
+breadcrumb_fragment: /fragments/breadcrumb-signals
+show_breadcrumb: true
 show_meta: false
 ---
 

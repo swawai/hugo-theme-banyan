@@ -38,6 +38,9 @@ other = "名稱"
 other = "價格"
 [products_col_value]
 other = "價值點"
+
+[breadcrumb_root_switch]
+other = "切換根頁面"
 [products_free]
 other = "免費"
 [products_empty]

@@ -1,0 +1,21 @@
+{{- $ctx := .ctx -}}
+{{- $items := slice -}}
+{{- range where $ctx.Site.Pages "Kind" "taxonomy" -}}
+  {{- $plural := lower (printf "%v" .Data.Plural) -}}
+  {{- $spec := partial "taxonomy/spec-get.html" (dict "ctx" $ctx "plural" $plural) -}}
+  {{- $weight := int (default 0 (index $spec "article_weight")) -}}
+  {{- $items = $items | append (dict
+    "text" (partial "taxonomy/label.html" (dict "ctx" $ctx "spec" $spec))
+    "href" .RelPermalink
+    "weight" $weight
+  ) -}}
+{{- end -}}
+{{- $sorted := sort (sort $items "text" "asc") "weight" "asc" -}}
+{{- $result := slice -}}
+{{- range $sorted -}}
+  {{- $result = $result | append (dict
+    "text" (index . "text")
+    "href" (index . "href")
+  ) -}}
+{{- end -}}
+{{- return $result -}}
