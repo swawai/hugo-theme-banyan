@@ -28,8 +28,23 @@
 {{ $themeLight := index $labels "theme_light" }}
 {{ $themeDark := index $labels "theme_dark" }}
 {{ $labelMeDefault := index $labels "me" }}
+{{ $currentKey := trim (lower (printf "%v" $ctx.RelPermalink)) "/" }}
+{{ $homePage := $ctx.Site.Home }}
+{{ $homeKey := "" }}
+{{ with $homePage }}{{ $homeKey = trim (lower (printf "%v" .RelPermalink)) "/" }}{{ end }}
+{{ $productsPage := $ctx.Site.GetPage "/products" }}
+{{ $productsKey := "" }}
+{{ with $productsPage }}{{ $productsKey = trim (lower (printf "%v" .RelPermalink)) "/" }}{{ end }}
+{{ $signalsPage := $ctx.Site.GetPage "/d" }}
+{{ $signalsKey := "" }}
+{{ with $signalsPage }}{{ $signalsKey = trim (lower (printf "%v" .RelPermalink)) "/" }}{{ end }}
+{{ $isProductPage := false }}
+{{ if isset $ctx.Params "product" }}{{ $isProductPage = eq (index $ctx.Params "product") true }}{{ end }}
+{{ $signalsFamilyActiveHref := "" }}
+{{ if not $isProductPage }}{{ $signalsFamilyActiveHref = printf "%v" (partial "breadcrumb/menu-active-href-signals-family.html" (dict "ctx" $ctx)) }}{{ end }}
 
 <nav class="site-nav" aria-label="Primary">
+    <div class="site-nav-primary">
 
     {{ range $item := $items }}
     {{ $hrefRaw := "" }}
@@ -59,11 +74,32 @@
     {{ else }}
         {{ $href = $hrefRaw }}
     {{ end }}
+    {{ $itemKey := trim (lower (printf "%v" $href)) "/" }}
+    {{ $isCurrent := false }}
+    {{ if and (ne $homeKey "") (eq $itemKey $homeKey) }}
+        {{ $isCurrent = $ctx.IsHome }}
+    {{ else if and (ne $productsKey "") (eq $itemKey $productsKey) }}
+        {{ $isCurrent = or $isProductPage (eq $currentKey $itemKey) (hasPrefix $currentKey (printf "%s/" $itemKey)) }}
+    {{ else if and (ne $signalsKey "") (eq $itemKey $signalsKey) }}
+        {{ $isCurrent = or
+            (and (ne $signalsFamilyActiveHref "") (not $isProductPage))
+            (eq $currentKey $itemKey)
+            (hasPrefix $currentKey (printf "%s/" $itemKey))
+        }}
+    {{ else if eq $currentKey $itemKey }}
+        {{ $isCurrent = true }}
+    {{ else if and (ne $itemKey "") (hasPrefix $currentKey (printf "%s/" $itemKey)) }}
+        {{ $isCurrent = true }}
+    {{ end }}
+    {{ $itemClass := "site-nav-link-primary" }}
+    {{ if $isCurrent }}{{ $itemClass = printf "%s is-current" $itemClass }}{{ end }}
     {{ partial "link.html" (dict
         "ctx" $ctx
         "href" $href
         "title" $itemTitle
         "text" $itemText
+        "class" $itemClass
+        "ariaCurrent" (cond $isCurrent "page" "")
         "linkSlot" "menu"
         "target" (cond $isInternal "" "_blank")
         "rel" (cond $isInternal "" "noopener noreferrer")
@@ -94,20 +130,38 @@
     {{ end }}
     {{ $meLabel := $labelMeDefault }}
     {{ with index $meConfig "label" }}{{ $meLabel = printf "%v" . }}{{ end }}
-    {{ if $meIsInternal }}{{ partial "link-collect-url.html" (dict "ctx" $ctx "slot" "menu" "url" $meLink) }}{{ end }}
-    <a href="{{ $meLink }}"{{ if not $meIsInternal }} target="_blank" rel="noopener noreferrer"{{ end }} aria-label="{{ if $hasMe }}{{ $meLabel }}{{ else }}Banyan Theme GitHub{{ end }}" class="nav-me-btn">
-        <span class="sr-only">{{ if $hasMe }}{{ $meLabel }}{{ else }}Banyan Theme GitHub{{ end }}</span>
-        {{ partial "icon" (dict "name" "me" "class" "default-me-icon") }}
-        <img alt="Me Avatar" class="me-avatar" />
-    </a>
+    {{ $meIsCurrent := false }}
+    {{ if $meIsInternal }}
+        {{ $meKey := trim (lower (printf "%v" $meLink)) "/" }}
+        {{ if eq $currentKey $meKey }}
+            {{ $meIsCurrent = true }}
+        {{ else if and (ne $meKey "") (hasPrefix $currentKey (printf "%s/" $meKey)) }}
+            {{ $meIsCurrent = true }}
+        {{ end }}
     {{ end }}
+    {{ $meClass := "site-nav-link-primary" }}
+    {{ if $meIsCurrent }}{{ $meClass = printf "%s is-current" $meClass }}{{ end }}
+    {{ partial "link.html" (dict
+        "ctx" $ctx
+        "href" $meLink
+        "text" (cond $hasMe $meLabel "Me")
+        "class" $meClass
+        "label" (cond $hasMe $meLabel "Banyan Theme GitHub")
+        "ariaCurrent" (cond $meIsCurrent "page" "")
+        "linkSlot" "menu"
+        "target" (cond $meIsInternal "" "_blank")
+        "rel" (cond $meIsInternal "" "noopener noreferrer")
+    ) }}
+    {{ end }}
+    </div>
 
+    <div class="site-nav-tools">
     {{ if $showLanguage }}
     {{ $cur := $ctx.Language.Lang }}
     {{ $transLangs := slice $cur }}
     {{ range $ctx.AllTranslations }}{{ $transLangs = $transLangs | append .Language.Lang }}{{ end }}
     {{ $transLangs = $transLangs | uniq }}
-    <span class="icon-select-wrapper" title="{{ $labelLanguage }}">
+    <span class="icon-select-wrapper nav-tool" title="{{ $labelLanguage }}">
         <span class="sr-only">{{ $labelLanguage }}</span>
         {{ partial "icon" (dict "name" "language") }}
         <select
@@ -121,7 +175,7 @@
     {{ end }}
 
     {{ if $showTheme }}
-    <span class="icon-select-wrapper" title="{{ $labelTheme }}">
+    <span class="icon-select-wrapper nav-tool" title="{{ $labelTheme }}">
         <span class="sr-only">{{ $labelTheme }}</span>
         {{ partial "icon" (dict "name" "theme") }}
         <select id="theme-select" class="icon-select" aria-label="{{ $labelTheme }}">
@@ -131,5 +185,6 @@
         </select>
     </span>
     {{ end }}
+    </div>
 
 </nav>

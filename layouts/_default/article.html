@@ -73,5 +73,5 @@
         {{ end }}
     </article>
     {{ if and .IsPage (eq .Section "d") }}{{ partial "article/schema.html" . }}{{ end }}
-    {{ partial "breadcrumb/schema.html" (dict "ctx" .) }}
+    {{ if $showBreadcrumb }}{{ partial "breadcrumb/schema.html" (dict "ctx" .) }}{{ end }}
 {{ end }}
