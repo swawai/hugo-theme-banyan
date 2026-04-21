@@ -3,6 +3,7 @@
     flex-wrap: nowrap;
     align-items: flex-end;
     white-space: nowrap;
+    margin-bottom: 18px;
 }
 
 /* .breadcrumb-nav > * {
@@ -26,7 +27,8 @@
 }
 
 .breadcrumb-link,
-.breadcrumb-select-wrapper {
+.breadcrumb-select-wrapper,
+.breadcrumb-select-trigger {
     position: relative;
     display: inline-flex;
     /* align-items: center; */
@@ -49,7 +51,7 @@
 }
 
 .breadcrumb-link::after,
-.breadcrumb-select-wrapper::after {
+.breadcrumb-select-trigger::after {
     content: "";
     position: absolute;
     left: 0;
@@ -69,23 +71,24 @@
     opacity: 0.8;
 }
 
-/* .breadcrumb-select-wrapper .icon {
-    display: block;
-    width: 1.08em;
-    height: 1.08em;
-    flex: none;
-    transform-origin: center center;
+/* .breadcrumb-select-wrapper {
+    position: relative;
+}
+
+.breadcrumb-select-trigger {
+    pointer-events: none;
 } */
 
-/* .breadcrumb-menu-icon {
-    color: var(--focus);
-} */
+.breadcrumb-select-trigger .crumb-text::after {
+    content: "▾";
+    font-size: 0.8em;
+}
 
 .breadcrumb-select {
     position: absolute;
-    /* inset: 0; */
-    /* width: 100%; */
-    /* height: 100%; */
+    /* inset: 0;
+    width: 100%;
+    height: 100%; */
     opacity: 0;
     /* cursor: pointer; */
 }
@@ -94,10 +97,6 @@
     outline: 2px dashed var(--focus);
     outline-offset: 2px;
 }
-
-/* .breadcrumb-select:focus {
-    outline: none;
-} */
 
 /* .breadcrumb-link .crumb-text {
     display: block;

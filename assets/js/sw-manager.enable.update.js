@@ -37,6 +37,15 @@ function getBreadcrumbCurrentLink() {
     return document.querySelector('[data-site-update-anchor]');
 }
 
+function matchBreadcrumbCurrentLink(target) {
+    const breadcrumbLink = getBreadcrumbCurrentLink();
+    if (!isUsableUpdateAnchor(breadcrumbLink)) return null;
+    if (!(target instanceof Element)) return null;
+
+    const currentTarget = target.closest('[data-site-update-anchor]');
+    return currentTarget === breadcrumbLink ? breadcrumbLink : null;
+}
+
 function clearActivationFallbackTimer() {
     if (!activationFallbackTimer) return;
 
@@ -436,25 +445,31 @@ async function handleEnableMode(runtime) {
 }
 
 function bindUpdateUi(runtime) {
+    document.addEventListener('pointerdown', (event) => {
+        if (root.getAttribute(UPDATE_STATE_ATTR) !== UPDATE_STATE_READY) return;
+
+        const breadcrumbLink = matchBreadcrumbCurrentLink(event.target);
+        if (!breadcrumbLink) return;
+
+        event.preventDefault();
+    }, true);
+
     document.addEventListener('click', (event) => {
         if (root.getAttribute(UPDATE_STATE_ATTR) !== UPDATE_STATE_READY) return;
 
-        const anchor = event.target instanceof Element ? event.target.closest('a[href]') : null;
-        const breadcrumbLink = getBreadcrumbCurrentLink();
-        if (!isUsableUpdateAnchor(breadcrumbLink)) return;
-
-        if (anchor === breadcrumbLink) {
-            event.preventDefault();
-            void showUpdatePopover(breadcrumbLink);
+        const breadcrumbLink = matchBreadcrumbCurrentLink(event.target);
+        if (!breadcrumbLink) {
+            if (updatePopover && !updatePopover.hidden) {
+                const clickTarget = event.target instanceof Element ? event.target : null;
+                if (clickTarget && !updatePopover.contains(clickTarget)) {
+                    hideUpdatePopover();
+                }
+            }
             return;
         }
 
-        if (updatePopover && !updatePopover.hidden) {
-            const clickTarget = event.target instanceof Element ? event.target : null;
-            if (clickTarget && !updatePopover.contains(clickTarget)) {
-                hideUpdatePopover();
-            }
-        }
+        event.preventDefault();
+        void showUpdatePopover(breadcrumbLink);
     }, true);
 
     window.addEventListener('keydown', (event) => {

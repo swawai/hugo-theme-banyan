@@ -1,57 +1,61 @@
 .site-nav {
     display: flex;
-    margin: 1rem 0 2rem calc(-1 * var(--page-edge-inline) - 1px);
+    flex-wrap: nowrap;
+    align-items: flex-end;
+    column-gap: 0.8rem;
+    white-space: nowrap;
+    margin-bottom: 12px;
+    line-height: 1;
+    color: var(--focus);
     font-weight: bold;
 }
 
-
-
-.site-nav-tools {
-    display: flex;
-    align-items: center;
-    gap: .6rem;
-    margin-left: 0.8rem;
+.site-nav > * {
+    flex-shrink: 0;
 }
 
-
-.site-nav-link-primary {
-    padding: 0.36rem 0.58rem;
-    border-radius: 3px;
-    text-decoration: none;
-    color: var(--focus);
-}
-
-.site-nav-link-primary:visited {
-    color: var(--focus);
-}
-
-.site-nav-link-primary:hover {
-    background: color-mix(in srgb, var(--focus) 7%, var(--bg));
-}
-
-.site-nav-link-primary.is-current {
-    background: color-mix(in srgb, var(--focus) 12%, var(--bg));
-}
-
-
-
-.site-nav .nav-tool {
+.site-nav :is(a, a:visited, .icon-select-wrapper) {
     position: relative;
-    /* top: 1px; */
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 1.42rem;
-    height: 1.42rem;
-    color: var(--focus);
+    gap: 0.15rem;
+    box-sizing: border-box;
+    min-height: 1.15em;
+    padding-bottom: 0.14em;
+    text-decoration: none;
+    color: inherit;
+    transition: color 0.3s, opacity 0.3s;
 }
 
+.site-nav :is(a, .icon-select-wrapper):hover {
+    opacity: 0.8;
+}
 
+.site-nav > :is(a, .icon-select-wrapper)::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-bottom: 1px solid currentColor;
+}
+
+.site-nav .icon-select-wrapper > .icon,
+.site-nav .site-nav-link-account > .icon {
+    display: block;
+    width: 1em;
+    height: 1em;
+    flex: none;
+    transform-origin: center center;
+}
 
 .site-nav .icon-select-wrapper select.icon-select {
     position: absolute;
     inset: 0;
+    width: 100%;
+    height: 100%;
     opacity: 0;
+    cursor: pointer;
 }
 
 .site-nav .icon-select-wrapper:has(select.icon-select:focus-visible) {
@@ -59,3 +63,6 @@
     outline-offset: 2px;
 }
 
+.site-nav .icon-select-wrapper select.icon-select:focus {
+    outline: none;
+}

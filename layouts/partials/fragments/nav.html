@@ -44,8 +44,6 @@
 {{ if not $isProductPage }}{{ $signalsFamilyActiveHref = printf "%v" (partial "breadcrumb/menu-active-href-signals-family.html" (dict "ctx" $ctx)) }}{{ end }}
 
 <nav class="site-nav" aria-label="Primary">
-    <div class="site-nav-primary">
-
     {{ range $item := $items }}
     {{ $hrefRaw := "" }}
     {{ with index $item "href" }}{{ $hrefRaw = printf "%v" . }}{{ end }}
@@ -139,29 +137,30 @@
             {{ $meIsCurrent = true }}
         {{ end }}
     {{ end }}
-    {{ $meClass := "site-nav-link-primary" }}
+    {{ $meClass := "site-nav-link-primary site-nav-link-account" }}
     {{ if $meIsCurrent }}{{ $meClass = printf "%s is-current" $meClass }}{{ end }}
+    {{ $meText := printf "%s<span class=\"sr-only\">%s</span>" (partial "icon" (dict "name" "me")) (cond $hasMe $meLabel "Banyan Theme GitHub") }}
     {{ partial "link.html" (dict
         "ctx" $ctx
         "href" $meLink
-        "text" (cond $hasMe $meLabel "Me")
+        "title" (cond $hasMe $meLabel "Banyan Theme GitHub")
+        "text" $meText
         "class" $meClass
         "label" (cond $hasMe $meLabel "Banyan Theme GitHub")
         "ariaCurrent" (cond $meIsCurrent "page" "")
         "linkSlot" "menu"
         "target" (cond $meIsInternal "" "_blank")
         "rel" (cond $meIsInternal "" "noopener noreferrer")
+        "safeHTML" true
     ) }}
     {{ end }}
-    </div>
 
-    <div class="site-nav-tools">
     {{ if $showLanguage }}
     {{ $cur := $ctx.Language.Lang }}
     {{ $transLangs := slice $cur }}
     {{ range $ctx.AllTranslations }}{{ $transLangs = $transLangs | append .Language.Lang }}{{ end }}
     {{ $transLangs = $transLangs | uniq }}
-    <span class="icon-select-wrapper nav-tool" title="{{ $labelLanguage }}">
+    <span class="icon-select-wrapper" title="{{ $labelLanguage }}">
         <span class="sr-only">{{ $labelLanguage }}</span>
         {{ partial "icon" (dict "name" "language") }}
         <select
@@ -175,7 +174,7 @@
     {{ end }}
 
     {{ if $showTheme }}
-    <span class="icon-select-wrapper nav-tool" title="{{ $labelTheme }}">
+    <span class="icon-select-wrapper" title="{{ $labelTheme }}">
         <span class="sr-only">{{ $labelTheme }}</span>
         {{ partial "icon" (dict "name" "theme") }}
         <select id="theme-select" class="icon-select" aria-label="{{ $labelTheme }}">
@@ -185,6 +184,5 @@
         </select>
     </span>
     {{ end }}
-    </div>
 
 </nav>

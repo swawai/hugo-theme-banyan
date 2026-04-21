@@ -17,27 +17,15 @@
     {{- if $itemIsCurrent -}}{{- $itemClass = printf "%s is-current" $itemClass -}}{{- end -}}
     {{- if and (eq $index 0) (gt (len $itemMenu) 0) -}}
       <span class="breadcrumb-item breadcrumb-item-menu">
-        <span class="breadcrumb-select-wrapper" title="{{ index $item "menu_button_label" }}">
-          {{ partial "icon" (dict "name" "menu" "class" "breadcrumb-menu-icon") }}
+        <span class="breadcrumb-select-wrapper" title="{{ index $item "menu_button_label" }}"{{ if $itemIsCurrent }} data-site-update-anchor="true"{{ end }}>
+          <span class="{{ printf "%s breadcrumb-select-trigger" $itemClass }}" aria-hidden="true"><span class="crumb-text">{{ index $item "text" }}</span></span>
           <select class="breadcrumb-select" aria-label="{{ index $item "menu_button_label" }}" onchange="if(this.value){window.location.href=this.value;}">
             {{- range $menuItem := $itemMenu -}}
+              {{- if and $ctx "nav" -}}{{ partial "link-collect-url.html" (dict "ctx" $ctx "slot" "nav" "url" (index $menuItem "href")) }}{{- end -}}
               <option value="{{ index $menuItem "href" }}"{{ if or (eq (index $menuItem "selected") true) (eq (index $menuItem "current") true) }} selected{{ end }}>{{ index $menuItem "text" }}</option>
             {{- end -}}
           </select>
         </span>
-      </span>
-      <span class="breadcrumb-sep" aria-hidden="true">﹥</span>
-      <span class="breadcrumb-item">
-        {{ partial "link.html" (dict
-          "ctx" $ctx
-          "href" (index $item "href")
-          "text" (index $item "text")
-          "textClass" "crumb-text"
-          "class" $itemClass
-          "title" (index $item "title")
-          "dataAttrs" (cond $itemIsCurrent (dict "site-update-anchor" "true") (dict))
-          "linkSlot" "nav"
-        ) }}
       </span>
     {{- else -}}
       <span class="breadcrumb-item">
