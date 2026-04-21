@@ -1,6 +1,7 @@
 ---
 title: Free Products
 description: Free products list.
+nav_primary: products
 layout: "article"
 show_meta: false
 slug: "free"

@@ -11,7 +11,6 @@ build:
   list: "never"
 ---
 
-# About Banyan Theme
 
 Banyan is a minimalist, Explorer-like Hugo theme designed for clear structure, author-intent signaling, and explorer-style taxonomy navigation (recommended default: `intent + tags`).
 
@@ -21,3 +20,5 @@ As defined in our `theme.toml`:
 - **Description**: A Explorer-like Hugo theme.
 
 Enjoy using this theme!
+
+{{< fragment "/fragments/home-footer-shortcuts" >}}

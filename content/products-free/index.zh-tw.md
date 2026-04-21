@@ -1,6 +1,7 @@
 ---
 title: 免費產品
 description: 免費產品列表。
+nav_primary: products
 layout: "article"
 show_meta: false
 slug: "free"

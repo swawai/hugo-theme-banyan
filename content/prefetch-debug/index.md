@@ -3,6 +3,7 @@ date: "2026-03-17T00:00:00+08:00"
 draft: false
 title: "Prefetch Debug"
 slug: "prefetchdebug"
+nav_primary: home
 url: "prefetchdebug"
 type: "page"
 layout: "article"

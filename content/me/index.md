@@ -2,6 +2,7 @@
 draft: false
 title: "Me"
 slug: "me"
+nav_primary: me
 type: "me"
 layout: "article"
 show_breadcrumb: false
@@ -11,7 +12,6 @@ build:
 page_js: "page.js"
 ---
 
-# Me
 
 This page is reserved for future personal and settings features.
 

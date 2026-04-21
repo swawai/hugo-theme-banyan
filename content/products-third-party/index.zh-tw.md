@@ -1,6 +1,7 @@
 ---
 title: 第三方產品
 description: 第三方產品列表。
+nav_primary: products
 layout: "article"
 show_meta: false
 slug: "third-party"

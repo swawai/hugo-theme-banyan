@@ -1,7 +1,7 @@
 .prose {
     line-height: 1.65;
-    word-break: break-all;
-    text-align: justify;
+    /* word-break: break-all;
+    text-align: justify; */
     overflow-wrap: break-word;
 }
 

@@ -28,26 +28,27 @@
 {{ $themeLight := index $labels "theme_light" }}
 {{ $themeDark := index $labels "theme_dark" }}
 {{ $labelMeDefault := index $labels "me" }}
-{{ $currentKey := trim (lower (printf "%v" $ctx.RelPermalink)) "/" }}
-{{ $homePage := $ctx.Site.Home }}
-{{ $homeKey := "" }}
-{{ with $homePage }}{{ $homeKey = trim (lower (printf "%v" .RelPermalink)) "/" }}{{ end }}
-{{ $productsPage := $ctx.Site.GetPage "/products" }}
-{{ $productsKey := "" }}
-{{ with $productsPage }}{{ $productsKey = trim (lower (printf "%v" .RelPermalink)) "/" }}{{ end }}
-{{ $signalsPage := $ctx.Site.GetPage "/d" }}
-{{ $signalsKey := "" }}
-{{ with $signalsPage }}{{ $signalsKey = trim (lower (printf "%v" .RelPermalink)) "/" }}{{ end }}
-{{ $isProductPage := false }}
-{{ if isset $ctx.Params "product" }}{{ $isProductPage = eq (index $ctx.Params "product") true }}{{ end }}
-{{ $signalsFamilyActiveHref := "" }}
-{{ if not $isProductPage }}{{ $signalsFamilyActiveHref = printf "%v" (partial "breadcrumb/menu-active-href-signals-family.html" (dict "ctx" $ctx)) }}{{ end }}
+{{ $resolvedItems := slice }}
+{{ $fallbackItemCount := 0 }}
+{{ $hasCurrent := false }}
 
-<nav class="site-nav" aria-label="Primary">
-    {{ range $item := $items }}
+{{ range $item := $items }}
+    {{ $pageRef := "" }}
+    {{ with index $item "page" }}{{ $pageRef = printf "%v" . }}{{ end }}
+    {{ $itemKey := "" }}
+    {{ with index $item "key" }}{{ $itemKey = lower (trim (printf "%v" .) " /") }}{{ end }}
+    {{ $targetPage := false }}
+    {{ if ne $pageRef "" }}
+        {{ if eq $pageRef "/" }}
+            {{ $targetPage = $ctx.Site.Home }}
+        {{ else }}
+            {{ $targetPage = $ctx.Site.GetPage $pageRef }}
+        {{ end }}
+        {{ if not $targetPage }}{{ errorf "编译失败: 页面 %q 的 nav.items.page=%q 找不到页面。" $source.File.Path $pageRef }}{{ end }}
+    {{ end }}
     {{ $hrefRaw := "" }}
-    {{ with index $item "href" }}{{ $hrefRaw = printf "%v" . }}{{ end }}
-    {{ if eq $hrefRaw "" }}{{ with index $item "page" }}{{ $hrefRaw = printf "%v" . }}{{ end }}{{ end }}
+    {{ with $targetPage }}{{ $hrefRaw = printf "%v" .RelPermalink }}{{ end }}
+    {{ if eq $hrefRaw "" }}{{ with index $item "href" }}{{ $hrefRaw = printf "%v" . }}{{ end }}{{ end }}
     {{ if eq $hrefRaw "" }}{{ errorf "编译失败: 页面 %q 的 nav.items 缺少 href/page。" $source.File.Path }}{{ end }}
     {{ $itemText := "" }}
     {{ with index $item "text" }}{{ $itemText = printf "%v" . }}{{ end }}
@@ -62,7 +63,10 @@
     {{ with index $item "title" }}{{ $itemTitle = printf "%v" . }}{{ end }}
     {{ $href := "" }}
     {{ $isInternal := false }}
-    {{ if or (hasPrefix $hrefRaw "/") (and (not (hasPrefix $hrefRaw "http://")) (not (hasPrefix $hrefRaw "https://")) (not (hasPrefix $hrefRaw "//"))) }}
+    {{ if $targetPage }}
+        {{ $isInternal = true }}
+        {{ $href = $targetPage.RelPermalink }}
+    {{ else if or (hasPrefix $hrefRaw "/") (and (not (hasPrefix $hrefRaw "http://")) (not (hasPrefix $hrefRaw "https://")) (not (hasPrefix $hrefRaw "//"))) }}
         {{ $isInternal = true }}
         {{ if hasPrefix $hrefRaw "/" }}
             {{ $href = $hrefRaw | relLangURL }}
@@ -72,21 +76,82 @@
     {{ else }}
         {{ $href = $hrefRaw }}
     {{ end }}
-    {{ $itemKey := trim (lower (printf "%v" $href)) "/" }}
-    {{ $isCurrent := false }}
-    {{ if and (ne $homeKey "") (eq $itemKey $homeKey) }}
-        {{ $isCurrent = $ctx.IsHome }}
-    {{ else if and (ne $productsKey "") (eq $itemKey $productsKey) }}
-        {{ $isCurrent = or $isProductPage (eq $currentKey $itemKey) (hasPrefix $currentKey (printf "%s/" $itemKey)) }}
-    {{ else if and (ne $signalsKey "") (eq $itemKey $signalsKey) }}
-        {{ $isCurrent = or
-            (and (ne $signalsFamilyActiveHref "") (not $isProductPage))
-            (eq $currentKey $itemKey)
-            (hasPrefix $currentKey (printf "%s/" $itemKey))
-        }}
-    {{ else if eq $currentKey $itemKey }}
-        {{ $isCurrent = true }}
-    {{ else if and (ne $itemKey "") (hasPrefix $currentKey (printf "%s/" $itemKey)) }}
+    {{ if and $isInternal (eq $itemKey "") }}{{ errorf "编译失败: 页面 %q 的 nav.items.key 不能为空。" $source.File.Path }}{{ end }}
+    {{ $isCurrent := partial "fragments/nav-link-is-current.html" (dict "ctx" $ctx "item" $item) }}
+    {{ if $isCurrent }}{{ $hasCurrent = true }}{{ end }}
+    {{ $isFallback := false }}
+    {{ if isset $item "fallback_when_none" }}{{ $isFallback = eq (index $item "fallback_when_none") true }}{{ end }}
+    {{ if $isFallback }}{{ $fallbackItemCount = add $fallbackItemCount 1 }}{{ end }}
+    {{ $resolvedItems = $resolvedItems | append (dict
+        "item" $item
+        "href" $href
+        "text" $itemText
+        "title" $itemTitle
+        "isInternal" $isInternal
+        "isCurrent" $isCurrent
+        "isFallback" $isFallback
+    ) }}
+{{ end }}
+
+{{ if gt $fallbackItemCount 1 }}{{ errorf "编译失败: 页面 %q 的 nav.items 只允许一个 fallback_when_none=true。" $source.File.Path }}{{ end }}
+
+{{ $mePageRef := "" }}
+{{ with index $meConfig "page" }}{{ $mePageRef = printf "%v" . }}{{ end }}
+{{ $meKey := "" }}
+{{ with index $meConfig "key" }}{{ $meKey = lower (trim (printf "%v" .) " /") }}{{ end }}
+{{ $mePage := false }}
+{{ if ne $mePageRef "" }}
+    {{ if eq $mePageRef "/" }}
+        {{ $mePage = $ctx.Site.Home }}
+    {{ else }}
+        {{ $mePage = $ctx.Site.GetPage $mePageRef }}
+    {{ end }}
+    {{ if not $mePage }}{{ errorf "编译失败: 页面 %q 的 nav.me.page=%q 找不到页面。" $source.File.Path $mePageRef }}{{ end }}
+{{ end }}
+{{ $meLinkRaw := "" }}
+{{ with $mePage }}{{ $meLinkRaw = printf "%v" .RelPermalink }}{{ end }}
+{{ with index $meConfig "href" }}{{ $meLinkRaw = printf "%v" . }}{{ end }}
+{{ if eq $meLinkRaw "" }}{{ $meLinkRaw = site.Params.me_url | default (site.Params.account_url | default "") }}{{ end }}
+{{ $meLink := "" }}
+{{ $meIsInternal := false }}
+{{ $hasMe := true }}
+{{ if $meLinkRaw }}
+    {{ if $mePage }}
+        {{ $meIsInternal = true }}
+        {{ $meLink = $mePage.RelPermalink }}
+    {{ else if or (hasPrefix $meLinkRaw "/") (and (not (hasPrefix $meLinkRaw "http://")) (not (hasPrefix $meLinkRaw "https://")) (not (hasPrefix $meLinkRaw "//"))) }}
+        {{ $meIsInternal = true }}
+        {{ if hasPrefix $meLinkRaw "/" }}
+            {{ $meLink = $meLinkRaw | relLangURL }}
+        {{ else }}
+            {{ $meLink = (printf "/%s" $meLinkRaw) | relLangURL }}
+        {{ end }}
+    {{ else }}
+        {{ $meLink = $meLinkRaw }}
+    {{ end }}
+{{ else }}
+    {{ $meLink = "https://github.com/swawai/hugo-theme-banyan" }}
+    {{ $hasMe = false }}
+{{ end }}
+{{ $meLabel := $labelMeDefault }}
+{{ with index $meConfig "label" }}{{ $meLabel = printf "%v" . }}{{ end }}
+{{ if and $showMe $meIsInternal (eq $meKey "") }}{{ errorf "编译失败: 页面 %q 的 nav.me.key 不能为空。" $source.File.Path }}{{ end }}
+{{ $meIsCurrent := false }}
+{{ if $meIsInternal }}
+    {{ $meIsCurrent = partial "fragments/nav-link-is-current.html" (dict "ctx" $ctx "item" $meConfig) }}
+{{ end }}
+{{ if $meIsCurrent }}{{ $hasCurrent = true }}{{ end }}
+
+<nav class="site-nav" aria-label="Primary">
+    {{ range $resolved := $resolvedItems }}
+    {{ $item := index $resolved "item" }}
+    {{ $href := printf "%v" (index $resolved "href") }}
+    {{ $itemText := printf "%v" (index $resolved "text") }}
+    {{ $itemTitle := printf "%v" (index $resolved "title") }}
+    {{ $isInternal := index $resolved "isInternal" }}
+    {{ $isMatched := index $resolved "isCurrent" }}
+    {{ $isCurrent := $isMatched }}
+    {{ if and (not $hasCurrent) (index $resolved "isFallback") }}
         {{ $isCurrent = true }}
     {{ end }}
     {{ $itemClass := "site-nav-link-primary" }}
@@ -97,7 +162,7 @@
         "title" $itemTitle
         "text" $itemText
         "class" $itemClass
-        "ariaCurrent" (cond $isCurrent "page" "")
+        "ariaCurrent" (cond $isMatched "page" "")
         "linkSlot" "menu"
         "target" (cond $isInternal "" "_blank")
         "rel" (cond $isInternal "" "noopener noreferrer")
@@ -105,38 +170,6 @@
     {{ end }}
 
     {{ if $showMe }}
-    {{ $meLinkRaw := "" }}
-    {{ with index $meConfig "href" }}{{ $meLinkRaw = printf "%v" . }}{{ end }}
-    {{ if eq $meLinkRaw "" }}{{ $meLinkRaw = site.Params.me_url | default (site.Params.account_url | default "") }}{{ end }}
-    {{ $meLink := "" }}
-    {{ $meIsInternal := false }}
-    {{ $hasMe := true }}
-    {{ if $meLinkRaw }}
-        {{ if or (hasPrefix $meLinkRaw "/") (and (not (hasPrefix $meLinkRaw "http://")) (not (hasPrefix $meLinkRaw "https://")) (not (hasPrefix $meLinkRaw "//"))) }}
-            {{ $meIsInternal = true }}
-            {{ if hasPrefix $meLinkRaw "/" }}
-                {{ $meLink = $meLinkRaw | relLangURL }}
-            {{ else }}
-                {{ $meLink = (printf "/%s" $meLinkRaw) | relLangURL }}
-            {{ end }}
-        {{ else }}
-            {{ $meLink = $meLinkRaw }}
-        {{ end }}
-    {{ else }}
-        {{ $meLink = "https://github.com/swawai/hugo-theme-banyan" }}
-        {{ $hasMe = false }}
-    {{ end }}
-    {{ $meLabel := $labelMeDefault }}
-    {{ with index $meConfig "label" }}{{ $meLabel = printf "%v" . }}{{ end }}
-    {{ $meIsCurrent := false }}
-    {{ if $meIsInternal }}
-        {{ $meKey := trim (lower (printf "%v" $meLink)) "/" }}
-        {{ if eq $currentKey $meKey }}
-            {{ $meIsCurrent = true }}
-        {{ else if and (ne $meKey "") (hasPrefix $currentKey (printf "%s/" $meKey)) }}
-            {{ $meIsCurrent = true }}
-        {{ end }}
-    {{ end }}
     {{ $meClass := "site-nav-link-primary site-nav-link-account" }}
     {{ if $meIsCurrent }}{{ $meClass = printf "%s is-current" $meClass }}{{ end }}
     {{ $meText := printf "%s<span class=\"sr-only\">%s</span>" (partial "icon" (dict "name" "me")) (cond $hasMe $meLabel "Banyan Theme GitHub") }}

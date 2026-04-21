@@ -16,15 +16,21 @@ nav:
     theme_dark: Dark
     me: Me
   items:
-    - href: /
+    - page: /
+      key: home
       text: Swaw
-    - href: /products/
+      fallback_when_none: true
+    - page: /products
+      key: products
       text: Products
-    - href: /d/
+    - page: /d
+      key: signals
       text: Signals
   controls:
     language: true
     theme: true
   me:
     show: true
+    page: /me
+    key: me
 ---

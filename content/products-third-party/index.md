@@ -1,6 +1,7 @@
 ---
 title: Third-party Products
 description: Third-party products list.
+nav_primary: products
 layout: "article"
 show_meta: false
 slug: "third-party"

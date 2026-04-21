@@ -16,15 +16,21 @@ nav:
     theme_dark: 深色
     me: 我
   items:
-    - href: /
+    - page: /
+      key: home
       text: 人不工
-    - href: /products/
+      fallback_when_none: true
+    - page: /products
+      key: products
       text: 產品
-    - href: /d/
+    - page: /d
+      key: signals
       text: 信號
   controls:
     language: true
     theme: true
   me:
     show: true
+    page: /me
+    key: me
 ---

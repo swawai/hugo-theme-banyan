@@ -2,6 +2,7 @@
 draft: false
 title: "我"
 slug: "me"
+nav_primary: me
 type: "me"
 layout: "article"
 show_breadcrumb: false
@@ -11,7 +12,6 @@ build:
 page_js: "page.js"
 ---
 
-# 我
 
 這裡預留給後續的個人與設定功能。
 

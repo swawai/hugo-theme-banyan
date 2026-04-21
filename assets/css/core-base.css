@@ -12,7 +12,7 @@
     --page-edge-inline: 8px;
     --page-edge-block-start: 12px;
     --page-edge-block-end: 6rem;
-    --page-shell-min-inline: min(80ch, 100%);
+    --page-shell-min-inline: min(88ch, 100%);
     --page-shell-min-block: calc(100vh - var(--page-edge-block-start));
     /* --text-secondary:#5F5F5F;
     --bg-surface:#FAFAFA; F9F9F9 F1F1F1 #E3E3E3 #D7D7D7 #868686 1D1D1D 7727272 */

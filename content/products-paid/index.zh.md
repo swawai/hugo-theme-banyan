@@ -1,6 +1,7 @@
 ---
 title: 付费产品
 description: 付费产品列表。
+nav_primary: products
 layout: "article"
 show_meta: false
 slug: "paid"

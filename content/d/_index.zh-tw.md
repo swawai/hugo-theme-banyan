@@ -1,6 +1,7 @@
 ---
 title: 目錄
 linkTitle: 目錄
+nav_primary: signals
 layout: "article"
 banyan_article_section_list: true
 breadcrumb_fragment: /fragments/breadcrumb-signals
@@ -9,11 +10,13 @@ show_meta: false
 cascade:
   - _target:
       kind: "page"
+    nav_primary: signals
     type: "post"
     layout: "article"
     breadcrumb_fragment: /fragments/breadcrumb-signals
   - _target:
       kind: "section"
+    nav_primary: signals
     layout: "article"
     banyan_article_section_list: true
     breadcrumb_fragment: /fragments/breadcrumb-signals
@@ -23,4 +26,4 @@ cascade:
 
 {{< section-list >}}
 
-{{< fragment "/fragments/home-footer-shortcuts" >}}
+<!-- {{< fragment "/fragments/home-footer-shortcuts" >}} -->

@@ -1,0 +1,6 @@
+{{ $ctx := .ctx }}
+{{ $item := .item | default dict }}
+{{ $currentNavPrimary := lower (trim (printf "%v" ($ctx.Params.nav_primary | default "")) " /") }}
+{{ $itemKey := "" }}
+{{ with index $item "key" }}{{ $itemKey = lower (trim (printf "%v" .) " /") }}{{ end }}
+{{ return and (ne $currentNavPrimary "") (ne $itemKey "") (eq $currentNavPrimary $itemKey) }}

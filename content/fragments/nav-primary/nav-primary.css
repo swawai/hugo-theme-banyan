@@ -4,7 +4,7 @@
     align-items: flex-end;
     column-gap: 0.8rem;
     white-space: nowrap;
-    margin-bottom: 12px;
+    margin-bottom: 22px;
     line-height: 1;
     color: var(--focus);
     font-weight: bold;
@@ -27,8 +27,29 @@
     transition: color 0.3s, opacity 0.3s;
 }
 
+.site-nav .site-nav-link-primary {
+    color: inherit;
+    opacity: 0.72;
+}
+
+.site-nav .site-nav-link-primary.is-current,
+.site-nav .site-nav-link-primary.is-current:visited {
+    color: inherit;
+    opacity: 1;
+}
+
 .site-nav :is(a, .icon-select-wrapper):hover {
     opacity: 0.8;
+}
+
+.site-nav a.site-nav-link-primary:hover,
+.site-nav a.site-nav-link-primary:visited:hover {
+    opacity: 0.88;
+}
+
+.site-nav a.site-nav-link-primary.is-current:hover,
+.site-nav a.site-nav-link-primary.is-current:visited:hover {
+    opacity: 1;
 }
 
 .site-nav > :is(a, .icon-select-wrapper)::after {
@@ -38,6 +59,12 @@
     right: 0;
     bottom: 0;
     border-bottom: 1px solid currentColor;
+
+}
+
+.site-nav > a.site-nav-link-primary.is-current::after {
+    opacity: 1;
+    border-bottom-width: 2px;
 }
 
 .site-nav .icon-select-wrapper > .icon,
