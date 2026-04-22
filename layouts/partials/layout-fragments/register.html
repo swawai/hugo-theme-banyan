@@ -1,9 +1,6 @@
 {{ $ctx := .ctx }}
 {{ $source := .source }}
 {{ if not $source }}{{ return }}{{ end }}
-{{ $key := printf "layout_fragment_registered:%s" $source.File.Path }}
-{{ if $ctx.Scratch.Get $key }}{{ return }}{{ end }}
-{{ $ctx.Scratch.Set $key true }}
 {{ $pageCss := true }}
 {{ if isset . "page_css" }}{{ $pageCss = index . "page_css" }}{{ end }}
 {{ $pageCssInline := true }}
@@ -19,5 +16,8 @@
     "page_js" $pageJs
     "page_js_inline" $pageJsInline
 }}
-{{ $sources := $ctx.Scratch.Get "layout_fragment_resource_sources" | default (slice) }}
-{{ $ctx.Scratch.Set "layout_fragment_resource_sources" ($sources | append $descriptor) }}
+{{ partial "page-resources/register.html" (dict
+    "ctx" $ctx
+    "key" (printf "layout-fragment:%s" $source.File.Path)
+    "descriptor" $descriptor
+) }}

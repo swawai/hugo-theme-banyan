@@ -1,5 +1,6 @@
 {{ $isOfflinePage := eq (.Scratch.Get "is_offline_page") true }}
 {{ $descriptors := partial "page-resource-descriptors.html" . }}
+{{ $emitted := dict }}
 {{ range $descriptor := $descriptors }}
     {{ $sourcePage := index $descriptor "page" }}
     {{ if index $descriptor "page_js" }}
@@ -7,6 +8,9 @@
         {{ range $spec := $pageJsSpecs }}
             {{ $pageJs := partial "page-resource-resolve.html" (dict "source" $sourcePage "spec" $spec "asset_dir" "js" "kind" "page_js") }}
             {{ if not hugo.IsServer }}{{ $pageJs = $pageJs | minify }}{{ end }}
+            {{ $emitKey := printf "js-resource:%s" $pageJs.RelPermalink }}
+            {{ if isset $emitted $emitKey }}{{ continue }}{{ end }}
+            {{ $emitted = merge $emitted (dict $emitKey true) }}
             {{ if $isOfflinePage }}
 <script>{{ $pageJs.Content | safeJS }}</script>
             {{ else }}
@@ -17,6 +21,32 @@
     {{ end }}
     {{ if index $descriptor "page_js_inline" }}
         {{ range $inlineJs := partial "page-resource-specs.html" (dict "source" $sourcePage "key" "page_js_inline") }}
+            {{ $emitKey := printf "js-inline:%x" (md5 $inlineJs) }}
+            {{ if isset $emitted $emitKey }}{{ continue }}{{ end }}
+            {{ $emitted = merge $emitted (dict $emitKey true) }}
+<script>{{ $inlineJs | safeJS }}</script>
+        {{ end }}
+    {{ end }}
+    {{ with index $descriptor "js_resources" }}
+        {{ range $resource := . }}
+            {{ $pageJs := $resource }}
+            {{ if not hugo.IsServer }}{{ $pageJs = $pageJs | minify }}{{ end }}
+            {{ $emitKey := printf "js-resource:%s" $pageJs.RelPermalink }}
+            {{ if isset $emitted $emitKey }}{{ continue }}{{ end }}
+            {{ $emitted = merge $emitted (dict $emitKey true) }}
+            {{ if $isOfflinePage }}
+<script>{{ $pageJs.Content | safeJS }}</script>
+            {{ else }}
+                {{ $pageJs = $pageJs | fingerprint }}
+<script src="{{ $pageJs.RelPermalink }}"></script>
+            {{ end }}
+        {{ end }}
+    {{ end }}
+    {{ with index $descriptor "js_inline_values" }}
+        {{ range $inlineJs := . }}
+            {{ $emitKey := printf "js-inline:%x" (md5 $inlineJs) }}
+            {{ if isset $emitted $emitKey }}{{ continue }}{{ end }}
+            {{ $emitted = merge $emitted (dict $emitKey true) }}
 <script>{{ $inlineJs | safeJS }}</script>
         {{ end }}
     {{ end }}

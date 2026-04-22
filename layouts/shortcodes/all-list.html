@@ -3,18 +3,21 @@
 {{ with .Get "section" }}{{ $target = $host.Site.GetPage (printf "/%s" .) }}{{ end }}
 {{ if not $target }}{{ $target = $host.Site.Home }}{{ end }}
 
-{{ if not (eq ($host.Scratch.Get "all_list_assets_rendered") true) }}
-  {{ $host.Scratch.Set "all_list_assets_rendered" true }}
-  {{ $gridList := resources.Get "css/grid-list.css" }}
-  {{ $gridAll := resources.Get "css/grid-all.css" }}
-  {{ if not $gridList }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-list.css" }}{{ end }}
-  {{ if not $gridAll }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-all.css" }}{{ end }}
-  {{ $gridCss := slice $gridList $gridAll | resources.Concat "css/all-list.embed.css" }}
-  {{ if not hugo.IsServer }}{{ $gridCss = $gridCss | minify }}{{ end }}
-<style>{{ $gridCss.Content | safeCSS }}</style>
-  {{ $sortJs := resources.Get "js/sortable-grids.js" | js.Build }}
-  {{ if not hugo.IsServer }}{{ $sortJs = $sortJs | minify }}{{ end }}
-<script>{{ $sortJs.Content | safeJS }}</script>
-{{ end }}
+{{ $gridList := resources.Get "css/grid-list.css" }}
+{{ $gridAll := resources.Get "css/grid-all.css" }}
+{{ if not $gridList }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-list.css" }}{{ end }}
+{{ if not $gridAll }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-all.css" }}{{ end }}
+{{ $gridCss := slice $gridList $gridAll | resources.Concat "css/all-list.embed.css" }}
+{{ $sortJsSource := resources.Get "js/sortable-grids.js" }}
+{{ if not $sortJsSource }}{{ errorf "编译失败: 缺少资源 %q。" "js/sortable-grids.js" }}{{ end }}
+{{ $sortJs := $sortJsSource | js.Build }}
+{{ partial "page-resources/register.html" (dict
+  "ctx" $host
+  "key" "shortcode:all-list"
+  "descriptor" (dict
+    "css_resources" (slice $gridCss)
+    "js_resources" (slice $sortJs)
+  )
+) }}
 
 {{ partial "list-all-common.html" (dict "ctx" $target "host" $host) }}

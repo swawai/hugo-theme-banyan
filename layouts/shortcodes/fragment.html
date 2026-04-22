@@ -5,71 +5,15 @@
 {{ if not $source }}
   {{ errorf "编译失败: 页面 %q 的 fragment shortcode 找不到 %q 对应页面。" $host.File.Path $src }}
 {{ end }}
-{{ $rendered := $source.Content }}
-{{ $scratchKey := printf "fragment_resources:%s" $source.File.Path }}
-{{ if not ($host.Scratch.Get $scratchKey) }}
-  {{ $host.Scratch.Set $scratchKey true }}
-
-  {{ $pageCssSpecs := slice }}
-  {{ with $source.Params.page_css }}
-    {{ if reflect.IsSlice . }}
-      {{ range . }}{{ $pageCssSpecs = $pageCssSpecs | append (printf "%v" .) }}{{ end }}
-    {{ else }}
-      {{ $pageCssSpecs = $pageCssSpecs | append (printf "%v" .) }}
-    {{ end }}
-  {{ end }}
-  {{ range $spec := $pageCssSpecs }}
-    {{ $pageCss := $source.Resources.GetMatch $spec }}
-    {{ if not $pageCss }}
-      {{ $pageCss = resources.Get (printf "css/%s" $spec) }}
-    {{ end }}
-    {{ if not $pageCss }}{{ errorf "编译失败: 页面 %q 找不到 page_css=%q 对应的 bundle 或全局 assets 资源。" $source.File.Path $spec }}{{ end }}
-    {{ if not hugo.IsServer }}{{ $pageCss = $pageCss | minify }}{{ end }}
-    {{ $pageCss = $pageCss | fingerprint }}
-<link rel="stylesheet" href="{{ $pageCss.RelPermalink }}">
-  {{ end }}
-
-  {{ $pageCssInline := slice }}
-  {{ with $source.Params.page_css_inline }}
-    {{ if reflect.IsSlice . }}
-      {{ range . }}{{ $pageCssInline = $pageCssInline | append (printf "%v" .) }}{{ end }}
-    {{ else }}
-      {{ $pageCssInline = $pageCssInline | append (printf "%v" .) }}
-    {{ end }}
-  {{ end }}
-  {{ range $inlineCss := $pageCssInline }}
-<style>{{ $inlineCss | safeCSS }}</style>
-  {{ end }}
-
-  {{ $pageJsSpecs := slice }}
-  {{ with $source.Params.page_js }}
-    {{ if reflect.IsSlice . }}
-      {{ range . }}{{ $pageJsSpecs = $pageJsSpecs | append (printf "%v" .) }}{{ end }}
-    {{ else }}
-      {{ $pageJsSpecs = $pageJsSpecs | append (printf "%v" .) }}
-    {{ end }}
-  {{ end }}
-  {{ range $spec := $pageJsSpecs }}
-    {{ $pageJs := $source.Resources.GetMatch $spec }}
-    {{ if not $pageJs }}
-      {{ $pageJs = resources.Get (printf "js/%s" $spec) }}
-    {{ end }}
-    {{ if not $pageJs }}{{ errorf "编译失败: 页面 %q 找不到 page_js=%q 对应的 bundle 或全局 assets 资源。" $source.File.Path $spec }}{{ end }}
-    {{ if not hugo.IsServer }}{{ $pageJs = $pageJs | minify }}{{ end }}
-    {{ $pageJs = $pageJs | fingerprint }}
-<script src="{{ $pageJs.RelPermalink }}"></script>
-  {{ end }}
-
-  {{ $pageJsInline := slice }}
-  {{ with $source.Params.page_js_inline }}
-    {{ if reflect.IsSlice . }}
-      {{ range . }}{{ $pageJsInline = $pageJsInline | append (printf "%v" .) }}{{ end }}
-    {{ else }}
-      {{ $pageJsInline = $pageJsInline | append (printf "%v" .) }}
-    {{ end }}
-  {{ end }}
-  {{ range $inlineJs := $pageJsInline }}
-<script>{{ $inlineJs | safeJS }}</script>
-  {{ end }}
-{{ end }}
-{{ $rendered }}
+{{ partial "page-resources/register.html" (dict
+  "ctx" $host
+  "key" (printf "fragment:%s" $source.File.Path)
+  "descriptor" (dict
+    "page" $source
+    "page_css" true
+    "page_css_inline" true
+    "page_js" true
+    "page_js_inline" true
+  )
+) }}
+{{ $source.Content }}

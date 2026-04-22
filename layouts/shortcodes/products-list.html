@@ -1,19 +1,22 @@
 {{ $host := .Page }}
 {{ with $host.Site.GetPage "/products" }}
   {{ $target := . }}
-  {{ if not (eq ($host.Scratch.Get "products_list_assets_rendered") true) }}
-    {{ $host.Scratch.Set "products_list_assets_rendered" true }}
-    {{ $gridList := resources.Get "css/grid-list.css" }}
-    {{ $gridProducts := resources.Get "css/grid-products.css" }}
-    {{ if not $gridList }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-list.css" }}{{ end }}
-    {{ if not $gridProducts }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-products.css" }}{{ end }}
-    {{ $gridCss := slice $gridList $gridProducts | resources.Concat "css/products-list.embed.css" }}
-    {{ if not hugo.IsServer }}{{ $gridCss = $gridCss | minify }}{{ end }}
-<style>{{ $gridCss.Content | safeCSS }}</style>
-    {{ $sortJs := resources.Get "js/sortable-grids.js" | js.Build }}
-    {{ if not hugo.IsServer }}{{ $sortJs = $sortJs | minify }}{{ end }}
-<script>{{ $sortJs.Content | safeJS }}</script>
-  {{ end }}
+  {{ $gridList := resources.Get "css/grid-list.css" }}
+  {{ $gridProducts := resources.Get "css/grid-products.css" }}
+  {{ if not $gridList }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-list.css" }}{{ end }}
+  {{ if not $gridProducts }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-products.css" }}{{ end }}
+  {{ $gridCss := slice $gridList $gridProducts | resources.Concat "css/products-list.embed.css" }}
+  {{ $sortJsSource := resources.Get "js/sortable-grids.js" }}
+  {{ if not $sortJsSource }}{{ errorf "编译失败: 缺少资源 %q。" "js/sortable-grids.js" }}{{ end }}
+  {{ $sortJs := $sortJsSource | js.Build }}
+  {{ partial "page-resources/register.html" (dict
+    "ctx" $host
+    "key" "shortcode:products-list"
+    "descriptor" (dict
+      "css_resources" (slice $gridCss)
+      "js_resources" (slice $sortJs)
+    )
+  ) }}
 
   {{ $entries := slice }}
   {{ $scope := lower (printf "%v" ($host.Params.products_scope | default ($.Get "filter") | default "all")) }}
