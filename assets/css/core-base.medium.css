@@ -1,7 +1,7 @@
 @media (min-width: 64rem) {
     :root {
         --page-shell-min-inline: min(78rem, 100%);
-        --page-rail-inline: 14rem;
+        --page-rail-inline: 13rem;
         --page-shell-gap-inline: 1.75rem;
         --page-shell-rail-divider: color-mix(in srgb, var(--focus) 24%, transparent);
     }
