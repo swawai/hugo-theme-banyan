@@ -1,7 +1,6 @@
 {{ $ctx := . }}
 {{ if reflect.IsMap . }}{{ with index . "ctx" }}{{ $ctx = . }}{{ end }}{{ end }}
 {{ $source := .source }}
-{{ if not $source }}{{ $source = $ctx.Scratch.Get "layout_fragment_nav_page" }}{{ end }}
 {{ if $source }}
 {{ $section := lower (printf "%v" (.section | default "all")) }}
 {{ $navConfig := $source.Params.nav | default dict }}

@@ -12,6 +12,7 @@
 {{- with .Scratch.Get "slot_sources" -}}
   {{- range $slot, $source := . -}}
     {{- if not $source -}}{{- continue -}}{{- end -}}
+    {{- if or (eq $slot "meta") (eq $slot "breadcrumb") -}}{{- continue -}}{{- end -}}
     {{- with $source.Content -}}
       {{- $contents = $contents | append . -}}
     {{- end -}}

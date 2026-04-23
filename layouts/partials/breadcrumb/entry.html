@@ -1,6 +1,6 @@
 {{- $ctx := .ctx | default . -}}
-{{- $model := partial "breadcrumb/model.html" (dict "ctx" $ctx) -}}
+{{- $model := partial "breadcrumb/model.html" (dict "ctx" $ctx "slot" .slot "source" .source) -}}
 {{- $items := index $model "items" | default slice -}}
 {{- if gt (len $items) 0 -}}
-{{ partial "breadcrumb/render.html" (dict "ctx" $ctx "model" $model) }}
+{{ partial "breadcrumb/render.html" (dict "ctx" $ctx "model" $model "omit_lead" (.omit_lead | default false)) }}
 {{- end -}}

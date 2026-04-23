@@ -1,5 +1,5 @@
 ---
-title: 产品面包屑片段
+title: 產品麵包屑模型
 build:
   list: never
   render: never
@@ -7,11 +7,11 @@ breadcrumb:
   variant: lead-menu
   auto_tail: current
   menu_mode: current-root
-  menu_label: 产品分类
+  menu_label: 產品分類
   lead:
     text: ALL
     page: /products
-    menu_label: 展开产品分类
+    menu_label: 展開產品分類
   menu:
     - text: ALL
       page: /products

@@ -7,10 +7,16 @@
     {{- partial "fragments/nav.html" (dict "ctx" $ctx "source" $source "section" "primary") -}}
   {{- else if eq $slot "utilities" -}}
     {{- partial "fragments/nav.html" (dict "ctx" $ctx "source" $source "section" "utilities") -}}
+  {{- else if eq $slot "breadcrumb_root" -}}
+    {{- partial "breadcrumb/root.html" (dict "ctx" $ctx "slot" "breadcrumb_root" "source" $source) -}}
   {{- else if eq $slot "breadcrumb" -}}
-    {{- if partial "article/show-breadcrumb.html" (dict "ctx" $ctx) -}}
-      {{- partial "breadcrumb/entry.html" (dict "ctx" $ctx) -}}
+    {{- $omitLead := false -}}
+    {{- with index $sources "breadcrumb_root" -}}
+      {{- $omitLead = true -}}
     {{- end -}}
+    {{- partial "breadcrumb/entry.html" (dict "ctx" $ctx "slot" "breadcrumb" "omit_lead" $omitLead) -}}
+  {{- else if eq $slot "meta" -}}
+    {{- partial "article/meta.html" (dict "ctx" $ctx) -}}
   {{- else -}}
     {{- $source.Content -}}
   {{- end -}}

@@ -1,9 +1,23 @@
+.slot-row-breadcrumb {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    margin-bottom: 18px;
+}
+
+.slot-breadcrumb-root,
+.slot-breadcrumb,
+.breadcrumb-root-nav {
+    display: inline-flex;
+    align-items: flex-end;
+}
+
 .breadcrumb-nav {
     display: flex;
     flex-wrap: nowrap;
     align-items: flex-end;
     white-space: nowrap;
-    margin-bottom: 18px;
+    margin-bottom: 0;
 }
 
 
@@ -18,6 +32,10 @@
     margin: 0 0.08rem;
     color: var(--link-visited);
     line-height: 1;
+}
+
+.slot-breadcrumb-row-sep {
+    align-self: flex-end;
 }
 
 .breadcrumb-link,

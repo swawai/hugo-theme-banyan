@@ -1,0 +1,27 @@
+.article-meta {
+    display: grid;
+    gap: 0.24rem;
+    margin: 0 0 1rem;
+}
+
+.article-meta .post-taxonomy,
+.article-meta .article-dates {
+    margin: 0;
+    font-size: small;
+    color: var(--link-visited);
+}
+
+.article-meta .post-taxonomy {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem;
+}
+
+.article-meta .post-taxonomy .label {
+    color: var(--text);
+}
+
+.article-meta .post-taxonomy .sep {
+    color: var(--link-visited);
+}

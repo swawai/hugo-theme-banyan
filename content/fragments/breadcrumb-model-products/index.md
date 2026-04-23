@@ -1,5 +1,5 @@
 ---
-title: 產品麵包屑片段
+title: Products Breadcrumb Model
 build:
   list: never
   render: never
@@ -7,11 +7,11 @@ breadcrumb:
   variant: lead-menu
   auto_tail: current
   menu_mode: current-root
-  menu_label: 產品分類
+  menu_label: Product categories
   lead:
     text: ALL
     page: /products
-    menu_label: 展開產品分類
+    menu_label: Open product categories
   menu:
     - text: ALL
       page: /products

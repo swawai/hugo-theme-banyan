@@ -20,11 +20,9 @@
       {{ if eq (.Store.Get "banyan_article_section_list") true }}{{ $isSectionListNode = true }}{{ end }}
       {{ if isset .Params "banyan_article_section_list" }}{{ $isSectionListNode = index .Params "banyan_article_section_list" }}{{ end }}
     {{ end }}
+    {{ $slotSources := .Scratch.Get "slot_sources" | default dict }}
     {{ $contentHTML := printf "%s" .Content }}
     {{ $content := trim $contentHTML " \r\n\t" }}
-    {{ $showBreadcrumb := partial "article/show-breadcrumb.html" (dict "ctx" .) }}
-    {{ $showMeta := not (or $isTaxonomyNode $isSectionListNode) }}
-    {{ if isset .Params "show_meta" }}{{ $showMeta = .Params.show_meta }}{{ end }}
     {{ $renderTaxonomyList := false }}
     {{ if $isTaxonomyNode }}
       {{ $renderTaxonomyList = eq .Kind "term" }}
@@ -51,10 +49,8 @@
     {{ $contentBefore := trim $contentBeforeSectionList " \r\n\t" }}
     {{ $contentAfter := trim $contentAfterSectionList " \r\n\t" }}
     <article class="article">
-        {{ if or $showMeta (and (not $hasSectionListMarker) (ne $content "")) (and $hasSectionListMarker (ne $contentBefore "")) }}
+        {{ if or (and (not $hasSectionListMarker) (ne $content "")) (and $hasSectionListMarker (ne $contentBefore "")) }}
         <div class="prose">
-    {{ if and $showBreadcrumb .IsPage }}{{ partial "taxonomy/article-links.html" (dict "ctx" .) }}{{ end }}
-    {{ if $showMeta }}{{ partial "article/dates.html" . }}{{ end }}
     {{ if $hasSectionListMarker }}
       {{ if ne $contentBefore "" }}{{ $contentBeforeSectionList | safeHTML }}{{ end }}
     {{ else if ne $content "" }}
@@ -71,5 +67,5 @@
         {{ end }}
     </article>
     {{ if and .IsPage (eq .Section "d") }}{{ partial "article/schema.html" . }}{{ end }}
-    {{ if $showBreadcrumb }}{{ partial "breadcrumb/schema.html" (dict "ctx" .) }}{{ end }}
+    {{ with index $slotSources "breadcrumb" }}{{ partial "breadcrumb/schema.html" (dict "ctx" $) }}{{ end }}
 {{ end }}

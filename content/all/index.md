@@ -7,9 +7,8 @@ layout: article
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities
-  breadcrumb: /fragments/breadcrumb-signals
-show_breadcrumb: true
-show_meta: false
+  breadcrumb_root: /fragments/breadcrumb-model-signals
+  breadcrumb: true
 ---
 
 {{< all-list section="d" >}}

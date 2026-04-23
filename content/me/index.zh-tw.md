@@ -8,8 +8,6 @@ layout: "article"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities
-show_breadcrumb: false
-show_meta: false
 build:
   list: "never"
 page_js: "page.js"

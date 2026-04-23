@@ -7,6 +7,14 @@
   {{- if eq $variant "lead-only" -}}
     {{- $visibleItems = slice (index $items 0) -}}
   {{- end -}}
+  {{- if .omit_lead -}}
+    {{- if gt (len $visibleItems) 1 -}}
+      {{- $visibleItems = after 1 $visibleItems -}}
+    {{- else -}}
+      {{- $visibleItems = slice -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if gt (len $visibleItems) 0 -}}
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
   {{- range $index, $item := $visibleItems -}}
     {{- if gt $index 0 -}}<span class="breadcrumb-sep" aria-hidden="true">﹥</span>{{- end -}}
@@ -55,4 +63,5 @@
     {{- end -}}
   {{- end -}}
 </nav>
+  {{- end -}}
 {{- end -}}

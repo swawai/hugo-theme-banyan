@@ -1,7 +1,16 @@
 {{- $ctx := .ctx | default . -}}
 {{- $result := dict -}}
+{{- $slot := printf "%v" (.slot | default "breadcrumb") -}}
 {{- $slotSources := $ctx.Scratch.Get "slot_sources" | default dict -}}
-{{- with index $slotSources "breadcrumb" -}}
+{{- $source := .source | default false -}}
+{{- if not $source -}}
+  {{- if eq $slot "breadcrumb" -}}
+    {{- $source = index $slotSources "breadcrumb_root" -}}
+  {{- else -}}
+    {{- $source = index $slotSources $slot -}}
+  {{- end -}}
+{{- end -}}
+{{- with $source -}}
   {{- $source := . -}}
   {{- $config := index $source.Params "breadcrumb" | default dict -}}
   {{- if eq (len $config) 0 -}}{{- errorf "编译失败: breadcrumb fragment %q 缺少 [breadcrumb] 配置。" $source.File.Path -}}{{- end -}}

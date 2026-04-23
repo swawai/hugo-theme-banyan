@@ -1,5 +1,5 @@
 ---
-title: Signals 麵包屑片段
+title: Signals 面包屑模型
 build:
   list: never
   render: never
@@ -7,7 +7,7 @@ breadcrumb:
   variant: lead-menu
   auto_tail: current
   menu_mode: current-root
-  menu_label: 切換根頁面
+  menu_label: 切换根页面
   menu_active_href_source: signals-family
   menu:
     - page: /d

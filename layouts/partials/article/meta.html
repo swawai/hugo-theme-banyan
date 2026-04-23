@@ -1,0 +1,45 @@
+{{- $ctx := .ctx | default . -}}
+{{- $slotSources := $ctx.Scratch.Get "slot_sources" | default dict -}}
+{{- $breadcrumbItems := slice -}}
+{{- with index $slotSources "breadcrumb" -}}
+  {{- $breadcrumbModel := partial "breadcrumb/model.html" (dict "ctx" $ctx "slot" "breadcrumb") -}}
+  {{- $breadcrumbItems = index $breadcrumbModel "items" | default slice -}}
+{{- end -}}
+{{- $hasPath := gt (len $breadcrumbItems) 1 -}}
+{{- $taxonomySpecs := partial "taxonomy/enabled.html" (dict "ctx" $ctx) -}}
+{{- $hasTaxonomy := false -}}
+{{- range sort $taxonomySpecs "article_weight" "asc" -}}
+  {{- $spec := . -}}
+  {{- $articleMode := printf "%v" (index $spec "article_mode") -}}
+  {{- $values := partial "taxonomy/values.html" (dict "page" $ctx "spec" $spec) -}}
+  {{- if and (ne $articleMode "none") (gt (len $values) 0) -}}
+    {{- $hasTaxonomy = true -}}
+    {{- break -}}
+  {{- end -}}
+{{- end -}}
+{{- $hasDates := false -}}
+{{- if $ctx.Date -}}{{- $hasDates = true -}}{{- end -}}
+{{- if or $hasPath $hasTaxonomy $hasDates -}}
+<div class="article-meta">
+  {{- if $hasPath -}}
+    {{- $leadItem := index $breadcrumbItems 0 -}}
+    {{- $tailItems := after 1 $breadcrumbItems -}}
+  <nav class="post-taxonomy post-taxonomy-path" aria-label="{{ index $leadItem "text" | default "Path" }}">
+    <span class="label">{{ index $leadItem "text" | default "Path" }}</span>
+    {{- range $index, $item := $tailItems -}}
+      {{- if gt $index 0 -}}<span class="sep" aria-hidden="true">/</span>{{- end -}}
+      {{- partial "link.html" (dict
+        "ctx" $ctx
+        "href" (index $item "href")
+        "text" (index $item "text")
+        "title" (index $item "title")
+        "ariaCurrent" (cond (eq (index $item "current") true) "page" "")
+        "linkSlot" "nav"
+      ) -}}
+    {{- end -}}
+  </nav>
+  {{- end -}}
+  {{- if $hasTaxonomy -}}{{ partial "taxonomy/article-links.html" (dict "ctx" $ctx) }}{{- end -}}
+  {{- if $hasDates -}}{{ partial "article/dates.html" $ctx }}{{- end -}}
+</div>
+{{- end -}}

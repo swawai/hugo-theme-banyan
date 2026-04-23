@@ -39,6 +39,14 @@ cp themes/banyan/exampleSite/data/cache-policy.toml ./data/cache-policy.toml
 - Minimalist CSS architecture
 - Content-driven taxonomy bundles: recommended `intent` + hierarchical `tags`, with rendering defined in each taxonomy root bundle
 
+## Layout Slots
+
+Banyan's current page shell is assembled from a small fixed slot set rather than
+free-form fragment injection.
+
+See [`docs/layout-slots.md`](docs/layout-slots.md) for the current slot names,
+their semantics, and the recommended fragment naming rules.
+
 ## Taxonomies
 
 Declare taxonomies in your site's root `hugo.toml` under `[taxonomies]`.

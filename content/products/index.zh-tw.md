@@ -5,11 +5,11 @@ description: 所有標記為產品的內容都會彙整在這裡。
 slug: "products"
 nav_primary: products
 layout: "article"
-show_meta: false
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities
-  breadcrumb: /fragments/breadcrumb-products
+  breadcrumb_root: /fragments/breadcrumb-model-products
+  breadcrumb: true
 products_scope: all
 ---
 
