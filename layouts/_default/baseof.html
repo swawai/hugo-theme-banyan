@@ -232,41 +232,70 @@
     {{ end }}
     <div class="page">
         <a class="skip" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
-        <div class="page-shell">
-            {{ $hasTopbar := or (index $slotSources "primary_nav") (index $slotSources "utilities") }}
-            {{ $hasBreadcrumbRoot := index $slotSources "breadcrumb_root" }}
-            {{ $hasBreadcrumb := eq (index $slotSources "breadcrumb") true }}
-            {{ $hasBreadcrumbTail := false }}
-            {{ if $hasBreadcrumb }}
-                {{ $breadcrumbModel := partial "breadcrumb/model.html" (dict "ctx" $ "slot" "breadcrumb") }}
-                {{ $breadcrumbItems := index $breadcrumbModel "items" | default slice }}
-                {{ if $hasBreadcrumbRoot }}
-                    {{ $hasBreadcrumbTail = gt (len $breadcrumbItems) 1 }}
-                {{ else }}
-                    {{ $hasBreadcrumbTail = gt (len $breadcrumbItems) 0 }}
-                {{ end }}
+        {{ $hasTopbar := or (index $slotSources "primary_nav") (index $slotSources "utilities") }}
+        {{ $hasBreadcrumbRoot := index $slotSources "breadcrumb_root" }}
+        {{ $hasBreadcrumb := eq (index $slotSources "breadcrumb") true }}
+        {{ $hasBreadcrumbTail := false }}
+        {{ if $hasBreadcrumb }}
+            {{ $breadcrumbModel := partial "breadcrumb/model.html" (dict "ctx" $ "slot" "breadcrumb") }}
+            {{ $breadcrumbItems := index $breadcrumbModel "items" | default slice }}
+            {{ if $hasBreadcrumbRoot }}
+                {{ $hasBreadcrumbTail = gt (len $breadcrumbItems) 1 }}
+            {{ else }}
+                {{ $hasBreadcrumbTail = gt (len $breadcrumbItems) 0 }}
             {{ end }}
-            {{ if $hasTopbar }}
-            <div class="page-topbar">
-                {{ with index $slotSources "primary_nav" }}
-                <div class="slot slot-primary-nav" data-slot="primary_nav">
-                    {{ partial "slots/render.html" (dict "ctx" $ "slot" "primary_nav") }}
+        {{ end }}
+        {{ $hasRail := or $hasTopbar $hasBreadcrumbRoot (index $slotSources "footer") }}
+        {{ $pageShellClasses := slice "page-shell" }}
+        {{ if $hasRail }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--has-rail" }}{{ end }}
+        {{ if $hasTopbar }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--has-topbar" }}{{ end }}
+        {{ if $hasBreadcrumbRoot }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--has-breadcrumb-root" }}{{ else }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--no-breadcrumb-root" }}{{ end }}
+        {{ if $hasBreadcrumbTail }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--has-breadcrumb-tail" }}{{ else }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--no-breadcrumb-tail" }}{{ end }}
+        {{ with index $slotSources "footer" }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--has-footer" }}{{ else }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--no-footer" }}{{ end }}
+        {{ with index $slotSources "meta" }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--has-meta" }}{{ else }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--no-meta" }}{{ end }}
+        {{ $footerInRail := and (index $slotSources "footer") (not $hasBreadcrumbRoot) }}
+        {{ if $footerInRail }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--footer-in-rail" }}{{ else }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--footer-in-stage" }}{{ end }}
+        <div class="{{ delimit $pageShellClasses " " }}">
+            {{ if $hasRail }}
+            <div class="page-rail">
+            {{ end }}
+                {{ if $hasTopbar }}
+                <div class="page-topbar">
+                    {{ with index $slotSources "primary_nav" }}
+                    <div class="slot slot-primary-nav" data-slot="primary_nav">
+                        {{ partial "slots/render.html" (dict "ctx" $ "slot" "primary_nav") }}
+                    </div>
+                    {{ end }}
+                    {{ with index $slotSources "utilities" }}
+                    <div class="slot slot-utilities" data-slot="utilities">
+                        {{ partial "slots/render.html" (dict "ctx" $ "slot" "utilities") }}
+                    </div>
+                    {{ end }}
                 </div>
                 {{ end }}
-                {{ with index $slotSources "utilities" }}
-                <div class="slot slot-utilities" data-slot="utilities">
-                    {{ partial "slots/render.html" (dict "ctx" $ "slot" "utilities") }}
+                {{ with index $slotSources "breadcrumb_root" }}
+                <div class="page-rail-context">
+                    <div class="slot slot-breadcrumb-root slot-breadcrumb-root-rail" data-slot="breadcrumb_root">
+                        {{ partial "breadcrumb/root.html" (dict "ctx" $ "slot" "breadcrumb_root" "source" . "mode" "list") }}
+                    </div>
                 </div>
                 {{ end }}
+                {{ if $footerInRail }}
+                <div class="slot slot-footer slot-footer-rail" data-slot="footer">
+                    {{ partial "slots/render.html" (dict "ctx" $ "slot" "footer") }}
+                </div>
+                {{ end }}
+            {{ if $hasRail }}
             </div>
             {{ end }}
+            <div class="page-stage">
             {{ if or $hasBreadcrumbRoot $hasBreadcrumbTail }}
             {{/* 单列下把 breadcrumb_root 与 breadcrumb tail 放在同一行：
                  root 渲染为首字段下拉，tail 渲染为后续路径，不再拆成两行。 */}}
             <div class="slot-row slot-row-breadcrumb">
                 {{ with index $slotSources "breadcrumb_root" }}
-                <div class="slot slot-breadcrumb-root" data-slot="breadcrumb_root">
-                    {{ partial "slots/render.html" (dict "ctx" $ "slot" "breadcrumb_root") }}
+                <div class="slot slot-breadcrumb-root slot-breadcrumb-root-stage" data-slot="breadcrumb_root">
+                    {{ partial "breadcrumb/root.html" (dict "ctx" $ "slot" "breadcrumb_root" "source" . "mode" "compact") }}
                 </div>
                 {{ end }}
                 {{ if and $hasBreadcrumbRoot $hasBreadcrumbTail }}
@@ -287,8 +316,9 @@
                 {{ partial "slots/render.html" (dict "ctx" $ "slot" "meta") }}
             </div>
             {{ end }}
+            </div>
             {{ with index $slotSources "footer" }}
-            <div class="slot slot-footer" data-slot="footer">
+            <div class="slot slot-footer slot-footer-stage" data-slot="footer">
                 {{ partial "slots/render.html" (dict "ctx" $ "slot" "footer") }}
             </div>
             {{ end }}

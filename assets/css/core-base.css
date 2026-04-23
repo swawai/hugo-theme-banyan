@@ -66,8 +66,18 @@ body {
 }
 
 .page-shell,
+.page-rail,
+.page-stage,
 .slot {
     min-width: 0;
+}
+
+.page-rail-context {
+    display: none;
+}
+
+.slot-footer-rail {
+    display: none;
 }
 
 .page-topbar {

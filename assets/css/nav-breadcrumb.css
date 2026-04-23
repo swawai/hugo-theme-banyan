@@ -1,21 +1,30 @@
 .slot-row-breadcrumb {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-end;
-    margin-bottom: 18px;
+    align-items: center;
+    margin-bottom: 12px;
 }
 
 .slot-breadcrumb-root,
 .slot-breadcrumb,
 .breadcrumb-root-nav {
     display: inline-flex;
-    align-items: flex-end;
+    align-items: center;
+}
+
+.breadcrumb-root-compact {
+    display: inline-flex;
+    align-items: center;
+}
+
+.breadcrumb-root-list {
+    display: none;
 }
 
 .breadcrumb-nav {
     display: flex;
     flex-wrap: nowrap;
-    align-items: flex-end;
+    align-items: center;
     white-space: nowrap;
     margin-bottom: 0;
 }
@@ -24,7 +33,7 @@
 .breadcrumb-item,
 .breadcrumb-item-menu {
     display: inline-flex;
-    align-items: flex-end;
+    align-items: center;
 }
 
 .breadcrumb-sep {
@@ -35,17 +44,25 @@
 }
 
 .slot-breadcrumb-row-sep {
-    align-self: flex-end;
+    align-self: center;
 }
 
 .breadcrumb-link,
+.breadcrumb-link:visited,
+.breadcrumb-link:hover,
 .breadcrumb-select-wrapper,
 .breadcrumb-select-trigger {
     position: relative;
     display: inline-flex;
-
+    align-items: center;
     line-height: 1;
+    text-decoration: none;
+}
 
+.breadcrumb-link .crumb-text,
+.breadcrumb-select-trigger .crumb-text {
+    display: inline-block;
+    line-height: 1;
 }
 
 .prose a.breadcrumb-link,
@@ -77,7 +94,11 @@
 
 .breadcrumb-select-trigger .crumb-text::after {
     content: "▾";
+    display: inline-block;
     font-size: 0.8em;
+    margin-inline-start: 0.12rem;
+    line-height: 1;
+    vertical-align: 0.04em;
 }
 
 .breadcrumb-select {

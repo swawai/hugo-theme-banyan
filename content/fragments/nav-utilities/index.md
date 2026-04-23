@@ -7,6 +7,8 @@ slot_resources:
   utilities:
     page_css:
       - site-nav.css
+      - site-nav.medium.css
+      - site-nav.wide.css
       - nav-utilities.css
     page_js:
       - nav-utilities.js

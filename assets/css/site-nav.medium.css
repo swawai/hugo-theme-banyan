@@ -1,0 +1,32 @@
+@media (min-width: 64rem) {
+    .page-shell.page-shell--has-rail .page-topbar {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        row-gap: 1.25rem;
+    }
+
+    .page-shell.page-shell--has-rail .page-topbar .slot {
+        min-width: 0;
+    }
+
+    .page-shell.page-shell--has-rail .page-topbar .site-nav {
+        margin-bottom: 0;
+    }
+
+    .page-shell.page-shell--has-rail .page-topbar .site-nav-primary {
+        flex-direction: column;
+        align-items: flex-start;
+        row-gap: 0.85rem;
+        font-size: 1.95rem;
+        line-height: 1.05;
+    }
+
+    .page-shell.page-shell--has-rail .page-topbar .site-nav-primary > a {
+        width: fit-content;
+    }
+
+    .page-shell.page-shell--has-rail .page-topbar .site-nav-utilities {
+        column-gap: 1rem;
+    }
+}

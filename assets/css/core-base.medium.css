@@ -1,0 +1,84 @@
+@media (min-width: 64rem) {
+    :root {
+        --page-shell-min-inline: min(78rem, 100%);
+        --page-rail-inline: 14rem;
+        --page-shell-gap-inline: 1.75rem;
+        --page-shell-rail-divider: color-mix(in srgb, var(--focus) 24%, transparent);
+    }
+
+    .page-shell.page-shell--has-rail {
+        display: grid;
+        grid-template-columns: minmax(12rem, var(--page-rail-inline)) minmax(0, 1fr);
+        column-gap: var(--page-shell-gap-inline);
+        align-items: start;
+    }
+
+    .page-shell.page-shell--has-rail .page-rail {
+        grid-column: 1;
+        grid-row: 1;
+        position: sticky;
+        top: var(--page-edge-block-start);
+        z-index: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        row-gap: 0.85rem;
+        padding-inline-end: var(--page-shell-gap-inline);
+        border-inline-end: 1px solid var(--page-shell-rail-divider);
+    }
+
+    .page-shell.page-shell--has-rail .page-stage {
+        grid-column: 2;
+        grid-row: 1;
+        min-width: 0;
+    }
+
+    .page-shell.page-shell--has-rail .page-rail-context {
+        display: block;
+        min-width: 0;
+        padding-block-start: 0.8rem;
+    }
+
+    .page-shell.page-shell--has-rail .slot-row-breadcrumb {
+        margin-bottom: 0.45rem;
+    }
+
+    .page-shell.page-shell--has-rail .slot-breadcrumb-root-stage,
+    .page-shell.page-shell--has-rail .slot-breadcrumb {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .page-shell.page-shell--has-rail .slot-main {
+        min-width: 0;
+    }
+
+    .page-shell.page-shell--has-rail .slot-meta {
+        min-width: 0;
+    }
+
+    .page-shell.page-shell--has-rail .slot-footer-stage {
+        grid-column: 1;
+        grid-row: 2;
+        min-width: 0;
+        padding-inline-end: var(--page-shell-gap-inline);
+        padding-block-start: 1.25rem;
+        border-inline-end: 1px solid var(--page-shell-rail-divider);
+        align-self: start;
+    }
+
+    .page-shell.page-shell--has-rail .slot-footer-rail {
+        min-width: 0;
+        padding-block-start: 0.8rem;
+        border-top: 1px solid var(--page-shell-rail-divider);
+    }
+
+    .page-shell.page-shell--footer-in-rail .slot-footer-stage {
+        display: none;
+    }
+
+    .page-shell.page-shell--footer-in-rail .slot-footer-rail {
+        display: block;
+    }
+}

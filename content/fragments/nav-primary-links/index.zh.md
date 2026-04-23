@@ -7,6 +7,8 @@ slot_resources:
   primary_nav:
     page_css:
       - site-nav.css
+      - site-nav.medium.css
+      - site-nav.wide.css
 nav:
   controls:
     language: false

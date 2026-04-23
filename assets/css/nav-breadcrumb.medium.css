@@ -1,0 +1,51 @@
+@media (min-width: 64rem) {
+    .page-shell.page-shell--has-rail .page-rail-context {
+        margin-top: 0.35rem;
+        border-top: 1px solid var(--page-shell-rail-divider);
+    }
+
+    .page-shell.page-shell--has-rail .slot-row-breadcrumb {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0;
+    }
+
+    .page-shell.page-shell--has-rail .slot-breadcrumb-root-stage {
+        margin-inline-end: 0.1rem;
+    }
+
+    .page-shell.page-shell--has-rail .slot-breadcrumb {
+        margin-bottom: 0;
+    }
+
+    .page-shell.page-shell--has-rail .breadcrumb-root-nav-list,
+    .page-shell.page-shell--has-rail .breadcrumb-root-nav-compact {
+        display: block;
+    }
+
+    .page-shell.page-shell--has-rail .page-rail-context .breadcrumb-root-list {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.7rem;
+        padding-top: 0.15rem;
+    }
+
+    .page-shell.page-shell--has-rail .page-rail-context .breadcrumb-root-link,
+    .page-shell.page-shell--has-rail .page-rail-context .breadcrumb-root-link:visited {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        padding: 0.05rem 0;
+        color: var(--link);
+        text-decoration: underline;
+        border-bottom: none;
+    }
+
+    .page-shell.page-shell--has-rail .page-rail-context .breadcrumb-root-link.is-current,
+    .page-shell.page-shell--has-rail .page-rail-context .breadcrumb-root-link.is-current:visited {
+        background: color-mix(in srgb, var(--focus) 18%, transparent);
+    }
+}

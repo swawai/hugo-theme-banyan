@@ -5,7 +5,7 @@ build:
   render: never
 breadcrumb:
   variant: lead-menu
-  auto_tail: current
+  auto_tail: full
   menu_mode: current-root
   menu_label: 产品分类
   lead:
