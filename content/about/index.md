@@ -1,10 +1,14 @@
----
+﻿---
 date: "2025-10-11T20:10:44+08:00"
 draft: false
 title: "About"
 slug: "about"
 type: "page"
 layout: "article"
+slots:
+  primary_nav: /fragments/nav-primary-links
+  utilities: /fragments/nav-utilities
+  footer: /fragments/home-footer-shortcuts
 show_breadcrumb: false
 show_meta: false
 build:
@@ -21,4 +25,3 @@ As defined in our `theme.toml`:
 
 Enjoy using this theme!
 
-{{< fragment "/fragments/home-footer-shortcuts" >}}

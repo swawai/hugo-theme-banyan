@@ -4,14 +4,25 @@
     {{- $used = merge $used (dict $name true) -}}
   {{- end -}}
 {{- end -}}
-{{- /* Fragment 内容可能复用 Hugo 的 .Content 缓存，补扫最终 HTML 里的 <use href="#icon-*"> 以兜住这类图标依赖。 */ -}}
-{{- $content := "" -}}
+{{- /* slot fragment 中的 shortcode icon 会记到 fragment 自己的 page.Store；这里补扫主页面与各 slot 页面的最终 HTML。 */ -}}
+{{- $contents := slice -}}
 {{- with .Content -}}
-  {{- $content = replaceRE `(?s)<!--.*?-->` "" . -}}
+  {{- $contents = $contents | append . -}}
 {{- end -}}
-{{- range findRE `#icon-[A-Za-z0-9_-]+` $content -}}
-  {{- $name := replace . "#icon-" "" -}}
-  {{- $used = merge $used (dict $name true) -}}
+{{- with .Scratch.Get "slot_sources" -}}
+  {{- range $slot, $source := . -}}
+    {{- if not $source -}}{{- continue -}}{{- end -}}
+    {{- with $source.Content -}}
+      {{- $contents = $contents | append . -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- range $content := $contents -}}
+  {{- $content = replaceRE `(?s)<!--.*?-->` "" $content -}}
+  {{- range findRE `#icon-[A-Za-z0-9_-]+` $content -}}
+    {{- $name := replace . "#icon-" "" -}}
+    {{- $used = merge $used (dict $name true) -}}
+  {{- end -}}
 {{- end -}}
 {{- if gt (len $used) 0 -}}
 <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true" focusable="false">

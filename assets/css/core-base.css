@@ -65,6 +65,22 @@ body {
     line-height: 1.7;
 }
 
+.page-shell,
+.slot {
+    min-width: 0;
+}
+
+.page-topbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 0.8rem;
+}
+
+
+
+
+
 
 a {
     color: var(--link);

@@ -59,37 +59,9 @@
     right: 0;
     bottom: 0;
     border-bottom: 1px solid currentColor;
-
 }
 
 .site-nav > a.site-nav-link-primary.is-current::after {
     opacity: 1;
     border-bottom-width: 2px;
-}
-
-.site-nav .icon-select-wrapper > .icon,
-.site-nav .site-nav-link-account > .icon {
-    display: block;
-    width: 1em;
-    height: 1em;
-    flex: none;
-    transform-origin: center center;
-}
-
-.site-nav .icon-select-wrapper select.icon-select {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    opacity: 0;
-    cursor: pointer;
-}
-
-.site-nav .icon-select-wrapper:has(select.icon-select:focus-visible) {
-    outline: 2px dashed var(--focus);
-    outline-offset: 2px;
-}
-
-.site-nav .icon-select-wrapper select.icon-select:focus {
-    outline: none;
 }

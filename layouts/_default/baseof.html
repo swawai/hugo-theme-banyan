@@ -67,35 +67,7 @@
     ) }}
 {{ end }}
 {{ $primarySite := index (sort .Sites "Language.Weight") 0 }}
-{{ $navEnabled := true }}
-{{ if isset .Params "nav" }}{{ $navEnabled = ne (index .Params "nav") false }}{{ end }}
-{{ $navFragmentSrc := .Site.Params.layout_fragments.nav | default "/fragments/nav-primary" }}
-{{ if isset .Params "nav_fragment" }}
-    {{ $navOverride := index .Params "nav_fragment" }}
-    {{ if eq $navOverride false }}
-        {{ $navEnabled = false }}
-    {{ else }}
-        {{ with $navOverride }}{{ $navFragmentSrc = printf "%v" . }}{{ end }}
-    {{ end }}
-{{ end }}
-{{ $navFragmentPage := "" }}
-{{ if and $navEnabled (ne $navFragmentSrc "") }}
-    {{ $hostPath := printf "%s %s" .Kind .RelPermalink }}
-    {{ with .File }}{{ $hostPath = .Path }}{{ end }}
-    {{ $navFragmentPage = .Site.GetPage $navFragmentSrc }}
-    {{ if not $navFragmentPage }}{{ errorf "编译失败: 页面 %q 找不到 layout fragment %q。" $hostPath $navFragmentSrc }}{{ end }}
-{{ end }}
-{{ with $navFragmentPage }}
-    {{ $.Scratch.Set "layout_fragment_nav_page" . }}
-    {{ partial "layout-fragments/register.html" (dict
-        "ctx" $
-        "source" .
-        "page_css" false
-        "page_css_inline" false
-        "page_js" true
-        "page_js_inline" true
-    ) }}
-{{ end }}
+{{ $slotSources := partial "slots/prepare.html" (dict "ctx" .) }}
 {{ if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) }}
     {{ $headersBody := partial "cache-policy-cloudflare-headers-body.txt" (dict "routes" $cachePolicyHeaderRoutes) }}
     {{ $headersResource := resources.FromString "_headers" $headersBody }}
@@ -260,14 +232,48 @@
     {{ end }}
     <div class="page">
         <a class="skip" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
-        {{ with (.Scratch.Get "layout_fragment_nav_page") }}{{ partial "fragments/nav.html" (dict "ctx" $ "source" .) }}{{ end }}
-
-        {{ block "breadcrumb" . }}{{ end }}
-        
-
-        <main id="main">
-            {{ block "main" . }}{{ end }}
-        </main>
+        <div class="page-shell">
+            {{ $hasTopbar := or (index $slotSources "primary_nav") (index $slotSources "utilities") }}
+            {{ if $hasTopbar }}
+            <div class="page-topbar">
+                {{ with index $slotSources "primary_nav" }}
+                <div class="slot slot-primary-nav" data-slot="primary_nav">
+                    {{ partial "slots/render.html" (dict "ctx" $ "slot" "primary_nav") }}
+                </div>
+                {{ end }}
+                {{ with index $slotSources "utilities" }}
+                <div class="slot slot-utilities" data-slot="utilities">
+                    {{ partial "slots/render.html" (dict "ctx" $ "slot" "utilities") }}
+                </div>
+                {{ end }}
+            </div>
+            {{ end }}
+            {{ with index $slotSources "context" }}
+            <div class="slot slot-context" data-slot="context">
+                {{ partial "slots/render.html" (dict "ctx" $ "slot" "context") }}
+            </div>
+            {{ end }}
+            {{ with index $slotSources "breadcrumb" }}
+                {{ if partial "article/show-breadcrumb.html" (dict "ctx" $) }}
+            <div class="slot slot-breadcrumb" data-slot="breadcrumb">
+                {{ partial "slots/render.html" (dict "ctx" $ "slot" "breadcrumb") }}
+            </div>
+                {{ end }}
+            {{ end }}
+            <main id="main" class="slot slot-main" data-slot="main">
+                {{ block "main" . }}{{ end }}
+            </main>
+            {{ with index $slotSources "meta" }}
+            <div class="slot slot-meta" data-slot="meta">
+                {{ partial "slots/render.html" (dict "ctx" $ "slot" "meta") }}
+            </div>
+            {{ end }}
+            {{ with index $slotSources "footer" }}
+            <div class="slot slot-footer" data-slot="footer">
+                {{ partial "slots/render.html" (dict "ctx" $ "slot" "footer") }}
+            </div>
+            {{ end }}
+        </div>
     </div>
     {{ partial "page-resources-body.html" . }}
     {{ if not $isOfflinePage }}

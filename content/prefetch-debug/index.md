@@ -1,4 +1,4 @@
----
+﻿---
 date: "2026-03-17T00:00:00+08:00"
 draft: false
 title: "Prefetch Debug"
@@ -7,6 +7,9 @@ nav_primary: home
 url: "prefetchdebug"
 type: "page"
 layout: "article"
+slots:
+  primary_nav: /fragments/nav-primary-links
+  utilities: /fragments/nav-utilities
 show_breadcrumb: false
 show_meta: false
 page_js: "page.js"

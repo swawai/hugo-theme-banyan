@@ -12,20 +12,9 @@
 {{ $navBreadcrumb := resources.Get "css/nav-breadcrumb.css" }}
 {{ $siteHeader := resources.Get "css/site-header.css" }}
 {{ $swUpdateAnchor := resources.Get "css/sw-update-anchor.css" }}
-{{ $navSource := $ctx.Scratch.Get "layout_fragment_nav_page" }}
-{{ $navCssResources := slice }}
-{{ with $navSource }}
-    {{ $navCssSpecs := partial "page-resource-specs.html" (dict "source" . "key" "page_css") }}
-    {{ if eq (len $navCssSpecs) 0 }}{{ errorf "编译失败: layout fragment %q 未声明 page_css。" .File.Path }}{{ end }}
-    {{ range $spec := $navCssSpecs }}
-        {{ $navCss := partial "page-resource-resolve.html" (dict "source" $navSource "spec" $spec "asset_dir" "css" "kind" "page_css") }}
-        {{ $navCssResources = $navCssResources | append $navCss }}
-    {{ end }}
-{{ end }}
 {{ $swModeRaw := $ctx.Site.Params.service_worker.mode | default "off" }}
 {{ $swMode := lower (printf "%v" $swModeRaw) }}
 {{ $pageBundleParts := slice $coreBase $siteHeader }}
-{{ range $part := $navCssResources }}{{ $pageBundleParts = $pageBundleParts | append $part }}{{ end }}
 {{ $pageBundleParts = $pageBundleParts | append $coreA11y }}
 {{ $pageBundleParts = $pageBundleParts | append $coreMotion }}
 {{ $pageBundle := $pageBundleParts | resources.Concat "css/bundle-page.css" }}
@@ -44,7 +33,6 @@
 {{ $allBundle := $allBundleParts | resources.Concat "css/bundle-all.css" }}
 {{ $allBundle = partial "css-process.html" (dict "resource" $allBundle "fingerprint" true) }}
 {{ $homeCriticalParts := slice $coreBase $siteHeader }}
-{{ range $part := $navCssResources }}{{ $homeCriticalParts = $homeCriticalParts | append $part }}{{ end }}
 {{ $homeCriticalParts = $homeCriticalParts | append $navBreadcrumb }}
 {{ $homeCriticalParts = $homeCriticalParts | append $coreA11y }}
 {{ $homeCriticalParts = $homeCriticalParts | append $gridList }}

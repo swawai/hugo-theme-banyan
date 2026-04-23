@@ -1,0 +1,124 @@
+{{- $ctx := .ctx | default . -}}
+{{- $slotConfig := dict -}}
+{{- with index $ctx.Params "slots" -}}
+  {{- if not (reflect.IsMap .) -}}
+    {{- errorf "编译失败: 页面 %q 的 slots 必须是 map/object。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}
+  {{- end -}}
+  {{- $slotConfig = . -}}
+{{- end -}}
+{{- $supportedSlots := slice "primary_nav" "context" "utilities" "breadcrumb" "meta" "footer" -}}
+{{- $supportedLookup := dict -}}
+{{- range $slot := $supportedSlots -}}
+  {{- $supportedLookup = merge $supportedLookup (dict $slot true) -}}
+{{- end -}}
+{{- range $slotName, $_ := $slotConfig -}}
+  {{- $key := printf "%v" $slotName -}}
+  {{- if not (isset $supportedLookup $key) -}}
+    {{- errorf "编译失败: 页面 %q 的 slots.%s 不受支持。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) $key -}}
+  {{- end -}}
+{{- end -}}
+{{- $sources := dict -}}
+{{- range $slot := $supportedSlots -}}
+  {{- $sources = merge $sources (dict $slot false) -}}
+  {{- if not (isset $slotConfig $slot) -}}{{- continue -}}{{- end -}}
+  {{- $raw := index $slotConfig $slot -}}
+  {{- if eq $raw false -}}{{- continue -}}{{- end -}}
+  {{- $src := trim (printf "%v" $raw) " \r\n\t" -}}
+  {{- if eq $src "" -}}{{- continue -}}{{- end -}}
+  {{- $source := $ctx.Site.GetPage $src -}}
+  {{- if not $source -}}
+    {{- errorf "编译失败: 页面 %q 的 slots.%s=%q 找不到对应页面。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) $slot $src -}}
+  {{- end -}}
+  {{- $sources = merge $sources (dict $slot $source) -}}
+  {{- $slotResourceConfig := dict -}}
+  {{- $slotResources := index $source.Params "slot_resources" | default dict -}}
+  {{- if and (gt (len $slotResources) 0) (not (reflect.IsMap $slotResources)) -}}
+    {{- errorf "编译失败: 页面 %q 的 slot_resources 必须是 map/object。" $source.File.Path -}}
+  {{- end -}}
+  {{- with index $slotResources $slot -}}
+    {{- if not (reflect.IsMap .) -}}
+      {{- errorf "编译失败: 页面 %q 的 slot_resources.%s 必须是 map/object。" $source.File.Path $slot -}}
+    {{- end -}}
+    {{- $slotResourceConfig = . -}}
+  {{- end -}}
+  {{- if gt (len $slotResourceConfig) 0 -}}
+    {{- $descriptor := dict -}}
+    {{- $cssResources := slice -}}
+    {{- with index $slotResourceConfig "page_css" -}}
+      {{- if reflect.IsSlice . -}}
+        {{- range . -}}
+          {{- $cssResources = $cssResources | append (partial "page-resource-resolve.html" (dict "source" $source "spec" (printf "%v" .) "asset_dir" "css" "kind" "page_css")) -}}
+        {{- end -}}
+      {{- else -}}
+        {{- $cssResources = $cssResources | append (partial "page-resource-resolve.html" (dict "source" $source "spec" (printf "%v" .) "asset_dir" "css" "kind" "page_css")) -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if gt (len $cssResources) 0 -}}
+      {{- $descriptor = merge $descriptor (dict "css_resources" $cssResources) -}}
+    {{- end -}}
+    {{- $cssInlineValues := slice -}}
+    {{- with index $slotResourceConfig "page_css_inline" -}}
+      {{- if reflect.IsSlice . -}}
+        {{- range . -}}{{- $cssInlineValues = $cssInlineValues | append (printf "%v" .) -}}{{- end -}}
+      {{- else -}}
+        {{- $cssInlineValues = $cssInlineValues | append (printf "%v" .) -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if gt (len $cssInlineValues) 0 -}}
+      {{- $descriptor = merge $descriptor (dict "css_inline_values" $cssInlineValues) -}}
+    {{- end -}}
+    {{- $jsResources := slice -}}
+    {{- with index $slotResourceConfig "page_js" -}}
+      {{- if reflect.IsSlice . -}}
+        {{- range . -}}
+          {{- $jsResources = $jsResources | append (partial "page-resource-resolve.html" (dict "source" $source "spec" (printf "%v" .) "asset_dir" "js" "kind" "page_js")) -}}
+        {{- end -}}
+      {{- else -}}
+        {{- $jsResources = $jsResources | append (partial "page-resource-resolve.html" (dict "source" $source "spec" (printf "%v" .) "asset_dir" "js" "kind" "page_js")) -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if gt (len $jsResources) 0 -}}
+      {{- $descriptor = merge $descriptor (dict "js_resources" $jsResources) -}}
+    {{- end -}}
+    {{- $jsInlineValues := slice -}}
+    {{- with index $slotResourceConfig "page_js_inline" -}}
+      {{- if reflect.IsSlice . -}}
+        {{- range . -}}{{- $jsInlineValues = $jsInlineValues | append (printf "%v" .) -}}{{- end -}}
+      {{- else -}}
+        {{- $jsInlineValues = $jsInlineValues | append (printf "%v" .) -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if gt (len $jsInlineValues) 0 -}}
+      {{- $descriptor = merge $descriptor (dict "js_inline_values" $jsInlineValues) -}}
+    {{- end -}}
+    {{- partial "page-resources/register.html" (dict
+      "ctx" $ctx
+      "key" (printf "slot:%s:%s" $slot $source.File.Path)
+      "descriptor" $descriptor
+    ) -}}
+  {{- else if or (eq $slot "primary_nav") (eq $slot "utilities") -}}
+    {{- partial "layout-fragments/register.html" (dict
+      "ctx" $ctx
+      "source" $source
+    ) -}}
+  {{- else -}}
+    {{- partial "page-resources/register.html" (dict
+      "ctx" $ctx
+      "key" (printf "slot:%s:%s" $slot $source.File.Path)
+      "descriptor" (dict
+        "page" $source
+        "page_css" true
+        "page_css_inline" true
+        "page_js" true
+        "page_js_inline" true
+      )
+    ) -}}
+  {{- end -}}
+  {{- if or (eq $slot "primary_nav") (eq $slot "utilities") -}}
+    {{- if not ($ctx.Scratch.Get "layout_fragment_nav_page") -}}
+      {{- $ctx.Scratch.Set "layout_fragment_nav_page" $source -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- $ctx.Scratch.Set "slot_sources" $sources -}}
+{{- return $sources -}}

@@ -1,10 +1,13 @@
----
+﻿---
 title: Directory
 linkTitle: DIR
 nav_primary: signals
 layout: "article"
 banyan_article_section_list: true
-breadcrumb_fragment: /fragments/breadcrumb-signals
+slots:
+  primary_nav: /fragments/nav-primary-links
+  utilities: /fragments/nav-utilities
+  breadcrumb: /fragments/breadcrumb-signals
 show_breadcrumb: true
 show_meta: false
 cascade:
@@ -13,17 +16,21 @@ cascade:
     nav_primary: signals
     type: "post"
     layout: "article"
-    breadcrumb_fragment: /fragments/breadcrumb-signals
+    slots:
+      primary_nav: /fragments/nav-primary-links
+      utilities: /fragments/nav-utilities
+      breadcrumb: /fragments/breadcrumb-signals
   - _target:
       kind: "section"
     nav_primary: signals
     layout: "article"
     banyan_article_section_list: true
-    breadcrumb_fragment: /fragments/breadcrumb-signals
+    slots:
+      primary_nav: /fragments/nav-primary-links
+      utilities: /fragments/nav-utilities
+      breadcrumb: /fragments/breadcrumb-signals
     show_breadcrumb: true
     show_meta: false
 ---
 
 {{< section-list >}}
-
-<!-- {{< fragment "/fragments/home-footer-shortcuts" >}} -->

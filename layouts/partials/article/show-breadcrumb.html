@@ -1,0 +1,10 @@
+{{- $ctx := .ctx | default . -}}
+{{- $isSectionListNode := false -}}
+{{- if and (eq $ctx.Kind "section") (isset $ctx.Params "banyan_article_section_list") -}}
+  {{- $isSectionListNode = index $ctx.Params "banyan_article_section_list" -}}
+{{- end -}}
+{{- $showBreadcrumb := not $isSectionListNode -}}
+{{- if isset $ctx.Params "show_breadcrumb" -}}
+  {{- $showBreadcrumb = index $ctx.Params "show_breadcrumb" -}}
+{{- end -}}
+{{- return $showBreadcrumb -}}

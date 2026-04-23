@@ -1,10 +1,13 @@
----
+﻿---
 draft: false
 title: "我"
 slug: "me"
 nav_primary: me
 type: "me"
 layout: "article"
+slots:
+  primary_nav: /fragments/nav-primary-links
+  utilities: /fragments/nav-utilities
 show_breadcrumb: false
 show_meta: false
 build:

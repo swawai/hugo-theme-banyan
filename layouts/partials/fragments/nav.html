@@ -2,7 +2,8 @@
 {{ if reflect.IsMap . }}{{ with index . "ctx" }}{{ $ctx = . }}{{ end }}{{ end }}
 {{ $source := .source }}
 {{ if not $source }}{{ $source = $ctx.Scratch.Get "layout_fragment_nav_page" }}{{ end }}
-{{ if not $source }}{{ return }}{{ end }}
+{{ if $source }}
+{{ $section := lower (printf "%v" (.section | default "all")) }}
 {{ $navConfig := $source.Params.nav | default dict }}
 {{ $items := index $navConfig "items" | default slice }}
 {{ $controls := index $navConfig "controls" | default dict }}
@@ -83,7 +84,6 @@
     {{ if isset $item "fallback_when_none" }}{{ $isFallback = eq (index $item "fallback_when_none") true }}{{ end }}
     {{ if $isFallback }}{{ $fallbackItemCount = add $fallbackItemCount 1 }}{{ end }}
     {{ $resolvedItems = $resolvedItems | append (dict
-        "item" $item
         "href" $href
         "text" $itemText
         "title" $itemTitle
@@ -140,11 +140,10 @@
 {{ if $meIsInternal }}
     {{ $meIsCurrent = partial "fragments/nav-link-is-current.html" (dict "ctx" $ctx "item" $meConfig) }}
 {{ end }}
-{{ if $meIsCurrent }}{{ $hasCurrent = true }}{{ end }}
 
-<nav class="site-nav" aria-label="Primary">
+{{ if or (eq $section "primary") (eq $section "all") }}
+<nav class="site-nav site-nav-primary" aria-label="Primary">
     {{ range $resolved := $resolvedItems }}
-    {{ $item := index $resolved "item" }}
     {{ $href := printf "%v" (index $resolved "href") }}
     {{ $itemText := printf "%v" (index $resolved "text") }}
     {{ $itemTitle := printf "%v" (index $resolved "title") }}
@@ -168,7 +167,11 @@
         "rel" (cond $isInternal "" "noopener noreferrer")
     ) }}
     {{ end }}
+</nav>
+{{ end }}
 
+{{ if or (eq $section "utilities") (eq $section "all") }}
+<nav class="site-nav site-nav-utilities" aria-label="Utilities">
     {{ if $showMe }}
     {{ $meClass := "site-nav-link-primary site-nav-link-account" }}
     {{ if $meIsCurrent }}{{ $meClass = printf "%s is-current" $meClass }}{{ end }}
@@ -217,5 +220,6 @@
         </select>
     </span>
     {{ end }}
-
 </nav>
+{{ end }}
+{{ end }}
