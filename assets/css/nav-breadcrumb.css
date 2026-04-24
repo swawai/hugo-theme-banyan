@@ -17,6 +17,16 @@
     align-items: center;
 }
 
+.breadcrumb-root-stage-compact,
+.breadcrumb-root-stage-current {
+    display: inline-flex;
+    align-items: center;
+}
+
+.breadcrumb-root-stage-current {
+    display: none;
+}
+
 .breadcrumb-root-list {
     display: none;
 }

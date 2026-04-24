@@ -295,7 +295,7 @@
             <div class="slot-row slot-row-breadcrumb">
                 {{ with index $slotSources "breadcrumb_root" }}
                 <div class="slot slot-breadcrumb-root slot-breadcrumb-root-stage" data-slot="breadcrumb_root">
-                    {{ partial "breadcrumb/root.html" (dict "ctx" $ "slot" "breadcrumb_root" "source" . "mode" "compact") }}
+                    {{ partial "breadcrumb/root.html" (dict "ctx" $ "slot" "breadcrumb_root" "source" . "mode" "stage") }}
                 </div>
                 {{ end }}
                 {{ if and $hasBreadcrumbRoot $hasBreadcrumbTail }}
