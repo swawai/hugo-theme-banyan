@@ -23,7 +23,8 @@
 {{ if $withMeta }}{{ $articleCoreParts = $articleCoreParts | append $articleMeta }}{{ end }}
 {{ $articleCoreParts = $articleCoreParts | append $articleProse }}
 {{ $articleCoreParts = $articleCoreParts | append $articleInline }}
-{{ $articleCore := $articleCoreParts | resources.Concat "css/article-core.css" }}
+{{ $articleCoreTarget := printf "css/article-core.%s.css" (cond $withMeta "with-meta" "no-meta") }}
+{{ $articleCore := $articleCoreParts | resources.Concat $articleCoreTarget }}
 {{ $articleCore = partial "css-process.html" (dict "resource" $articleCore "fingerprint" true) }}
 <link rel="stylesheet" href="{{ $articleCore.RelPermalink }}">
 {{ $articleAddonParts := slice }}
