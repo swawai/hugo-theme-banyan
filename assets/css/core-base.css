@@ -83,7 +83,7 @@ body {
 .page-topbar {
     display: flex;
     flex-wrap: wrap;
-    align-items: flex-start;
+    align-items: flex-end;
     gap: 0.8rem;
 }
 

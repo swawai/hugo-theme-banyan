@@ -10,6 +10,10 @@
     font-weight: bold;
 }
 
+.site-nav-primary {
+    font-size: 1.08rem;
+}
+
 .site-nav > * {
     flex-shrink: 0;
 }

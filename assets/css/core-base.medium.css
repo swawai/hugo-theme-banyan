@@ -2,7 +2,8 @@
     :root {
         --page-shell-min-inline: min(78rem, 100%);
         --page-rail-inline: 13rem;
-        --page-shell-gap-inline: 1.75rem;
+        --page-shell-gap-inline: .5rem;
+        --page-rail-padding-inline-end: 1rem;
         --page-shell-rail-divider: color-mix(in srgb, var(--focus) 24%, transparent);
     }
 
@@ -24,8 +25,7 @@
         flex-direction: column;
         align-items: stretch;
         row-gap: 0.85rem;
-        padding-inline-end: var(--page-shell-gap-inline);
-        border-inline-end: 1px solid var(--page-shell-rail-divider);
+        padding-inline-end: var(--page-rail-padding-inline-end);
     }
 
     .page-shell.page-shell--has-rail .page-stage {
@@ -58,16 +58,14 @@
         grid-column: 1;
         grid-row: 2;
         min-width: 0;
-        padding-inline-end: var(--page-shell-gap-inline);
+        padding-inline-end: var(--page-rail-padding-inline-end);
         padding-block-start: 1.25rem;
-        border-inline-end: 1px solid var(--page-shell-rail-divider);
         align-self: start;
     }
 
     .page-shell.page-shell--has-rail .slot-footer-rail {
         min-width: 0;
         padding-block-start: 0.8rem;
-        border-top: 1px solid var(--page-shell-rail-divider);
     }
 
     .page-shell.page-shell--footer-in-rail .slot-footer-stage {

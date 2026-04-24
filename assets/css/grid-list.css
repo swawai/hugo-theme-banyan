@@ -1,5 +1,4 @@
 .grid-list {
-    /* margin-top: 0.8rem; */
     position: relative;
     display: grid;
     width: max-content;
@@ -12,6 +11,8 @@
     grid-template-columns: 12rem minmax(5rem, max-content) minmax(4rem, max-content);
     justify-content: start;
     column-gap: 0.6rem;
+    row-gap: 0.08rem;
+    line-height: 1.55;
 }
 
 .grid-list > * {
