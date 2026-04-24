@@ -1,5 +1,6 @@
 ﻿---
 title: 付費產品
+linkTitle: 付費
 description: 付費產品列表。
 nav_primary: products
 layout: "article"

@@ -9,16 +9,11 @@ breadcrumb:
   menu_mode: current-root
   menu_label: 產品分類
   lead:
-    text: ALL
     page: /products
     menu_label: 展開產品分類
   menu:
-    - text: ALL
-      page: /products
-    - text: Paid
-      page: /products-paid
-    - text: Free
-      page: /products-free
-    - text: third-party
-      page: /products-third-party
+    - page: /products
+    - page: /products-paid
+    - page: /products-free
+    - page: /products-third-party
 ---

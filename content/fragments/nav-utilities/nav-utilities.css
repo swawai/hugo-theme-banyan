@@ -1,8 +1,6 @@
 .site-nav-utilities .icon-select-wrapper > .icon,
 .site-nav-utilities .site-nav-link-account > .icon {
     display: block;
-    width: 1em;
-    height: 1em;
     flex: none;
     transform-origin: center center;
 }
@@ -10,8 +8,7 @@
 .site-nav-utilities .icon-select-wrapper select.icon-select {
     position: absolute;
     inset: 0;
-    width: 100%;
-    height: 100%;
+
     opacity: 0;
     cursor: pointer;
 }

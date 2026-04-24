@@ -1,6 +1,6 @@
 ﻿---
 title: 所有文章
-linkTitle: ALL
+linkTitle: 全部
 slug: "all"
 nav_primary: signals
 layout: article

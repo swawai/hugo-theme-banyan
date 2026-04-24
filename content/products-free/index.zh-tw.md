@@ -1,5 +1,6 @@
 ﻿---
 title: 免費產品
+linkTitle: 免費
 description: 免費產品列表。
 nav_primary: products
 layout: "article"

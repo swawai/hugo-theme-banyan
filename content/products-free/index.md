@@ -1,5 +1,6 @@
 ﻿---
 title: Free Products
+linkTitle: Free
 description: Free products list.
 nav_primary: products
 layout: "article"

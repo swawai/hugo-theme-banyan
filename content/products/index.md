@@ -1,6 +1,6 @@
 ﻿---
 title: Products
-linkTitle: PRODUCTS
+linkTitle: ALL
 description: Curated products marked with product metadata.
 slug: "products"
 nav_primary: products

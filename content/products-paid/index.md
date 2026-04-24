@@ -1,5 +1,6 @@
 ﻿---
 title: Paid Products
+linkTitle: Paid
 description: Paid products list.
 nav_primary: products
 layout: "article"

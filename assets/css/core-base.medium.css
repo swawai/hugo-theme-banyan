@@ -3,7 +3,7 @@
         --page-shell-min-inline: min(78rem, 100%);
         --page-rail-inline: 13rem;
         --page-shell-gap-inline: .5rem;
-        --page-rail-padding-inline-end: 1rem;
+        --page-rail-padding-inline-end: .5rem;
         --page-shell-rail-divider: color-mix(in srgb, var(--focus) 24%, transparent);
     }
 

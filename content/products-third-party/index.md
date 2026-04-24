@@ -1,5 +1,6 @@
 ﻿---
 title: Third-party Products
+linkTitle: Third-party
 description: Third-party products list.
 nav_primary: products
 layout: "article"
