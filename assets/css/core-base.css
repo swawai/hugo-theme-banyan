@@ -79,17 +79,27 @@ body {
     display: none;
 }
 
-.slot-footer-rail {
-    display: none;
-}
-
-.slot-footer-stage {
+.slot-footer {
     display: flow-root;
 }
 
-/* The narrow-layout footer needs to own its own scroll tail instead of ending right
-   at the root scroll boundary, otherwise some mobile browsers settle one screen too high. */
-.page-shell--footer-in-rail .slot-footer-stage {
+.page-shell--footer-in-rail {
+    display: flex;
+    flex-direction: column;
+}
+
+.page-shell--footer-in-rail .page-rail {
+    display: contents;
+}
+
+.page-shell--footer-in-rail > .page-stage {
+    order: 1;
+}
+
+/* The narrow-layout footer needs to stay after stage flow and own its scroll tail,
+   otherwise some mobile browsers settle one screen too high on short pages. */
+.page-shell--footer-in-rail .page-rail > .slot-footer {
+    order: 2;
     padding-block-end: var(--page-footer-tail-space);
 }
 

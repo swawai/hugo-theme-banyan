@@ -54,7 +54,7 @@
         min-width: 0;
     }
 
-    .page-shell.page-shell--has-rail .slot-footer-stage {
+    .page-shell.page-shell--has-rail > .slot-footer {
         grid-column: 1;
         grid-row: 2;
         min-width: 0;
@@ -63,16 +63,9 @@
         align-self: start;
     }
 
-    .page-shell.page-shell--has-rail .slot-footer-rail {
+    .page-shell.page-shell--footer-in-rail .page-rail > .slot-footer {
         min-width: 0;
         padding-block-start: 0.8rem;
-    }
-
-    .page-shell.page-shell--footer-in-rail .slot-footer-stage {
-        display: none;
-    }
-
-    .page-shell.page-shell--footer-in-rail .slot-footer-rail {
-        display: block;
+        padding-block-end: 0;
     }
 }
