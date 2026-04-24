@@ -1,7 +1,7 @@
 @media (min-width: 64rem) {
     :root {
         --page-shell-min-inline: min(78rem, 100%);
-        --page-rail-inline: 13rem;
+        --page-rail-inline: 10rem;
         --page-shell-gap-inline: .5rem;
         --page-rail-padding-inline-end: .5rem;
         --page-shell-rail-divider: color-mix(in srgb, var(--focus) 24%, transparent);
@@ -9,7 +9,7 @@
 
     .page-shell.page-shell--has-rail {
         display: grid;
-        grid-template-columns: minmax(12rem, var(--page-rail-inline)) minmax(0, 1fr);
+        grid-template-columns: minmax(8rem, var(--page-rail-inline)) minmax(0, 1fr);
         column-gap: var(--page-shell-gap-inline);
         align-items: start;
     }

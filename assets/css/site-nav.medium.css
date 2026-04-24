@@ -17,8 +17,8 @@
     .page-shell.page-shell--has-rail .page-topbar .site-nav-primary {
         flex-direction: column;
         align-items: flex-start;
-        row-gap: 1.2rem;
-        font-size: 2rem;
+        row-gap: 1.1rem;
+        font-size: 1rem;
     }
 
     .page-shell.page-shell--has-rail .page-topbar .site-nav-primary > a {

@@ -2,7 +2,7 @@
     display: flex;
     flex-wrap: nowrap;
     align-items: flex-end;
-    column-gap: 0.8rem;
+    column-gap: .8rem;
     white-space: nowrap;
     margin-bottom: 22px;
     line-height: 1;
@@ -10,9 +10,7 @@
     font-weight: bold;
 }
 
-.site-nav-primary {
-    font-size: 1.08rem;
-}
+
 
 .site-nav > * {
     flex-shrink: 0;

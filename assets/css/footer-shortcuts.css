@@ -1,13 +1,13 @@
 .footer-shortcuts {
-    margin: 22px 4px 0;
+    margin: 12px 0;
     color: var(--link-visited);
-    font-size: 11px;
+    font-size: 12px;
 }
 
 .footer-shortcuts p {
     display: flex;
     align-items: center;
-    gap: .4rem;
+    gap: 4px;
     margin: 0 0 4px;
 }
 
@@ -36,5 +36,4 @@
 .footer-shortcuts p > a:first-child svg {
     width: 1em;
     height: 1em;
-    vertical-align: -3px;
 }
