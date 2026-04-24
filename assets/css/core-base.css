@@ -14,6 +14,9 @@
     --page-edge-block-end: 6rem;
     --page-shell-min-inline: min(88ch, 100%);
     --page-shell-min-block: calc(100vh - var(--page-edge-block-start));
+    /* Keep a safety tail after the visible footer so mobile bounce / toolbar reflow
+       does not clamp the last block out of view on short pages. */
+    --page-footer-tail-space: clamp(12rem, 32vh, 18rem);
     /* --text-secondary:#5F5F5F;
     --bg-surface:#FAFAFA; F9F9F9 F1F1F1 #E3E3E3 #D7D7D7 #868686 1D1D1D 7727272 */
 }
@@ -80,11 +83,27 @@ body {
     display: none;
 }
 
+.slot-footer-stage {
+    display: flow-root;
+}
+
+/* The narrow-layout footer needs to own its own scroll tail instead of ending right
+   at the root scroll boundary, otherwise some mobile browsers settle one screen too high. */
+.page-shell--footer-in-rail .slot-footer-stage {
+    padding-block-end: var(--page-footer-tail-space);
+}
+
 .page-topbar {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
     gap: 0.8rem;
+}
+
+@supports (height: 100svh) {
+    :root {
+        --page-footer-tail-space: clamp(12rem, 32svh, 18rem);
+    }
 }
 
 

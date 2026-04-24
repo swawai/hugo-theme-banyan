@@ -316,11 +316,22 @@
                 {{ partial "slots/render.html" (dict "ctx" $ "slot" "meta") }}
             </div>
             {{ end }}
-            </div>
+            {{/* On narrow layouts the visible footer must stay inside stage flow.
+                 Desktop still shows slot-footer-rail via CSS and hides this stage copy. */}}
+            {{ if $footerInRail }}
             {{ with index $slotSources "footer" }}
             <div class="slot slot-footer slot-footer-stage" data-slot="footer">
                 {{ partial "slots/render.html" (dict "ctx" $ "slot" "footer") }}
             </div>
+            {{ end }}
+            {{ end }}
+            </div>
+            {{ if not $footerInRail }}
+            {{ with index $slotSources "footer" }}
+            <div class="slot slot-footer slot-footer-stage" data-slot="footer">
+                {{ partial "slots/render.html" (dict "ctx" $ "slot" "footer") }}
+            </div>
+            {{ end }}
             {{ end }}
         </div>
     </div>
