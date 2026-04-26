@@ -1,0 +1,5 @@
+@media (min-width: 64rem) {
+    .page-shell.page-shell--has-rail .slot-main > .article > .prose > p:first-child {
+        margin-block-start: -0.325em;
+    }
+}

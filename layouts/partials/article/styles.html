@@ -1,6 +1,7 @@
 {{ $articleBase := resources.Get "css/article-base.css" }}
 {{ $articleMeta := resources.Get "css/article-meta.css" }}
 {{ $articleProse := resources.Get "css/article-prose.css" }}
+{{ $articleProseMedium := resources.Get "css/article-prose.medium.css" }}
 {{ $articleInline := resources.Get "css/article-inline.css" }}
 {{ $articleCode := resources.Get "css/article-code.css" }}
 {{ $articleList := resources.Get "css/article-list.css" }}
@@ -22,6 +23,7 @@
 {{ $articleCoreParts := slice $articleBase }}
 {{ if $withMeta }}{{ $articleCoreParts = $articleCoreParts | append $articleMeta }}{{ end }}
 {{ $articleCoreParts = $articleCoreParts | append $articleProse }}
+{{ $articleCoreParts = $articleCoreParts | append $articleProseMedium }}
 {{ $articleCoreParts = $articleCoreParts | append $articleInline }}
 {{ $articleCoreTarget := printf "css/article-core.%s.css" (cond $withMeta "with-meta" "no-meta") }}
 {{ $articleCore := $articleCoreParts | resources.Concat $articleCoreTarget }}

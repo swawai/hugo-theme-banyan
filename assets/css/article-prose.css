@@ -31,7 +31,11 @@
     text-align: left;
 }
 
-.prose h4,
+.prose h4 {
+    margin: 16px 0 2px;
+    text-align: left;
+}
+
 .prose h5,
 .prose h6 {
     margin: 16px 0 4px;

@@ -6,7 +6,6 @@
         flex-wrap: wrap;
         align-items: center;
         gap: 0;
-        padding-block-start: 2px;
     }
 
     .page-shell.page-shell--has-rail .slot-breadcrumb-root-stage {

@@ -124,6 +124,9 @@ body {
 a {
     color: var(--link);
     text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.08rem;
+    text-decoration-skip-ink: auto;
     transition: color 0.3s;
 }
 a:hover {
