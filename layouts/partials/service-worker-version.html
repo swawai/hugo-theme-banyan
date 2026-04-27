@@ -1,2 +1,0 @@
-{{- $swConfig := site.Params.service_worker | default dict -}}
-{{- printf "%v" (index $swConfig "version" | default (now.Format "20060102150405")) -}}
