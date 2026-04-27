@@ -17,7 +17,7 @@
       {{- if eq $seg "" -}}{{- continue -}}{{- end -}}
       {{- $path = $path | append $seg -}}
       {{- $items = $items | append (dict
-        "text" (partial "taxonomy/value-label.html" (dict "spec" $spec "value" $seg))
+        "text" (partial "taxonomy/value-label.html" (dict "spec" $spec "value" (delimit $path $separator) "fallback" $seg))
         "href" (partial "taxonomy/url.html" (dict "ctx" $ctx "spec" $spec "value" (delimit $path $separator)))
         "current" (eq $i $lastIndex)
       ) -}}

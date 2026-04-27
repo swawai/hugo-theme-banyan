@@ -1,9 +1,15 @@
 {{- $page := .page | default .ctx -}}
 {{- $plural := printf "%v" (or .plural (index (.spec | default dict) "plural")) -}}
+{{- $spec := .spec | default dict -}}
 {{- $values := index $page.Params $plural -}}
 {{- if not $values -}}
   {{- $values = slice -}}
 {{- else if not (reflect.IsSlice $values) -}}
   {{- $values = slice $values -}}
+{{- end -}}
+{{- if eq (printf "%v" (index $spec "require_term_bundles" | default false)) "true" -}}
+  {{- range $value := $values -}}
+    {{- partial "taxonomy/term-bundle-assert.html" (dict "page" $page "spec" $spec "plural" $plural "value" $value) -}}
+  {{- end -}}
 {{- end -}}
 {{- return $values -}}

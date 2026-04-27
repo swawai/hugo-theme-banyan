@@ -1,0 +1,61 @@
+{{- $page := .page | default .ctx -}}
+{{- $spec := .spec | default dict -}}
+{{- $plural := printf "%v" (or .plural (index $spec "plural")) -}}
+{{- $value := trim (printf "%v" (.value | default "")) " \r\n\t" -}}
+{{- if and (ne $plural "") (ne $value "") -}}
+  {{- $pagePath := "" -}}
+  {{- with $page.File -}}
+    {{- $pagePath = .Path -}}
+  {{- else -}}
+    {{- $pagePath = $page.RelPermalink | default $page.Title | default "(unknown page)" -}}
+  {{- end -}}
+  {{- $lang := $page.Site.Language.Lang | default "default" -}}
+  {{- $defaultLang := "" -}}
+  {{- with index $page.Site.Sites 0 -}}
+    {{- $defaultLang = .Language.Lang | default "" -}}
+  {{- end -}}
+  {{- $unassignedTerm := printf "%v" (index $spec "unassigned_term" | default "") -}}
+  {{- if not (and (ne $unassignedTerm "") (eq (partial "taxonomy/normalize.html" (dict "spec" $spec "value" $value)) (partial "taxonomy/normalize.html" (dict "spec" $spec "value" $unassignedTerm)))) -}}
+    {{- $targets := slice $value -}}
+    {{- if eq (printf "%v" (index $spec "mode")) "tree" -}}
+      {{- $separator := printf "%v" (index $spec "separator" | default "/") -}}
+      {{- $segments := split $value $separator -}}
+      {{- $path := slice -}}
+      {{- $targets = slice -}}
+      {{- range $seg := $segments -}}
+        {{- if eq $seg "" -}}{{- continue -}}{{- end -}}
+        {{- $path = $path | append $seg -}}
+        {{- $targets = $targets | append (delimit $path $separator) -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $seen := dict -}}
+    {{- range $target := $targets -}}
+      {{- $targetText := trim (printf "%v" $target) " \r\n\t" -}}
+      {{- if eq $targetText "" -}}{{- continue -}}{{- end -}}
+      {{- $norm := partial "taxonomy/normalize.html" (dict "spec" $spec "value" $targetText) -}}
+      {{- if isset $seen $norm -}}{{- continue -}}{{- end -}}
+      {{- $seen = merge $seen (dict $norm true) -}}
+      {{- $termPage := partialCached "taxonomy/term-page-get.html" (dict "spec" $spec "plural" $plural "value" $targetText) $lang (lower $plural) $norm -}}
+      {{- $expected := printf "content/%s/%s/_index.%s.md" $plural $targetText $lang -}}
+      {{- $expectedHint := $expected -}}
+      {{- if eq $lang $defaultLang -}}
+        {{- $expectedHint = printf "%s（默认语言也可写为 content/%s/%s/_index.md）" $expected $plural $targetText -}}
+      {{- end -}}
+      {{- if eq $termPage "" -}}
+        {{- errorf "编译失败: %s 使用了 taxonomy %q 的 term %q，但没有建立对应 term bundle。请先创建 %s。" $pagePath $plural $targetText $expectedHint -}}
+      {{- end -}}
+      {{- $hasFile := false -}}
+      {{- with $termPage.File -}}
+        {{- $hasFile = true -}}
+      {{- end -}}
+      {{- if not $hasFile -}}
+        {{- errorf "编译失败: %s 使用了 taxonomy %q 的 term %q，但当前语言 %q 没有显式 term bundle。请先创建 %s，不要依赖自动生成页。" $pagePath $plural $targetText $lang $expectedHint -}}
+      {{- end -}}
+      {{- $title := trim (printf "%v" ($termPage.LinkTitle | default $termPage.Title | default "")) " \r\n\t" -}}
+      {{- if eq $title "" -}}
+        {{- $bundlePath := $termPage.File.Path | default $expected -}}
+        {{- errorf "编译失败: %s 使用了 taxonomy %q 的 term %q，但 %s 缺少非空 title。" $pagePath $plural $targetText $bundlePath -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

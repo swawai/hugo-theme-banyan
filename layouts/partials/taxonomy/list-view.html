@@ -2,40 +2,6 @@
 {{ $items := .items }}
 {{ $sortField := "latestKey" }}
 {{ $sortOrder := "desc" }}
-{{ $nameLabel := i18n "list_col_name" }}
-{{ $dateLabel := i18n "list_col_date" }}
-{{ $countLabel := i18n "list_col_count" }}
-
-{{ partial "grid-sort-cell.html" (dict
-  "class" "cell-title"
-  "ctx" $ctx
-  "field" "name"
-  "label" $nameLabel
-  "defaultOrder" "asc"
-  "currentField" "date"
-  "currentOrder" "desc"
-  "titleAsc" (i18n "list_sort_name_asc")
-  "titleDesc" (i18n "list_sort_name_desc")) }}
-{{ partial "grid-sort-cell.html" (dict
-  "class" "cell-date"
-  "ctx" $ctx
-  "field" "date"
-  "label" $dateLabel
-  "defaultOrder" "desc"
-  "currentField" "date"
-  "currentOrder" "desc"
-  "titleAsc" (i18n "list_sort_date_asc")
-  "titleDesc" (i18n "list_sort_date_desc")) }}
-{{ partial "grid-sort-cell.html" (dict
-  "class" "cell-count"
-  "ctx" $ctx
-  "field" "count"
-  "label" $countLabel
-  "defaultOrder" "desc"
-  "currentField" "date"
-  "currentOrder" "desc"
-  "titleAsc" (i18n "list_sort_count_asc")
-  "titleDesc" (i18n "list_sort_count_desc")) }}
 
 {{ $cats := sort (where $items "kind" "==" "cat") $sortField $sortOrder }}
 {{ $pages := sort (where $items "kind" "==" "page") $sortField $sortOrder }}
@@ -43,33 +9,30 @@
 {{ range $pages }}{{ $ordered = $ordered | append . }}{{ end }}
 {{ range $cats }}{{ $ordered = $ordered | append . }}{{ end }}
 
+{{ $renderItems := slice }}
 {{ range $ordered }}
   {{ $isCat := eq .kind "cat" }}
-  {{ $icon := cond $isCat "folder" "file" }}
-  {{ $bytes := .bytes }}
-  {{ partial "grid-title-cell.html" (dict
-    "ctx" $ctx
+  {{ $countText := cond (ne .cnt "") .cnt "." }}
+  {{ $countUnit := "" }}
+  {{ if not $isCat }}
+    {{ $countText = div (add .bytes 1023) 1024 }}
+    {{ $countUnit = "&thinsp;KB" }}
+  {{ end }}
+  {{ $renderItems = $renderItems | append (dict
     "href" .url
-    "title" (or .display .title)
-    "icon" $icon
+    "title" .title
+    "text" (or .display .title)
+    "schemaName" (or .display .title)
+    "icon" (cond $isCat "folder" "file")
     "prefetchKind" (cond $isCat "desc" "post")
+    "dateText" (cond (ne .latest "") .latest ".")
+    "countText" $countText
+    "countUnit" $countUnit
     "dataAttrs" (dict
       "sort-group" (cond $isCat "0" "1")
       "sort-name" (or .display .title)
       "sort-date" (.latestKey | default "")
       "sort-count" (printf "%v" .cnt))) }}
-  <span class="cell-date">{{ cond (ne .latest "") .latest "." }}</span>
-  {{ if $isCat }}
-    <span class="cell-count"><span>{{ cond (ne .cnt "") .cnt "." }}</span><span class="unit"></span></span>
-  {{ else }}
-    {{ $kb := div (add $bytes 1023) 1024 }}
-    <span class="cell-count"><span>{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>
-  {{ end }}
 {{ end }}
 
-{{- $entries := slice -}}
-{{- range $ordered -}}
-  {{- $name := or .display .title -}}
-  {{- $entries = $entries | append (dict "url" .url "name" $name) -}}
-{{- end -}}
-{{ partial "schema-itemlist.html" (dict "entries" $entries) }}
+{{ partial "list/grid-render.html" (dict "ctx" $ctx "items" $renderItems) }}

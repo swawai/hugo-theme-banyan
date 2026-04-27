@@ -1,43 +1,9 @@
 {{ $ctx := .ctx }}
 {{ if ne $ctx.Kind "section" }}{{ errorf "编译失败: list-section-common.html 仅支持 kind=section，当前页面 %q 的 kind=%q。" $ctx.RelPermalink $ctx.Kind }}{{ end }}
-{{ $nameLabel := i18n "list_col_name" }}
-{{ $dateLabel := i18n "list_col_date" }}
-{{ $countLabel := i18n "list_col_count" }}
 {{ $sortField := "dateKey" }}
 {{ $sortOrder := "desc" }}
 
 <div class="grid-list" data-sortable="true" data-sort-variant="section" data-sort-columns="3" data-sort-default="date-desc">
-  {{ partial "grid-sort-cell.html" (dict
-    "class" "cell-title"
-    "ctx" $ctx
-    "field" "name"
-    "label" $nameLabel
-    "defaultOrder" "asc"
-    "currentField" "date"
-    "currentOrder" "desc"
-    "titleAsc" (i18n "list_sort_name_asc")
-    "titleDesc" (i18n "list_sort_name_desc")) }}
-  {{ partial "grid-sort-cell.html" (dict
-    "class" "cell-date"
-    "ctx" $ctx
-    "field" "date"
-    "label" $dateLabel
-    "defaultOrder" "desc"
-    "currentField" "date"
-    "currentOrder" "desc"
-    "titleAsc" (i18n "list_sort_date_asc")
-    "titleDesc" (i18n "list_sort_date_desc")) }}
-  {{ partial "grid-sort-cell.html" (dict
-    "class" "cell-count"
-    "ctx" $ctx
-    "field" "count"
-    "label" $countLabel
-    "defaultOrder" "desc"
-    "currentField" "date"
-    "currentOrder" "desc"
-    "titleAsc" (i18n "list_sort_count_asc")
-    "titleDesc" (i18n "list_sort_count_desc")) }}
-
   {{ $sectionEntriesRaw := slice }}
   {{ range $ctx.Sections }}
     {{ $section := . }}
@@ -92,25 +58,23 @@
   {{ range $pageEntries }}{{ $ordered = $ordered | append . }}{{ end }}
   {{ range $sectionEntries }}{{ $ordered = $ordered | append . }}{{ end }}
 
+  {{ $items := slice }}
   {{ range $ordered }}
-    {{ partial "grid-title-cell.html" (dict
-      "ctx" $ctx
+    {{ $items = $items | append (dict
       "href" .href
       "title" .title
       "icon" .icon
       "prefetchKind" .prefetchKind
+      "dateText" .dateText
+      "countText" .countText
+      "countUnit" .countUnit
+      "schemaName" .title
       "dataAttrs" (dict
         "sort-group" (cond (eq .kind "section") "0" "1")
         "sort-name" .title
         "sort-date" .dateKey
         "sort-count" (printf "%v" .cnt))) }}
-    <span class="cell-date">{{ .dateText }}</span>
-    <span class="cell-count"><span>{{ .countText }}</span><span class="unit">{{ .countUnit | safeHTML }}</span></span>
   {{ end }}
-</div>
 
-{{- $entries := slice -}}
-{{- range $ordered -}}
-  {{- $entries = $entries | append (dict "url" .href "name" .title) -}}
-{{- end -}}
-{{ partial "schema-itemlist.html" (dict "entries" $entries) }}
+  {{ partial "list/grid-render.html" (dict "ctx" $ctx "items" $items) }}
+</div>

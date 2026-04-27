@@ -54,7 +54,7 @@
       {{- $items = $items | append (dict
           "kind" "cat"
           "title" .
-          "display" (partial "taxonomy/value-label.html" (dict "spec" $spec "value" .))
+          "display" (partial "taxonomy/value-label.html" (dict "spec" $spec "value" $full "fallback" .))
           "latest" (index $agg "latest")
           "latestKey" (index $agg "latestKey")
           "cnt" (index $agg "cnt")
@@ -106,7 +106,7 @@
     {{- $items = $items | append (dict
         "kind" "cat"
         "title" $root
-        "display" (partial "taxonomy/value-label.html" (dict "spec" $spec "value" $root))
+        "display" (partial "taxonomy/value-label.html" (dict "spec" $spec "value" $root "fallback" $root))
         "latest" (index $agg "latest")
         "latestKey" (index $agg "latestKey")
         "cnt" (index $agg "cnt")

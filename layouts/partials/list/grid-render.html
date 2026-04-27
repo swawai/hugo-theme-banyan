@@ -1,0 +1,56 @@
+{{ $ctx := .ctx }}
+{{ $items := .items | default slice }}
+{{ $nameLabel := i18n "list_col_name" }}
+{{ $dateLabel := i18n "list_col_date" }}
+{{ $countLabel := i18n "list_col_count" }}
+
+{{ partial "grid-sort-cell.html" (dict
+  "class" "cell-title"
+  "ctx" $ctx
+  "field" "name"
+  "label" $nameLabel
+  "defaultOrder" "asc"
+  "currentField" "date"
+  "currentOrder" "desc"
+  "titleAsc" (i18n "list_sort_name_asc")
+  "titleDesc" (i18n "list_sort_name_desc")) }}
+{{ partial "grid-sort-cell.html" (dict
+  "class" "cell-date"
+  "ctx" $ctx
+  "field" "date"
+  "label" $dateLabel
+  "defaultOrder" "desc"
+  "currentField" "date"
+  "currentOrder" "desc"
+  "titleAsc" (i18n "list_sort_date_asc")
+  "titleDesc" (i18n "list_sort_date_desc")) }}
+{{ partial "grid-sort-cell.html" (dict
+  "class" "cell-count"
+  "ctx" $ctx
+  "field" "count"
+  "label" $countLabel
+  "defaultOrder" "desc"
+  "currentField" "date"
+  "currentOrder" "desc"
+  "titleAsc" (i18n "list_sort_count_asc")
+  "titleDesc" (i18n "list_sort_count_desc")) }}
+
+{{ range $items }}
+  {{ partial "grid-title-cell.html" (dict
+    "ctx" $ctx
+    "href" .href
+    "title" .title
+    "text" (.text | default .title)
+    "icon" (.icon | default "file")
+    "prefetchKind" (.prefetchKind | default "")
+    "dataAttrs" (.dataAttrs | default dict)) }}
+  <span class="cell-date">{{ .dateText | default "." }}</span>
+  <span class="cell-count"><span>{{ .countText | default "." }}</span><span class="unit">{{ (.countUnit | default "") | safeHTML }}</span></span>
+{{ end }}
+
+{{- $entries := slice -}}
+{{- range $items -}}
+  {{- $name := or .schemaName .text .title -}}
+  {{- $entries = $entries | append (dict "url" .href "name" $name) -}}
+{{- end -}}
+{{ partial "schema-itemlist.html" (dict "entries" $entries) }}

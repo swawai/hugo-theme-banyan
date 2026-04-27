@@ -1,10 +1,32 @@
 {{- $spec := .spec | default dict -}}
 {{- $value := printf "%v" (.value | default "") -}}
-{{- $label := $value -}}
+{{- $separator := printf "%v" (index $spec "separator" | default "/") -}}
+{{- $fallback := printf "%v" (.fallback | default "") -}}
+{{- if eq $fallback "" -}}
+  {{- $fallback = $value -}}
+  {{- if and (ne $separator "") (in $value $separator) -}}
+    {{- $parts := split $value $separator -}}
+    {{- $fallback = index $parts (sub (len $parts) 1) -}}
+  {{- end -}}
+{{- end -}}
+{{- $label := $fallback -}}
 {{- $unassignedTerm := printf "%v" (index $spec "unassigned_term" | default "") -}}
 {{- if and (ne $unassignedTerm "") (eq (partial "taxonomy/normalize.html" (dict "spec" $spec "value" $value)) (partial "taxonomy/normalize.html" (dict "spec" $spec "value" $unassignedTerm))) -}}
   {{- with index $spec "unassigned_label" -}}
     {{- $label = printf "%v" . -}}
+  {{- end -}}
+{{- else -}}
+  {{- $plural := printf "%v" (index $spec "plural" | default "") -}}
+  {{- if and (ne $plural "") (ne $value "") -}}
+    {{- $lang := site.Language.Lang | default "default" -}}
+    {{- $norm := partial "taxonomy/normalize.html" (dict "spec" $spec "value" $value) -}}
+    {{- $page := partialCached "taxonomy/term-page-get.html" (dict "spec" $spec "plural" $plural "value" $value) $lang (lower $plural) $norm -}}
+    {{- with $page -}}
+      {{- $title := trim (.LinkTitle | default .Title) " " -}}
+      {{- if ne $title "" -}}
+        {{- $label = $title -}}
+      {{- end -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 {{- return $label -}}

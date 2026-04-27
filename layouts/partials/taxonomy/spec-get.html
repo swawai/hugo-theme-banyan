@@ -25,6 +25,7 @@
 {{- $spec := dict
     "plural" $plural
     "separator" "/"
+    "require_term_bundles" true
     "term_rel" ""
     "unassigned_term" ""
     "unassigned_label" ""
@@ -49,5 +50,6 @@
     "mode" $mode
     "normalize" $normalize
     "article_mode" $articleMode
+    "require_term_bundles" (eq (lower (printf "%v" (index $spec "require_term_bundles"))) "true")
 ) -}}
 {{- return $spec -}}
