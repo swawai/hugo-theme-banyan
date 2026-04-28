@@ -1,0 +1,36 @@
+{{- $ctx := .ctx -}}
+{{- $source := .source | default dict -}}
+{{- $pageRef := trim (printf "%v" (index $source "page" | default "")) " " -}}
+{{- $result := slice -}}
+{{- if ne $pageRef "" -}}
+  {{- $page := $ctx.Site.GetPage $pageRef -}}
+  {{- if not $page -}}
+    {{- errorf "编译失败: breadcrumb/menu-source-section-children.html 的 page=%q 找不到对应页面。" $pageRef -}}
+  {{- end -}}
+  {{- if ne $page.Kind "section" -}}
+    {{- errorf "编译失败: breadcrumb/menu-source-section-children.html 要求 page=%q 必须是 section，当前 kind=%q。" $pageRef $page.Kind -}}
+  {{- end -}}
+  {{- $includeSelf := eq (lower (printf "%v" (index $source "include_self" | default "false"))) "true" -}}
+  {{- if $includeSelf -}}
+    {{- $result = $result | append (dict
+      "text" ($page.LinkTitle | default $page.Title)
+      "href" $page.RelPermalink
+    ) -}}
+  {{- end -}}
+  {{- $children := slice -}}
+  {{- range $child := $page.Sections -}}
+    {{- $children = $children | append (dict
+      "text" ($child.LinkTitle | default $child.Title)
+      "href" $child.RelPermalink
+      "weight" $child.Weight
+    ) -}}
+  {{- end -}}
+  {{- $sortedChildren := sort (sort $children "text" "asc") "weight" "asc" -}}
+  {{- range $item := $sortedChildren -}}
+    {{- $result = $result | append (dict
+      "text" (index $item "text")
+      "href" (index $item "href")
+    ) -}}
+  {{- end -}}
+{{- end -}}
+{{- return $result -}}

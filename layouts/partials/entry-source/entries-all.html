@@ -1,0 +1,23 @@
+{{- $ctx := .ctx -}}
+{{- if not $ctx -}}
+  {{- errorf "编译失败: entry-source/entries-all.html 缺少 ctx。" -}}
+{{- end -}}
+{{- $pagesToShow := $ctx.RegularPagesRecursive -}}
+{{- if eq $ctx.Kind "home" -}}
+  {{- $pagesToShow = $ctx.Site.RegularPages -}}
+{{- end -}}
+{{- $sortedPages := sort $pagesToShow "Date" "desc" -}}
+{{- $items := slice -}}
+{{- range $sortedPages -}}
+  {{- $bytes := len .RawContent -}}
+  {{- $items = $items | append (dict
+    "entry_key" (partial "entry-source/page-entry-key.html" (dict "ctx" .))
+    "href" .RelPermalink
+    "title" .Title
+    "date_text" (.Date.Format "2006-01-02")
+    "date_key" (.Date.Format "20060102150405")
+    "bytes" $bytes
+    "path_value" (path.Clean .File.Dir)
+  ) -}}
+{{- end -}}
+{{- return $items -}}

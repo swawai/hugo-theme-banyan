@@ -1,0 +1,15 @@
+{{- $page := .page -}}
+{{- if not $page -}}
+  {{- errorf "编译失败: entry-source/model-page.html 缺少 page。" -}}
+{{- end -}}
+{{- $meta := index $page.Params "banyan_entry_source" | default dict -}}
+{{- $provider := lower (trim (printf "%v" (index $meta "provider" | default "")) " ") -}}
+{{- $model := dict -}}
+{{- if ne $provider "" -}}
+  {{- $model = partial "entry-source/source-page-model.html" (dict
+    "page" $page
+    "provider" $provider
+    "logical_path" $page.RelPermalink
+  ) -}}
+{{- end -}}
+{{- return $model -}}

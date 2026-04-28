@@ -1,0 +1,26 @@
+{{- $page := .page -}}
+{{- if not $page -}}
+  {{- errorf "编译失败: products/source-scope.html 缺少 page。" -}}
+{{- end -}}
+{{- $root := $page.Site.GetPage "/products" -}}
+{{- if not $root -}}
+  {{- errorf "编译失败: 页面 %q 的 products source scope 找不到 /products 根页面。" ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+{{- end -}}
+{{- $scope := "" -}}
+{{- if eq $page.RelPermalink $root.RelPermalink -}}
+  {{- $scope = "first-party" -}}
+{{- else -}}
+  {{- $parent := $page.Parent -}}
+  {{- if not $parent -}}
+    {{- errorf "编译失败: 页面 %q 不是 /products/ 树中的合法 products source page。" ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+  {{- end -}}
+  {{- if ne $parent.RelPermalink $root.RelPermalink -}}
+    {{- errorf "编译失败: 页面 %q 当前只支持 /products/ 的直接子节点作为 products source page。" ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+  {{- end -}}
+  {{- $trimmedPath := replaceRE "/+$" "" $page.RelPermalink -}}
+  {{- $scope = lower (path.Base $trimmedPath) -}}
+  {{- if not (in (slice "paid" "free" "third-party") $scope) -}}
+    {{- errorf "编译失败: 页面 %q 的 products source scope=%q 不受支持。" ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) $scope -}}
+  {{- end -}}
+{{- end -}}
+{{- return $scope -}}

@@ -69,13 +69,16 @@
     ) }}
 {{ end }}
 {{ $slotSources := partial "slots/prepare.html" (dict "ctx" .) }}
-{{ $entryTaxonomyRoots := dict }}
-{{ range $spec := partial "taxonomy/enabled.html" (dict "ctx" .) }}
-    {{ $plural := printf "%v" (index $spec "plural") }}
-    {{ $entryTaxonomyRoots = merge $entryTaxonomyRoots (dict $plural (dict
-        "label" (partial "taxonomy/label.html" (dict "ctx" $ "spec" $spec))
-        "href" (partial "taxonomy/url.html" (dict "ctx" $ "spec" $spec))
-    )) }}
+{{ $entryBreadcrumbSourceModels := partial "entry-source/models.html" (dict "ctx" .) }}
+{{ $entryBreadcrumbSources := slice }}
+{{ range $source := $entryBreadcrumbSourceModels }}
+    {{ $entryBreadcrumbSources = $entryBreadcrumbSources | append (dict
+        "logical_path" (index $source "logical_path")
+        "root_item" (index $source "root_item")
+        "root_menu" (index $source "root_menu")
+        "root_menu_label" (index $source "root_menu_label")
+        "tail_items" (index $source "tail_items")
+    ) }}
 {{ end }}
 {{ partialCached "entry-fragments-publish.html" (dict "ctx" . "build_version" $buildVersion) $buildVersion }}
 {{ if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) }}
@@ -236,7 +239,7 @@
         {{ end }}
     {{ end }}
 </head>
-<body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-fragment-root="{{ printf "/__fragments/%s/%s/" $buildVersion .Site.Language.Lang }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-taxonomy-roots="{{ $entryTaxonomyRoots | jsonify }}">
+<body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-fragment-root="{{ printf "/__fragments/%s/%s/" $buildVersion .Site.Language.Lang }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $entryBreadcrumbSources | jsonify }}">
     {{ if and .IsPage (not .Params.slug) }}
         {{ errorf "编译失败: 页面 %q (标题: %q) 未配置 slug 字段。" .File.Path .Title }}
     {{ end }}

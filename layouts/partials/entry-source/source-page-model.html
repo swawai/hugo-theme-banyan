@@ -1,0 +1,63 @@
+{{- $page := .page -}}
+{{- $logicalPath := printf "%v" (.logical_path | default "") -}}
+{{- $provider := printf "%v" (.provider | default "") -}}
+{{- if not $page -}}
+  {{- errorf "编译失败: entry-source/source-page-model.html 缺少 page。" -}}
+{{- end -}}
+{{- if eq $logicalPath "" -}}
+  {{- errorf "编译失败: 页面 %q 的 entry source 缺少 logical_path。" ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+{{- end -}}
+{{- partial "slots/prepare.html" (dict "ctx" $page) -}}
+{{- $rootModel := partial "breadcrumb/model.html" (dict "ctx" $page "slot" "breadcrumb_root") -}}
+{{- $rootItems := index $rootModel "items" | default slice -}}
+{{- if eq (len $rootItems) 0 -}}
+  {{- errorf "编译失败: 页面 %q 的 entry source 缺少 breadcrumb_root model items。" ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+{{- end -}}
+{{- $rootRaw := index $rootItems 0 -}}
+{{- $rootText := trim (printf "%v" (index $rootRaw "text")) " " -}}
+{{- $rootHref := trim (printf "%v" (index $rootRaw "href")) " " -}}
+{{- if or (eq $rootText "") (eq $rootHref "") -}}
+  {{- errorf "编译失败: 页面 %q 的 entry source root item 缺少 text/href。" ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+{{- end -}}
+{{- $rootItem := dict
+  "text" $rootText
+  "href" $rootHref
+-}}
+{{- with index $rootRaw "title" }}{{ $rootItem = merge $rootItem (dict "title" (printf "%v" .)) }}{{ end -}}
+{{- $rootMenuItems := slice -}}
+{{- range $menuItem := (index $rootRaw "menu" | default slice) -}}
+  {{- $text := trim (printf "%v" (index $menuItem "text")) " " -}}
+  {{- $href := trim (printf "%v" (index $menuItem "href")) " " -}}
+  {{- if or (eq $text "") (eq $href "") -}}{{- continue -}}{{- end -}}
+  {{- $item := dict "text" $text "href" $href -}}
+  {{- with index $menuItem "title" }}{{ $item = merge $item (dict "title" (printf "%v" .)) }}{{ end -}}
+  {{- $rootMenuItems = $rootMenuItems | append $item -}}
+{{- end -}}
+{{- if eq (len $rootMenuItems) 0 -}}
+  {{- $rootMenuItems = slice $rootItem -}}
+{{- end -}}
+{{- $rootMenuLabel := trim (printf "%v" (index $rootRaw "menu_button_label" | default "Breadcrumb root")) " " -}}
+{{- $tailModel := partial "breadcrumb/model.html" (dict "ctx" $page "slot" "breadcrumb") -}}
+{{- $tailItems := slice -}}
+{{- range $tailRaw := (index $tailModel "items" | default slice) -}}
+  {{- $text := trim (printf "%v" (index $tailRaw "text")) " " -}}
+  {{- $href := trim (printf "%v" (index $tailRaw "href")) " " -}}
+  {{- if or (eq $text "") (eq $href "") -}}{{- continue -}}{{- end -}}
+  {{- if eq $href $rootHref -}}{{- continue -}}{{- end -}}
+  {{- $item := dict
+    "text" $text
+    "href" $href
+  -}}
+  {{- with index $tailRaw "title" }}{{ $item = merge $item (dict "title" (printf "%v" .)) }}{{ end -}}
+  {{- $tailItems = $tailItems | append $item -}}
+{{- end -}}
+{{- $result := dict
+  "provider" $provider
+  "page" $page
+  "logical_path" $logicalPath
+  "root_item" $rootItem
+  "root_menu" $rootMenuItems
+  "root_menu_label" $rootMenuLabel
+  "tail_items" $tailItems
+ -}}
+{{- return $result -}}

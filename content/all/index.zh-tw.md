@@ -9,6 +9,9 @@ slots:
   utilities: /fragments/nav-utilities
   breadcrumb_root: /fragments/breadcrumb-model-signals
   breadcrumb: true
+banyan_entry_source:
+  provider: all
+  target_section: d
 ---
 
 {{< all-list section="d" >}}

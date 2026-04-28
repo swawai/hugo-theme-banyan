@@ -1,8 +1,8 @@
 ﻿---
-title: 產品
-linkTitle: 全部
-description: 所有標記為產品的內容都會彙整在這裡。
-slug: "products"
+title: 免费产品
+linkTitle: 免费
+description: 免费产品列表。
+weight: 20
 nav_primary: products
 layout: "article"
 slots:
@@ -10,12 +10,8 @@ slots:
   utilities: /fragments/nav-utilities
   breadcrumb_root: /fragments/breadcrumb-model-products
   breadcrumb: true
-products_scope: all
+banyan_entry_source:
+  provider: products
 ---
 
-
-
 {{< products-list >}}
-
-
-

@@ -1,17 +1,20 @@
 ﻿---
-title: 第三方產品
-linkTitle: 第三方
-description: 第三方產品列表。
+title: First-party Products
+linkTitle: First-party
+description: Products built and produced in-house, including both paid and free offerings.
 nav_primary: products
 layout: "article"
-slug: "third-party"
-url: "/zh-tw/products/third-party/"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities
   breadcrumb_root: /fragments/breadcrumb-model-products
   breadcrumb: true
-products_scope: third-party
+banyan_entry_source:
+  provider: products
 ---
 
+
+
 {{< products-list >}}
+
+

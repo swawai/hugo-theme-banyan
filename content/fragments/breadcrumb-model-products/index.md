@@ -11,9 +11,8 @@ breadcrumb:
   lead:
     page: /products
     menu_label: Open product categories
-  menu:
-    - page: /products
-    - page: /products-paid
-    - page: /products-free
-    - page: /products-third-party
+  menu_sources:
+    - source: section-children
+      page: /products
+      include_self: true
 ---

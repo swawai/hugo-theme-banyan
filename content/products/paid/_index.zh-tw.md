@@ -1,17 +1,17 @@
 ﻿---
-title: Third-party Products
-linkTitle: Third-party
-description: Third-party products list.
+title: 付費產品
+linkTitle: 付費
+description: 付費產品列表。
+weight: 10
 nav_primary: products
 layout: "article"
-slug: "third-party"
-url: "/products/third-party/"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities
   breadcrumb_root: /fragments/breadcrumb-model-products
   breadcrumb: true
-products_scope: third-party
+banyan_entry_source:
+  provider: products
 ---
 
 {{< products-list >}}

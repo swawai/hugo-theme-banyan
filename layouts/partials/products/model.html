@@ -1,0 +1,55 @@
+{{- $page := .page -}}
+{{- if not $page -}}
+  {{- errorf "编译失败: products/model.html 缺少 page。" -}}
+{{- end -}}
+{{- $pageRef := $page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink) -}}
+{{- $product := index $page.Params "product" -}}
+{{- if not $product -}}
+  {{- errorf "编译失败: 页面 %q 缺少 product 对象。" $pageRef -}}
+{{- end -}}
+{{- if eq (trim (printf "%v" $product) " ") "true" -}}
+  {{- errorf "编译失败: 页面 %q 的 product 必须为对象格式，不能继续使用旧的 product=true 形式。" $pageRef -}}
+{{- end -}}
+{{- $origin := lower (trim (printf "%v" (index $product "origin" | default "")) " ") -}}
+{{- if not (in (slice "first-party" "third-party") $origin) -}}
+  {{- errorf "编译失败: 页面 %q 的 product.origin=%q 不受支持，当前仅支持 first-party 或 third-party。" $pageRef $origin -}}
+{{- end -}}
+{{- $price := index $product "price" -}}
+{{- if not $price -}}
+  {{- errorf "编译失败: 页面 %q 缺少 product.price 对象。" $pageRef -}}
+{{- end -}}
+{{- $amountRaw := index $price "amount" -}}
+{{- $amountText := trim (printf "%v" $amountRaw) " " -}}
+{{- if eq $amountText "" -}}
+  {{- errorf "编译失败: 页面 %q 缺少 product.price.amount。" $pageRef -}}
+{{- end -}}
+{{- if eq (len (findRE `^[0-9]+(?:\.[0-9]+)?$` $amountText)) 0 -}}
+  {{- errorf "编译失败: 页面 %q 的 product.price.amount=%q 不是合法数字。" $pageRef $amountText -}}
+{{- end -}}
+{{- $currency := upper (trim (printf "%v" (index $price "currency" | default "")) " ") -}}
+{{- if eq $currency "" -}}
+  {{- errorf "编译失败: 页面 %q 缺少 product.price.currency。" $pageRef -}}
+{{- end -}}
+{{- $valueText := trim (printf "%v" (index $product "value" | default "")) " " -}}
+{{- if eq $valueText "" -}}
+  {{- errorf "编译失败: 页面 %q 缺少 product.value。" $pageRef -}}
+{{- end -}}
+{{- $isFree := gt (len (findRE `^0(?:\.0+)?$` $amountText)) 0 -}}
+{{- $scope := "paid" -}}
+{{- if eq $origin "third-party" -}}
+  {{- $scope = "third-party" -}}
+{{- else if $isFree -}}
+  {{- $scope = "free" -}}
+{{- end -}}
+{{- $priceText := printf "%s %s" $currency $amountText -}}
+{{- if $isFree -}}
+  {{- $priceText = i18n "products_free" -}}
+{{- end -}}
+{{- return (dict
+  "origin" $origin
+  "scope" $scope
+  "price_amount_text" $amountText
+  "price_currency" $currency
+  "price_text" $priceText
+  "value_text" $valueText
+) -}}

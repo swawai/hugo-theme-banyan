@@ -1,0 +1,13 @@
+{{- $source := .source -}}
+{{- $page := index $source "page" -}}
+{{- $entries := partial "entry-source/entries-products.html" (dict "host" $page) -}}
+{{- $items := slice -}}
+{{- range $entry := $entries -}}
+  {{- $items = $items | append (dict
+    "key" (printf "%v" (index $entry "entry_key"))
+    "text" (printf "%v" (index $entry "title"))
+    "href" (printf "%v" (index $entry "href"))
+    "type" "p"
+  ) -}}
+{{- end -}}
+{{- return $items -}}

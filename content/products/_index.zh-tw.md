@@ -1,17 +1,21 @@
 ﻿---
-title: 第三方产品
-linkTitle: 第三方
-description: 第三方产品列表。
+title: 自建產品
+linkTitle: 自建
+description: 自建生產的產品都會彙整在這裡，包含付費與免費，不含第三方產品。
 nav_primary: products
 layout: "article"
-slug: "third-party"
-url: "/zh/products/third-party/"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities
   breadcrumb_root: /fragments/breadcrumb-model-products
   breadcrumb: true
-products_scope: third-party
+banyan_entry_source:
+  provider: products
 ---
 
+
+
 {{< products-list >}}
+
+
+

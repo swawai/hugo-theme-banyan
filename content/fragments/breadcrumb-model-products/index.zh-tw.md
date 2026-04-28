@@ -11,9 +11,8 @@ breadcrumb:
   lead:
     page: /products
     menu_label: 展開產品分類
-  menu:
-    - page: /products
-    - page: /products-paid
-    - page: /products-free
-    - page: /products-third-party
+  menu_sources:
+    - source: section-children
+      page: /products
+      include_self: true
 ---

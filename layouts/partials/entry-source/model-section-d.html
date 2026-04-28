@@ -1,0 +1,14 @@
+{{- $page := .page -}}
+{{- if not $page -}}
+  {{- errorf "编译失败: entry-source/model-section-d.html 缺少 page。" -}}
+{{- end -}}
+{{- $logicalPath := partial "section/d-logical-path.html" (dict "ctx" $page) -}}
+{{- $model := dict -}}
+{{- if ne $logicalPath "" -}}
+  {{- $model = partial "entry-source/source-page-model.html" (dict
+    "page" $page
+    "provider" "section-d"
+    "logical_path" $logicalPath
+  ) -}}
+{{- end -}}
+{{- return $model -}}

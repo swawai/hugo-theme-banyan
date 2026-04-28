@@ -1,0 +1,21 @@
+{{- $ctx := .ctx | default . -}}
+{{- $entries := slice -}}
+{{- range $page := sort (where (where $ctx.Site.Pages "Kind" "section") "Section" "d") "RelPermalink" -}}
+  {{- $model := partial "entry-source/model-section-d.html" (dict "page" $page) -}}
+  {{- if gt (len $model) 0 -}}
+    {{- $entries = $entries | append $model -}}
+  {{- end -}}
+{{- end -}}
+{{- range $page := sort (where $ctx.Site.Pages "Kind" "in" (slice "taxonomy" "term")) "RelPermalink" -}}
+  {{- $model := partial "entry-source/model-taxonomy.html" (dict "page" $page) -}}
+  {{- if gt (len $model) 0 -}}
+    {{- $entries = $entries | append $model -}}
+  {{- end -}}
+{{- end -}}
+{{- range $page := sort (where (where $ctx.Site.Pages "Kind" "in" (slice "page" "section")) "Params.banyan_entry_source" "ne" nil) "RelPermalink" -}}
+  {{- $model := partial "entry-source/model-page.html" (dict "page" $page) -}}
+  {{- if gt (len $model) 0 -}}
+    {{- $entries = $entries | append $model -}}
+  {{- end -}}
+{{- end -}}
+{{- return $entries -}}

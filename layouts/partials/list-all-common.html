@@ -9,6 +9,9 @@
 {{ $sizeLabel := i18n "list_col_size" }}
 {{ $pathLabel := i18n "list_col_path" }}
 {{ $currentAllHref := $host.RelPermalink }}
+{{ $entrySource := partial "entry-source/model-page.html" (dict "page" $host) }}
+{{ $entrySourcePath := printf "%v" (index $entrySource "logical_path") }}
+{{ $entriesData := partial "entry-source/entries-all.html" (dict "ctx" $ctx "host" $host) }}
 
 <div class="grid-list grid-all" data-sortable="true" data-sort-variant="all" data-sort-columns="4" data-sort-default="date-desc">
   {{ partial "grid-sort-cell.html" (dict
@@ -56,36 +59,29 @@
     "titleAsc" (i18n "list_sort_path_asc")
     "titleDesc" (i18n "list_sort_path_desc")) }}
 
-  {{ $pagesToShow := $ctx.RegularPagesRecursive }}
-  {{ if eq $ctx.Kind "home" }}
-    {{ $pagesToShow = $ctx.Site.RegularPages }}
-  {{ end }}
-  {{ $sortedPages := sort $pagesToShow "Date" "desc" }}
-
-  {{ range $sortedPages }}
-    {{ $bytes := len .RawContent }}
-    {{ $pathValue := path.Clean .File.Dir }}
+  {{ range $entriesData }}
+    {{ $entryHref := printf "%s?%s" .href (querify "from" (printf "%s%s/" $entrySourcePath .entry_key)) }}
     {{ partial "grid-title-cell.html" (dict
       "ctx" $ctx
-      "href" .RelPermalink
-      "title" .Title
+      "href" $entryHref
+      "title" .title
       "icon" "file"
       "prefetchKind" "post"
       "dataAttrs" (dict
         "sort-group" "0"
-        "sort-name" .Title
-        "sort-date" (.Date.Format "20060102150405")
-        "sort-size" (printf "%v" $bytes)
-        "sort-path" $pathValue)) }}
-    <span class="cell-date">{{ .Date.Format "2006-01-02" }}</span>
-    {{ $kb := div (add $bytes 1023) 1024 }}
+        "sort-name" .title
+        "sort-date" .date_key
+        "sort-size" (printf "%v" .bytes)
+        "sort-path" .path_value)) }}
+    <span class="cell-date">{{ .date_text }}</span>
+    {{ $kb := div (add .bytes 1023) 1024 }}
     <span class="cell-count"><span>{{ $kb }}</span><span class="unit">&thinsp;KB</span></span>
-    <span class="cell-path">{{ with .CurrentSection }}{{ partial "link.html" (dict "href" .RelPermalink "text" (printf "/%s" $pathValue)) }}{{ end }}</span>
+    <span class="cell-path">{{ partial "link.html" (dict "href" (printf "/%s/" (trim .path_value "/")) "text" (printf "/%s" .path_value)) }}</span>
   {{ end }}
 </div>
 
 {{- $entries := slice -}}
-{{- range $sortedPages -}}
-  {{- $entries = $entries | append (dict "url" .RelPermalink "name" .Title) -}}
+{{- range $entriesData -}}
+  {{- $entries = $entries | append (dict "url" .href "name" .title) -}}
 {{- end -}}
 {{ partial "schema-itemlist.html" (dict "entries" $entries) }}

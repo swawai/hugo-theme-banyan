@@ -1,8 +1,8 @@
 ﻿---
-title: Products
-linkTitle: ALL
-description: Curated products marked with product metadata.
-slug: "products"
+title: 第三方产品
+linkTitle: 第三方
+description: 第三方产品列表。
+weight: 30
 nav_primary: products
 layout: "article"
 slots:
@@ -10,11 +10,8 @@ slots:
   utilities: /fragments/nav-utilities
   breadcrumb_root: /fragments/breadcrumb-model-products
   breadcrumb: true
-products_scope: all
+banyan_entry_source:
+  provider: products
 ---
 
-
-
 {{< products-list >}}
-
-

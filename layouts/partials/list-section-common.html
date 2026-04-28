@@ -1,13 +1,15 @@
 {{ $ctx := .ctx }}
 {{ if ne $ctx.Kind "section" }}{{ errorf "编译失败: list-section-common.html 仅支持 kind=section，当前页面 %q 的 kind=%q。" $ctx.RelPermalink $ctx.Kind }}{{ end }}
 {{ $entries := partial "section/direct-children.html" (dict "ctx" $ctx) }}
+{{ $sourceLogicalPath := partial "section/d-logical-path.html" (dict "ctx" $ctx) }}
 
 <div class="grid-list" data-sortable="true" data-sort-variant="section" data-sort-columns="3" data-sort-default="date-desc">
   {{ $items := slice }}
   {{ range $entries }}
     {{ $href := .href }}
-    {{ if and (eq .kind "page") (hasPrefix .logicalPath "/d/") }}
-      {{ $href = printf "%s?%s" .href (querify "from" .logicalPath) }}
+    {{ if and (eq .kind "page") $sourceLogicalPath }}
+      {{ $entryKey := partial "section/d-logical-key.html" (dict "ctx" .node) }}
+      {{ $href = printf "%s?%s" .href (querify "from" (printf "%s%s/" $sourceLogicalPath $entryKey)) }}
     {{ end }}
     {{ $items = $items | append (dict
       "href" $href

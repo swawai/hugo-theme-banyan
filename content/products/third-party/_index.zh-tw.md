@@ -1,17 +1,17 @@
 ﻿---
-title: 免费产品
-linkTitle: 免费
-description: 免费产品列表。
+title: 第三方產品
+linkTitle: 第三方
+description: 第三方產品列表。
+weight: 30
 nav_primary: products
 layout: "article"
-slug: "free"
-url: "/zh/products/free/"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities
   breadcrumb_root: /fragments/breadcrumb-model-products
   breadcrumb: true
-products_scope: free
+banyan_entry_source:
+  provider: products
 ---
 
 {{< products-list >}}
