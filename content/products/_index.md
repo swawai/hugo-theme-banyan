@@ -1,20 +1,8 @@
-﻿---
-title: First-party Products
-linkTitle: First-party
-description: Products built and produced in-house, including both paid and free offerings.
-nav_primary: products
-layout: "article"
-slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
-  breadcrumb_root: /fragments/breadcrumb-model-products
-  breadcrumb: true
-banyan_entry_source:
-  provider: products
 ---
-
-
-
-{{< products-list >}}
-
-
+title: Products
+linkTitle: Products
+description: Structural products root.
+build:
+  list: never
+  render: never
+---

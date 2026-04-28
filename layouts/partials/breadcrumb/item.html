@@ -18,6 +18,9 @@
 {{- end -}}
 {{- if gt (len $itemMenu) 1 -}}
   {{- $linkDataAttrs = merge $linkDataAttrs (dict "breadcrumb-menu-link" "true") -}}
+  {{- $hasHighlightedMenu := gt (len (where $itemMenu "highlighted" true)) 0 -}}
+  {{- $hasCurrentMenu := gt (len (where $itemMenu "current" true)) 0 -}}
+  {{- $hasSelectedMenu := gt (len (where $itemMenu "selected" true)) 0 -}}
   <span class="{{ printf "%s breadcrumb-item-menu" $wrapperClass }}" data-breadcrumb-menu>
     {{ partial "link.html" (dict
       "ctx" $ctx
@@ -33,7 +36,13 @@
     ) }}
     <span class="breadcrumb-menu-panel" data-breadcrumb-menu-panel hidden>
       {{- range $menuItem := $itemMenu -}}
-        {{- $menuItemIsCurrent := or (eq (index $menuItem "selected") true) (eq (index $menuItem "current") true) -}}
+        {{- $menuItemIsCurrent := eq (index $menuItem "highlighted") true -}}
+        {{- if and (not $hasHighlightedMenu) $hasCurrentMenu (eq (index $menuItem "current") true) -}}
+          {{- $menuItemIsCurrent = true -}}
+        {{- end -}}
+        {{- if and (not $hasHighlightedMenu) (not $hasCurrentMenu) $hasSelectedMenu (eq (index $menuItem "selected") true) -}}
+          {{- $menuItemIsCurrent = true -}}
+        {{- end -}}
         {{- $menuItemClass := "breadcrumb-menu-option" -}}
         {{- if $menuItemIsCurrent -}}{{- $menuItemClass = printf "%s is-current" $menuItemClass -}}{{- end -}}
         {{ partial "link.html" (dict

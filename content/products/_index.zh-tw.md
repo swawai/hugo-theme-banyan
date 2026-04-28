@@ -1,21 +1,8 @@
-﻿---
-title: 自建產品
-linkTitle: 自建
-description: 自建生產的產品都會彙整在這裡，包含付費與免費，不含第三方產品。
-nav_primary: products
-layout: "article"
-slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
-  breadcrumb_root: /fragments/breadcrumb-model-products
-  breadcrumb: true
-banyan_entry_source:
-  provider: products
 ---
-
-
-
-{{< products-list >}}
-
-
-
+title: 產品
+linkTitle: 產品
+description: 產品結構根節點。
+build:
+  list: never
+  render: never
+---

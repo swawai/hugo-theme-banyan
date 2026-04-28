@@ -20,7 +20,7 @@ nav:
       key: home
       text: Swaw
       fallback_when_none: true
-    - page: /products
+    - page: /products/first-party
       key: products
       text: Products
     - page: /d

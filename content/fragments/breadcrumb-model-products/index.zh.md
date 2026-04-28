@@ -5,14 +5,13 @@ build:
   render: never
 breadcrumb:
   variant: lead-menu
-  auto_tail: full
+  auto_tail: current
   menu_mode: current-root
   menu_label: 产品分类
-  lead:
-    page: /products
-    menu_label: 展开产品分类
-  menu_sources:
-    - source: section-children
-      page: /products
-      include_self: true
+  menu_active_href_source: products-family
+  menu:
+    - page: /products/first-party
+    - page: /products/first-party/paid
+    - page: /products/first-party/free
+    - page: /products/third-party
 ---

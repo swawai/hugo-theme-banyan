@@ -2,7 +2,7 @@
 {{ if ne $host.Kind "section" }}
   {{ $hostPath := printf "%s %s" $host.Kind $host.RelPermalink }}
   {{ with $host.File }}{{ $hostPath = .Path }}{{ end }}
-  {{ errorf "编译失败: 页面 %q 的 section-list shortcode 仅允许用于 section，当前 kind=%q。" $hostPath $host.Kind }}
+  {{ errorf "Build failed: section-list shortcode on page %q only supports section pages, got kind=%q." $hostPath $host.Kind }}
 {{ end }}
 {{ $host.Store.Set "banyan_article_section_list" true }}
 {{ "<div data-banyan-section-list-anchor=\"true\"></div>" | safeHTML }}

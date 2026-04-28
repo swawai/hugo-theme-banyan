@@ -1,0 +1,19 @@
+{{- $ctx := .ctx -}}
+{{- $activeHref := "" -}}
+{{- if $ctx -}}
+  {{- $firstPartyPage := $ctx.Site.GetPage "/products/first-party" -}}
+  {{- $thirdPartyPage := $ctx.Site.GetPage "/products/third-party" -}}
+  {{- if $thirdPartyPage -}}
+    {{- $thirdPartyHref := $thirdPartyPage.RelPermalink -}}
+    {{- if or (eq $ctx.RelPermalink $thirdPartyHref) (hasPrefix $ctx.RelPermalink $thirdPartyHref) -}}
+      {{- $activeHref = $thirdPartyHref -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if and (eq $activeHref "") $firstPartyPage -}}
+    {{- $firstPartyHref := $firstPartyPage.RelPermalink -}}
+    {{- if or (eq $ctx.RelPermalink $firstPartyHref) (hasPrefix $ctx.RelPermalink $firstPartyHref) -}}
+      {{- $activeHref = $firstPartyHref -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $activeHref -}}

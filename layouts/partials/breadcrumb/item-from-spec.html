@@ -12,7 +12,7 @@
 {{- with index $spec "page" -}}
   {{- $pageRef := printf "%v" . -}}
   {{- $target := $ctx.Site.GetPage $pageRef -}}
-  {{- if not $target -}}{{- errorf "编译失败: 页面 %q 的 breadcrumb 配置找不到 page=%q。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) $pageRef -}}{{- end -}}
+{{- if not $target -}}{{- errorf "Build failed: page %q cannot resolve breadcrumb page=%q." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) $pageRef -}}{{- end -}}
   {{- $href = $target.RelPermalink -}}
   {{- if eq $text "" -}}{{- $text = $target.LinkTitle | default $target.Title -}}{{- end -}}
 {{- else -}}
@@ -29,8 +29,8 @@
     {{- end -}}
   {{- end -}}
 {{- end -}}
-{{- if eq $text "" -}}{{- errorf "编译失败: 页面 %q 的 breadcrumb item 缺少 text/name/text_key。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}{{- end -}}
-{{- if eq $href "" -}}{{- errorf "编译失败: 页面 %q 的 breadcrumb item 缺少 page/href。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}{{- end -}}
+{{- if eq $text "" -}}{{- errorf "Build failed: breadcrumb item on page %q is missing text, name, or text_key." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}{{- end -}}
+{{- if eq $href "" -}}{{- errorf "Build failed: breadcrumb item on page %q is missing page or href." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}{{- end -}}
 {{- $currentKey := trim (lower (printf "%v" $ctx.RelPermalink)) "/" -}}
 {{- $hrefKey := trim (lower (printf "%v" $href)) "/" -}}
 {{- $item := dict

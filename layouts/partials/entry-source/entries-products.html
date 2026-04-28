@@ -1,15 +1,15 @@
 {{- $host := .host -}}
 {{- if not $host -}}
-  {{- errorf "编译失败: entry-source/entries-products.html 缺少 host。" -}}
+  {{- errorf "Build failed: entry-source/entries-products.html requires host." -}}
 {{- end -}}
 {{- if not ($host.Site.GetPage "/products") -}}
-  {{- errorf "编译失败: 页面 %q 的 entry-source/entries-products.html 找不到 /products 对应页面。" $host.File.Path -}}
+  {{- errorf "Build failed: entry-source/entries-products.html on page %q cannot resolve /products." $host.File.Path -}}
 {{- end -}}
 {{- $entries := slice -}}
 {{- $scope := partial "products/source-scope.html" (dict "page" $host) -}}
 {{- if not (in (slice "first-party" "paid" "free" "third-party") $scope) -}}
-  {{- errorf "编译失败: 页面 %q 的 products source scope=%q 不受支持。" ($host.File.Path | default (printf "%s %s" $host.Kind $host.RelPermalink)) $scope -}}
-{{- end -}}
+  {{- errorf "Build failed: products source page %q has unsupported scope=%q." ($host.File.Path | default (printf "%s %s" $host.Kind $host.RelPermalink)) $scope -}}
+  {{- end -}}
 {{- range where $host.Site.RegularPages "Params.product" "ne" nil -}}
   {{- $product := partial "products/model.html" (dict "page" .) -}}
   {{- $productScope := index $product "scope" -}}

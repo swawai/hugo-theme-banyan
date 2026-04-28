@@ -20,7 +20,7 @@ nav:
       key: home
       text: 人不工
       fallback_when_none: true
-    - page: /products
+    - page: /products/first-party
       key: products
       text: 產品
     - page: /d

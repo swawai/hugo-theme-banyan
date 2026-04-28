@@ -1,6 +1,6 @@
 {{- $page := .page -}}
 {{- if not $page -}}
-  {{- errorf "编译失败: entry-source/model-section-d.html 缺少 page。" -}}
+  {{- errorf "Build failed: entry-source/model-section-d.html requires page." -}}
 {{- end -}}
 {{- $logicalPath := partial "section/d-logical-path.html" (dict "ctx" $page) -}}
 {{- $model := dict -}}

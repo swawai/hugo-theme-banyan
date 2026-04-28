@@ -1,7 +1,7 @@
-﻿---
-title: 付费产品
-linkTitle: 付费
-description: 付费产品列表。
+---
+title: 自建
+linkTitle: 自建
+description: 自建生產的產品都會彙整在這裡，包含付費與免費，不含第三方產品。
 weight: 10
 nav_primary: products
 layout: "article"

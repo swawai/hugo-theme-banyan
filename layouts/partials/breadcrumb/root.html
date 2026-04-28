@@ -21,8 +21,17 @@
   {{- end -}}
   {{- if eq $mode "list" -}}
   <div class="breadcrumb-root-list" role="list">
+    {{- $hasHighlightedMenu := gt (len (where $itemMenu "highlighted" true)) 0 -}}
+    {{- $hasCurrentMenu := gt (len (where $itemMenu "current" true)) 0 -}}
+    {{- $hasSelectedMenu := gt (len (where $itemMenu "selected" true)) 0 -}}
     {{- range $menuItem := $itemMenu -}}
-      {{- $isCurrentMenu := or (eq (index $menuItem "selected") true) (eq (index $menuItem "current") true) -}}
+      {{- $isCurrentMenu := eq (index $menuItem "highlighted") true -}}
+      {{- if and (not $hasHighlightedMenu) $hasCurrentMenu (eq (index $menuItem "current") true) -}}
+        {{- $isCurrentMenu = true -}}
+      {{- end -}}
+      {{- if and (not $hasHighlightedMenu) (not $hasCurrentMenu) $hasSelectedMenu (eq (index $menuItem "selected") true) -}}
+        {{- $isCurrentMenu = true -}}
+      {{- end -}}
       {{- $itemClass := "breadcrumb-root-link" -}}
       {{- if $isCurrentMenu -}}{{- $itemClass = printf "%s is-current" $itemClass -}}{{- end -}}
       <span class="breadcrumb-root-list-item" role="listitem">

@@ -13,7 +13,7 @@
 {{- with $source -}}
   {{- $source := . -}}
   {{- $config := index $source.Params "breadcrumb" | default dict -}}
-  {{- if eq (len $config) 0 -}}{{- errorf "编译失败: breadcrumb fragment %q 缺少 [breadcrumb] 配置。" $source.File.Path -}}{{- end -}}
+{{- if eq (len $config) 0 -}}{{- errorf "Build failed: breadcrumb fragment %q is missing the [breadcrumb] configuration block." $source.File.Path -}}{{- end -}}
   {{- $result = dict
     "source" $source
     "config" $config

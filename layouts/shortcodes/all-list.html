@@ -5,11 +5,11 @@
 
 {{ $gridList := resources.Get "css/grid-list.css" }}
 {{ $gridAll := resources.Get "css/grid-all.css" }}
-{{ if not $gridList }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-list.css" }}{{ end }}
-{{ if not $gridAll }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-all.css" }}{{ end }}
+{{ if not $gridList }}{{ errorf "Build failed: missing resource %q." "css/grid-list.css" }}{{ end }}
+{{ if not $gridAll }}{{ errorf "Build failed: missing resource %q." "css/grid-all.css" }}{{ end }}
 {{ $gridCss := slice $gridList $gridAll | resources.Concat "css/all-list.embed.css" }}
 {{ $sortJsSource := resources.Get "js/sortable-grids.js" }}
-{{ if not $sortJsSource }}{{ errorf "编译失败: 缺少资源 %q。" "js/sortable-grids.js" }}{{ end }}
+{{ if not $sortJsSource }}{{ errorf "Build failed: missing resource %q." "js/sortable-grids.js" }}{{ end }}
 {{ $sortJs := $sortJsSource | js.Build }}
 {{ partial "page-resources/register.html" (dict
   "ctx" $host

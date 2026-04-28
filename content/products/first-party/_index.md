@@ -1,8 +1,8 @@
-﻿---
-title: Free Products
-linkTitle: Free
-description: Free products list.
-weight: 20
+---
+title: First-party
+linkTitle: First-party
+description: Products built and produced in-house, including both paid and free offerings.
+weight: 10
 nav_primary: products
 layout: "article"
 slots:

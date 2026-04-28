@@ -1,8 +1,8 @@
 ---
-title: Third-party
-linkTitle: Third-party
-description: Third-party products list.
-weight: 30
+title: 付費
+linkTitle: 付費
+description: 付費產品列表。
+weight: 10
 nav_primary: products
 layout: "article"
 slots:

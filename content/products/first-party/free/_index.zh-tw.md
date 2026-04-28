@@ -1,8 +1,8 @@
-﻿---
-title: Paid Products
-linkTitle: Paid
-description: Paid products list.
-weight: 10
+---
+title: 免費
+linkTitle: 免費
+description: 免費產品列表。
+weight: 20
 nav_primary: products
 layout: "article"
 slots:

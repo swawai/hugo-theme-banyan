@@ -1,6 +1,6 @@
 {{- $ctx := .ctx -}}
 {{- if not $ctx -}}
-  {{- errorf "编译失败: entry-source/entries-all.html 缺少 ctx。" -}}
+  {{- errorf "Build failed: entry-source/entries-all.html requires ctx." -}}
 {{- end -}}
 {{- $pagesToShow := $ctx.RegularPagesRecursive -}}
 {{- if eq $ctx.Kind "home" -}}

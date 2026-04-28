@@ -5,10 +5,10 @@
 {{- if ne $pageRef "" -}}
   {{- $page := $ctx.Site.GetPage $pageRef -}}
   {{- if not $page -}}
-    {{- errorf "编译失败: breadcrumb/menu-source-section-children.html 的 page=%q 找不到对应页面。" $pageRef -}}
+    {{- errorf "Build failed: breadcrumb/menu-source-section-children.html cannot resolve page=%q." $pageRef -}}
   {{- end -}}
   {{- if ne $page.Kind "section" -}}
-    {{- errorf "编译失败: breadcrumb/menu-source-section-children.html 要求 page=%q 必须是 section，当前 kind=%q。" $pageRef $page.Kind -}}
+    {{- errorf "Build failed: breadcrumb/menu-source-section-children.html requires page=%q to be a section, got kind=%q." $pageRef $page.Kind -}}
   {{- end -}}
   {{- $includeSelf := eq (lower (printf "%v" (index $source "include_self" | default "false"))) "true" -}}
   {{- if $includeSelf -}}

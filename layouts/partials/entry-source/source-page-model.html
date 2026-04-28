@@ -2,22 +2,22 @@
 {{- $logicalPath := printf "%v" (.logical_path | default "") -}}
 {{- $provider := printf "%v" (.provider | default "") -}}
 {{- if not $page -}}
-  {{- errorf "编译失败: entry-source/source-page-model.html 缺少 page。" -}}
+  {{- errorf "Build failed: entry-source/source-page-model.html requires page." -}}
 {{- end -}}
 {{- if eq $logicalPath "" -}}
-  {{- errorf "编译失败: 页面 %q 的 entry source 缺少 logical_path。" ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+  {{- errorf "Build failed: entry source page %q is missing logical_path." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
 {{- end -}}
 {{- partial "slots/prepare.html" (dict "ctx" $page) -}}
 {{- $rootModel := partial "breadcrumb/model.html" (dict "ctx" $page "slot" "breadcrumb_root") -}}
 {{- $rootItems := index $rootModel "items" | default slice -}}
 {{- if eq (len $rootItems) 0 -}}
-  {{- errorf "编译失败: 页面 %q 的 entry source 缺少 breadcrumb_root model items。" ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+  {{- errorf "Build failed: entry source page %q is missing breadcrumb_root model items." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
 {{- end -}}
 {{- $rootRaw := index $rootItems 0 -}}
 {{- $rootText := trim (printf "%v" (index $rootRaw "text")) " " -}}
 {{- $rootHref := trim (printf "%v" (index $rootRaw "href")) " " -}}
 {{- if or (eq $rootText "") (eq $rootHref "") -}}
-  {{- errorf "编译失败: 页面 %q 的 entry source root item 缺少 text/href。" ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+  {{- errorf "Build failed: entry source page %q has a root item missing text or href." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
 {{- end -}}
 {{- $rootItem := dict
   "text" $rootText
@@ -31,6 +31,9 @@
   {{- if or (eq $text "") (eq $href "") -}}{{- continue -}}{{- end -}}
   {{- $item := dict "text" $text "href" $href -}}
   {{- with index $menuItem "title" }}{{ $item = merge $item (dict "title" (printf "%v" .)) }}{{ end -}}
+  {{- if eq (index $menuItem "current") true }}{{ $item = merge $item (dict "current" true) }}{{ end -}}
+  {{- if eq (index $menuItem "selected") true }}{{ $item = merge $item (dict "selected" true) }}{{ end -}}
+  {{- if eq (index $menuItem "highlighted") true }}{{ $item = merge $item (dict "highlighted" true) }}{{ end -}}
   {{- $rootMenuItems = $rootMenuItems | append $item -}}
 {{- end -}}
 {{- if eq (len $rootMenuItems) 0 -}}

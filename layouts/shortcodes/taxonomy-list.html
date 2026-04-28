@@ -3,6 +3,6 @@
 {{- if and (ne $kind "taxonomy") (ne $kind "term") -}}
   {{- $hostPath := printf "%s %s" $host.Kind $host.RelPermalink -}}
   {{- with $host.File }}{{ $hostPath = .Path }}{{ end -}}
-  {{- errorf "编译失败: 页面 %q 的 taxonomy-list shortcode 仅允许用于 taxonomy/term，当前 kind=%q。" $hostPath $kind -}}
+  {{- errorf "Build failed: taxonomy-list shortcode on page %q only supports taxonomy or term pages, got kind=%q." $hostPath $kind -}}
 {{- end -}}
 {{- $host.Store.Set "banyan_article_taxonomy_list" true -}}

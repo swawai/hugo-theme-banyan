@@ -1,21 +1,8 @@
-﻿---
-title: 自建产品
-linkTitle: 自建
-description: 自建生产的产品会汇总在这里，包含付费与免费，不含第三方产品。
-nav_primary: products
-layout: "article"
-slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
-  breadcrumb_root: /fragments/breadcrumb-model-products
-  breadcrumb: true
-banyan_entry_source:
-  provider: products
 ---
-
-
-
-{{< products-list >}}
-
-
-
+title: 产品
+linkTitle: 产品
+description: 产品结构根节点。
+build:
+  list: never
+  render: never
+---

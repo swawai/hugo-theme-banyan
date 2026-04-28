@@ -1,6 +1,6 @@
 {{- $page := .page -}}
 {{- if not $page -}}
-  {{- errorf "编译失败: entry-source/model-taxonomy.html 缺少 page。" -}}
+  {{- errorf "Build failed: entry-source/model-taxonomy.html requires page." -}}
 {{- end -}}
 {{- $spec := partial "taxonomy/spec-get.html" (dict "ctx" $page "plural" $page.Data.Plural) -}}
 {{- $logicalPath := partial "taxonomy/logical-path.html" (dict "ctx" $page "spec" $spec) -}}

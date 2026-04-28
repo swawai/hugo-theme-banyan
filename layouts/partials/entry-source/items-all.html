@@ -4,7 +4,7 @@
 {{- $targetSection := trim (printf "%v" (index $meta "target_section" | default "d")) " " -}}
 {{- $target := $page.Site.GetPage (printf "/%s" $targetSection) -}}
 {{- if not $target -}}
-  {{- errorf "编译失败: 页面 %q 的 banyan_entry_source.target_section=%q 找不到对应页面。" ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) $targetSection -}}
+  {{- errorf "Build failed: page %q cannot resolve banyan_entry_source.target_section=%q." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) $targetSection -}}
 {{- end -}}
 {{- $entries := partial "entry-source/entries-all.html" (dict "ctx" $target "host" $page) -}}
 {{- $items := slice -}}

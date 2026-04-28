@@ -1,38 +1,38 @@
 {{- $page := .page -}}
 {{- if not $page -}}
-  {{- errorf "编译失败: products/model.html 缺少 page。" -}}
+  {{- errorf "Build failed: products/model.html requires page." -}}
 {{- end -}}
 {{- $pageRef := $page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink) -}}
 {{- $product := index $page.Params "product" -}}
 {{- if not $product -}}
-  {{- errorf "编译失败: 页面 %q 缺少 product 对象。" $pageRef -}}
+  {{- errorf "Build failed: page %q is missing the product object." $pageRef -}}
 {{- end -}}
 {{- if eq (trim (printf "%v" $product) " ") "true" -}}
-  {{- errorf "编译失败: 页面 %q 的 product 必须为对象格式，不能继续使用旧的 product=true 形式。" $pageRef -}}
+  {{- errorf "Build failed: page %q must use an object for product; the legacy product=true format is no longer supported." $pageRef -}}
 {{- end -}}
 {{- $origin := lower (trim (printf "%v" (index $product "origin" | default "")) " ") -}}
 {{- if not (in (slice "first-party" "third-party") $origin) -}}
-  {{- errorf "编译失败: 页面 %q 的 product.origin=%q 不受支持，当前仅支持 first-party 或 third-party。" $pageRef $origin -}}
+  {{- errorf "Build failed: page %q has unsupported product.origin=%q; expected first-party or third-party." $pageRef $origin -}}
 {{- end -}}
 {{- $price := index $product "price" -}}
 {{- if not $price -}}
-  {{- errorf "编译失败: 页面 %q 缺少 product.price 对象。" $pageRef -}}
+  {{- errorf "Build failed: page %q is missing product.price." $pageRef -}}
 {{- end -}}
 {{- $amountRaw := index $price "amount" -}}
 {{- $amountText := trim (printf "%v" $amountRaw) " " -}}
 {{- if eq $amountText "" -}}
-  {{- errorf "编译失败: 页面 %q 缺少 product.price.amount。" $pageRef -}}
+  {{- errorf "Build failed: page %q is missing product.price.amount." $pageRef -}}
 {{- end -}}
 {{- if eq (len (findRE `^[0-9]+(?:\.[0-9]+)?$` $amountText)) 0 -}}
-  {{- errorf "编译失败: 页面 %q 的 product.price.amount=%q 不是合法数字。" $pageRef $amountText -}}
+  {{- errorf "Build failed: page %q has invalid product.price.amount=%q." $pageRef $amountText -}}
 {{- end -}}
 {{- $currency := upper (trim (printf "%v" (index $price "currency" | default "")) " ") -}}
 {{- if eq $currency "" -}}
-  {{- errorf "编译失败: 页面 %q 缺少 product.price.currency。" $pageRef -}}
+  {{- errorf "Build failed: page %q is missing product.price.currency." $pageRef -}}
 {{- end -}}
 {{- $valueText := trim (printf "%v" (index $product "value" | default "")) " " -}}
 {{- if eq $valueText "" -}}
-  {{- errorf "编译失败: 页面 %q 缺少 product.value。" $pageRef -}}
+  {{- errorf "Build failed: page %q is missing product.value." $pageRef -}}
 {{- end -}}
 {{- $isFree := gt (len (findRE `^0(?:\.0+)?$` $amountText)) 0 -}}
 {{- $scope := "paid" -}}

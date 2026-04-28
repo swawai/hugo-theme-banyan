@@ -1,15 +1,15 @@
 {{ $host := .Page }}
 {{ if not ($host.Site.GetPage "/products") }}
-  {{ errorf "编译失败: 页面 %q 的 products-list shortcode 找不到 /products 对应页面。" $host.File.Path }}
+  {{ errorf "Build failed: products-list shortcode on page %q cannot resolve /products." $host.File.Path }}
 {{ end }}
 
 {{ $gridList := resources.Get "css/grid-list.css" }}
 {{ $gridProducts := resources.Get "css/grid-products.css" }}
-{{ if not $gridList }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-list.css" }}{{ end }}
-{{ if not $gridProducts }}{{ errorf "编译失败: 缺少资源 %q。" "css/grid-products.css" }}{{ end }}
+{{ if not $gridList }}{{ errorf "Build failed: missing resource %q." "css/grid-list.css" }}{{ end }}
+{{ if not $gridProducts }}{{ errorf "Build failed: missing resource %q." "css/grid-products.css" }}{{ end }}
 {{ $gridCss := slice $gridList $gridProducts | resources.Concat "css/products-list.embed.css" }}
 {{ $sortJsSource := resources.Get "js/sortable-grids.js" }}
-{{ if not $sortJsSource }}{{ errorf "编译失败: 缺少资源 %q。" "js/sortable-grids.js" }}{{ end }}
+{{ if not $sortJsSource }}{{ errorf "Build failed: missing resource %q." "js/sortable-grids.js" }}{{ end }}
 {{ $sortJs := $sortJsSource | js.Build }}
 {{ partial "page-resources/register.html" (dict
   "ctx" $host

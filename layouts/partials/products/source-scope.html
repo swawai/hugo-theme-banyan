@@ -1,26 +1,36 @@
 {{- $page := .page -}}
 {{- if not $page -}}
-  {{- errorf "编译失败: products/source-scope.html 缺少 page。" -}}
+  {{- errorf "Build failed: products/source-scope.html requires page." -}}
 {{- end -}}
 {{- $root := $page.Site.GetPage "/products" -}}
 {{- if not $root -}}
-  {{- errorf "编译失败: 页面 %q 的 products source scope 找不到 /products 根页面。" ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+  {{- errorf "Build failed: products source page %q cannot resolve the /products root page." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+{{- end -}}
+{{- $firstParty := $page.Site.GetPage "/products/first-party" -}}
+{{- if not $firstParty -}}
+  {{- errorf "Build failed: products source page %q cannot resolve /products/first-party/." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+{{- end -}}
+{{- $thirdParty := $page.Site.GetPage "/products/third-party" -}}
+{{- if not $thirdParty -}}
+  {{- errorf "Build failed: products source page %q cannot resolve /products/third-party/." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
 {{- end -}}
 {{- $scope := "" -}}
-{{- if eq $page.RelPermalink $root.RelPermalink -}}
+{{- if eq $page.RelPermalink $firstParty.RelPermalink -}}
   {{- $scope = "first-party" -}}
+{{- else if eq $page.RelPermalink $thirdParty.RelPermalink -}}
+  {{- $scope = "third-party" -}}
 {{- else -}}
   {{- $parent := $page.Parent -}}
   {{- if not $parent -}}
-    {{- errorf "编译失败: 页面 %q 不是 /products/ 树中的合法 products source page。" ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+    {{- errorf "Build failed: products source page %q is not a valid node under /products/." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
   {{- end -}}
-  {{- if ne $parent.RelPermalink $root.RelPermalink -}}
-    {{- errorf "编译失败: 页面 %q 当前只支持 /products/ 的直接子节点作为 products source page。" ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+  {{- if ne $parent.RelPermalink $firstParty.RelPermalink -}}
+    {{- errorf "Build failed: products source page %q must be a direct child of /products/first-party/." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
   {{- end -}}
   {{- $trimmedPath := replaceRE "/+$" "" $page.RelPermalink -}}
   {{- $scope = lower (path.Base $trimmedPath) -}}
-  {{- if not (in (slice "paid" "free" "third-party") $scope) -}}
-    {{- errorf "编译失败: 页面 %q 的 products source scope=%q 不受支持。" ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) $scope -}}
+  {{- if not (in (slice "paid" "free") $scope) -}}
+    {{- errorf "Build failed: products source page %q has unsupported scope=%q." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) $scope -}}
   {{- end -}}
 {{- end -}}
 {{- return $scope -}}

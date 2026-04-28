@@ -46,6 +46,15 @@ function normalizeLinkItem(item) {
     if (typeof item.title === 'string' && item.title.trim() !== '') {
         normalized.title = item.title.trim();
     }
+    if (typeof item.current === 'boolean') {
+        normalized.current = item.current;
+    }
+    if (typeof item.selected === 'boolean') {
+        normalized.selected = item.selected;
+    }
+    if (typeof item.highlighted === 'boolean') {
+        normalized.highlighted = item.highlighted;
+    }
 
     return normalized;
 }
@@ -361,8 +370,41 @@ function renderTopBreadcrumb(items) {
 }
 
 function normalizeMenuState(rootItem, rootMenuItems) {
-    const selectedPathname = normalizePathname(new URL(rootItem.href, window.location.origin).pathname);
     const menuItems = Array.isArray(rootMenuItems) ? rootMenuItems : [];
+    const highlightedItems = menuItems.filter((item) => item && item.highlighted === true);
+    if (highlightedItems.length > 0) {
+        return menuItems
+            .map((item) => normalizeLinkItem(item))
+            .filter(Boolean)
+            .map((item) => ({
+                ...item,
+                current: item.highlighted === true,
+            }));
+    }
+
+    const currentItems = menuItems.filter((item) => item && item.current === true);
+    if (currentItems.length > 0) {
+        return menuItems
+            .map((item) => normalizeLinkItem(item))
+            .filter(Boolean)
+            .map((item) => ({
+                ...item,
+                current: item.current === true,
+            }));
+    }
+
+    const selectedItems = menuItems.filter((item) => item && item.selected === true);
+    if (selectedItems.length > 0) {
+        return menuItems
+            .map((item) => normalizeLinkItem(item))
+            .filter(Boolean)
+            .map((item) => ({
+                ...item,
+                current: item.selected === true,
+            }));
+    }
+
+    const selectedPathname = normalizePathname(new URL(rootItem.href, window.location.origin).pathname);
 
     return menuItems
         .map((item) => normalizeLinkItem(item))

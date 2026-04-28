@@ -1,8 +1,8 @@
-﻿---
-title: 免費產品
-linkTitle: 免費
-description: 免費產品列表。
-weight: 20
+---
+title: 自建
+linkTitle: 自建
+description: 自建生产的产品会汇总在这里，包含付费与免费，不含第三方产品。
+weight: 10
 nav_primary: products
 layout: "article"
 slots:

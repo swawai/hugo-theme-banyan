@@ -1,6 +1,6 @@
 {{- $ctx := .ctx -}}
 {{- if not $ctx -}}
-  {{- errorf "编译失败: entry-source/page-entry-key.html 缺少 ctx。" -}}
+  {{- errorf "Build failed: entry-source/page-entry-key.html requires ctx." -}}
 {{- end -}}
 {{- $result := "" -}}
 {{- with $ctx.RelPermalink -}}
@@ -17,6 +17,6 @@
   {{- $result = urlize $fallback -}}
 {{- end -}}
 {{- if or (eq $result "") (eq $result ".") (eq $result "..") -}}
-  {{- errorf "编译失败: 页面 %q 无法生成稳定的 entry key。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}
+  {{- errorf "Build failed: page %q cannot generate a stable entry key." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}
 {{- end -}}
 {{- return $result -}}

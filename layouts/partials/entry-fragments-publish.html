@@ -1,10 +1,10 @@
 {{- $ctx := .ctx -}}
 {{- if not $ctx -}}
-  {{- errorf "编译失败: entry-fragments-publish.html 缺少 ctx。" -}}
+  {{- errorf "Build failed: entry-fragments-publish.html requires ctx." -}}
 {{- end -}}
 {{- $buildVersion := trim (printf "%v" .build_version) " \r\n\t" -}}
 {{- if eq $buildVersion "" -}}
-  {{- errorf "编译失败: entry-fragments-publish.html 缺少 build_version。" -}}
+  {{- errorf "Build failed: entry-fragments-publish.html requires build_version." -}}
 {{- end -}}
 {{- range $languageSite := sort $ctx.Sites "Language.Weight" -}}
   {{- $sourceModels := partial "entry-source/models.html" (dict "ctx" $languageSite.Home) -}}
@@ -20,7 +20,7 @@
       {{- $href := trim (printf "%v" (index $entry "href")) " \r\n\t" -}}
       {{- if or (eq $key "") (eq $text "") (eq $href "") -}}{{- continue -}}{{- end -}}
       {{- if isset $seenKeys $key -}}
-        {{- errorf "编译失败: entry source %q 出现重复 entry key=%q，冲突 href=%q 与 %q。" $logicalPath $key (index $seenKeys $key) $href -}}
+        {{- errorf "Build failed: entry source %q has duplicate entry key=%q for href=%q and href=%q." $logicalPath $key (index $seenKeys $key) $href -}}
       {{- end -}}
       {{- $seenKeys = merge $seenKeys (dict $key $href) -}}
       {{- $type := cond (eq (printf "%v" (index $entry "type")) "d") "d" "p" -}}

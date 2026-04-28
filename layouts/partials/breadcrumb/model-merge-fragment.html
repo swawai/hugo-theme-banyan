@@ -61,6 +61,26 @@
     {{- $menuItems = $updatedMenuItems -}}
   {{- end -}}
 {{- end -}}
+{{- $highlightedMenuKey := "" -}}
+{{- range $menuItems -}}
+  {{- if eq (index . "current") true -}}
+    {{- $highlightedMenuKey = trim (lower (printf "%v" (index . "href"))) "/" -}}
+    {{- break -}}
+  {{- end -}}
+{{- end -}}
+{{- if and (eq $highlightedMenuKey "") (ne $activeMenuKey "") -}}
+  {{- $highlightedMenuKey = $activeMenuKey -}}
+{{- end -}}
+{{- if ne $highlightedMenuKey "" -}}
+  {{- $updatedMenuItems := slice -}}
+  {{- range $menuItems -}}
+    {{- $menuItem := . -}}
+    {{- $menuKey := trim (lower (printf "%v" (index $menuItem "href"))) "/" -}}
+    {{- $menuItem = merge $menuItem (dict "highlighted" (eq $menuKey $highlightedMenuKey)) -}}
+    {{- $updatedMenuItems = $updatedMenuItems | append $menuItem -}}
+  {{- end -}}
+  {{- $menuItems = $updatedMenuItems -}}
+{{- end -}}
 {{- $leadItem := dict -}}
 {{- $hasLead := false -}}
 {{- $menuButtonLabel := printf "%v" (index $config "menu_label" | default "") -}}

@@ -1,6 +1,6 @@
 {{- $page := .page -}}
 {{- if not $page -}}
-  {{- errorf "编译失败: entry-source/model-page.html 缺少 page。" -}}
+  {{- errorf "Build failed: entry-source/model-page.html requires page." -}}
 {{- end -}}
 {{- $meta := index $page.Params "banyan_entry_source" | default dict -}}
 {{- $provider := lower (trim (printf "%v" (index $meta "provider" | default "")) " ") -}}
