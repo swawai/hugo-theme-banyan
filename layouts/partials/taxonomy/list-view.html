@@ -1,5 +1,7 @@
 {{ $ctx := .ctx }}
 {{ $items := .items }}
+{{ $spec := .spec | default dict }}
+{{ $ownerLogicalPath := partial "taxonomy/logical-path.html" (dict "ctx" $ctx "spec" $spec) }}
 {{ $sortField := "latestKey" }}
 {{ $sortOrder := "desc" }}
 
@@ -12,6 +14,10 @@
 {{ $renderItems := slice }}
 {{ range $ordered }}
   {{ $isCat := eq .kind "cat" }}
+  {{ $href := .url }}
+  {{ if and (not $isCat) $ownerLogicalPath .entry_key }}
+    {{ $href = printf "%s?%s" .url (querify "from" (printf "%s%s/" $ownerLogicalPath .entry_key)) }}
+  {{ end }}
   {{ $countText := cond (ne .cnt "") .cnt "." }}
   {{ $countUnit := "" }}
   {{ if not $isCat }}
@@ -19,7 +25,8 @@
     {{ $countUnit = "&thinsp;KB" }}
   {{ end }}
   {{ $renderItems = $renderItems | append (dict
-    "href" .url
+    "href" $href
+    "schemaHref" .url
     "title" .title
     "text" (or .display .title)
     "schemaName" (or .display .title)

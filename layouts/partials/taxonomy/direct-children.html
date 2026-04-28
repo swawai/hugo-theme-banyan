@@ -1,0 +1,13 @@
+{{- $ctx := .ctx -}}
+{{- if not $ctx -}}
+  {{- errorf "编译失败: taxonomy/direct-children.html 缺少 ctx。" -}}
+{{- end -}}
+{{- $spec := .spec | default (partial "taxonomy/spec-get.html" (dict "ctx" $ctx "plural" $ctx.Data.Plural)) -}}
+{{- $kind := .kind | default (cond (eq $ctx.Kind "term") "term" "root") -}}
+{{- $result := slice -}}
+{{- if eq (index $spec "mode") "tree" -}}
+  {{- $result = partial "taxonomy/items-tree.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) -}}
+{{- else -}}
+  {{- $result = partial "taxonomy/items-flat.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) -}}
+{{- end -}}
+{{- return $result -}}

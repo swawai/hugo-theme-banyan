@@ -1,0 +1,67 @@
+{{- $ctx := .ctx | default . -}}
+{{- $item := .item | default dict -}}
+{{- $itemMenu := index $item "menu" | default slice -}}
+{{- $itemIsCurrent := eq (index $item "current") true -}}
+{{- $wrapperClass := .wrapperClass | default "breadcrumb-item" -}}
+{{- $linkClass := .linkClass | default "breadcrumb-link" -}}
+{{- $linkDataAttrs := .dataAttrs | default dict -}}
+{{- $showCaret := or $itemIsCurrent (gt (len $itemMenu) 1) -}}
+{{- $linkText := index $item "text" -}}
+{{- $linkSafeHTML := false -}}
+{{- if $itemIsCurrent -}}
+  {{- $linkDataAttrs = merge $linkDataAttrs (dict "site-update-anchor" "true") -}}
+  {{- $linkDataAttrs = merge $linkDataAttrs (dict "breadcrumb-mode-toggle" "true") -}}
+{{- end -}}
+{{- if $showCaret -}}
+  {{- $linkText = printf "%s<span class=\"breadcrumb-menu-caret\" aria-hidden=\"true\">▾</span>" ($linkText | htmlEscape) -}}
+  {{- $linkSafeHTML = true -}}
+{{- end -}}
+{{- if gt (len $itemMenu) 1 -}}
+  {{- $linkDataAttrs = merge $linkDataAttrs (dict "breadcrumb-menu-link" "true") -}}
+  <span class="{{ printf "%s breadcrumb-item-menu" $wrapperClass }}" data-breadcrumb-menu>
+    {{ partial "link.html" (dict
+      "ctx" $ctx
+      "href" (index $item "href")
+      "text" $linkText
+      "textClass" "crumb-text"
+      "class" (printf "%s breadcrumb-menu-link" $linkClass)
+      "title" (index $item "title")
+      "dataAttrs" $linkDataAttrs
+      "ariaCurrent" (cond $itemIsCurrent "page" "")
+      "safeHTML" $linkSafeHTML
+      "linkSlot" "nav"
+    ) }}
+    <span class="breadcrumb-menu-panel" data-breadcrumb-menu-panel hidden>
+      {{- range $menuItem := $itemMenu -}}
+        {{- $menuItemIsCurrent := or (eq (index $menuItem "selected") true) (eq (index $menuItem "current") true) -}}
+        {{- $menuItemClass := "breadcrumb-menu-option" -}}
+        {{- if $menuItemIsCurrent -}}{{- $menuItemClass = printf "%s is-current" $menuItemClass -}}{{- end -}}
+        {{ partial "link.html" (dict
+          "ctx" $ctx
+          "href" (index $menuItem "href")
+          "text" (index $menuItem "text")
+          "class" $menuItemClass
+          "title" (index $menuItem "title")
+          "dataAttrs" (cond $menuItemIsCurrent (dict "site-update-anchor" "true") (dict))
+          "ariaCurrent" (cond $menuItemIsCurrent "page" "")
+          "linkSlot" "nav"
+        ) }}
+      {{- end -}}
+    </span>
+  </span>
+{{- else -}}
+  <span class="{{ $wrapperClass }}">
+    {{ partial "link.html" (dict
+      "ctx" $ctx
+      "href" (index $item "href")
+      "text" $linkText
+      "textClass" "crumb-text"
+      "class" $linkClass
+      "title" (index $item "title")
+      "dataAttrs" $linkDataAttrs
+      "ariaCurrent" (cond $itemIsCurrent "page" "")
+      "safeHTML" $linkSafeHTML
+      "linkSlot" "nav"
+    ) }}
+  </span>
+{{- end -}}

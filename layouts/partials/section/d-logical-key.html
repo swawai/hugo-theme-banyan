@@ -1,0 +1,15 @@
+{{- $ctx := .ctx -}}
+{{- if not $ctx -}}
+  {{- errorf "编译失败: section/d-logical-key.html 缺少 ctx。" -}}
+{{- end -}}
+{{- $result := "" -}}
+{{- $logicalPath := partial "section/d-logical-path.html" (dict "ctx" $ctx) -}}
+{{- if $logicalPath -}}
+  {{- $trimmed := trim $logicalPath "/" -}}
+  {{- if eq $trimmed "d" -}}
+    {{- $result = "d" -}}
+  {{- else -}}
+    {{- $result = replaceRE "^.*/([^/]+)$" "$1" $trimmed -}}
+  {{- end -}}
+{{- end -}}
+{{- return $result -}}

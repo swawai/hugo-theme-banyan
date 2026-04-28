@@ -1,0 +1,16 @@
+{{- $ctx := .ctx -}}
+{{- if not $ctx -}}
+  {{- errorf "编译失败: taxonomy/page-entry-key.html 缺少 ctx。" -}}
+{{- end -}}
+{{- $result := "" -}}
+{{- with $ctx.File -}}
+  {{- $result = urlize .TranslationBaseName -}}
+{{- end -}}
+{{- if eq $result "" -}}
+  {{- $fallback := trim (printf "%v" ($ctx.Params.slug | default "")) " " -}}
+  {{- if eq $fallback "" -}}
+    {{- $fallback = trim (printf "%v" ($ctx.Title | default "")) " " -}}
+  {{- end -}}
+  {{- $result = urlize $fallback -}}
+{{- end -}}
+{{- return $result -}}

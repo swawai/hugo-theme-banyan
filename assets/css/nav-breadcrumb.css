@@ -3,6 +3,25 @@
     flex-wrap: wrap;
     align-items: center;
     margin-bottom: 18px;
+    position: relative;
+    z-index: 0;
+}
+
+.slot-row-breadcrumb.is-breadcrumb-menu-mode {
+    background: transparent;
+    box-shadow: none;
+    z-index: 2;
+}
+
+.slot-row-breadcrumb.is-breadcrumb-menu-mode::before {
+    content: "";
+    position: absolute;
+    inset: -0.38rem -0.62rem;
+    border-radius: 0.86rem;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--focus) 20%, transparent);
+    background: color-mix(in srgb, var(--focus) 2%, transparent);
+    pointer-events: none;
+    z-index: -1;
 }
 
 .slot-breadcrumb-root,
@@ -10,21 +29,6 @@
 .breadcrumb-root-nav {
     display: inline-flex;
     align-items: center;
-}
-
-.breadcrumb-root-compact {
-    display: inline-flex;
-    align-items: center;
-}
-
-.breadcrumb-root-stage-compact,
-.breadcrumb-root-stage-current {
-    display: inline-flex;
-    align-items: center;
-}
-
-.breadcrumb-root-stage-current {
-    display: none;
 }
 
 .breadcrumb-root-list {
@@ -46,6 +50,10 @@
     align-items: center;
 }
 
+.breadcrumb-item-menu {
+    position: relative;
+}
+
 .breadcrumb-sep {
     display: inline-flex;
     margin: 0 0.08rem;
@@ -60,8 +68,11 @@
 .breadcrumb-link,
 .breadcrumb-link:visited,
 .breadcrumb-link:hover,
-.breadcrumb-select-wrapper,
-.breadcrumb-select-trigger {
+.breadcrumb-menu-link,
+.breadcrumb-menu-link:visited,
+.breadcrumb-menu-link:hover,
+.breadcrumb-menu-option,
+.breadcrumb-menu-option:visited {
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -70,19 +81,25 @@
 }
 
 .breadcrumb-link .crumb-text,
-.breadcrumb-select-trigger .crumb-text {
+.breadcrumb-menu-link .crumb-text {
     display: inline-block;
     line-height: 1;
 }
 
 .prose a.breadcrumb-link,
 .prose a.breadcrumb-link:visited,
-.prose a.breadcrumb-link:hover {
+.prose a.breadcrumb-link:hover,
+.prose a.breadcrumb-menu-link,
+.prose a.breadcrumb-menu-link:visited,
+.prose a.breadcrumb-menu-link:hover,
+.prose a.breadcrumb-menu-option,
+.prose a.breadcrumb-menu-option:visited,
+.prose a.breadcrumb-menu-option:hover {
     border-bottom: none;
 }
 
 .breadcrumb-link::after,
-.breadcrumb-select-trigger::after {
+.breadcrumb-menu-link::after {
     content: "";
     position: absolute;
     left: 0;
@@ -96,28 +113,82 @@
 
 
 .breadcrumb-link:hover,
-.breadcrumb-select-wrapper:hover {
+.breadcrumb-menu-link:hover,
+.breadcrumb-item-menu.is-open > .breadcrumb-menu-link {
     opacity: 0.8;
 }
 
-
-
-.breadcrumb-select-trigger .crumb-text::after {
-    content: "▾";
-    display: inline-block;
+.breadcrumb-menu-caret {
+    display: none;
     font-size: 0.8em;
     margin-inline-start: 0.12rem;
     line-height: 1;
     vertical-align: 0.04em;
+    transition: transform 0.16s ease, color 0.16s ease;
 }
 
-.breadcrumb-select {
+[data-breadcrumb-mode-toggle="true"] .breadcrumb-menu-caret,
+.slot-row-breadcrumb.is-breadcrumb-menu-mode [data-breadcrumb-menu-link="true"] .breadcrumb-menu-caret {
+    display: inline-block;
+}
+
+.breadcrumb-menu-panel {
     position: absolute;
-
-    opacity: 0;
+    inset-block-start: calc(100% + 0.28rem);
+    inset-inline-start: 0;
+    z-index: 12;
+    display: flex;
+    flex-direction: column;
+    gap: 0.08rem;
+    min-width: max-content;
+    padding: 0.26rem;
+    background: var(--bg);
+    border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+    border-radius: 0.42rem;
+    box-shadow: 0 0.32rem 1rem color-mix(in srgb, var(--fg) 12%, transparent);
+    white-space: nowrap;
 }
 
-.breadcrumb-select-wrapper:has(.breadcrumb-select:focus-visible) {
+.breadcrumb-menu-panel[hidden] {
+    display: none;
+}
+
+.breadcrumb-menu-option,
+.breadcrumb-menu-option:visited {
+    display: flex;
+    align-items: center;
+    padding: 0.16rem 0.42rem;
+    line-height: 1.35;
+    color: var(--link);
+    border-radius: 0.32rem;
+}
+
+.breadcrumb-menu-option.is-current,
+.breadcrumb-menu-option.is-current:visited {
+    color: var(--focus);
+}
+
+.breadcrumb-menu-option:hover,
+.breadcrumb-menu-option:focus-visible {
+    color: var(--focus);
+    background: color-mix(in srgb, var(--focus) 8%, transparent);
+}
+
+.breadcrumb-item-menu.is-open > .breadcrumb-menu-link {
+    background: color-mix(in srgb, var(--focus) 8%, transparent);
+    border-radius: 0.28rem;
+}
+
+.breadcrumb-item-menu.is-open > .breadcrumb-menu-link .breadcrumb-menu-caret {
+    transform: rotate(180deg);
+}
+
+.breadcrumb-item-menu.is-open > .breadcrumb-menu-link .breadcrumb-menu-caret {
+    color: var(--focus);
+}
+
+.breadcrumb-menu-link:focus-visible,
+.breadcrumb-menu-option:focus-visible {
     outline: 2px dashed var(--focus);
     outline-offset: 2px;
 }

@@ -1,3 +1,6 @@
+import { initEntryBreadcrumb } from './breadcrumb-entry.js';
+import { initBreadcrumbMenus } from './breadcrumb-menu.js';
+
 // 针对微信安卓版：通过 WeixinJSBridge 强制覆盖字体大小并禁止用户修改，缓解字体缩放导致的页面跳变
 (function () {
     if (typeof WeixinJSBridge == "object" && typeof WeixinJSBridge.invoke == "function") {
@@ -68,4 +71,6 @@ async function injectSiteManifest() {
 
 document.addEventListener('DOMContentLoaded', () => {
     injectSiteManifest();
+    initBreadcrumbMenus();
+    initEntryBreadcrumb();
 });

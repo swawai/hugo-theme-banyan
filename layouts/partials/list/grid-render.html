@@ -51,6 +51,6 @@
 {{- $entries := slice -}}
 {{- range $items -}}
   {{- $name := or .schemaName .text .title -}}
-  {{- $entries = $entries | append (dict "url" .href "name" $name) -}}
+  {{- $entries = $entries | append (dict "url" (.schemaHref | default .href) "name" $name) -}}
 {{- end -}}
 {{ partial "schema-itemlist.html" (dict "entries" $entries) }}

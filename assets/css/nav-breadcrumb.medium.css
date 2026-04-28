@@ -12,16 +12,6 @@
         margin-inline-end: 0.1rem;
     }
 
-    .page-shell.page-shell--has-rail .slot-breadcrumb-root-stage .breadcrumb-root-stage-compact {
-        display: none;
-    }
-
-    .page-shell.page-shell--has-rail .slot-breadcrumb-root-stage .breadcrumb-root-stage-current {
-        display: inline-flex;
-    }
-
-
-
     .page-shell.page-shell--has-rail .breadcrumb-root-nav-list,
     .page-shell.page-shell--has-rail .breadcrumb-root-nav-compact {
         display: block;

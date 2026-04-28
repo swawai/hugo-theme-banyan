@@ -16,7 +16,8 @@
 {{ if not (in $allowedSwModes $swMode) }}
     {{ errorf "编译失败: params.service_worker.mode 仅支持 enable/disable/off，当前值为 %q。" $swModeRaw }}
 {{ end }}
-{{ $buildVersion := partialCached "build-version.html" . "build-version" }}
+{{ $primarySite := index (sort .Sites "Language.Weight") 0 }}
+{{ $buildVersion := partialCached "build-version.html" $primarySite.Home "build-version-primary" }}
 {{ with index $swConfig "cache_first_extensions" }}
     {{ errorf "编译失败: params.service_worker.cache_first_extensions 已迁移到 data/cache-policy.toml（或主题默认缓存策略）的 routes[].sw 配置，请勿继续在 hugo.toml 中设置。" }}
 {{ end }}
@@ -66,8 +67,16 @@
         "url" (printf "%s%s/" .Home.RelPermalink $offlineNoticePath)
     ) }}
 {{ end }}
-{{ $primarySite := index (sort .Sites "Language.Weight") 0 }}
 {{ $slotSources := partial "slots/prepare.html" (dict "ctx" .) }}
+{{ $entryTaxonomyRoots := dict }}
+{{ range $spec := partial "taxonomy/enabled.html" (dict "ctx" .) }}
+    {{ $plural := printf "%v" (index $spec "plural") }}
+    {{ $entryTaxonomyRoots = merge $entryTaxonomyRoots (dict $plural (dict
+        "label" (partial "taxonomy/label.html" (dict "ctx" $ "spec" $spec))
+        "href" (partial "taxonomy/url.html" (dict "ctx" $ "spec" $spec))
+    )) }}
+{{ end }}
+{{ partialCached "entry-fragments-publish.html" (dict "ctx" . "build_version" $buildVersion) $buildVersion }}
 {{ if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) }}
     {{ $headersBody := partial "cache-policy-cloudflare-headers-body.txt" (dict "routes" $cachePolicyHeaderRoutes) }}
     {{ $headersResource := resources.FromString "_headers" $headersBody }}
@@ -226,7 +235,7 @@
         {{ end }}
     {{ end }}
 </head>
-<body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}">
+<body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-fragment-root="{{ printf "/__fragments/%s/%s/" $buildVersion .Site.Language.Lang }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-taxonomy-roots="{{ $entryTaxonomyRoots | jsonify }}">
     {{ if and .IsPage (not .Params.slug) }}
         {{ errorf "编译失败: 页面 %q (标题: %q) 未配置 slug 字段。" .File.Path .Title }}
     {{ end }}
@@ -295,7 +304,7 @@
             <div class="slot-row slot-row-breadcrumb">
                 {{ with index $slotSources "breadcrumb_root" }}
                 <div class="slot slot-breadcrumb-root slot-breadcrumb-root-stage" data-slot="breadcrumb_root">
-                    {{ partial "breadcrumb/root.html" (dict "ctx" $ "slot" "breadcrumb_root" "source" . "mode" "stage") }}
+                    {{ partial "breadcrumb/root.html" (dict "ctx" $ "slot" "breadcrumb_root" "source" . "mode" "stage" "is_terminal" (not $hasBreadcrumbTail)) }}
                 </div>
                 {{ end }}
                 {{ if and $hasBreadcrumbRoot $hasBreadcrumbTail }}

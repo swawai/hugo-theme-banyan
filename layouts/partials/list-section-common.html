@@ -1,67 +1,17 @@
 {{ $ctx := .ctx }}
 {{ if ne $ctx.Kind "section" }}{{ errorf "编译失败: list-section-common.html 仅支持 kind=section，当前页面 %q 的 kind=%q。" $ctx.RelPermalink $ctx.Kind }}{{ end }}
-{{ $sortField := "dateKey" }}
-{{ $sortOrder := "desc" }}
+{{ $entries := partial "section/direct-children.html" (dict "ctx" $ctx) }}
 
 <div class="grid-list" data-sortable="true" data-sort-variant="section" data-sort-columns="3" data-sort-default="date-desc">
-  {{ $sectionEntriesRaw := slice }}
-  {{ range $ctx.Sections }}
-    {{ $section := . }}
-    {{ $cnt := len $section.RegularPagesRecursive }}
-    {{ $d := $section.Lastmod }}
-    {{ with first 1 ($section.RegularPagesRecursive.ByLastmod.Reverse) }}
-      {{ $p := index . 0 }}
-      {{ $d = $p.Lastmod }}
-    {{ else }}
-      {{ with first 1 ($section.RegularPagesRecursive.ByDate.Reverse) }}
-        {{ $p := index . 0 }}
-        {{ $d = $p.Date }}
-      {{ end }}
-    {{ end }}
-    {{ if eq ($d.Format "2006") "0001" }}{{ $d = $section.Date }}{{ end }}
-    {{ $sectionEntriesRaw = $sectionEntriesRaw | append (dict
-      "kind" "section"
-      "title" $section.Title
-      "href" $section.RelPermalink
-      "icon" "folder"
-      "prefetchKind" "desc"
-      "cnt" $cnt
-      "countText" $cnt
-      "countUnit" ""
-      "dateKey" ($d.Format "20060102150405")
-      "dateText" ($d.Format "2006-01-02")) }}
-  {{ end }}
-
-  {{ $pageEntriesRaw := slice }}
-  {{ range $ctx.RegularPages }}
-    {{ $page := . }}
-    {{ $bytes := len $page.RawContent }}
-    {{ $kb := div (add $bytes 1023) 1024 }}
-    {{ $d := $page.Lastmod }}
-    {{ if eq ($d.Format "2006") "0001" }}{{ $d = $page.Date }}{{ end }}
-    {{ $pageEntriesRaw = $pageEntriesRaw | append (dict
-      "kind" "page"
-      "title" $page.Title
-      "href" $page.RelPermalink
-      "icon" "file"
-      "prefetchKind" "post"
-      "cnt" $bytes
-      "countText" $kb
-      "countUnit" "&thinsp;KB"
-      "dateKey" ($d.Format "20060102150405")
-      "dateText" ($d.Format "2006-01-02")) }}
-  {{ end }}
-
-  {{ $sectionEntries := sort $sectionEntriesRaw $sortField $sortOrder }}
-  {{ $pageEntries := sort $pageEntriesRaw $sortField $sortOrder }}
-  {{ $ordered := slice }}
-  {{ range $pageEntries }}{{ $ordered = $ordered | append . }}{{ end }}
-  {{ range $sectionEntries }}{{ $ordered = $ordered | append . }}{{ end }}
-
   {{ $items := slice }}
-  {{ range $ordered }}
+  {{ range $entries }}
+    {{ $href := .href }}
+    {{ if and (eq .kind "page") (hasPrefix .logicalPath "/d/") }}
+      {{ $href = printf "%s?%s" .href (querify "from" .logicalPath) }}
+    {{ end }}
     {{ $items = $items | append (dict
-      "href" .href
+      "href" $href
+      "schemaHref" .href
       "title" .title
       "icon" .icon
       "prefetchKind" .prefetchKind
@@ -73,7 +23,7 @@
         "sort-group" (cond (eq .kind "section") "0" "1")
         "sort-name" .title
         "sort-date" .dateKey
-        "sort-count" (printf "%v" .cnt))) }}
+        "sort-count" (printf "%v" .countValue))) }}
   {{ end }}
 
   {{ partial "list/grid-render.html" (dict "ctx" $ctx "items" $items) }}

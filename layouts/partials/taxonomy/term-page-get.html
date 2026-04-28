@@ -2,9 +2,13 @@
 {{- $plural := lower (printf "%v" (or .plural (index $spec "plural"))) -}}
 {{- $value := trim (printf "%v" (.value | default "")) " " -}}
 {{- $page := "" -}}
+{{- $pages := site.Pages -}}
+{{- with .ctx -}}
+  {{- $pages = .Site.Pages -}}
+{{- end -}}
 {{- if and (ne $plural "") (ne $value "") -}}
   {{- $targetNorm := partial "taxonomy/normalize.html" (dict "spec" $spec "value" $value) -}}
-  {{- range where site.Pages "Kind" "term" -}}
+  {{- range where $pages "Kind" "term" -}}
     {{- if ne (lower (printf "%v" .Data.Plural)) $plural -}}
       {{- continue -}}
     {{- end -}}

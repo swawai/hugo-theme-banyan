@@ -1,0 +1,17 @@
+{{- $ctx := .ctx -}}
+{{- if not $ctx -}}
+  {{- errorf "编译失败: taxonomy/logical-path.html 缺少 ctx。" -}}
+{{- end -}}
+{{- $spec := .spec | default dict -}}
+{{- $plural := printf "%v" (or .plural (index $spec "plural")) -}}
+{{- $result := printf "/%s/" $plural -}}
+{{- $value := "" -}}
+{{- if isset . "value" -}}
+  {{- $value = trim (printf "%v" .value) " " -}}
+{{- else if eq $ctx.Kind "term" -}}
+  {{- $value = trim (printf "%v" $ctx.Data.Term) " " -}}
+{{- end -}}
+{{- if ne $value "" -}}
+  {{- $result = printf "/%s/%s/" $plural (urlize $value) -}}
+{{- end -}}
+{{- return $result -}}

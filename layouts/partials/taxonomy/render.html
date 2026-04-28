@@ -3,12 +3,7 @@
 {{ $withContent := true }}
 {{ if isset . "with_content" }}{{ $withContent = .with_content }}{{ end }}
 {{ $spec := .spec | default (partial "taxonomy/spec-get.html" (dict "ctx" $ctx "plural" $ctx.Data.Plural)) }}
-{{ $items := slice }}
-{{ if eq (index $spec "mode") "tree" }}
-  {{ $items = partial "taxonomy/items-tree.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) }}
-{{ else }}
-  {{ $items = partial "taxonomy/items-flat.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) }}
-{{ end }}
+{{ $items := partial "taxonomy/direct-children.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) }}
 {{ $content := "" }}
 {{ if $withContent }}{{ $content = trim $ctx.Content " \r\n\t" }}{{ end }}
 
@@ -18,5 +13,5 @@
 </div>
 {{ end }}
 <div class="grid-list" data-sortable="true" data-sort-variant="tree" data-sort-columns="3" data-sort-default="date-desc">
-  {{ partial "taxonomy/list-view.html" (dict "ctx" $ctx "items" $items) }}
+  {{ partial "taxonomy/list-view.html" (dict "ctx" $ctx "spec" $spec "kind" $kind "items" $items) }}
 </div>

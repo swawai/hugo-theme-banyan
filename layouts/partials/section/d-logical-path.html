@@ -1,0 +1,22 @@
+{{- $ctx := .ctx -}}
+{{- if not $ctx -}}
+  {{- errorf "编译失败: section/d-logical-path.html 缺少 ctx。" -}}
+{{- end -}}
+{{- $result := "" -}}
+{{- with $ctx.File -}}
+  {{- $filePath := replace .Path "\\" "/" -}}
+  {{- if hasPrefix $filePath "d/" -}}
+    {{- $dirPath := replaceRE "/[^/]+$" "" $filePath -}}
+    {{- if eq $ctx.Kind "section" -}}
+      {{- $result = printf "/%s/" (trim $dirPath "/") -}}
+    {{- else -}}
+      {{- $baseName := .TranslationBaseName -}}
+      {{- if eq $baseName "index" -}}
+        {{- $result = printf "/%s/" (trim $dirPath "/") -}}
+      {{- else -}}
+        {{- $result = printf "/%s/%s/" (trim $dirPath "/") $baseName -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $result -}}

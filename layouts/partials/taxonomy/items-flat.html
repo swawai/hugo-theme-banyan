@@ -7,6 +7,7 @@
     {{- $items = $items | append (dict
         "kind" "cat"
         "title" ($entry.Page.LinkTitle | default $entry.Page.Title)
+        "term_key" (urlize (printf "%v" $entry.Page.Data.Term))
         "latest" (index $agg "latest")
         "latestKey" (index $agg "latestKey")
         "cnt" $entry.Count
@@ -21,6 +22,7 @@
     {{- $items = $items | append (dict
         "kind" "page"
         "title" $page.Title
+        "entry_key" (partial "taxonomy/page-entry-key.html" (dict "ctx" $page))
         "latest" ($d.Format "2006-01-02")
         "latestKey" ($d.Format "20060102")
         "cnt" $bytes

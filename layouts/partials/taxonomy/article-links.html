@@ -35,7 +35,7 @@
     {{ end }}
     {{ range $root := $rootOrder }}
       {{ $term := index $deepestByRoot $root }}
-      {{ $display := partial "taxonomy/value-label.html" (dict "spec" $spec "value" $term) }}
+      {{ $display := partial "taxonomy/value-label.html" (dict "ctx" $page "spec" $spec "value" $term) }}
 {{ partial "link.html" (dict "ctx" $page "href" (partial "taxonomy/url.html" (dict "ctx" $page "spec" $spec "value" $term)) "rel" (index $spec "term_rel") "text" $display "linkSlot" "nav") }}
     {{ end }}
   {{ else }}

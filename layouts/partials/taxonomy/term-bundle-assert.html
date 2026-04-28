@@ -35,7 +35,7 @@
       {{- $norm := partial "taxonomy/normalize.html" (dict "spec" $spec "value" $targetText) -}}
       {{- if isset $seen $norm -}}{{- continue -}}{{- end -}}
       {{- $seen = merge $seen (dict $norm true) -}}
-      {{- $termPage := partialCached "taxonomy/term-page-get.html" (dict "spec" $spec "plural" $plural "value" $targetText) $lang (lower $plural) $norm -}}
+      {{- $termPage := partialCached "taxonomy/term-page-get.html" (dict "ctx" $page "spec" $spec "plural" $plural "value" $targetText) $lang (lower $plural) $norm -}}
       {{- $expected := printf "content/%s/%s/_index.%s.md" $plural $targetText $lang -}}
       {{- $expectedHint := $expected -}}
       {{- if eq $lang $defaultLang -}}

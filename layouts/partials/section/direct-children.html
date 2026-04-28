@@ -1,0 +1,64 @@
+{{- $ctx := .ctx | default . -}}
+{{- if ne $ctx.Kind "section" -}}
+  {{- errorf "编译失败: section/direct-children.html 仅支持 kind=section，当前页面 %q 的 kind=%q。" $ctx.RelPermalink $ctx.Kind -}}
+{{- end -}}
+{{- $sortField := "dateKey" -}}
+{{- $sortOrder := "desc" -}}
+{{- $sectionEntriesRaw := slice -}}
+{{- range $ctx.Sections -}}
+  {{- $section := . -}}
+  {{- $count := len $section.RegularPagesRecursive -}}
+  {{- $dateValue := $section.Lastmod -}}
+  {{- with first 1 ($section.RegularPagesRecursive.ByLastmod.Reverse) -}}
+    {{- $page := index . 0 -}}
+    {{- $dateValue = $page.Lastmod -}}
+  {{- else -}}
+    {{- with first 1 ($section.RegularPagesRecursive.ByDate.Reverse) -}}
+      {{- $page := index . 0 -}}
+      {{- $dateValue = $page.Date -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if eq ($dateValue.Format "2006") "0001" -}}{{- $dateValue = $section.Date -}}{{- end -}}
+  {{- $sectionEntriesRaw = $sectionEntriesRaw | append (dict
+    "kind" "section"
+    "title" $section.Title
+    "href" $section.RelPermalink
+    "icon" "folder"
+    "prefetchKind" "desc"
+    "countValue" $count
+    "countText" $count
+    "countUnit" ""
+    "dateKey" ($dateValue.Format "20060102150405")
+    "dateText" ($dateValue.Format "2006-01-02")
+    "node" $section
+    "logicalPath" (partial "section/d-logical-path.html" (dict "ctx" $section))
+  ) -}}
+{{- end -}}
+{{- $pageEntriesRaw := slice -}}
+{{- range $ctx.RegularPages -}}
+  {{- $page := . -}}
+  {{- $bytes := len $page.RawContent -}}
+  {{- $kb := div (add $bytes 1023) 1024 -}}
+  {{- $dateValue := $page.Lastmod -}}
+  {{- if eq ($dateValue.Format "2006") "0001" -}}{{- $dateValue = $page.Date -}}{{- end -}}
+  {{- $pageEntriesRaw = $pageEntriesRaw | append (dict
+    "kind" "page"
+    "title" $page.Title
+    "href" $page.RelPermalink
+    "icon" "file"
+    "prefetchKind" "post"
+    "countValue" $bytes
+    "countText" $kb
+    "countUnit" "&thinsp;KB"
+    "dateKey" ($dateValue.Format "20060102150405")
+    "dateText" ($dateValue.Format "2006-01-02")
+    "node" $page
+    "logicalPath" (partial "section/d-logical-path.html" (dict "ctx" $page))
+  ) -}}
+{{- end -}}
+{{- $sectionEntries := sort $sectionEntriesRaw $sortField $sortOrder -}}
+{{- $pageEntries := sort $pageEntriesRaw $sortField $sortOrder -}}
+{{- $ordered := slice -}}
+{{- range $pageEntries -}}{{- $ordered = $ordered | append . -}}{{- end -}}
+{{- range $sectionEntries -}}{{- $ordered = $ordered | append . -}}{{- end -}}
+{{- return $ordered -}}

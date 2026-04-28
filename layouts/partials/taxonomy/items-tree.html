@@ -11,7 +11,7 @@
   {{- $unassignedTerm := printf "%v" (index $spec "unassigned_term" | default "") -}}
   {{- $unassignedNorm := partial "taxonomy/normalize.html" (dict "spec" $spec "value" $unassignedTerm) -}}
   {{- if and (ne $unassignedTerm "") (eq $termNorm $unassignedNorm) -}}
-    {{- range $page := site.RegularPages -}}
+    {{- range $page := $ctx.Site.RegularPages -}}
       {{- $values := partial "taxonomy/values.html" (dict "page" $page "spec" $spec) -}}
       {{- if gt (len $values) 0 -}}
         {{- continue -}}
@@ -35,7 +35,7 @@
     {{- $root := index $termParts 0 -}}
     {{- $rootNorm := partial "taxonomy/normalize.html" (dict "spec" $spec "value" $root) -}}
     {{- $children := slice -}}
-    {{- range $termValue, $pages := (index site.Taxonomies $plural | default dict) -}}
+    {{- range $termValue, $pages := (index $ctx.Site.Taxonomies $plural | default dict) -}}
       {{- $termValueNorm := partial "taxonomy/normalize.html" (dict "spec" $spec "value" $termValue) -}}
       {{- if not (and (hasPrefix $termValueNorm (printf "%s%s" $termNorm $separator)) (ne $termValueNorm $termNorm)) -}}
         {{- continue -}}
@@ -53,8 +53,9 @@
       {{- $agg := partial "taxonomy/pages-dedup-latest.html" (dict "pages" $pagesAll) -}}
       {{- $items = $items | append (dict
           "kind" "cat"
-          "title" .
-          "display" (partial "taxonomy/value-label.html" (dict "spec" $spec "value" $full "fallback" .))
+          "title" . 
+          "term_key" (urlize .)
+          "display" (partial "taxonomy/value-label.html" (dict "ctx" $ctx "spec" $spec "value" $full "fallback" .))
           "latest" (index $agg "latest")
           "latestKey" (index $agg "latestKey")
           "cnt" (index $agg "cnt")
@@ -83,6 +84,7 @@
       {{- $items = $items | append (dict
           "kind" "page"
           "title" $page.Title
+          "entry_key" (partial "taxonomy/page-entry-key.html" (dict "ctx" $page))
           "latest" ($d.Format $dateFmt)
           "latestKey" ($d.Format "20060102")
           "cnt" $bytes
@@ -93,7 +95,7 @@
   {{- end -}}
 {{- else if eq $kind "root" -}}
   {{- $roots := slice -}}
-  {{- range $termValue, $pages := (index site.Taxonomies $plural | default dict) -}}
+  {{- range $termValue, $pages := (index $ctx.Site.Taxonomies $plural | default dict) -}}
     {{- $root := index (split $termValue $separator) 0 -}}
     {{- if not (in $roots $root) -}}
       {{- $roots = $roots | append $root -}}
@@ -106,7 +108,8 @@
     {{- $items = $items | append (dict
         "kind" "cat"
         "title" $root
-        "display" (partial "taxonomy/value-label.html" (dict "spec" $spec "value" $root "fallback" $root))
+        "term_key" (urlize $root)
+        "display" (partial "taxonomy/value-label.html" (dict "ctx" $ctx "spec" $spec "value" $root "fallback" $root))
         "latest" (index $agg "latest")
         "latestKey" (index $agg "latestKey")
         "cnt" (index $agg "cnt")

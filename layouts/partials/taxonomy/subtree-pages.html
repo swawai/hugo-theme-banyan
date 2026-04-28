@@ -10,7 +10,7 @@
 {{- $uniq := $scr.Get $key -}}
 {{- if not $uniq -}}
   {{- $pagesAll := slice -}}
-  {{- $taxonomyObject := index site.Taxonomies $plural | default dict -}}
+  {{- $taxonomyObject := index $page.Site.Taxonomies $plural | default dict -}}
   {{- $separator := printf "%v" (index $spec "separator" | default "/") -}}
   {{- if eq $mode "subtree" -}}
     {{- range $term, $pages := $taxonomyObject -}}

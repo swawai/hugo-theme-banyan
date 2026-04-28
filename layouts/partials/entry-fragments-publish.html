@@ -1,0 +1,54 @@
+{{- $ctx := .ctx -}}
+{{- if not $ctx -}}
+  {{- errorf "编译失败: entry-fragments-publish.html 缺少 ctx。" -}}
+{{- end -}}
+{{- $buildVersion := trim (printf "%v" .build_version) " \r\n\t" -}}
+{{- if eq $buildVersion "" -}}
+  {{- errorf "编译失败: entry-fragments-publish.html 缺少 build_version。" -}}
+{{- end -}}
+{{- range $languageSite := sort $ctx.Sites "Language.Weight" -}}
+  {{- $dSections := where (where $languageSite.Pages "Kind" "section") "Section" "d" -}}
+  {{- range sort $dSections "RelPermalink" -}}
+    {{- $ownerPath := partial "section/d-logical-path.html" (dict "ctx" .) -}}
+    {{- if $ownerPath -}}
+      {{- $entries := partial "section/direct-children.html" (dict "ctx" .) -}}
+      {{- $itemJsonList := slice -}}
+      {{- range $entries -}}
+        {{- $key := partial "section/d-logical-key.html" (dict "ctx" .node) -}}
+        {{- $itemJson := "" -}}
+        {{- if eq .kind "section" -}}
+          {{- $itemJson = (slice $key .title "d") | jsonify -}}
+        {{- else -}}
+          {{- $itemJson = (slice $key .title "p" .href) | jsonify -}}
+        {{- end -}}
+        {{- $itemJsonList = $itemJsonList | append $itemJson -}}
+      {{- end -}}
+      {{- $targetDir := replaceRE "^/" "" $ownerPath -}}
+      {{- $fragmentBody := printf "[%s]" (delimit $itemJsonList ",") -}}
+      {{- $fragmentResource := resources.FromString (printf "__fragments/%s/%s/%s_children.json" $buildVersion $languageSite.Language.Lang $targetDir) $fragmentBody -}}
+      {{- $publishFragment := $fragmentResource.RelPermalink -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $taxonomyPages := where $languageSite.Pages "Kind" "in" (slice "taxonomy" "term") -}}
+  {{- range sort $taxonomyPages "RelPermalink" -}}
+    {{- $spec := partial "taxonomy/spec-get.html" (dict "ctx" . "plural" .Data.Plural) -}}
+    {{- $ownerPath := partial "taxonomy/logical-path.html" (dict "ctx" . "spec" $spec) -}}
+    {{- if $ownerPath -}}
+      {{- $items := partial "taxonomy/direct-children.html" (dict "ctx" . "spec" $spec) -}}
+      {{- $itemJsonList := slice -}}
+      {{- range $items -}}
+        {{- $itemJson := "" -}}
+        {{- if eq .kind "cat" -}}
+          {{- $itemJson = (slice .term_key (or .display .title) "d") | jsonify -}}
+        {{- else -}}
+          {{- $itemJson = (slice .entry_key .title "p" .url) | jsonify -}}
+        {{- end -}}
+        {{- $itemJsonList = $itemJsonList | append $itemJson -}}
+      {{- end -}}
+      {{- $targetDir := replaceRE "^/" "" $ownerPath -}}
+      {{- $fragmentBody := printf "[%s]" (delimit $itemJsonList ",") -}}
+      {{- $fragmentResource := resources.FromString (printf "__fragments/%s/%s/%s_children.json" $buildVersion $languageSite.Language.Lang $targetDir) $fragmentBody -}}
+      {{- $publishFragment := $fragmentResource.RelPermalink -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
