@@ -16,6 +16,7 @@
 {{ if not (in $allowedSwModes $swMode) }}
     {{ errorf "编译失败: params.service_worker.mode 仅支持 enable/disable/off，当前值为 %q。" $swModeRaw }}
 {{ end }}
+{{ partialCached "audit/permalink-collision.html" (dict "ctx" .) "audit-permalink-collision" }}
 {{ $primarySite := index (sort .Sites "Language.Weight") 0 }}
 {{ $buildVersion := partialCached "build-version.html" $primarySite.Home "build-version-primary" }}
 {{ with index $swConfig "cache_first_extensions" }}

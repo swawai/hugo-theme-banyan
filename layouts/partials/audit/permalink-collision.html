@@ -1,0 +1,96 @@
+{{- $ctx := .ctx | default . -}}
+{{- $build := site.Params.build | default dict -}}
+{{- $audit := index $build "audit" | default dict -}}
+{{- $modeRaw := printf "%v" (index $audit "permalink_collision" | default "warn") -}}
+{{- $mode := lower $modeRaw -}}
+{{- $allowedModes := slice "off" "warn" "error" -}}
+{{- if not (in $allowedModes $mode) -}}
+  {{- errorf "Build failed: params.build.audit.permalink_collision must be one of off/warn/error, got %q." $modeRaw -}}
+{{- end -}}
+{{- if ne $mode "off" -}}
+
+  {{- $primaryByHref := dict -}}
+  {{- $aliasByHref := dict -}}
+
+  {{- range sort $ctx.Sites "Language.Weight" -}}
+    {{- $site := . -}}
+    {{- range $site.Pages -}}
+      {{- $page := . -}}
+      {{- $primaryHref := printf "%v" $page.RelPermalink -}}
+      {{- if eq $primaryHref "" -}}
+        {{- continue -}}
+      {{- end -}}
+      {{- $sourceLabel := printf "%s [%s %s]" $page.RelPermalink $site.Language.Lang $page.Kind -}}
+      {{- with $page.File -}}
+        {{- $sourceLabel = printf "%s [%s %s]" .Path $site.Language.Lang $page.Kind -}}
+      {{- end -}}
+      {{- $primaryRecord := dict
+        "href" $primaryHref
+        "source" $sourceLabel
+        "lang" $site.Language.Lang
+        "kind" $page.Kind
+        "title" ($page.LinkTitle | default $page.Title)
+      -}}
+      {{- $primaryRecords := index $primaryByHref $primaryHref | default slice -}}
+      {{- $primaryRecords = $primaryRecords | append $primaryRecord -}}
+      {{- $primaryByHref = merge $primaryByHref (dict $primaryHref $primaryRecords) -}}
+
+      {{- range $aliasHref := $page.Aliases -}}
+        {{- if eq (printf "%v" $aliasHref) "" -}}
+          {{- continue -}}
+        {{- end -}}
+        {{- $aliasRecord := merge $primaryRecord (dict
+          "alias_href" (printf "%v" $aliasHref)
+          "target_href" $primaryHref
+        ) -}}
+        {{- $aliasRecords := index $aliasByHref $aliasHref | default slice -}}
+        {{- $aliasRecords = $aliasRecords | append $aliasRecord -}}
+        {{- $aliasByHref = merge $aliasByHref (dict $aliasHref $aliasRecords) -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- $messages := slice -}}
+
+  {{- range $href, $records := $primaryByHref -}}
+    {{- if gt (len $records) 1 -}}
+      {{- $sources := slice -}}
+      {{- range $records -}}
+        {{- $sources = $sources | append (printf "%s → %s" (index . "source") (index . "href")) -}}
+      {{- end -}}
+      {{- $messages = $messages | append (printf "Primary URL collision %q: %s" $href (delimit $sources " ; ")) -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- range $href, $records := $aliasByHref -}}
+    {{- if gt (len $records) 1 -}}
+      {{- $sources := slice -}}
+      {{- range $records -}}
+        {{- $sources = $sources | append (printf "%s (target %s)" (index . "source") (index . "target_href")) -}}
+      {{- end -}}
+      {{- $messages = $messages | append (printf "Alias collision %q: %s" $href (delimit $sources " ; ")) -}}
+    {{- end -}}
+    {{- $primaryRecords := index $primaryByHref $href | default slice -}}
+    {{- if gt (len $primaryRecords) 0 -}}
+      {{- $aliasSources := slice -}}
+      {{- range $records -}}
+        {{- $aliasSources = $aliasSources | append (printf "%s (target %s)" (index . "source") (index . "target_href")) -}}
+      {{- end -}}
+      {{- $primarySources := slice -}}
+      {{- range $primaryRecords -}}
+        {{- $primarySources = $primarySources | append (printf "%s → %s" (index . "source") (index . "href")) -}}
+      {{- end -}}
+      {{- $messages = $messages | append (printf "Alias %q collides with a primary URL: alias=%s ; primary=%s" $href (delimit $aliasSources " ; ") (delimit $primarySources " ; ")) -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- if gt (len $messages) 0 -}}
+    {{- $summary := printf "Detected %d permalink/alias collisions." (len $messages) -}}
+    {{- if eq $mode "error" -}}
+      {{- errorf "Build failed: %s %s" $summary (delimit $messages " || ") -}}
+    {{- else -}}
+      {{- warnf "Build warning: %s %s" $summary (delimit $messages " || ") -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return "" -}}
