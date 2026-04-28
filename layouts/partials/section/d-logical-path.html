@@ -1,6 +1,6 @@
 {{- $ctx := .ctx -}}
 {{- if not $ctx -}}
-  {{- errorf "编译失败: section/d-logical-path.html 缺少 ctx。" -}}
+  {{- errorf "Build failed: section/d-logical-path.html requires ctx." -}}
 {{- end -}}
 {{- $result := "" -}}
 {{- with $ctx.File -}}

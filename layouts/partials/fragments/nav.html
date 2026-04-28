@@ -44,12 +44,12 @@
         {{ else }}
             {{ $targetPage = $ctx.Site.GetPage $pageRef }}
         {{ end }}
-        {{ if not $targetPage }}{{ errorf "编译失败: 页面 %q 的 nav.items.page=%q 找不到页面。" $source.File.Path $pageRef }}{{ end }}
+        {{ if not $targetPage }}{{ errorf "Build failed: page %q cannot resolve nav.items.page=%q." $source.File.Path $pageRef }}{{ end }}
     {{ end }}
     {{ $hrefRaw := "" }}
     {{ with $targetPage }}{{ $hrefRaw = printf "%v" .RelPermalink }}{{ end }}
     {{ if eq $hrefRaw "" }}{{ with index $item "href" }}{{ $hrefRaw = printf "%v" . }}{{ end }}{{ end }}
-    {{ if eq $hrefRaw "" }}{{ errorf "编译失败: 页面 %q 的 nav.items 缺少 href/page。" $source.File.Path }}{{ end }}
+    {{ if eq $hrefRaw "" }}{{ errorf "Build failed: page %q has nav.items missing href/page." $source.File.Path }}{{ end }}
     {{ $itemText := "" }}
     {{ with index $item "text" }}{{ $itemText = printf "%v" . }}{{ end }}
     {{ if eq $itemText "" }}{{ with index $item "name" }}{{ $itemText = printf "%v" . }}{{ end }}{{ end }}
@@ -58,7 +58,7 @@
             {{ $itemText = i18n (printf "%v" .) | default "" }}
         {{ end }}
     {{ end }}
-    {{ if eq $itemText "" }}{{ errorf "编译失败: 页面 %q 的 nav.items 缺少 text/name/text_key。" $source.File.Path }}{{ end }}
+    {{ if eq $itemText "" }}{{ errorf "Build failed: page %q has nav.items missing text/name/text_key." $source.File.Path }}{{ end }}
     {{ $itemTitle := "" }}
     {{ with index $item "title" }}{{ $itemTitle = printf "%v" . }}{{ end }}
     {{ $href := "" }}
@@ -76,7 +76,7 @@
     {{ else }}
         {{ $href = $hrefRaw }}
     {{ end }}
-    {{ if and $isInternal (eq $itemKey "") }}{{ errorf "编译失败: 页面 %q 的 nav.items.key 不能为空。" $source.File.Path }}{{ end }}
+    {{ if and $isInternal (eq $itemKey "") }}{{ errorf "Build failed: page %q cannot use an empty nav.items.key." $source.File.Path }}{{ end }}
     {{ $isCurrent := partial "fragments/nav-link-is-current.html" (dict "ctx" $ctx "item" $item) }}
     {{ if $isCurrent }}{{ $hasCurrent = true }}{{ end }}
     {{ $isFallback := false }}
@@ -92,7 +92,7 @@
     ) }}
 {{ end }}
 
-{{ if gt $fallbackItemCount 1 }}{{ errorf "编译失败: 页面 %q 的 nav.items 只允许一个 fallback_when_none=true。" $source.File.Path }}{{ end }}
+{{ if gt $fallbackItemCount 1 }}{{ errorf "Build failed: page %q allows only one nav.items entry with fallback_when_none=true." $source.File.Path }}{{ end }}
 
 {{ $mePageRef := "" }}
 {{ with index $meConfig "page" }}{{ $mePageRef = printf "%v" . }}{{ end }}
@@ -105,7 +105,7 @@
     {{ else }}
         {{ $mePage = $ctx.Site.GetPage $mePageRef }}
     {{ end }}
-    {{ if not $mePage }}{{ errorf "编译失败: 页面 %q 的 nav.me.page=%q 找不到页面。" $source.File.Path $mePageRef }}{{ end }}
+    {{ if not $mePage }}{{ errorf "Build failed: page %q cannot resolve nav.me.page=%q." $source.File.Path $mePageRef }}{{ end }}
 {{ end }}
 {{ $meLinkRaw := "" }}
 {{ with $mePage }}{{ $meLinkRaw = printf "%v" .RelPermalink }}{{ end }}
@@ -134,7 +134,7 @@
 {{ end }}
 {{ $meLabel := $labelMeDefault }}
 {{ with index $meConfig "label" }}{{ $meLabel = printf "%v" . }}{{ end }}
-{{ if and $showMe $meIsInternal (eq $meKey "") }}{{ errorf "编译失败: 页面 %q 的 nav.me.key 不能为空。" $source.File.Path }}{{ end }}
+{{ if and $showMe $meIsInternal (eq $meKey "") }}{{ errorf "Build failed: page %q cannot use an empty nav.me.key." $source.File.Path }}{{ end }}
 {{ $meIsCurrent := false }}
 {{ if $meIsInternal }}
     {{ $meIsCurrent = partial "fragments/nav-link-is-current.html" (dict "ctx" $ctx "item" $meConfig) }}

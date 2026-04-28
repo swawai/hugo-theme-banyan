@@ -1,6 +1,6 @@
 {{- $ctx := .ctx | default . -}}
 {{- if ne $ctx.Kind "section" -}}
-  {{- errorf "编译失败: section/direct-children.html 仅支持 kind=section，当前页面 %q 的 kind=%q。" $ctx.RelPermalink $ctx.Kind -}}
+  {{- errorf "Build failed: section/direct-children.html only supports kind=section; current page %q has kind=%q." $ctx.RelPermalink $ctx.Kind -}}
 {{- end -}}
 {{- $sortField := "dateKey" -}}
 {{- $sortOrder := "desc" -}}

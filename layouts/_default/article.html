@@ -37,7 +37,7 @@
     {{ if and $renderSectionList (ne $content "") }}
       {{ $sectionListParts = split $contentHTML $sectionListMarker }}
       {{ $sectionListMarkerCount = sub (len $sectionListParts) 1 }}
-      {{ if gt $sectionListMarkerCount 1 }}{{ errorf "编译失败: 页面 %q 的 section-list shortcode 只允许出现一次。" .File.Path }}{{ end }}
+{{ if gt $sectionListMarkerCount 1 }}{{ errorf "Build failed: page %q may include the section-list shortcode at most once." .File.Path }}{{ end }}
       {{ $hasSectionListMarker = eq $sectionListMarkerCount 1 }}
     {{ end }}
     {{ $contentBeforeSectionList := $contentHTML }}

@@ -1,7 +1,7 @@
 {{- $name := .name -}}
 {{- $iconData := index site.Data.icons $name -}}
 {{- if not $iconData -}}
-  {{- errorf "编译失败: 未定义图标 %q。" $name -}}
+  {{- errorf "Build failed: undefined icon %q." $name -}}
 {{- end -}}
 {{- if page -}}
   {{- page.Store.SetInMap "used_icons" $name true -}}

@@ -45,7 +45,7 @@
   {{- $isServer := hugo.IsServer -}}
   {{- $runtimeTemplatePath := "js/prefetch.runtime.entry.js.tmpl" -}}
   {{- $runtimeTemplate := resources.Get $runtimeTemplatePath -}}
-  {{- if not $runtimeTemplate }}{{ errorf "编译失败: 缺少资源 %q。" $runtimeTemplatePath }}{{ end -}}
+  {{- if not $runtimeTemplate }}{{ errorf "Build failed: missing resource %q." $runtimeTemplatePath }}{{ end -}}
   {{- $featureLetters := slice -}}
   {{- if $hasSpecModule }}{{- $featureLetters = $featureLetters | append "s" -}}{{- end -}}
   {{- if $hasLinkModule }}{{- $featureLetters = $featureLetters | append "l" -}}{{- end -}}

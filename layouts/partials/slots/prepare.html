@@ -18,7 +18,7 @@
 {{- $slotConfig := dict -}}
 {{- with index $ctx.Params "slots" -}}
   {{- if not (reflect.IsMap .) -}}
-    {{- errorf "编译失败: 页面 %q 的 slots 必须是 map/object。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}
+    {{- errorf "Build failed: page %q must define slots as a map/object." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}
   {{- end -}}
   {{- $slotConfig = . -}}
 {{- end -}}
@@ -30,7 +30,7 @@
 {{- range $slotName, $_ := $slotConfig -}}
   {{- $key := printf "%v" $slotName -}}
   {{- if not (isset $supportedLookup $key) -}}
-    {{- errorf "编译失败: 页面 %q 的 slots.%s 不受支持。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) $key -}}
+    {{- errorf "Build failed: page %q does not support slots.%s." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) $key -}}
   {{- end -}}
 {{- end -}}
 {{- $sources := dict -}}
@@ -44,30 +44,30 @@
       {{- $sources = merge $sources (dict $slot true) -}}
       {{- continue -}}
     {{- end -}}
-    {{- errorf "编译失败: 页面 %q 的 slots.breadcrumb 仅支持 true/false。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}
+    {{- errorf "Build failed: page %q only supports true/false for slots.breadcrumb." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}
   {{- end -}}
   {{- if eq $slot "meta" -}}
     {{- if eq $raw true -}}
       {{- $sources = merge $sources (dict $slot true) -}}
       {{- continue -}}
     {{- end -}}
-    {{- errorf "编译失败: 页面 %q 的 slots.meta 仅支持 true/false。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}
+    {{- errorf "Build failed: page %q only supports true/false for slots.meta." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}
   {{- end -}}
   {{- $src := trim (printf "%v" $raw) " \r\n\t" -}}
   {{- if eq $src "" -}}{{- continue -}}{{- end -}}
   {{- $source := $ctx.Site.GetPage $src -}}
   {{- if not $source -}}
-    {{- errorf "编译失败: 页面 %q 的 slots.%s=%q 找不到对应页面。" ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) $slot $src -}}
+    {{- errorf "Build failed: page %q cannot resolve slots.%s=%q to a page." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) $slot $src -}}
   {{- end -}}
   {{- $sources = merge $sources (dict $slot $source) -}}
   {{- $slotResourceConfig := dict -}}
   {{- $slotResources := index $source.Params "slot_resources" | default dict -}}
   {{- if and (gt (len $slotResources) 0) (not (reflect.IsMap $slotResources)) -}}
-    {{- errorf "编译失败: 页面 %q 的 slot_resources 必须是 map/object。" $source.File.Path -}}
+    {{- errorf "Build failed: page %q must define slot_resources as a map/object." $source.File.Path -}}
   {{- end -}}
   {{- with index $slotResources $slot -}}
     {{- if not (reflect.IsMap .) -}}
-      {{- errorf "编译失败: 页面 %q 的 slot_resources.%s 必须是 map/object。" $source.File.Path $slot -}}
+      {{- errorf "Build failed: page %q must define slot_resources.%s as a map/object." $source.File.Path $slot -}}
     {{- end -}}
     {{- $slotResourceConfig = . -}}
   {{- end -}}

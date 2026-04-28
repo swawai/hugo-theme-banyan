@@ -5,6 +5,6 @@
 {{- $pagePath := $page.File.Path | default (printf "content/%s/_index.*" $plural) -}}
 {{- $title := trim (printf "%v" ($page.Title | default "")) " \r\n\t" -}}
 {{- if eq $title "" -}}
-  {{- errorf "编译失败: %s 必须提供非空 title，作为 taxonomy %q 的唯一命名来源。" $pagePath $plural -}}
+  {{- errorf "Build failed: %s must provide a non-empty title as the single naming source for taxonomy %q." $pagePath $plural -}}
 {{- end -}}
 {{- return $title -}}

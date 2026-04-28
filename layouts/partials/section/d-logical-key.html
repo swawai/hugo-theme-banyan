@@ -1,6 +1,6 @@
 {{- $ctx := .ctx -}}
 {{- if not $ctx -}}
-  {{- errorf "编译失败: section/d-logical-key.html 缺少 ctx。" -}}
+  {{- errorf "Build failed: section/d-logical-key.html requires ctx." -}}
 {{- end -}}
 {{- $result := "" -}}
 {{- $logicalPath := partial "section/d-logical-path.html" (dict "ctx" $ctx) -}}

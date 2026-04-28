@@ -6,5 +6,5 @@
 {{ if not $resource }}
     {{ $resource = resources.Get (printf "%s/%s" $assetDir $spec) }}
 {{ end }}
-{{ if not $resource }}{{ errorf "编译失败: 页面 %q 找不到 %s=%q 对应的 bundle 或全局 assets 资源。" $source.File.Path $kind $spec }}{{ end }}
+{{ if not $resource }}{{ errorf "Build failed: page %q cannot resolve %s=%q to a bundle or global asset resource." $source.File.Path $kind $spec }}{{ end }}
 {{ return $resource }}

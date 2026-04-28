@@ -117,7 +117,7 @@
     ) -}}
   {{- end -}}
 {{- else -}}
-  {{- errorf "编译失败: taxonomy/items-tree.html 不支持 kind=%q。" $kind -}}
+  {{- errorf "Build failed: taxonomy/items-tree.html does not support kind=%q." $kind -}}
 {{- end -}}
 {{- $seen := dict -}}
 {{- $dedup := slice -}}

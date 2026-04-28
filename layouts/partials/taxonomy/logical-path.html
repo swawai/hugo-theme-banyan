@@ -1,6 +1,6 @@
 {{- $ctx := .ctx -}}
 {{- if not $ctx -}}
-  {{- errorf "编译失败: taxonomy/logical-path.html 缺少 ctx。" -}}
+  {{- errorf "Build failed: taxonomy/logical-path.html requires ctx." -}}
 {{- end -}}
 {{- $spec := .spec | default dict -}}
 {{- $plural := printf "%v" (or .plural (index $spec "plural")) -}}

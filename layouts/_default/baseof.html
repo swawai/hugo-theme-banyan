@@ -4,7 +4,7 @@
 {{ $offlineNoticePathRaw := printf "%v" (index $swConfig "offline_notice_path" | default "offline/") }}
 {{ $offlineNoticePath := trim $offlineNoticePathRaw "/" }}
 {{ if eq $offlineNoticePath "" }}
-    {{ errorf "编译失败: params.service_worker.offline_notice_path 不能为空。" }}
+{{ errorf "Build failed: params.service_worker.offline_notice_path cannot be empty." }}
 {{ end }}
 {{ $offlineNoticeRelPermalinks := slice }}
 {{ range sort .Sites "Language.Weight" }}
@@ -14,17 +14,17 @@
 {{ .Scratch.Set "is_offline_page" $isOfflinePage }}
 {{ $allowedSwModes := slice "enable" "disable" "off" }}
 {{ if not (in $allowedSwModes $swMode) }}
-    {{ errorf "编译失败: params.service_worker.mode 仅支持 enable/disable/off，当前值为 %q。" $swModeRaw }}
+{{ errorf "Build failed: params.service_worker.mode only supports enable/disable/off; got %q." $swModeRaw }}
 {{ end }}
 {{ partialCached "audit/permalink-collision.html" (dict "ctx" .) "audit-permalink-collision" }}
 {{ $primarySite := index (sort .Sites "Language.Weight") 0 }}
 {{ $buildVersion := partialCached "build-version.html" $primarySite.Home "build-version-primary" }}
 {{ with index $swConfig "cache_first_extensions" }}
-    {{ errorf "编译失败: params.service_worker.cache_first_extensions 已迁移到 data/cache-policy.toml（或主题默认缓存策略）的 routes[].sw 配置，请勿继续在 hugo.toml 中设置。" }}
+{{ errorf "Build failed: params.service_worker.cache_first_extensions has moved to data/cache-policy.toml (or the theme default cache policy) routes[].sw config; do not keep setting it in hugo.toml." }}
 {{ end }}
 {{ $themeCachePolicy := index site.Data "cache-policy-default" | default dict }}
 {{ if eq (len $themeCachePolicy) 0 }}
-    {{ errorf "编译失败: 缺少主题默认缓存策略数据 %q。" "themes/<theme>/data/cache-policy-default.toml" }}
+{{ errorf "Build failed: missing theme default cache policy data %q." "themes/<theme>/data/cache-policy-default.toml" }}
 {{ end }}
 {{ $siteCachePolicy := index site.Data "cache-policy" | default dict }}
 {{ $themeCachePolicyRoutes := index $themeCachePolicy "routes" | default slice }}
@@ -98,10 +98,10 @@
 
 <head>
     {{ $faviconSvg := resources.Get "site/favicon.svg" }}
-    {{ if not $faviconSvg }}{{ errorf "编译失败: 缺少资源 %q。" "site/favicon.svg" }}{{ end }}
+{{ if not $faviconSvg }}{{ errorf "Build failed: missing resource %q." "site/favicon.svg" }}{{ end }}
     {{ $faviconSvg = $faviconSvg | fingerprint }}
     {{ $appleTouchIcon := resources.Get "site/swaw180x180.png" }}
-    {{ if not $appleTouchIcon }}{{ errorf "编译失败: 缺少资源 %q。" "site/swaw180x180.png" }}{{ end }}
+{{ if not $appleTouchIcon }}{{ errorf "Build failed: missing resource %q." "site/swaw180x180.png" }}{{ end }}
     {{ $appleTouchIcon = $appleTouchIcon | fingerprint }}
     {{ $defaultSite := $primarySite }}
     {{ $manifest := "" }}
@@ -110,7 +110,7 @@
         {{ if $manifestTmpl }}
             {{ $manifest = $manifestTmpl | resources.ExecuteAsTemplate "site/site.webmanifest" $defaultSite.Home | fingerprint }}
         {{ else }}
-            {{ errorf "编译失败: 缺少资源 %q。" "site/manifest.webmanifest.tmpl" }}
+{{ errorf "Build failed: missing resource %q." "site/manifest.webmanifest.tmpl" }}
         {{ end }}
     {{ end }}
     {{ $runtimeI18n := dict }}
@@ -146,7 +146,7 @@
     {{ $prefetchLabels := slice "menu" "nav" "sort_siblings" "descendants" "post" }}
     {{ range $label := $prefetchLabels }}
         {{ if isset $prefetchConfig $label }}
-            {{ errorf "编译失败: 已移除 params.link_prefetch.%s 这类全局默认写法，请改用 params.link_prefetch.env.TTT.%s / params.link_prefetch.env.FTT.%s 这类显式环境表。" $label $label $label }}
+          {{ errorf "Build failed: params.link_prefetch.%s global defaults have been removed. Use explicit environment tables such as params.link_prefetch.env.TTT.%s or params.link_prefetch.env.FTT.%s instead." $label $label $label }}
         {{ end }}
     {{ end }}
     {{ $prefetchEnvConfig := partial "prefetch-env-config-map.html" (dict "prefetch_config" $prefetchConfig "prefetch_labels" $prefetchLabels) }}
@@ -155,22 +155,22 @@
             {{ if isset $envConfig $label }}
                 {{ $parsed := partial "prefetch-env-actions-mode.html" (index $envConfig $label) }}
                 {{ if eq (index $parsed "kind") "invalid" }}
-                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s 仅支持空值/off 或短码（如 spec_xf、spec_xf_g、spec_xr、link_mf、sw_sf），当前值为 %q。" $envKey $label (index $parsed "value") }}
+            {{ errorf "Build failed: params.link_prefetch.env.%s.%s only supports empty/off or short codes (for example spec_xf, spec_xf_g, spec_xr, link_mf, sw_sf); got %q." $envKey $label (index $parsed "value") }}
                 {{ end }}
                 {{ if and (eq (index $parsed "transport") "speculationrules") (eq (substr $envKey 0 1) "F") }}
-                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 Speculation Rules transport，但当前环境键 %s 的首位为 F。" $envKey $label (index $parsed "value") $envKey }}
+            {{ errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires Speculation Rules transport, but the first flag of environment key %s is F." $envKey $label (index $parsed "value") $envKey }}
                 {{ end }}
                 {{ if and (eq (index $parsed "transport") "link") (eq (substr $envKey 1 1) "F") }}
-                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 link transport，但当前环境键 %s 的第二位为 F。" $envKey $label (index $parsed "value") $envKey }}
+            {{ errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires link transport, but the second flag of environment key %s is F." $envKey $label (index $parsed "value") $envKey }}
                 {{ end }}
                 {{ if and (eq (index $parsed "transport") "sw") (eq (substr $envKey 2 1) "F") }}
-                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 SW transport，但当前环境键 %s 的第三位为 F。" $envKey $label (index $parsed "value") $envKey }}
+            {{ errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires SW transport, but the third flag of environment key %s is F." $envKey $label (index $parsed "value") $envKey }}
                 {{ end }}
                 {{ if and (eq (index $parsed "transport") "sw") (ne $swMode "enable") }}
-                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 SW transport，但 params.service_worker.mode=%q。" $envKey $label (index $parsed "value") $swMode }}
+            {{ errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires SW transport, but params.service_worker.mode=%q." $envKey $label (index $parsed "value") $swMode }}
                 {{ end }}
                 {{ if and (eq (index $parsed "kind") "prerender") (eq (substr $envKey 0 1) "F") }}
-                    {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 使用 prerender，但当前环境键 %s 不支持 Speculation Rules transport。" $envKey $label (index $parsed "value") $envKey }}
+            {{ errorf "Build failed: params.link_prefetch.env.%s.%s=%q uses prerender, but environment key %s does not support Speculation Rules transport." $envKey $label (index $parsed "value") $envKey }}
                 {{ end }}
             {{ end }}
         {{ end }}
@@ -187,7 +187,7 @@
         {{ if eq $swMode "enable" }}
             {{ $swScriptTemplatePath := "js/sw.enable.js.tmpl" }}
             {{ $swScriptTemplate := resources.Get $swScriptTemplatePath }}
-            {{ if not $swScriptTemplate }}{{ errorf "编译失败: 缺少资源 %q。" $swScriptTemplatePath }}{{ end }}
+  {{ if not $swScriptTemplate }}{{ errorf "Build failed: missing resource %q." $swScriptTemplatePath }}{{ end }}
             {{ $swScriptContext := dict
                 "build_version" $buildVersion
                 "offline_fallbacks" $offlineFallbacks
@@ -201,11 +201,11 @@
             {{ $publishSw := $swScript.RelPermalink }}
             {{ $swUrl := "sw.js" | relURL }}
             {{ $swUpdatePopover := resources.Get "css/sw-update-popover.css" }}
-            {{ if not $swUpdatePopover }}{{ errorf "编译失败: 缺少资源 %q。" "css/sw-update-popover.css" }}{{ end }}
+  {{ if not $swUpdatePopover }}{{ errorf "Build failed: missing resource %q." "css/sw-update-popover.css" }}{{ end }}
             {{ $swUpdatePopover = partial "css-process.html" (dict "resource" $swUpdatePopover "fingerprint" true) }}
             {{ $swManagerEntryPath := "js/sw-manager.enable.entry.js.tmpl" }}
             {{ $swManagerEntryTemplate := resources.Get $swManagerEntryPath }}
-            {{ if not $swManagerEntryTemplate }}{{ errorf "编译失败: 缺少资源 %q。" $swManagerEntryPath }}{{ end }}
+  {{ if not $swManagerEntryTemplate }}{{ errorf "Build failed: missing resource %q." $swManagerEntryPath }}{{ end }}
             {{ $swCheckInterval := index $swConfig "update_check_interval" | default 15 }}
             {{ $swVisibilityThrottle := index $swConfig "update_visibility_throttle" | default 3 }}
             {{ $swManagerEntryCtx := dict 
@@ -227,13 +227,13 @@
         {{ else }}
             {{ $swScriptPath := "js/sw.disable.js" }}
             {{ $swScriptSource := resources.Get $swScriptPath }}
-            {{ if not $swScriptSource }}{{ errorf "编译失败: 缺少资源 %q。" $swScriptPath }}{{ end }}
+{{ if not $swScriptSource }}{{ errorf "Build failed: missing resource %q." $swScriptPath }}{{ end }}
             {{ $swScript := $swScriptSource | resources.Copy "sw.js" }}
             {{ $publishSw := $swScript.RelPermalink }}
             {{ $swUrl := "sw.js" | relURL }}
             {{ $swManagerPath := "js/sw-manager.disable.js" }}
             {{ $swManagerSource := resources.Get $swManagerPath }}
-            {{ if not $swManagerSource }}{{ errorf "编译失败: 缺少资源 %q。" $swManagerPath }}{{ end }}
+{{ if not $swManagerSource }}{{ errorf "Build failed: missing resource %q." $swManagerPath }}{{ end }}
             {{ $swManager := $swManagerSource | fingerprint }}
             <script src="{{ $swManager.RelPermalink }}" integrity="{{ $swManager.Data.Integrity }}" defer></script>
         {{ end }}
@@ -241,7 +241,7 @@
 </head>
 <body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-fragment-root="{{ printf "/__fragments/%s/%s/" $buildVersion .Site.Language.Lang }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $entryBreadcrumbSources | jsonify }}">
     {{ if and .IsPage (not .Params.slug) }}
-        {{ errorf "编译失败: 页面 %q (标题: %q) 未配置 slug 字段。" .File.Path .Title }}
+{{ errorf "Build failed: page %q (title: %q) is missing the slug field." .File.Path .Title }}
     {{ end }}
     <div class="page">
         <a class="skip" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>

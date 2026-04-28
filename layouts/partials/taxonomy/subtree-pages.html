@@ -37,7 +37,7 @@
       {{- end -}}
     {{- end -}}
   {{- else -}}
-    {{- errorf "编译失败: taxonomy/subtree-pages.html 不支持 mode=%q。" $mode -}}
+    {{- errorf "Build failed: taxonomy/subtree-pages.html does not support mode=%q." $mode -}}
   {{- end -}}
   {{- $uniq = index (partial "taxonomy/pages-dedup-latest.html" (dict "pages" $pagesAll)) "uniq" -}}
   {{- $scr.Set $key $uniq -}}

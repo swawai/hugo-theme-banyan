@@ -19,11 +19,11 @@
 
 {{ $directoryPage := $ctx.Site.GetPage "section" "d" }}
 {{ if not $directoryPage }}
-  {{ errorf "编译失败: 首页目录快捷入口依赖 section d。请提供 content/d/_index.<lang>.md 或主题等价文件。" }}
+  {{ errorf "Build failed: the homepage directory shortcut requires section /d/. Provide content/d/_index.<lang>.md or the theme equivalent." }}
 {{ end }}
 {{ $directoryTitle := trim (printf "%v" ($directoryPage.Title | default "")) " \r\n\t" }}
 {{ if eq $directoryTitle "" }}
-  {{ errorf "编译失败: %s 必须提供非空 title，作为首页目录快捷入口的唯一命名来源。" ($directoryPage.File.Path | default "content/d/_index.*") }}
+  {{ errorf "Build failed: %s must provide a non-empty title as the single naming source for the homepage directory shortcut." ($directoryPage.File.Path | default "content/d/_index.*") }}
 {{ end }}
 {{ $directoryHref := $directoryPage.RelPermalink }}
 {{ $directoryCount := 0 }}
@@ -48,11 +48,11 @@
 
 {{ $allPage := $ctx.Site.GetPage "/all" }}
 {{ if not $allPage }}
-  {{ errorf "编译失败: 首页全部内容快捷入口依赖 /all/ page bundle。请提供 content/all/index.<lang>.md 或主题等价文件。" }}
+  {{ errorf "Build failed: the homepage all-content shortcut requires the /all/ page bundle. Provide content/all/index.<lang>.md or the theme equivalent." }}
 {{ end }}
 {{ $allTitle := trim (printf "%v" ($allPage.Title | default "")) " \r\n\t" }}
 {{ if eq $allTitle "" }}
-  {{ errorf "编译失败: %s 必须提供非空 title，作为首页全部内容快捷入口的唯一命名来源。" ($allPage.File.Path | default "content/all/index.*") }}
+  {{ errorf "Build failed: %s must provide a non-empty title as the single naming source for the homepage all-content shortcut." ($allPage.File.Path | default "content/all/index.*") }}
 {{ end }}
 {{ $allHref := $allPage.RelPermalink }}
 

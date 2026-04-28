@@ -50,19 +50,19 @@
   {{ $seenUrls = index $filtered "seen" }}
   {{ if and $urls (gt (len $urls) 0) (or (eq $kind "prefetch") (eq $kind "prerender")) (ne $transport "") }}
     {{ if and (eq $transport "speculationrules") (not $specEnabled) }}
-      {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 Speculation Rules transport，但当前环境键 %s 的首位为 F。" $envKey $configKey $source $envKey }}
+      {{ errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires Speculation Rules transport, but the first flag of environment key %s is F." $envKey $configKey $source $envKey }}
     {{ end }}
     {{ if and (eq $transport "link") (not $linkEnabled) }}
-      {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 link transport，但当前环境键 %s 的第二位为 F。" $envKey $configKey $source $envKey }}
+      {{ errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires link transport, but the second flag of environment key %s is F." $envKey $configKey $source $envKey }}
     {{ end }}
     {{ if and (eq $transport "sw") (not $swEnabled) }}
-      {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 SW transport，但当前环境键 %s 的第三位为 F。" $envKey $configKey $source $envKey }}
+      {{ errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires SW transport, but the third flag of environment key %s is F." $envKey $configKey $source $envKey }}
     {{ end }}
     {{ if and (eq $transport "sw") (ne $swMode "enable") }}
-      {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 依赖 SW transport，但 params.service_worker.mode=%q。" $envKey $configKey $source $swMode }}
+      {{ errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires SW transport, but params.service_worker.mode=%q." $envKey $configKey $source $swMode }}
     {{ end }}
     {{ if and (eq $kind "prerender") (not $specEnabled) }}
-      {{ errorf "编译失败: params.link_prefetch.env.%s.%s=%q 使用 prerender，但当前环境键 %s 不支持 Speculation Rules transport。" $envKey $configKey $source $envKey }}
+      {{ errorf "Build failed: params.link_prefetch.env.%s.%s=%q uses prerender, but environment key %s does not support Speculation Rules transport." $envKey $configKey $source $envKey }}
     {{ end }}
 
     {{ if eq $transport "speculationrules" }}

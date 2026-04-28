@@ -2,7 +2,7 @@
 {{ $host := .host | default $ctx }}
 {{ $hostTitle := trim (printf "%v" ($host.Title | default "")) " \r\n\t" }}
 {{ if eq $hostTitle "" }}
-  {{ errorf "编译失败: %s 必须提供非空 title，作为 /all/ 页面及其快捷入口的唯一命名来源。" ($host.File.Path | default "content/all/index.*") }}
+{{ errorf "Build failed: %s must provide a non-empty title as the single naming source for the /all/ page and its shortcut entry." ($host.File.Path | default "content/all/index.*") }}
 {{ end }}
 {{ $nameLabel := i18n "list_col_name" }}
 {{ $dateLabel := i18n "list_col_date" }}

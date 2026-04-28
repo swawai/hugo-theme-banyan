@@ -31,6 +31,6 @@
     ) -}}
   {{- end -}}
 {{- else -}}
-  {{- errorf "编译失败: taxonomy/items-flat.html 不支持 kind=%q。" $kind -}}
+  {{- errorf "Build failed: taxonomy/items-flat.html does not support kind=%q." $kind -}}
 {{- end -}}
 {{- return $items -}}
