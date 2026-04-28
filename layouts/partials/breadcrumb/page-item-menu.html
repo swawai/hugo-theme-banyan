@@ -1,0 +1,20 @@
+{{- $node := .node -}}
+{{- $menu := slice -}}
+{{- if $node -}}
+  {{- $owner := "" -}}
+  {{- with $node.Parent -}}
+    {{- if eq .Kind "section" -}}
+      {{- $owner = . -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if $owner -}}
+    {{- $entries := partial "section/direct-children.html" (dict "ctx" $owner) -}}
+    {{- $menu = partial "breadcrumb/menu-items-from-entries.html" (dict
+      "entries" $entries
+      "selected_href" $node.RelPermalink
+      "text_key" "title"
+      "href_key" "href"
+    ) -}}
+  {{- end -}}
+{{- end -}}
+{{- return $menu -}}

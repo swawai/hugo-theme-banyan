@@ -1,0 +1,33 @@
+{{- $ctx := .ctx -}}
+{{- $spec := .spec | default dict -}}
+{{- $ownerKind := lower (printf "%v" (.owner_kind | default "")) -}}
+{{- $ownerValue := printf "%v" (.owner_value | default "") -}}
+{{- $selectedHref := printf "%v" (.selected_href | default "") -}}
+{{- $menu := slice -}}
+{{- if $ctx -}}
+  {{- $ownerCtx := $ctx -}}
+  {{- if eq $ownerKind "root" -}}
+    {{- $ownerCtx = partial "taxonomy/root-page-get.html" (dict "ctx" $ctx "spec" $spec) -}}
+  {{- else if eq $ownerKind "term" -}}
+    {{- $ownerCtx = partial "taxonomy/term-page-get.html" (dict "ctx" $ctx "spec" $spec "value" $ownerValue) -}}
+  {{- end -}}
+  {{- if $ownerCtx -}}
+    {{- $kind := cond (eq $ownerKind "term") "term" "root" -}}
+    {{- $entries := partial "taxonomy/direct-children.html" (dict "ctx" $ownerCtx "spec" $spec "kind" $kind) -}}
+    {{- $menu = partial "breadcrumb/menu-items-from-entries.html" (dict
+      "entries" $entries
+      "selected_href" $selectedHref
+      "text_key" "display"
+      "href_key" "url"
+    ) -}}
+    {{- if eq (len $menu) 0 -}}
+      {{- $menu = partial "breadcrumb/menu-items-from-entries.html" (dict
+        "entries" $entries
+        "selected_href" $selectedHref
+        "text_key" "title"
+        "href_key" "url"
+      ) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $menu -}}

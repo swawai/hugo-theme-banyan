@@ -1,0 +1,13 @@
+{{- $ctx := .ctx -}}
+{{- $spec := .spec | default dict -}}
+{{- $plural := lower (printf "%v" (or .plural (index $spec "plural"))) -}}
+{{- $page := "" -}}
+{{- if and $ctx (ne $plural "") -}}
+  {{- range where $ctx.Site.Pages "Kind" "taxonomy" -}}
+    {{- if eq (lower (printf "%v" .Data.Plural)) $plural -}}
+      {{- $page = . -}}
+      {{- break -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $page -}}

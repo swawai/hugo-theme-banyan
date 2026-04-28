@@ -16,17 +16,37 @@
     {{- range $i, $seg := $segments -}}
       {{- if eq $seg "" -}}{{- continue -}}{{- end -}}
       {{- $path = $path | append $seg -}}
+      {{- $fullValue := delimit $path $separator -}}
+      {{- $ownerKind := cond (eq $i 0) "root" "term" -}}
+      {{- $ownerValue := cond (eq $i 0) "" (delimit (first $i $path) $separator) -}}
+      {{- $itemHref := partial "taxonomy/url.html" (dict "ctx" $ctx "spec" $spec "value" $fullValue) -}}
+      {{- $itemMenu := partial "breadcrumb/taxonomy-item-menu.html" (dict
+        "ctx" $ctx
+        "spec" $spec
+        "owner_kind" $ownerKind
+        "owner_value" $ownerValue
+        "selected_href" $itemHref
+      ) -}}
       {{- $items = $items | append (dict
-        "text" (partial "taxonomy/value-label.html" (dict "ctx" $ctx "spec" $spec "value" (delimit $path $separator) "fallback" $seg))
-        "href" (partial "taxonomy/url.html" (dict "ctx" $ctx "spec" $spec "value" (delimit $path $separator)))
+        "text" (partial "taxonomy/value-label.html" (dict "ctx" $ctx "spec" $spec "value" $fullValue "fallback" $seg))
+        "href" $itemHref
         "current" (eq $i $lastIndex)
+        "menu" $itemMenu
       ) -}}
     {{- end -}}
   {{- else -}}
+    {{- $itemMenu := partial "breadcrumb/taxonomy-item-menu.html" (dict
+      "ctx" $ctx
+      "spec" $spec
+      "owner_kind" "root"
+      "owner_value" ""
+      "selected_href" $ctx.RelPermalink
+    ) -}}
     {{- $items = $items | append (dict
       "text" ($ctx.LinkTitle | default $ctx.Title)
       "href" $ctx.RelPermalink
       "current" true
+      "menu" $itemMenu
     ) -}}
   {{- end -}}
 {{- end -}}

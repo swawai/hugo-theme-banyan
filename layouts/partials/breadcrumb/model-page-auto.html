@@ -1,16 +1,20 @@
 {{- $ctx := .ctx | default . -}}
 {{- $items := slice -}}
 {{- range (where $ctx.Ancestors.Reverse "IsHome" "ne" true) -}}
+  {{- $menu := partial "breadcrumb/page-item-menu.html" (dict "node" .) -}}
   {{- $items = $items | append (dict
     "text" (.LinkTitle | default .Title)
     "href" .RelPermalink
     "current" false
+    "menu" $menu
   ) -}}
 {{- end -}}
+{{- $currentMenu := partial "breadcrumb/page-item-menu.html" (dict "node" $ctx) -}}
 {{- $items = $items | append (dict
   "text" ($ctx.Title | default $ctx.LinkTitle)
   "href" $ctx.RelPermalink
   "current" true
+  "menu" $currentMenu
 ) -}}
 {{- $result := dict
   "variant" "trail"
