@@ -1,84 +1,262 @@
-const SORT_PARAM_KEY = 'sort';
-const SORT_VARIANTS = {
-    section: {
-        defaultToken: 'date-desc',
-        grouped: true,
-        fields: {
-            name: { dataKey: 'sortName', type: 'string', defaultOrder: 'asc' },
-            date: { dataKey: 'sortDate', type: 'number', defaultOrder: 'desc' },
-            count: { dataKey: 'sortCount', type: 'number', defaultOrder: 'desc' }
-        }
-    },
-    all: {
-        defaultToken: 'date-desc',
-        grouped: false,
-        fields: {
-            name: { dataKey: 'sortName', type: 'string', defaultOrder: 'asc' },
-            date: { dataKey: 'sortDate', type: 'number', defaultOrder: 'desc' },
-            size: { dataKey: 'sortSize', type: 'number', defaultOrder: 'desc' },
-            path: { dataKey: 'sortPath', type: 'string', defaultOrder: 'asc' }
-        }
-    },
-    tree: {
-        defaultToken: 'date-desc',
-        grouped: true,
-        fields: {
-            name: { dataKey: 'sortName', type: 'string', defaultOrder: 'asc' },
-            date: { dataKey: 'sortDate', type: 'number', defaultOrder: 'desc' },
-            count: { dataKey: 'sortCount', type: 'number', defaultOrder: 'desc' }
-        }
-    },
-    products: {
-        defaultToken: 'name-asc',
-        grouped: false,
-        fields: {
-            name: { dataKey: 'sortName', type: 'string', defaultOrder: 'asc' },
-            price: { dataKey: 'sortPrice', type: 'number', defaultOrder: 'desc' },
-            value: { dataKey: 'sortValue', type: 'string', defaultOrder: 'asc' }
-        }
+import {
+    SORT_VARIANTS,
+    applySortTokenToUrl,
+    getNormalizedSortToken,
+    parseSortToken,
+    readCurrentSortToken,
+    toggleSortOrder
+} from './sort-shared.js';
+import {
+    applySortsTokensToUrl,
+    buildCurrentPageSortsTokens,
+    buildDescendantSortsTokens,
+    getLogicalPathDepth,
+    normalizeCollectionLogicalPathFromUrl as normalizeLogicalPathFromUrl,
+    normalizeFromPath,
+    normalizePathname,
+    readSortTokenForPath,
+} from './nav-state.js';
+import { buildBreadcrumbMenuItems } from './breadcrumb-items.js';
+
+function normalizePageCollectionSource(source) {
+    if (!source || typeof source !== 'object') {
+        return null;
     }
-};
 
-function parseSortToken(token) {
-    const value = typeof token === 'string' ? token.trim().toLowerCase() : '';
-    if (!value) return { field: '', order: '' };
-    const parts = value.split('-');
-    if (parts.length !== 2) return { field: '', order: '' };
-    const [field, order] = parts;
-    if (order !== 'asc' && order !== 'desc') return { field: '', order: '' };
-    return { field, order };
+    const logicalPath = normalizeFromPath(source.logical_path || source.logicalPath || '');
+    const provider = typeof source.provider === 'string' ? source.provider.trim().toLowerCase() : '';
+    const sortVariant = typeof (source.sort_variant || source.sortVariant) === 'string'
+        ? (source.sort_variant || source.sortVariant).trim().toLowerCase()
+        : '';
+    const defaultSort = typeof (source.default_sort || source.defaultSort) === 'string'
+        ? (source.default_sort || source.defaultSort).trim().toLowerCase()
+        : '';
+
+    if (!logicalPath || !provider || !sortVariant) {
+        return null;
+    }
+
+    return { logicalPath, provider, sortVariant, defaultSort };
 }
 
-function getNormalizedSortToken(token, variantName) {
-    const variant = SORT_VARIANTS[variantName];
-    if (!variant) return '';
-    const parsed = parseSortToken(token);
-    if (!parsed.field || !variant.fields[parsed.field]) return variant.defaultToken;
-    return `${parsed.field}-${parsed.order}`;
+function readPageCollectionSource() {
+    const raw = document.body?.dataset.pageCollectionSource || '';
+    if (!raw) {
+        return null;
+    }
+
+    try {
+        return normalizePageCollectionSource(JSON.parse(raw));
+    } catch (error) {
+        return null;
+    }
 }
 
-function toggleSortOrder(order) {
-    return order === 'asc' ? 'desc' : 'asc';
+function normalizeCollectionLogicalPathFromUrl(url, pageCollectionSource) {
+    if (!(url instanceof URL) || !pageCollectionSource?.provider) {
+        return '';
+    }
+
+    return normalizeLogicalPathFromUrl(url, document.body?.dataset.siteRoot || '/');
 }
 
-function readCurrentSortToken(variantName) {
+function buildSortHref(token, defaultToken, pageCollectionSource) {
     const url = new URL(window.location.href);
-    return getNormalizedSortToken(url.searchParams.get(SORT_PARAM_KEY), variantName);
-}
-
-function buildSortHref(token, defaultToken) {
-    const url = new URL(window.location.href);
-    if (!token || token === defaultToken) url.searchParams.delete(SORT_PARAM_KEY);
-    else url.searchParams.set(SORT_PARAM_KEY, token);
+    applySortTokenToUrl(url, token, defaultToken);
+    if (pageCollectionSource?.logicalPath) {
+        applySortsTokensToUrl(url, buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, token));
+    }
     return `${url.pathname}${url.search}${url.hash}`;
 }
 
-function writeSortToken(token, defaultToken) {
+function writeSortToken(token, defaultToken, pageCollectionSource) {
     const url = new URL(window.location.href);
-    if (!token || token === defaultToken) url.searchParams.delete(SORT_PARAM_KEY);
-    else url.searchParams.set(SORT_PARAM_KEY, token);
-
+    applySortTokenToUrl(url, token, defaultToken);
+    if (pageCollectionSource?.logicalPath) {
+        applySortsTokensToUrl(url, buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, token));
+    }
     window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
+function buildRelativeHref(url) {
+    if (!(url instanceof URL)) {
+        return '';
+    }
+
+    return url.origin === window.location.origin
+        ? `${url.pathname}${url.search}${url.hash}`
+        : url.toString();
+}
+
+function readBreadcrumbCollectionSource(wrapper, pageCollectionSource) {
+    if (!(wrapper instanceof HTMLElement) || !pageCollectionSource?.provider) {
+        return null;
+    }
+
+    const rawSource = wrapper.dataset.breadcrumbCollectionSource || '';
+    if (rawSource) {
+        try {
+            return normalizePageCollectionSource(JSON.parse(rawSource));
+        } catch (error) {
+            return null;
+        }
+    }
+
+    const collectionHref = wrapper.dataset.breadcrumbCollectionHref || '';
+    if (!collectionHref) {
+        return null;
+    }
+
+    try {
+        const logicalPath = normalizeLogicalPathFromUrl(new URL(collectionHref, window.location.origin), document.body?.dataset.siteRoot || '/');
+        if (!logicalPath) {
+            return null;
+        }
+
+        return {
+            logicalPath,
+            provider: pageCollectionSource.provider,
+            sortVariant: pageCollectionSource.sortVariant,
+            defaultSort: pageCollectionSource.defaultSort,
+        };
+    } catch (error) {
+        return null;
+    }
+}
+
+let breadcrumbTrailMenuRenderId = 0;
+
+async function updateBreadcrumbTrailMenus(pageCollectionSource) {
+    const fragmentRoot = document.body?.dataset.fragmentRoot || '';
+    if (!fragmentRoot || !pageCollectionSource?.provider) {
+        return;
+    }
+
+    const wrappers = Array.from(document.querySelectorAll('.slot-breadcrumb [data-breadcrumb-menu]'));
+    if (wrappers.length === 0) {
+        return;
+    }
+
+    const renderId = ++breadcrumbTrailMenuRenderId;
+
+    await Promise.all(wrappers.map(async (wrapper) => {
+        const collectionSource = readBreadcrumbCollectionSource(wrapper, pageCollectionSource);
+        if (!collectionSource?.logicalPath) {
+            return;
+        }
+
+        const link = wrapper.querySelector('a.breadcrumb-menu-link[href]');
+        const panel = wrapper.querySelector('[data-breadcrumb-menu-panel]');
+        if (!(link instanceof HTMLAnchorElement) || !(panel instanceof HTMLElement)) {
+            return;
+        }
+
+        const selectedPathname = normalizePathname(new URL(link.href, window.location.origin).pathname);
+        const menuItems = await buildBreadcrumbMenuItems(fragmentRoot, collectionSource, { selectedPathname });
+        if (renderId !== breadcrumbTrailMenuRenderId) {
+            return;
+        }
+
+        const fragment = document.createDocumentFragment();
+
+        menuItems.forEach((menuItem) => {
+            const option = document.createElement('a');
+            option.href = menuItem.href;
+            option.className = 'breadcrumb-menu-option';
+            option.textContent = menuItem.text;
+            if (menuItem.current) {
+                option.classList.add('is-current');
+                option.dataset.siteUpdateAnchor = 'true';
+                option.setAttribute('aria-current', 'page');
+            }
+
+            fragment.appendChild(option);
+        });
+
+        if (renderId !== breadcrumbTrailMenuRenderId) {
+            return;
+        }
+
+        panel.replaceChildren(fragment);
+    }));
+}
+
+function updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSource) {
+    const variant = SORT_VARIANTS[variantName];
+    if (!variant) return;
+
+    const currentSorts = pageCollectionSource?.logicalPath
+        ? buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, currentToken)
+        : [];
+    const descendantSorts = pageCollectionSource?.logicalPath
+        ? buildDescendantSortsTokens(pageCollectionSource.logicalPath, currentToken)
+        : [];
+
+    grid.querySelectorAll('.cell-title .title-link[href]').forEach((link) => {
+        const rawHref = link.getAttribute('href') || '';
+        if (!rawHref) return;
+
+        let url;
+        try {
+            url = new URL(rawHref, window.location.origin);
+        } catch (error) {
+            return;
+        }
+
+        if (url.origin !== window.location.origin) {
+            return;
+        }
+
+        applySortTokenToUrl(url, currentToken, variant.defaultToken);
+        if (pageCollectionSource?.logicalPath) {
+            const isEntryLink = new URLSearchParams(url.search).has('from');
+            applySortsTokensToUrl(url, isEntryLink ? currentSorts : descendantSorts);
+        }
+        link.href = buildRelativeHref(url);
+    });
+}
+
+function updateBreadcrumbTrailLinks(variantName, currentToken, pageCollectionSource) {
+    const variant = SORT_VARIANTS[variantName];
+    if (!variant) return;
+
+    const currentSorts = pageCollectionSource?.logicalPath
+        ? buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, currentToken)
+        : [];
+    const currentDepth = pageCollectionSource?.logicalPath
+        ? getLogicalPathDepth(pageCollectionSource.logicalPath)
+        : 0;
+
+    document.querySelectorAll('.slot-breadcrumb a[href]').forEach((link) => {
+        const rawHref = link.getAttribute('href') || '';
+        if (!rawHref) return;
+
+        let url;
+        try {
+            url = new URL(rawHref, window.location.origin);
+        } catch (error) {
+            return;
+        }
+
+        if (url.origin !== window.location.origin) {
+            return;
+        }
+
+        let targetToken = currentToken;
+        let targetSorts = currentSorts;
+        if (pageCollectionSource?.logicalPath) {
+            const targetLogicalPath = normalizeCollectionLogicalPathFromUrl(url, pageCollectionSource);
+            const targetDepth = getLogicalPathDepth(targetLogicalPath);
+            if (targetDepth > 0 && targetDepth <= currentDepth) {
+                targetSorts = currentSorts.slice(0, targetDepth);
+                targetToken = targetSorts[targetSorts.length - 1] || '';
+            }
+            applySortsTokensToUrl(url, targetSorts);
+        }
+
+        applySortTokenToUrl(url, targetToken, variant.defaultToken);
+        link.href = buildRelativeHref(url);
+    });
 }
 
 function readRowValue(rowHead, fieldConfig) {
@@ -139,7 +317,7 @@ function collectSortableRows(grid, columnCount) {
     return { rows, rowCells };
 }
 
-function updateSortControls(grid, variantName, currentToken) {
+function updateSortControls(grid, variantName, currentToken, pageCollectionSource) {
     const variant = SORT_VARIANTS[variantName];
     const current = parseSortToken(currentToken);
     const controls = grid.querySelectorAll('a[data-sort-control="true"]');
@@ -155,7 +333,7 @@ function updateSortControls(grid, variantName, currentToken) {
         const titleDesc = control.dataset.sortTitleDesc || '';
         const actionLabel = nextOrder === 'asc' ? titleAsc : titleDesc;
 
-        control.href = buildSortHref(nextToken, variant.defaultToken);
+        control.href = buildSortHref(nextToken, variant.defaultToken, pageCollectionSource);
         control.dataset.sortActive = active ? 'true' : 'false';
         if (actionLabel) {
             control.title = actionLabel;
@@ -174,14 +352,25 @@ function applySortableGrid(grid) {
     const columnCount = Number(grid.dataset.sortColumns || 0);
     if (!variant || !columnCount) return;
 
-    const currentToken = readCurrentSortToken(variantName);
+    const pageCollectionSource = readPageCollectionSource();
+    const queryToken = readCurrentSortToken(variantName, variant.defaultToken);
+    const currentToken = pageCollectionSource?.logicalPath
+        ? getNormalizedSortToken(
+            readSortTokenForPath(pageCollectionSource.logicalPath, queryToken),
+            variantName,
+            variant.defaultToken
+        )
+        : queryToken;
     const current = parseSortToken(currentToken);
     const fieldConfig = variant.fields[current.field];
     if (!fieldConfig) return;
 
     const { rows, rowCells } = collectSortableRows(grid, columnCount);
     if (!rows.length) {
-        updateSortControls(grid, variantName, currentToken);
+        updateSortControls(grid, variantName, currentToken, pageCollectionSource);
+        updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSource);
+        updateBreadcrumbTrailLinks(variantName, currentToken, pageCollectionSource);
+        void updateBreadcrumbTrailMenus(pageCollectionSource);
         return;
     }
 
@@ -209,7 +398,10 @@ function applySortableGrid(grid) {
         grid.appendChild(fragment);
     }
 
-    updateSortControls(grid, variantName, currentToken);
+    updateSortControls(grid, variantName, currentToken, pageCollectionSource);
+    updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSource);
+    updateBreadcrumbTrailLinks(variantName, currentToken, pageCollectionSource);
+    void updateBreadcrumbTrailMenus(pageCollectionSource);
 }
 
 function applySortableGrids() {
@@ -230,16 +422,25 @@ function initSortableGrids() {
 
         const variantName = (grid.dataset.sortVariant || '').toLowerCase();
         const variant = SORT_VARIANTS[variantName];
+        const pageCollectionSource = readPageCollectionSource();
         const field = (control.dataset.sortField || '').toLowerCase();
         const defaultOrder = (control.dataset.sortDefaultOrder || 'asc').toLowerCase();
-        const current = parseSortToken(readCurrentSortToken(variantName));
+        const queryToken = readCurrentSortToken(variantName, variant?.defaultToken || '');
+        const currentToken = pageCollectionSource?.logicalPath
+            ? getNormalizedSortToken(
+                readSortTokenForPath(pageCollectionSource.logicalPath, queryToken),
+                variantName,
+                variant?.defaultToken || ''
+            )
+            : queryToken;
+        const current = parseSortToken(currentToken);
         const nextOrder = current.field === field ? toggleSortOrder(current.order) : defaultOrder;
         const nextToken = `${field}-${nextOrder}`;
 
         if (!variant || !variant.fields[field]) return;
 
         event.preventDefault();
-        writeSortToken(nextToken, variant.defaultToken);
+        writeSortToken(nextToken, variant.defaultToken, pageCollectionSource);
         applySortableGrids();
     });
 }

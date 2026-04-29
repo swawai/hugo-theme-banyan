@@ -1,0 +1,27 @@
+{{- $source := .source -}}
+{{- $rows := partial "entry-source/rows-products.html" (dict "source" $source) -}}
+{{- $fields := slice
+  "key"
+  "href"
+  "text"
+  "sort_name"
+  "sort_price"
+  "sort_value"
+  "price_text"
+  "value_text"
+-}}
+{{- $constants := dict
+  "kind" "page"
+  "icon" "file"
+  "prefetch_kind" "post"
+  "sort_group" "0"
+-}}
+{{- partial "entry-source/items-json-encode.html" (dict
+  "provider" "products"
+  "logical_path" (index $source "logical_path")
+  "sort_variant" "products"
+  "default_sort" "name-asc"
+  "fields" $fields
+  "rows" $rows
+  "constants" $constants
+) -}}

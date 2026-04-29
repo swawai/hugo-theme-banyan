@@ -60,7 +60,8 @@
     "titleDesc" (i18n "products_sort_value_desc")) }}
 
   {{ range $rows }}
-    {{ $entryHref := printf "%s?%s" .href (querify "from" (printf "%s%s/" $entrySourcePath .key)) }}
+    {{ $fromValue := partial "entry-source/from-param-value.html" (dict "logical_path" $entrySourcePath "entry_key" .key) }}
+    {{ $entryHref := printf "%s?from=%s" .href $fromValue }}
     {{ partial "grid-title-cell.html" (dict
       "ctx" $host
       "href" $entryHref

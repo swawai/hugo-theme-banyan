@@ -1,0 +1,26 @@
+{{- $source := .source -}}
+{{- $page := index $source "page" -}}
+{{- if not $page -}}
+  {{- errorf "Build failed: entry-source/rows-section-d.html requires source.page." -}}
+{{- end -}}
+{{- $rows := slice -}}
+{{- range $entry := partial "section/direct-children.html" (dict "ctx" $page) -}}
+  {{- $rows = $rows | append (dict
+    "key" (partial "section/d-logical-key.html" (dict "ctx" .node))
+    "kind" .kind
+    "href" .href
+    "schema_href" .href
+    "title" .title
+    "text" .title
+    "icon" .icon
+    "prefetch_kind" .prefetchKind
+    "sort_group" (cond (eq .kind "section") "0" "1")
+    "sort_name" .title
+    "sort_date" (.dateKey | default "")
+    "date_text" (.dateText | default ".")
+    "sort_count" (printf "%v" (.countValue | default 0))
+    "count_text" (.countText | default ".")
+    "count_unit" (.countUnit | default "")
+  ) -}}
+{{- end -}}
+{{- return $rows -}}

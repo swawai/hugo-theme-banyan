@@ -69,15 +69,19 @@
     ) }}
 {{ end }}
 {{ $slotSources := partial "slots/prepare.html" (dict "ctx" .) }}
+{{ $pageCollectionSource := partial "entry-source/model-current.html" (dict "page" .) }}
 {{ $entryBreadcrumbSourceModels := partialCached "entry-source/models.html" (dict "ctx" .) .Site.Language.Lang }}
 {{ $entryBreadcrumbSources := slice }}
 {{ range $source := $entryBreadcrumbSourceModels }}
     {{ $entryBreadcrumbSources = $entryBreadcrumbSources | append (dict
+        "provider" (index $source "provider")
         "logical_path" (index $source "logical_path")
         "root_item" (index $source "root_item")
         "root_menu" (index $source "root_menu")
         "root_menu_label" (index $source "root_menu_label")
         "tail_items" (index $source "tail_items")
+        "levels" (index $source "levels")
+        "current_collection_source" (index $source "current_collection_source")
     ) }}
 {{ end }}
 {{ if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) }}
@@ -142,7 +146,7 @@
     {{/* 若当前 URL 带 from=，先进入 entry breadcrumb 预览/补全阶段：
          1) 预览阶段先屏蔽默认 breadcrumb，避免闪出错误路径；
          2) 运行时补全阶段继续隐藏 meta path，待异步修正完成后再显示。 */}}
-    <script>(function(){try{var from=(new URLSearchParams(window.location.search)).get('from')||'';if(from&&from.charAt(0)==='/'){document.documentElement.setAttribute('data-entry-breadcrumb-preview-pending','true');document.documentElement.setAttribute('data-entry-breadcrumb-meta-pending','true');}}catch(e){}})();</script>
+    <script>(function(){try{var from=(new URLSearchParams(window.location.search)).get('from')||'';var segments=typeof from==='string'?from.trim().split('/').filter(Boolean):[];if(segments.length>0){document.documentElement.setAttribute('data-entry-breadcrumb-preview-pending','true');document.documentElement.setAttribute('data-entry-breadcrumb-meta-pending','true');}}catch(e){}})();</script>
     {{ block "styles" . }}{{ partial "head-styles.html" (dict "ctx" .) }}{{ end }}
     {{ block "head-extra" . }}{{ end }}
     {{ partial "page-resources-head.html" . }}
@@ -243,7 +247,7 @@
         {{ end }}
     {{ end }}
 </head>
-<body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-fragment-root="{{ printf "/__fragments/%s/%s/" $buildVersion .Site.Language.Lang }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $entryBreadcrumbSources | jsonify }}" data-current-page-title="{{ (.Title | default .LinkTitle) | htmlEscape }}" data-current-page-href="{{ .RelPermalink }}">
+<body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-fragment-root="{{ printf "/__fragments/%s/%s/" $buildVersion .Site.Language.Lang }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $entryBreadcrumbSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}" data-current-page-title="{{ (.Title | default .LinkTitle) | htmlEscape }}" data-current-page-href="{{ .RelPermalink }}">
     {{ if and .IsPage (not .Params.slug) }}
 {{ errorf "Build failed: page %q (title: %q) is missing the slug field." .File.Path .Title }}
     {{ end }}

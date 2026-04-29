@@ -23,6 +23,29 @@
 {{- $rootMenuItems := index $canonicalModel "root_menu" | default (slice $rootItem) -}}
 {{- $rootMenuLabel := trim (printf "%v" (index $canonicalModel "root_menu_label" | default "Breadcrumb root")) " " -}}
 {{- $tailItems := index $canonicalModel "tail_items" | default slice -}}
+{{- $canonicalLevels := index $canonicalModel "levels" | default slice -}}
+{{- $levels := slice -}}
+{{- range $level := $canonicalLevels -}}
+  {{- $item := index $level "item" | default dict -}}
+  {{- $collectionLogicalPath := partial "entry-source/logical-path-from-href.html" (dict
+    "ctx" $page
+    "provider" $provider
+    "href" (index $level "collection_href")
+  ) -}}
+  {{- $collectionSource := partial "entry-source/collection-source.html" (dict
+    "provider" $provider
+    "logical_path" $collectionLogicalPath
+  ) -}}
+  {{- $levelModel := dict "item" $item -}}
+  {{- if gt (len $collectionSource) 0 -}}
+    {{- $levelModel = merge $levelModel (dict "collection_source" $collectionSource) -}}
+  {{- end -}}
+  {{- $levels = $levels | append $levelModel -}}
+{{- end -}}
+{{- $currentCollectionSource := partial "entry-source/collection-source.html" (dict
+  "provider" $provider
+  "logical_path" $logicalPath
+) -}}
 {{- $result := dict
   "provider" $provider
   "page" $page
@@ -31,5 +54,7 @@
   "root_menu" $rootMenuItems
   "root_menu_label" $rootMenuLabel
   "tail_items" $tailItems
+  "levels" $levels
+  "current_collection_source" $currentCollectionSource
  -}}
 {{- return $result -}}

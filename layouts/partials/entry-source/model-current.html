@@ -1,0 +1,14 @@
+{{- $page := .page | default . -}}
+{{- $result := dict -}}
+{{- if $page -}}
+  {{- $model := dict -}}
+  {{- if and (eq $page.Kind "section") (eq $page.Section "d") -}}
+    {{- $model = partial "entry-source/model-section-d.html" (dict "page" $page) -}}
+  {{- else if in (slice "taxonomy" "term") $page.Kind -}}
+    {{- $model = partial "entry-source/model-taxonomy.html" (dict "page" $page) -}}
+  {{- else if isset $page.Params "banyan_entry_source" -}}
+    {{- $model = partial "entry-source/model-page.html" (dict "page" $page) -}}
+  {{- end -}}
+  {{- $result = index $model "current_collection_source" | default dict -}}
+{{- end -}}
+{{- return $result -}}

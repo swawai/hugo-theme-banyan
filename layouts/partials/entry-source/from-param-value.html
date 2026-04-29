@@ -1,0 +1,14 @@
+{{- $logicalPath := printf "%v" (.logical_path | default "") -}}
+{{- $segments := split (trim $logicalPath "/") "/" -}}
+{{- $cleanSegments := slice -}}
+{{- range $segment := $segments -}}
+  {{- $value := trim (printf "%v" $segment) " " -}}
+  {{- if ne $value "" -}}
+    {{- $cleanSegments = $cleanSegments | append $value -}}
+  {{- end -}}
+{{- end -}}
+{{- $entryKey := trim (printf "%v" (.entry_key | default "")) " " -}}
+{{- if ne $entryKey "" -}}
+  {{- $cleanSegments = $cleanSegments | append $entryKey -}}
+{{- end -}}
+{{- return (delimit $cleanSegments "/") -}}

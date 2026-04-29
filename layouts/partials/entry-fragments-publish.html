@@ -11,24 +11,11 @@
   {{- range $source := $sourceModels -}}
     {{- $logicalPath := trim (printf "%v" (index $source "logical_path")) " \r\n\t" -}}
     {{- if eq $logicalPath "" -}}{{- continue -}}{{- end -}}
-    {{- $entries := partial "entry-source/items.html" (dict "source" $source) -}}
-    {{- $itemJsonList := slice -}}
-    {{- $seenKeys := dict -}}
-    {{- range $entry := $entries -}}
-      {{- $key := trim (printf "%v" (index $entry "key")) " \r\n\t" -}}
-      {{- $text := trim (printf "%v" (index $entry "text")) " \r\n\t" -}}
-      {{- $href := trim (printf "%v" (index $entry "href")) " \r\n\t" -}}
-      {{- if or (eq $key "") (eq $text "") (eq $href "") -}}{{- continue -}}{{- end -}}
-      {{- if isset $seenKeys $key -}}
-        {{- errorf "Build failed: entry source %q has duplicate entry key=%q for href=%q and href=%q." $logicalPath $key (index $seenKeys $key) $href -}}
-      {{- end -}}
-      {{- $seenKeys = merge $seenKeys (dict $key $href) -}}
-      {{- $type := cond (eq (printf "%v" (index $entry "type")) "d") "d" "p" -}}
-      {{- $itemJsonList = $itemJsonList | append ((slice $key $text $type $href) | jsonify) -}}
-    {{- end -}}
+    {{- $itemsBody := trim (partial "entry-source/items-json.html" (dict "source" $source)) " \r\n\t" -}}
     {{- $targetDir := replaceRE "^/" "" $logicalPath -}}
-    {{- $fragmentBody := printf "[%s]" (delimit $itemJsonList ",") -}}
-    {{- $fragmentResource := resources.FromString (printf "__fragments/%s/%s/%s_children.json" $buildVersion $languageSite.Language.Lang $targetDir) $fragmentBody -}}
-    {{- $publishFragment := $fragmentResource.RelPermalink -}}
+    {{- if ne $itemsBody "" -}}
+      {{- $itemsResource := resources.FromString (printf "__fragments/%s/%s/%s_items.json" $buildVersion $languageSite.Language.Lang $targetDir) $itemsBody -}}
+      {{- $publishItemsFragment := $itemsResource.RelPermalink -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}

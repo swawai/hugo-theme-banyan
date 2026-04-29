@@ -1,0 +1,36 @@
+{{- $source := .source -}}
+{{- $page := index $source "page" -}}
+{{- if not $page -}}
+  {{- errorf "Build failed: entry-source/rows-taxonomy.html requires source.page." -}}
+{{- end -}}
+{{- $spec := partial "taxonomy/spec-get.html" (dict "ctx" $page "plural" $page.Data.Plural) -}}
+{{- $rows := slice -}}
+{{- range $entry := partial "taxonomy/direct-children.html" (dict "ctx" $page "spec" $spec) -}}
+  {{- $isCat := eq .kind "cat" -}}
+  {{- $text := or .display .title -}}
+  {{- $countText := printf "%v" (.cnt | default ".") -}}
+  {{- $countUnit := "" -}}
+  {{- if not $isCat -}}
+    {{- $bytes := .bytes | default .cnt | default 0 -}}
+    {{- $countText = printf "%v" (div (add $bytes 1023) 1024) -}}
+    {{- $countUnit = "&thinsp;KB" -}}
+  {{- end -}}
+  {{- $rows = $rows | append (dict
+    "key" (cond $isCat .term_key .entry_key)
+    "kind" .kind
+    "href" .url
+    "schema_href" .url
+    "title" .title
+    "text" $text
+    "icon" (cond $isCat "folder" "file")
+    "prefetch_kind" (cond $isCat "desc" "post")
+    "sort_group" (cond $isCat "0" "1")
+    "sort_name" $text
+    "sort_date" (.latestKey | default "")
+    "date_text" (.latest | default ".")
+    "sort_count" (printf "%v" (.cnt | default 0))
+    "count_text" $countText
+    "count_unit" $countUnit
+  ) -}}
+{{- end -}}
+{{- return $rows -}}

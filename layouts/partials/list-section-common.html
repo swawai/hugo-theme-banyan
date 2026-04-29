@@ -9,7 +9,8 @@
     {{ $href := .href }}
     {{ if and (eq .kind "page") $sourceLogicalPath }}
       {{ $entryKey := partial "section/d-logical-key.html" (dict "ctx" .node) }}
-      {{ $href = printf "%s?%s" .href (querify "from" (printf "%s%s/" $sourceLogicalPath $entryKey)) }}
+      {{ $fromValue := partial "entry-source/from-param-value.html" (dict "logical_path" $sourceLogicalPath "entry_key" $entryKey) }}
+      {{ $href = printf "%s?from=%s" .href $fromValue }}
     {{ end }}
     {{ $items = $items | append (dict
       "href" $href

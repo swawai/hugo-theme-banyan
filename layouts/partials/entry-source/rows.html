@@ -1,0 +1,7 @@
+{{- $source := .source | default dict -}}
+{{- $provider := printf "%v" (index $source "provider" | default "") -}}
+{{- $rows := slice -}}
+{{- if in (slice "all" "products" "section-d" "taxonomy") $provider -}}
+  {{- $rows = partial (printf "entry-source/rows-%s.html" $provider) (dict "source" $source) | default slice -}}
+{{- end -}}
+{{- return $rows -}}

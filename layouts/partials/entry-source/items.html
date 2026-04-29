@@ -1,7 +1,0 @@
-{{- $source := .source | default dict -}}
-{{- $provider := printf "%v" (index $source "provider" | default "") -}}
-{{- $items := slice -}}
-{{- if ne $provider "" -}}
-  {{- $items = partial (printf "entry-source/items-%s.html" $provider) (dict "source" $source) -}}
-{{- end -}}
-{{- return $items -}}

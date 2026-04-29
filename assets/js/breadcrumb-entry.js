@@ -1,6 +1,18 @@
 import { initBreadcrumbMenus } from './breadcrumb-menu.js';
+import {
+    buildBreadcrumbMenuItems,
+    buildCollectionPageHref,
+    buildSelectedBreadcrumbItem,
+    getSourceSortVariant,
+    normalizeBreadcrumbCollectionSource as normalizeCollectionSource,
+} from './breadcrumb-items.js';
+import {
+    normalizeCollectionLogicalPathFromUrl as normalizeLogicalPathFromUrl,
+    normalizeFromPath,
+    normalizePathname,
+    readCurrentFromPath,
+} from './nav-state.js';
 
-const childrenPayloadPromises = new Map();
 const ENTRY_BREADCRUMB_PREVIEW_PENDING_ATTR = 'data-entry-breadcrumb-preview-pending';
 const ENTRY_BREADCRUMB_META_PENDING_ATTR = 'data-entry-breadcrumb-meta-pending';
 
@@ -11,31 +23,6 @@ function clearEntryBreadcrumbPending() {
 
 function readFragmentRoot() {
     return document.body?.dataset.fragmentRoot || '';
-}
-
-function normalizeFromPath(value) {
-    if (typeof value !== 'string') {
-        return '';
-    }
-
-    let path = value.trim();
-    if (!path.startsWith('/')) {
-        return '';
-    }
-    if (!path.endsWith('/')) {
-        path = `${path}/`;
-    }
-
-    return path;
-}
-
-function normalizePathname(pathname) {
-    if (typeof pathname !== 'string' || pathname === '') {
-        return '/';
-    }
-
-    const normalized = pathname.endsWith('/') ? pathname : `${pathname}/`;
-    return normalized === '//' ? '/' : normalized;
 }
 
 function normalizeLinkItem(item) {
@@ -61,6 +48,15 @@ function normalizeLinkItem(item) {
     }
     if (typeof item.highlighted === 'boolean') {
         normalized.highlighted = item.highlighted;
+    }
+    if (typeof item.menu_button_label === 'string' && item.menu_button_label.trim() !== '') {
+        normalized.menu_button_label = item.menu_button_label.trim();
+    }
+    if (Array.isArray(item.menu)) {
+        const menuItems = item.menu.map(normalizeLinkItem).filter(Boolean);
+        if (menuItems.length > 0) {
+            normalized.menu = menuItems;
+        }
     }
 
     return normalized;
@@ -97,13 +93,41 @@ function normalizeEntryBreadcrumbSources() {
                 const rootMenuLabel = typeof (source.root_menu_label || source.rootMenuLabel) === 'string'
                     ? (source.root_menu_label || source.rootMenuLabel).trim()
                     : '';
+                const provider = typeof source.provider === 'string' ? source.provider.trim().toLowerCase() : '';
+                const levelsRaw = Array.isArray(source.levels) ? source.levels : [];
+                const levels = levelsRaw
+                    .map((level) => {
+                        if (!level || typeof level !== 'object') {
+                            return null;
+                        }
+
+                        const item = normalizeLinkItem(level.item);
+                        if (!item) {
+                            return null;
+                        }
+
+                        const normalized = { item };
+                        const collectionSource = normalizeCollectionSource(level.collection_source || level.collectionSource);
+                        if (collectionSource) {
+                            normalized.collectionSource = collectionSource;
+                        }
+
+                        return normalized;
+                    })
+                    .filter(Boolean);
+                const currentCollectionSource = normalizeCollectionSource(
+                    source.current_collection_source || source.currentCollectionSource
+                );
 
                 return {
+                    provider,
                     logicalPath,
                     rootItem,
                     rootMenuItems: rootMenuItems.length > 0 ? rootMenuItems : [rootItem],
                     rootMenuLabel: rootMenuLabel || rootItem.text,
                     tailItems,
+                    levels,
+                    currentCollectionSource,
                 };
             })
             .filter(Boolean);
@@ -117,8 +141,7 @@ function isEntryKeySafe(value) {
 }
 
 function parseEntrySelection(sources) {
-    const params = new URLSearchParams(window.location.search);
-    const normalized = normalizeFromPath(params.get('from') || '');
+    const normalized = readCurrentFromPath();
     if (!normalized || !Array.isArray(sources) || sources.length === 0) {
         return null;
     }
@@ -149,78 +172,76 @@ function parseEntrySelection(sources) {
     return null;
 }
 
-function buildFragmentUrl(fragmentRoot, logicalPath) {
-    const root = fragmentRoot.endsWith('/') ? fragmentRoot : `${fragmentRoot}/`;
-    const ownerRelative = logicalPath.replace(/^\/+/, '');
-    return `${root}${ownerRelative}_children.json`;
-}
-
-function getChildrenPayload(fragmentRoot, logicalPath) {
-    const url = buildFragmentUrl(fragmentRoot, logicalPath);
-    if (!childrenPayloadPromises.has(url)) {
-        const promise = fetch(url, { credentials: 'same-origin' })
-            .then((response) => (response && response.ok ? response.json() : null))
-            .then((payload) => (Array.isArray(payload) ? payload : null))
-            .catch(() => null);
-        childrenPayloadPromises.set(url, promise);
-    }
-
-    return childrenPayloadPromises.get(url);
-}
-
-function resolveItemHref(item) {
-    return typeof item?.[3] === 'string' ? item[3] : '';
-}
-
-function buildMenu(payload, selectedKey) {
-    return payload
-        .map((item) => {
-            if (!Array.isArray(item) || typeof item[0] !== 'string' || typeof item[1] !== 'string') {
-                return null;
-            }
-
-            const href = resolveItemHref(item);
-            if (!href) {
-                return null;
-            }
-
-            return {
-                text: item[1],
-                href,
-                current: item[0] === selectedKey,
-            };
-        })
-        .filter(Boolean);
-}
-
-function buildSelectedItem(payload, entryKey) {
-    const selectedItem = payload.find((item) => Array.isArray(item) && item[0] === entryKey);
-    if (!selectedItem) {
+async function buildPrefixLevelItem(fragmentRoot, source, level) {
+    const baseItem = normalizeLinkItem(level?.item);
+    if (!baseItem) {
         return null;
     }
 
-    const href = resolveItemHref(selectedItem);
-    if (!href) {
-        return null;
+    const currentCollectionSource = normalizeCollectionSource(source?.currentCollectionSource) || null;
+    const sortVariant = currentCollectionSource?.sortVariant || getSourceSortVariant(source);
+    const defaultSort = currentCollectionSource?.defaultSort || '';
+    const siteRoot = document.body?.dataset.siteRoot || '/';
+
+    let targetLogicalPath = '';
+    let targetPathname = '';
+    try {
+        const targetUrl = new URL(baseItem.href, window.location.origin);
+        targetLogicalPath = normalizeLogicalPathFromUrl(targetUrl, siteRoot);
+        targetPathname = normalizePathname(targetUrl.pathname);
+    } catch (error) {
+        targetLogicalPath = '';
+        targetPathname = '';
     }
 
-    return {
-        text: typeof selectedItem[1] === 'string' && selectedItem[1] !== '' ? selectedItem[1] : entryKey,
-        href,
-        current: true,
-        menu: buildMenu(payload, entryKey),
+    const result = {
+        text: baseItem.text,
+        href: targetLogicalPath
+            ? buildCollectionPageHref(baseItem.href, targetLogicalPath, sortVariant, defaultSort)
+            : baseItem.href,
+        current: false,
     };
+    if (baseItem.title) {
+        result.title = baseItem.title;
+    }
+
+    const collectionSource = normalizeCollectionSource(level?.collectionSource) || null;
+    if (collectionSource) {
+        const menu = await buildBreadcrumbMenuItems(fragmentRoot, collectionSource, {
+            selectedPathname: targetPathname,
+        });
+        if (menu.length > 0) {
+            result.menu = menu;
+            result.menu_button_label = baseItem.menu_button_label || baseItem.text;
+        }
+        return result;
+    }
+
+    if (Array.isArray(baseItem.menu) && baseItem.menu.length > 0) {
+        result.menu = baseItem.menu;
+        result.menu_button_label = baseItem.menu_button_label || baseItem.text;
+    }
+
+    return result;
 }
 
-function buildBreadcrumbItems(source, currentItem) {
-    const prefixItems = Array.isArray(source.tailItems)
-        ? source.tailItems.map((item) => ({
-            ...item,
-            current: false,
-        }))
-        : [];
+async function buildPrefixItems(fragmentRoot, source) {
+    const levels = Array.isArray(source?.levels) ? source.levels : [];
+    if (levels.length > 0) {
+        const items = (await Promise.all(levels.map((level) => buildPrefixLevelItem(fragmentRoot, source, level)))).filter(Boolean);
+        if (items.length > 0) {
+            return items;
+        }
+    }
 
-    return [...prefixItems, currentItem];
+    return Array.isArray(source?.tailItems)
+        ? source.tailItems.map((item) => ({ ...item, current: false }))
+        : [];
+}
+
+function buildBreadcrumbItems(prefixItems, currentItem) {
+    const safePrefixItems = Array.isArray(prefixItems) ? prefixItems : [];
+    return [...safePrefixItems, currentItem];
 }
 
 async function buildEntryState() {
@@ -235,12 +256,8 @@ async function buildEntryState() {
         return null;
     }
 
-    const payload = await getChildrenPayload(fragmentRoot, selection.source.logicalPath);
-    if (!Array.isArray(payload)) {
-        return null;
-    }
-
-    const currentItem = buildSelectedItem(payload, selection.entryKey);
+    const prefixItemsPromise = buildPrefixItems(fragmentRoot, selection.source);
+    const currentItem = await buildSelectedBreadcrumbItem(fragmentRoot, selection.source, selection.entryKey);
     if (!currentItem) {
         return null;
     }
@@ -251,7 +268,8 @@ async function buildEntryState() {
         return null;
     }
 
-    const breadcrumbItems = buildBreadcrumbItems(selection.source, currentItem);
+    const prefixItems = await prefixItemsPromise;
+    const breadcrumbItems = buildBreadcrumbItems(prefixItems, currentItem);
     return {
         rootItem: selection.source.rootItem,
         rootMenuItems: selection.source.rootMenuItems,

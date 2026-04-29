@@ -6,10 +6,15 @@
 {{- $provider := lower (trim (printf "%v" (index $meta "provider" | default "")) " ") -}}
 {{- $model := dict -}}
 {{- if ne $provider "" -}}
+  {{- $logicalPath := partial "entry-source/logical-path-from-href.html" (dict
+    "ctx" $page
+    "provider" $provider
+    "href" $page.RelPermalink
+  ) -}}
   {{- $model = partial "entry-source/source-page-model.html" (dict
     "page" $page
     "provider" $provider
-    "logical_path" $page.RelPermalink
+    "logical_path" $logicalPath
   ) -}}
 {{- end -}}
 {{- return $model -}}

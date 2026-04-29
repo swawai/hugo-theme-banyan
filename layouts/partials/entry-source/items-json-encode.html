@@ -1,0 +1,46 @@
+{{/* Compact items protocol: optional metadata + field list + flat row vector. */}}
+{{- $provider := trim (printf "%v" (.provider | default "")) " " -}}
+{{- $logicalPath := trim (printf "%v" (.logical_path | default "")) " " -}}
+{{- $sortVariant := trim (printf "%v" (.sort_variant | default "")) " " -}}
+{{- $defaultSort := trim (printf "%v" (.default_sort | default "")) " " -}}
+{{- $fields := .fields | default slice -}}
+{{- $rows := .rows | default slice -}}
+{{- $constants := .constants | default dict -}}
+{{- $rowVector := slice -}}
+{{- $seenKeys := dict -}}
+{{- range $row := $rows -}}
+  {{- $key := trim (printf "%v" (index $row "key")) " \r\n\t" -}}
+  {{- $text := trim (printf "%v" (index $row "text")) " \r\n\t" -}}
+  {{- $href := trim (printf "%v" (index $row "href")) " \r\n\t" -}}
+  {{- if or (eq $key "") (eq $text "") (eq $href "") -}}
+    {{- errorf "Build failed: entry source %q has invalid row key=%q text=%q href=%q." $logicalPath $key $text $href -}}
+  {{- end -}}
+  {{- if isset $seenKeys $key -}}
+    {{- errorf "Build failed: entry source %q has duplicate entry key=%q for href=%q and href=%q." $logicalPath $key (index $seenKeys $key) $href -}}
+  {{- end -}}
+  {{- $seenKeys = merge $seenKeys (dict $key $href) -}}
+  {{- range $field := $fields -}}
+    {{- $value := "" -}}
+    {{- with index $row $field -}}
+      {{- $value = printf "%v" . -}}
+    {{- end -}}
+    {{- $rowVector = $rowVector | append $value -}}
+  {{- end -}}
+{{- end -}}
+{{- $model := dict
+  "v" 1
+  "sv" $sortVariant
+  "ds" $defaultSort
+  "f" $fields
+  "rv" $rowVector
+-}}
+{{- if ne $provider "" -}}
+  {{- $model = merge $model (dict "p" $provider) -}}
+{{- end -}}
+{{- if ne $logicalPath "" -}}
+  {{- $model = merge $model (dict "lp" $logicalPath) -}}
+{{- end -}}
+{{- if gt (len $constants) 0 -}}
+  {{- $model = merge $model (dict "c" $constants) -}}
+{{- end -}}
+{{- $model | jsonify -}}

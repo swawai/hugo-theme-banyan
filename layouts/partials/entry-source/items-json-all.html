@@ -1,0 +1,31 @@
+{{- $source := .source -}}
+{{- $rows := partial "entry-source/rows-all.html" (dict "source" $source) -}}
+{{- $fields := slice
+  "key"
+  "href"
+  "text"
+  "sort_name"
+  "sort_date"
+  "sort_size"
+  "sort_path"
+  "date_text"
+  "size_text"
+  "size_unit"
+  "path_text"
+  "path_href"
+-}}
+{{- $constants := dict
+  "kind" "page"
+  "icon" "file"
+  "prefetch_kind" "post"
+  "sort_group" "0"
+-}}
+{{- partial "entry-source/items-json-encode.html" (dict
+  "provider" "all"
+  "logical_path" (index $source "logical_path")
+  "sort_variant" "all"
+  "default_sort" "date-desc"
+  "fields" $fields
+  "rows" $rows
+  "constants" $constants
+) -}}

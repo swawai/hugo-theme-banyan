@@ -16,7 +16,8 @@
   {{ $isCat := eq .kind "cat" }}
   {{ $href := .url }}
   {{ if and (not $isCat) $ownerLogicalPath .entry_key }}
-    {{ $href = printf "%s?%s" .url (querify "from" (printf "%s%s/" $ownerLogicalPath .entry_key)) }}
+    {{ $fromValue := partial "entry-source/from-param-value.html" (dict "logical_path" $ownerLogicalPath "entry_key" .entry_key) }}
+    {{ $href = printf "%s?from=%s" .url $fromValue }}
   {{ end }}
   {{ $countText := cond (ne .cnt "") .cnt "." }}
   {{ $countUnit := "" }}

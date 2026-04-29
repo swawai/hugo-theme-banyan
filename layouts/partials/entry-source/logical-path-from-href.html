@@ -1,0 +1,18 @@
+{{- $ctx := .ctx | default . -}}
+{{- $provider := lower (trim (printf "%v" (.provider | default "")) " \r\n\t") -}}
+{{- $href := trim (printf "%v" (.href | default "")) " \r\n\t" -}}
+{{- $path := "" -}}
+{{- if ne $href "" -}}
+  {{- $candidate := replaceRE "[?#].*$" "" $href -}}
+  {{- if and (ne $candidate "") (not (hasPrefix $candidate "http://")) (not (hasPrefix $candidate "https://")) (hasPrefix $candidate "/") -}}
+    {{- $path = replaceRE "/+" "/" $candidate -}}
+    {{- $siteRoot := printf "%v" ($ctx.Site.Home.RelPermalink | default "/") -}}
+    {{- if and (ne $siteRoot "/") (hasPrefix $path $siteRoot) -}}
+      {{- $path = printf "/%s" (strings.TrimPrefix $siteRoot $path) -}}
+    {{- end -}}
+    {{- if not (hasSuffix $path "/") -}}
+      {{- $path = printf "%s/" $path -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $path -}}

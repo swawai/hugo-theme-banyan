@@ -1,0 +1,3 @@
+{{- $source := .source -}}
+{{- $page := index $source "page" -}}
+{{- return partial "collection/rows-products.html" (dict "host" $page) -}}

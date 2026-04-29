@@ -1,0 +1,25 @@
+{{- $source := .source -}}
+{{- $rows := partial "entry-source/rows-section-d.html" (dict "source" $source) -}}
+{{- $fields := slice
+  "key"
+  "kind"
+  "href"
+  "text"
+  "icon"
+  "prefetch_kind"
+  "sort_group"
+  "sort_name"
+  "sort_date"
+  "sort_count"
+  "date_text"
+  "count_text"
+  "count_unit"
+-}}
+{{- partial "entry-source/items-json-encode.html" (dict
+  "provider" "section-d"
+  "logical_path" (index $source "logical_path")
+  "sort_variant" "section"
+  "default_sort" "date-desc"
+  "fields" $fields
+  "rows" $rows
+) -}}
