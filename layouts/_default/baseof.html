@@ -80,8 +80,8 @@
         "tail_items" (index $source "tail_items")
     ) }}
 {{ end }}
-{{ partialCached "entry-fragments-publish.html" (dict "ctx" . "build_version" $buildVersion) $buildVersion }}
 {{ if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) }}
+    {{ partialCached "entry-fragments-publish.html" (dict "ctx" . "build_version" $buildVersion) $buildVersion }}
     {{ $headersBody := partial "cache-policy-cloudflare-headers-body.txt" (dict "routes" $cachePolicyHeaderRoutes) }}
     {{ $headersResource := resources.FromString "_headers" $headersBody }}
     {{ $publishHeaders := $headersResource.RelPermalink }}

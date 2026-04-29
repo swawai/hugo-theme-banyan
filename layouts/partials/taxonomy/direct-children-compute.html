@@ -1,0 +1,10 @@
+{{- $ctx := .ctx -}}
+{{- $spec := .spec -}}
+{{- $kind := .kind -}}
+{{- $result := slice -}}
+{{- if eq (index $spec "mode") "tree" -}}
+  {{- $result = partial "taxonomy/items-tree.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) -}}
+{{- else -}}
+  {{- $result = partial "taxonomy/items-flat.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) -}}
+{{- end -}}
+{{- return $result -}}

@@ -1,8 +1,18 @@
 {{- $ctx := .ctx | default . -}}
-{{- $strategy := partial "breadcrumb/strategy-key.html" (dict "ctx" $ctx) -}}
-{{- $model := partial (printf "breadcrumb/%s.html" $strategy) (dict "ctx" $ctx) -}}
-{{- $fragment := partial "breadcrumb/fragment-load.html" (dict "ctx" $ctx "slot" .slot "source" .source) -}}
-{{- if gt (len $fragment) 0 -}}
-  {{- $model = partial "breadcrumb/model-merge-fragment.html" (dict "ctx" $ctx "model" $model "fragment" $fragment) -}}
+{{- $slot := printf "%v" (.slot | default "breadcrumb") -}}
+{{- $sourceKey := "__auto__" -}}
+{{- with .source -}}
+  {{- $sourceKey = printf "%v" (.File.Path | default .RelPermalink | default .Kind) -}}
+{{- end -}}
+{{- $cacheKey := printf "breadcrumb:model:%s:%s" $slot $sourceKey -}}
+{{- $model := $ctx.Scratch.Get $cacheKey -}}
+{{- if not $model -}}
+  {{- $strategy := partial "breadcrumb/strategy-key.html" (dict "ctx" $ctx) -}}
+  {{- $model = partial (printf "breadcrumb/%s.html" $strategy) (dict "ctx" $ctx) -}}
+  {{- $fragment := partial "breadcrumb/fragment-load.html" (dict "ctx" $ctx "slot" $slot "source" .source) -}}
+  {{- if gt (len $fragment) 0 -}}
+    {{- $model = partial "breadcrumb/model-merge-fragment.html" (dict "ctx" $ctx "model" $model "fragment" $fragment) -}}
+  {{- end -}}
+  {{- $ctx.Scratch.Set $cacheKey $model -}}
 {{- end -}}
 {{- return $model -}}

@@ -4,10 +4,5 @@
 {{- end -}}
 {{- $spec := .spec | default (partial "taxonomy/spec-get.html" (dict "ctx" $ctx "plural" $ctx.Data.Plural)) -}}
 {{- $kind := .kind | default (cond (eq $ctx.Kind "term") "term" "root") -}}
-{{- $result := slice -}}
-{{- if eq (index $spec "mode") "tree" -}}
-  {{- $result = partial "taxonomy/items-tree.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) -}}
-{{- else -}}
-  {{- $result = partial "taxonomy/items-flat.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) -}}
-{{- end -}}
-{{- return $result -}}
+{{- $specKey := md5 ($spec | jsonify) -}}
+{{- return partialCached "taxonomy/direct-children-compute.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) $ctx.Site.Language.Lang $ctx.Kind $ctx.RelPermalink (printf "%v" ($ctx.Data.Plural | default "")) (printf "%v" ($ctx.Data.Term | default "")) $kind $specKey -}}
