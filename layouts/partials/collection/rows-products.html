@@ -1,15 +1,15 @@
 {{- $host := .host -}}
 {{- if not $host -}}
-  {{- errorf "Build failed: entry-source/entries-products.html requires host." -}}
+  {{- errorf "Build failed: collection/rows-products.html requires host." -}}
 {{- end -}}
 {{- if not ($host.Site.GetPage "/products") -}}
-  {{- errorf "Build failed: entry-source/entries-products.html on page %q cannot resolve /products." $host.File.Path -}}
+  {{- errorf "Build failed: collection/rows-products.html on page %q cannot resolve /products." $host.File.Path -}}
 {{- end -}}
-{{- $entries := slice -}}
+{{- $rows := slice -}}
 {{- $scope := partial "products/source-scope.html" (dict "page" $host) -}}
 {{- if not (in (slice "first-party" "paid" "free" "third-party") $scope) -}}
   {{- errorf "Build failed: products source page %q has unsupported scope=%q." ($host.File.Path | default (printf "%s %s" $host.Kind $host.RelPermalink)) $scope -}}
-  {{- end -}}
+{{- end -}}
 {{- range where $host.Site.RegularPages "Params.product" "ne" nil -}}
   {{- $product := partial "products/model.html" (dict "page" .) -}}
   {{- $productScope := index $product "scope" -}}
@@ -21,15 +21,22 @@
     {{- continue -}}
   {{- end -}}
 
-  {{- $entries = $entries | append (dict
-    "entry_key" (partial "entry-source/page-entry-key.html" (dict "ctx" .))
+  {{- $rows = $rows | append (dict
+    "key" (partial "entry-source/page-entry-key.html" (dict "ctx" .))
+    "kind" "page"
     "href" .RelPermalink
+    "schema_href" .RelPermalink
     "title" .Title
+    "text" .Title
+    "icon" "file"
+    "prefetch_kind" "post"
+    "sort_group" "0"
     "sort_name" .Title
     "sort_price" (index $product "price_amount_text")
-    "sort_value" (index $product "value_text")
     "price_text" (index $product "price_text")
-    "value_text" (index $product "value_text")) -}}
+    "sort_value" (index $product "value_text")
+    "value_text" (index $product "value_text")
+  ) -}}
 {{- end -}}
-{{- $entries = sort $entries "title" "asc" -}}
-{{- return $entries -}}
+{{- $rows = sort $rows "title" "asc" -}}
+{{- return $rows -}}

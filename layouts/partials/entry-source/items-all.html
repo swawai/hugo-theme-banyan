@@ -6,13 +6,13 @@
 {{- if not $target -}}
   {{- errorf "Build failed: page %q cannot resolve banyan_entry_source.target_section=%q." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) $targetSection -}}
 {{- end -}}
-{{- $entries := partial "entry-source/entries-all.html" (dict "ctx" $target "host" $page) -}}
+{{- $rows := partial "collection/rows-all.html" (dict "ctx" $target) -}}
 {{- $items := slice -}}
-{{- range $entry := $entries -}}
+{{- range $row := $rows -}}
   {{- $items = $items | append (dict
-    "key" (printf "%v" (index $entry "entry_key"))
-    "text" (printf "%v" (index $entry "title"))
-    "href" (printf "%v" (index $entry "href"))
+    "key" (printf "%v" (index $row "key"))
+    "text" (printf "%v" (index $row "text"))
+    "href" (printf "%v" (index $row "href"))
     "type" "p"
   ) -}}
 {{- end -}}

@@ -20,7 +20,7 @@
   )
 ) }}
 
-{{ $entries := partial "entry-source/entries-products.html" (dict "host" $host) }}
+{{ $rows := partial "collection/rows-products.html" (dict "host" $host) }}
 {{ $entrySource := partial "entry-source/model-page.html" (dict "page" $host) }}
 {{ $entrySourcePath := printf "%v" (index $entrySource "logical_path") }}
 
@@ -59,8 +59,8 @@
     "titleAsc" (i18n "products_sort_value_asc")
     "titleDesc" (i18n "products_sort_value_desc")) }}
 
-  {{ range $entries }}
-    {{ $entryHref := printf "%s?%s" .href (querify "from" (printf "%s%s/" $entrySourcePath .entry_key)) }}
+  {{ range $rows }}
+    {{ $entryHref := printf "%s?%s" .href (querify "from" (printf "%s%s/" $entrySourcePath .key)) }}
     {{ partial "grid-title-cell.html" (dict
       "ctx" $host
       "href" $entryHref
@@ -68,7 +68,7 @@
       "icon" "file"
       "prefetchKind" "post"
       "dataAttrs" (dict
-        "sort-group" "0"
+        "sort-group" .sort_group
         "sort-name" .sort_name
         "sort-price" .sort_price
         "sort-value" .sort_value)) }}
@@ -82,7 +82,7 @@
 </div>
 
 {{- $schemaEntries := slice -}}
-{{- range $entries -}}
-  {{- $schemaEntries = $schemaEntries | append (dict "url" .href "name" .title) -}}
+{{- range $rows -}}
+  {{- $schemaEntries = $schemaEntries | append (dict "url" .schema_href "name" .title) -}}
 {{- end -}}
 {{ partial "schema-itemlist.html" (dict "entries" $schemaEntries) }}

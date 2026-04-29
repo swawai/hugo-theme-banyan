@@ -1,0 +1,38 @@
+{{- $ctx := .ctx -}}
+{{- if not $ctx -}}
+  {{- errorf "Build failed: collection/rows-all.html requires ctx." -}}
+{{- end -}}
+{{- $pagesToShow := $ctx.RegularPagesRecursive -}}
+{{- if eq $ctx.Kind "home" -}}
+  {{- $pagesToShow = $ctx.Site.RegularPages -}}
+{{- end -}}
+{{- $sortedPages := sort $pagesToShow "Date" "desc" -}}
+{{- $rows := slice -}}
+{{- range $sortedPages -}}
+  {{- $bytes := len .RawContent -}}
+  {{- $kb := div (add $bytes 1023) 1024 -}}
+  {{- $pathValue := path.Clean .File.Dir -}}
+  {{- $pathHref := printf "/%s/" (trim $pathValue "/") -}}
+  {{- $rows = $rows | append (dict
+    "key" (partial "entry-source/page-entry-key.html" (dict "ctx" .))
+    "kind" "page"
+    "href" .RelPermalink
+    "schema_href" .RelPermalink
+    "title" .Title
+    "text" .Title
+    "icon" "file"
+    "prefetch_kind" "post"
+    "sort_group" "0"
+    "sort_name" .Title
+    "sort_date" (.Date.Format "20060102150405")
+    "date_text" (.Date.Format "2006-01-02")
+    "sort_size" (printf "%v" $bytes)
+    "size_text" $kb
+    "size_unit" "&thinsp;KB"
+    "sort_path" $pathValue
+    "path_value" $pathValue
+    "path_href" $pathHref
+    "path_text" (printf "/%s" $pathValue)
+  ) -}}
+{{- end -}}
+{{- return $rows -}}
