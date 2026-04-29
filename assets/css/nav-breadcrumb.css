@@ -7,6 +7,17 @@
     z-index: 0;
 }
 
+html[data-entry-breadcrumb-preview-pending="true"] .slot-row-breadcrumb,
+html[data-entry-breadcrumb-preview-pending="true"] .page-rail-context {
+    visibility: hidden;
+    pointer-events: none;
+}
+
+html[data-entry-breadcrumb-meta-pending="true"] .article-meta .post-taxonomy-path {
+    visibility: hidden;
+    pointer-events: none;
+}
+
 .slot-row-breadcrumb.is-breadcrumb-menu-mode {
     background: transparent;
     box-shadow: none;

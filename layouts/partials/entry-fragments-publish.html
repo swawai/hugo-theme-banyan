@@ -7,7 +7,7 @@
   {{- errorf "Build failed: entry-fragments-publish.html requires build_version." -}}
 {{- end -}}
 {{- range $languageSite := sort $ctx.Sites "Language.Weight" -}}
-  {{- $sourceModels := partial "entry-source/models.html" (dict "ctx" $languageSite.Home) -}}
+  {{- $sourceModels := partialCached "entry-source/models.html" (dict "ctx" $languageSite.Home) $languageSite.Language.Lang -}}
   {{- range $source := $sourceModels -}}
     {{- $logicalPath := trim (printf "%v" (index $source "logical_path")) " \r\n\t" -}}
     {{- if eq $logicalPath "" -}}{{- continue -}}{{- end -}}

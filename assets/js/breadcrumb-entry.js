@@ -1,6 +1,13 @@
 import { initBreadcrumbMenus } from './breadcrumb-menu.js';
 
 const childrenPayloadPromises = new Map();
+const ENTRY_BREADCRUMB_PREVIEW_PENDING_ATTR = 'data-entry-breadcrumb-preview-pending';
+const ENTRY_BREADCRUMB_META_PENDING_ATTR = 'data-entry-breadcrumb-meta-pending';
+
+function clearEntryBreadcrumbPending() {
+    document.documentElement?.removeAttribute(ENTRY_BREADCRUMB_PREVIEW_PENDING_ATTR);
+    document.documentElement?.removeAttribute(ENTRY_BREADCRUMB_META_PENDING_ATTR);
+}
 
 function readFragmentRoot() {
     return document.body?.dataset.fragmentRoot || '';
@@ -544,13 +551,17 @@ function renderArticleMetaPath(metaLabel, items) {
 }
 
 export async function initEntryBreadcrumb() {
-    const state = await buildEntryState();
-    if (!state || !Array.isArray(state.breadcrumbItems) || state.breadcrumbItems.length === 0) {
-        return;
-    }
+    try {
+        const state = await buildEntryState();
+        if (!state || !Array.isArray(state.breadcrumbItems) || state.breadcrumbItems.length === 0) {
+            return;
+        }
 
-    renderRootSelection(state.rootItem, state.rootMenuItems, state.rootMenuLabel);
-    renderTopBreadcrumb(state.breadcrumbItems);
-    renderArticleMetaPath(state.metaLabel, state.metaItems || []);
-    initBreadcrumbMenus();
+        renderRootSelection(state.rootItem, state.rootMenuItems, state.rootMenuLabel);
+        renderTopBreadcrumb(state.breadcrumbItems);
+        renderArticleMetaPath(state.metaLabel, state.metaItems || []);
+        initBreadcrumbMenus();
+    } finally {
+        clearEntryBreadcrumbPending();
+    }
 }
