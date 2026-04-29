@@ -1,0 +1,209 @@
+{{- $ctx := .ctx | default . -}}
+{{- $slot := printf "%v" (.slot | default "breadcrumb") -}}
+{{- $sourceKey := "__auto__" -}}
+{{- with .source -}}
+  {{- $sourceKey = printf "%v" (.File.Path | default .RelPermalink | default .Kind) -}}
+{{- end -}}
+{{- $cacheKey := printf "breadcrumb:canonical:%s:%s" $slot $sourceKey -}}
+{{- $canonical := $ctx.Scratch.Get $cacheKey -}}
+{{- if not $canonical -}}
+  {{- /* Shared breadcrumb semantics consumed by both entry-source export and breadcrumb rendering. */ -}}
+  {{- $strategy := partial "breadcrumb/strategy-key.html" (dict "ctx" $ctx) -}}
+  {{- $baseModel := partial (printf "breadcrumb/%s.html" $strategy) (dict "ctx" $ctx) -}}
+  {{- $variant := lower (printf "%v" (index $baseModel "variant" | default "trail")) -}}
+  {{- $items := index $baseModel "items" | default slice -}}
+  {{- $schemaItems := index $baseModel "schema_items" | default $items -}}
+  {{- $fragment := partial "breadcrumb/fragment-load.html" (dict "ctx" $ctx "slot" $slot "source" .source) -}}
+
+  {{- if gt (len $fragment) 0 -}}
+    {{- $config := index $fragment "config" | default dict -}}
+    {{- $variant = lower (printf "%v" (index $config "variant" | default $variant)) -}}
+    {{- $autoTail := lower (printf "%v" (index $config "auto_tail" | default "current")) -}}
+    {{- $menuMode := lower (printf "%v" (index $config "menu_mode" | default "")) -}}
+    {{- $menuItems := partial "breadcrumb/menu-items-from-config.html" (dict "ctx" $ctx "config" $config) -}}
+    {{- $menuTextByHref := dict -}}
+    {{- $currentKey := trim (lower (printf "%v" $ctx.RelPermalink)) "/" -}}
+    {{- $activeMenuKey := "" -}}
+    {{- $activeMenuDepth := -1 -}}
+    {{- $activeMenuItem := dict -}}
+    {{- $menuActiveHrefSource := lower (printf "%v" (index $config "menu_active_href_source" | default "")) -}}
+    {{- $resolvedMenuActiveHref := "" -}}
+
+    {{- range $menuItems -}}
+      {{- $menuKey := trim (lower (printf "%v" (index . "href"))) "/" -}}
+      {{- $menuTextByHref = merge $menuTextByHref (dict $menuKey (index . "text")) -}}
+    {{- end -}}
+
+    {{- if and (eq $menuMode "current-root") (gt (len $menuItems) 0) -}}
+      {{- if ne $menuActiveHrefSource "" -}}
+        {{- $resolvedMenuActiveHref = printf "%v" (partial "breadcrumb/menu-active-href.html" (dict "ctx" $ctx "source" $menuActiveHrefSource "config" $config "menuItems" $menuItems)) -}}
+        {{- $resolvedKey := trim (lower (printf "%v" $resolvedMenuActiveHref)) "/" -}}
+        {{- if ne $resolvedKey "" -}}
+          {{- $activeMenuKey = $resolvedKey -}}
+          {{- $activeMenuDepth = len (split $resolvedKey "/") -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if lt $activeMenuDepth 0 -}}
+        {{- range $menuItems -}}
+          {{- $menuItem := . -}}
+          {{- $menuKey := trim (lower (printf "%v" (index $menuItem "href"))) "/" -}}
+          {{- $isMatch := false -}}
+          {{- if eq $menuKey $currentKey -}}
+            {{- $isMatch = true -}}
+          {{- else if and (ne $menuKey "") (hasPrefix $currentKey (printf "%s/" $menuKey)) -}}
+            {{- $isMatch = true -}}
+          {{- end -}}
+          {{- if $isMatch -}}
+            {{- $menuDepth := len (split $menuKey "/") -}}
+            {{- if gt $menuDepth $activeMenuDepth -}}
+              {{- $activeMenuDepth = $menuDepth -}}
+              {{- $activeMenuKey = $menuKey -}}
+            {{- end -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+      {{- if ge $activeMenuDepth 0 -}}
+        {{- $updatedMenuItems := slice -}}
+        {{- range $menuItems -}}
+          {{- $menuItem := . -}}
+          {{- $menuKey := trim (lower (printf "%v" (index $menuItem "href"))) "/" -}}
+          {{- $menuItem = merge $menuItem (dict "selected" (eq $menuKey $activeMenuKey)) -}}
+          {{- if eq $menuKey $activeMenuKey -}}
+            {{- $activeMenuItem = $menuItem -}}
+          {{- end -}}
+          {{- $updatedMenuItems = $updatedMenuItems | append $menuItem -}}
+        {{- end -}}
+        {{- $menuItems = $updatedMenuItems -}}
+      {{- end -}}
+    {{- end -}}
+
+    {{- $highlightedMenuKey := "" -}}
+    {{- range $menuItems -}}
+      {{- if eq (index . "current") true -}}
+        {{- $highlightedMenuKey = trim (lower (printf "%v" (index . "href"))) "/" -}}
+        {{- break -}}
+      {{- end -}}
+    {{- end -}}
+    {{- if and (eq $highlightedMenuKey "") (ne $activeMenuKey "") -}}
+      {{- $highlightedMenuKey = $activeMenuKey -}}
+    {{- end -}}
+    {{- if ne $highlightedMenuKey "" -}}
+      {{- $updatedMenuItems := slice -}}
+      {{- range $menuItems -}}
+        {{- $menuItem := . -}}
+        {{- $menuKey := trim (lower (printf "%v" (index $menuItem "href"))) "/" -}}
+        {{- $menuItem = merge $menuItem (dict "highlighted" (eq $menuKey $highlightedMenuKey)) -}}
+        {{- $updatedMenuItems = $updatedMenuItems | append $menuItem -}}
+      {{- end -}}
+      {{- $menuItems = $updatedMenuItems -}}
+    {{- end -}}
+
+    {{- $leadItem := dict -}}
+    {{- $hasLead := false -}}
+    {{- $menuButtonLabel := printf "%v" (index $config "menu_label" | default "") -}}
+    {{- with index $config "lead" -}}
+      {{- $leadItem = partial "breadcrumb/item-from-spec.html" (dict "ctx" $ctx "spec" .) -}}
+      {{- if eq $menuButtonLabel "" -}}{{- $menuButtonLabel = printf "%v" (index . "menu_label" | default "") -}}{{- end -}}
+      {{- $hasLead = true -}}
+    {{- end -}}
+    {{- if and (not $hasLead) (gt (len $menuItems) 0) (gt (len $items) 0) -}}
+      {{- $leadItem = index $items 0 -}}
+      {{- $hasLead = true -}}
+    {{- end -}}
+    {{- if and (eq $menuMode "current-root") (gt (len $activeMenuItem) 0) -}}
+      {{- $leadItem = $activeMenuItem -}}
+      {{- $hasLead = true -}}
+    {{- end -}}
+    {{- if and $hasLead (gt (len $menuItems) 0) -}}
+      {{- if eq $menuButtonLabel "" -}}{{- $menuButtonLabel = printf "%s menu" (index $leadItem "text") -}}{{- end -}}
+      {{- $leadItem = merge $leadItem (dict "menu" $menuItems "menu_button_label" $menuButtonLabel) -}}
+    {{- end -}}
+    {{- if $hasLead -}}
+      {{- $leadKey := trim (lower (printf "%v" (index $leadItem "href"))) "/" -}}
+      {{- $tailItems := slice -}}
+      {{- if eq $autoTail "full" -}}
+        {{- range $schemaItems -}}
+          {{- $item := . -}}
+          {{- $itemKey := trim (lower (printf "%v" (index $item "href"))) "/" -}}
+          {{- if eq $itemKey $leadKey -}}{{- continue -}}{{- end -}}
+          {{- with index $menuTextByHref $itemKey -}}{{- $item = merge $item (dict "text" .) -}}{{- end -}}
+          {{- $tailItems = $tailItems | append $item -}}
+        {{- end -}}
+      {{- else if eq $autoTail "current" -}}
+        {{- if gt (len $schemaItems) 0 -}}
+          {{- $currentItem := index $schemaItems (sub (len $schemaItems) 1) -}}
+          {{- $currentKey := trim (lower (printf "%v" (index $currentItem "href"))) "/" -}}
+          {{- if ne $currentKey $leadKey -}}
+            {{- with index $menuTextByHref $currentKey -}}{{- $currentItem = merge $currentItem (dict "text" .) -}}{{- end -}}
+            {{- $tailItems = $tailItems | append $currentItem -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+      {{- $items = slice $leadItem -}}
+      {{- range $tailItems -}}{{- $items = $items | append . -}}{{- end -}}
+      {{- $schemaItems = $items -}}
+    {{- else if and (gt (len $menuItems) 0) (gt (len $items) 0) -}}
+      {{- $existingTail := after 1 $items -}}
+      {{- $leadItem = index $items 0 -}}
+      {{- if eq $menuButtonLabel "" -}}{{- $menuButtonLabel = printf "%s menu" (index $leadItem "text") -}}{{- end -}}
+      {{- $leadItem = merge $leadItem (dict "menu" $menuItems "menu_button_label" $menuButtonLabel) -}}
+      {{- $items = slice $leadItem -}}
+      {{- range $existingTail -}}{{- $items = $items | append . -}}{{- end -}}
+      {{- $schemaItems = $items -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- $rootItem := dict -}}
+  {{- $rootMenu := slice -}}
+  {{- $rootMenuLabel := "Breadcrumb root" -}}
+  {{- $tailItems := slice -}}
+  {{- if gt (len $items) 0 -}}
+    {{- $rootRaw := index $items 0 -}}
+    {{- $rootText := trim (printf "%v" (index $rootRaw "text")) " " -}}
+    {{- $rootHref := trim (printf "%v" (index $rootRaw "href")) " " -}}
+    {{- if and (ne $rootText "") (ne $rootHref "") -}}
+      {{- $rootItem = dict "text" $rootText "href" $rootHref -}}
+      {{- with index $rootRaw "title" }}{{- $rootItem = merge $rootItem (dict "title" (printf "%v" .)) -}}{{- end -}}
+      {{- if eq (index $rootRaw "current") true }}{{- $rootItem = merge $rootItem (dict "current" true) -}}{{- end -}}
+      {{- if eq (index $rootRaw "selected") true }}{{- $rootItem = merge $rootItem (dict "selected" true) -}}{{- end -}}
+      {{- if eq (index $rootRaw "highlighted") true }}{{- $rootItem = merge $rootItem (dict "highlighted" true) -}}{{- end -}}
+      {{- range $menuItem := (index $rootRaw "menu" | default slice) -}}
+        {{- $menuText := trim (printf "%v" (index $menuItem "text")) " " -}}
+        {{- $menuHref := trim (printf "%v" (index $menuItem "href")) " " -}}
+        {{- if or (eq $menuText "") (eq $menuHref "") -}}{{- continue -}}{{- end -}}
+        {{- $normalizedMenuItem := dict "text" $menuText "href" $menuHref -}}
+        {{- with index $menuItem "title" }}{{- $normalizedMenuItem = merge $normalizedMenuItem (dict "title" (printf "%v" .)) -}}{{- end -}}
+        {{- if eq (index $menuItem "current") true }}{{- $normalizedMenuItem = merge $normalizedMenuItem (dict "current" true) -}}{{- end -}}
+        {{- if eq (index $menuItem "selected") true }}{{- $normalizedMenuItem = merge $normalizedMenuItem (dict "selected" true) -}}{{- end -}}
+        {{- if eq (index $menuItem "highlighted") true }}{{- $normalizedMenuItem = merge $normalizedMenuItem (dict "highlighted" true) -}}{{- end -}}
+        {{- $rootMenu = $rootMenu | append $normalizedMenuItem -}}
+      {{- end -}}
+      {{- if eq (len $rootMenu) 0 -}}
+        {{- $rootMenu = slice $rootItem -}}
+      {{- end -}}
+      {{- $rootMenuLabel = trim (printf "%v" (index $rootRaw "menu_button_label" | default "Breadcrumb root")) " " -}}
+      {{- range $tailRaw := $items -}}
+        {{- $tailText := trim (printf "%v" (index $tailRaw "text")) " " -}}
+        {{- $tailHref := trim (printf "%v" (index $tailRaw "href")) " " -}}
+        {{- if or (eq $tailText "") (eq $tailHref "") (eq $tailHref $rootHref) -}}{{- continue -}}{{- end -}}
+        {{- $tailItem := dict "text" $tailText "href" $tailHref -}}
+        {{- with index $tailRaw "title" }}{{- $tailItem = merge $tailItem (dict "title" (printf "%v" .)) -}}{{- end -}}
+        {{- if eq (index $tailRaw "current") true }}{{- $tailItem = merge $tailItem (dict "current" true) -}}{{- end -}}
+        {{- $tailItems = $tailItems | append $tailItem -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- $canonical = dict
+    "variant" $variant
+    "strategy" $strategy
+    "items" $items
+    "schema_items" $schemaItems
+    "root_item" $rootItem
+    "root_menu" $rootMenu
+    "root_menu_label" $rootMenuLabel
+    "tail_items" $tailItems
+  -}}
+  {{- $ctx.Scratch.Set $cacheKey $canonical -}}
+{{- end -}}
+{{- return $canonical -}}

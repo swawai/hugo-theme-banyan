@@ -8,12 +8,8 @@
   {{- errorf "Build failed: entry source page %q is missing logical_path." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
 {{- end -}}
 {{- partial "slots/prepare.html" (dict "ctx" $page) -}}
-{{- $rootModel := partial "breadcrumb/model.html" (dict "ctx" $page "slot" "breadcrumb_root") -}}
-{{- $rootItems := index $rootModel "items" | default slice -}}
-{{- if eq (len $rootItems) 0 -}}
-  {{- errorf "Build failed: entry source page %q is missing breadcrumb_root model items." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
-{{- end -}}
-{{- $rootRaw := index $rootItems 0 -}}
+{{- $canonicalModel := partial "breadcrumb/canonical-model.html" (dict "ctx" $page "slot" "breadcrumb") -}}
+{{- $rootRaw := index $canonicalModel "root_item" | default dict -}}
 {{- $rootText := trim (printf "%v" (index $rootRaw "text")) " " -}}
 {{- $rootHref := trim (printf "%v" (index $rootRaw "href")) " " -}}
 {{- if or (eq $rootText "") (eq $rootHref "") -}}
@@ -24,36 +20,9 @@
   "href" $rootHref
 -}}
 {{- with index $rootRaw "title" }}{{ $rootItem = merge $rootItem (dict "title" (printf "%v" .)) }}{{ end -}}
-{{- $rootMenuItems := slice -}}
-{{- range $menuItem := (index $rootRaw "menu" | default slice) -}}
-  {{- $text := trim (printf "%v" (index $menuItem "text")) " " -}}
-  {{- $href := trim (printf "%v" (index $menuItem "href")) " " -}}
-  {{- if or (eq $text "") (eq $href "") -}}{{- continue -}}{{- end -}}
-  {{- $item := dict "text" $text "href" $href -}}
-  {{- with index $menuItem "title" }}{{ $item = merge $item (dict "title" (printf "%v" .)) }}{{ end -}}
-  {{- if eq (index $menuItem "current") true }}{{ $item = merge $item (dict "current" true) }}{{ end -}}
-  {{- if eq (index $menuItem "selected") true }}{{ $item = merge $item (dict "selected" true) }}{{ end -}}
-  {{- if eq (index $menuItem "highlighted") true }}{{ $item = merge $item (dict "highlighted" true) }}{{ end -}}
-  {{- $rootMenuItems = $rootMenuItems | append $item -}}
-{{- end -}}
-{{- if eq (len $rootMenuItems) 0 -}}
-  {{- $rootMenuItems = slice $rootItem -}}
-{{- end -}}
-{{- $rootMenuLabel := trim (printf "%v" (index $rootRaw "menu_button_label" | default "Breadcrumb root")) " " -}}
-{{- $tailModel := partial "breadcrumb/model.html" (dict "ctx" $page "slot" "breadcrumb") -}}
-{{- $tailItems := slice -}}
-{{- range $tailRaw := (index $tailModel "items" | default slice) -}}
-  {{- $text := trim (printf "%v" (index $tailRaw "text")) " " -}}
-  {{- $href := trim (printf "%v" (index $tailRaw "href")) " " -}}
-  {{- if or (eq $text "") (eq $href "") -}}{{- continue -}}{{- end -}}
-  {{- if eq $href $rootHref -}}{{- continue -}}{{- end -}}
-  {{- $item := dict
-    "text" $text
-    "href" $href
-  -}}
-  {{- with index $tailRaw "title" }}{{ $item = merge $item (dict "title" (printf "%v" .)) }}{{ end -}}
-  {{- $tailItems = $tailItems | append $item -}}
-{{- end -}}
+{{- $rootMenuItems := index $canonicalModel "root_menu" | default (slice $rootItem) -}}
+{{- $rootMenuLabel := trim (printf "%v" (index $canonicalModel "root_menu_label" | default "Breadcrumb root")) " " -}}
+{{- $tailItems := index $canonicalModel "tail_items" | default slice -}}
 {{- $result := dict
   "provider" $provider
   "page" $page
