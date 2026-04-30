@@ -18,4 +18,35 @@
     {{- $entries = $entries | append $model -}}
   {{- end -}}
 {{- end -}}
-{{- return $entries -}}
+{{- $itemsBySource := dict -}}
+{{- range $model := $entries -}}
+  {{- $provider := printf "%v" (index $model "provider" | default "") -}}
+  {{- $logicalPath := printf "%v" (index $model "logical_path" | default "") -}}
+  {{- $currentItems := index $model "current_collection_items" | default dict -}}
+  {{- if and (ne $provider "") (ne $logicalPath "") (gt (len $currentItems) 0) -}}
+    {{- $itemsBySource = merge $itemsBySource (dict (printf "%s|%s" $provider $logicalPath) $currentItems) -}}
+  {{- end -}}
+{{- end -}}
+{{- $enrichedEntries := slice -}}
+{{- range $model := $entries -}}
+  {{- $levelsRaw := index $model "levels" | default slice -}}
+  {{- if gt (len $levelsRaw) 0 -}}
+    {{- $levels := slice -}}
+    {{- range $level := $levelsRaw -}}
+      {{- $collectionSource := index $level "collection_source" | default dict -}}
+      {{- $levelModel := $level -}}
+      {{- if gt (len $collectionSource) 0 -}}
+        {{- $provider := printf "%v" (index $collectionSource "provider" | default "") -}}
+        {{- $logicalPath := printf "%v" (index $collectionSource "logical_path" | default "") -}}
+        {{- $lookupKey := printf "%s|%s" $provider $logicalPath -}}
+        {{- with index $itemsBySource $lookupKey -}}
+          {{- $levelModel = merge $levelModel (dict "collection_items" .) -}}
+        {{- end -}}
+      {{- end -}}
+      {{- $levels = $levels | append $levelModel -}}
+    {{- end -}}
+    {{- $model = merge $model (dict "levels" $levels) -}}
+  {{- end -}}
+  {{- $enrichedEntries = $enrichedEntries | append $model -}}
+{{- end -}}
+{{- return $enrichedEntries -}}

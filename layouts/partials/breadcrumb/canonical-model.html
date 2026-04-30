@@ -210,6 +210,31 @@
         {{- end -}}
         {{- $tailItems = $tailItems | append $tailItem -}}
       {{- end -}}
+      {{- $rootMenuHrefSet := dict -}}
+      {{- range $rootMenuItem := $rootMenu -}}
+        {{- $rootMenuKey := trim (lower (printf "%v" (index $rootMenuItem "href"))) "/" -}}
+        {{- if ne $rootMenuKey "" -}}
+          {{- $rootMenuHrefSet = merge $rootMenuHrefSet (dict $rootMenuKey true) -}}
+        {{- end -}}
+      {{- end -}}
+      {{- $normalizedTailItems := slice -}}
+      {{- range $tailItem := $tailItems -}}
+        {{- $tailMenu := index $tailItem "menu" | default slice -}}
+        {{- if gt (len $tailMenu) 0 -}}
+          {{- $menuCoveredByRoot := true -}}
+          {{- range $menuItem := $tailMenu -}}
+            {{- $menuKey := trim (lower (printf "%v" (index $menuItem "href"))) "/" -}}
+            {{- if or (eq $menuKey "") (not (index $rootMenuHrefSet $menuKey)) -}}
+              {{- $menuCoveredByRoot = false -}}
+            {{- end -}}
+          {{- end -}}
+          {{- if $menuCoveredByRoot -}}
+            {{- $tailItem = merge $tailItem (dict "redundant_with_root_menu" true) -}}
+          {{- end -}}
+        {{- end -}}
+        {{- $normalizedTailItems = $normalizedTailItems | append $tailItem -}}
+      {{- end -}}
+      {{- $tailItems = $normalizedTailItems -}}
       {{- $levelCollectionHref := $rootHref -}}
       {{- range $tailItem := $tailItems -}}
         {{- $level := dict "item" $tailItem -}}

@@ -253,5 +253,6 @@ export async function buildSelectedBreadcrumbItem(fragmentRoot, source, entryKey
         href,
         current: true,
         menu,
+        collection_source: collectionSource,
     };
 }

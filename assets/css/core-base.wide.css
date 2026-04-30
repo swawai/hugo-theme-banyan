@@ -1,2 +1,5 @@
 @media (min-width: 88rem) {
+    :root {
+        --page-shell-min-inline: 100%;
+    }
 }

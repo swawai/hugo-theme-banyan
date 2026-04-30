@@ -46,6 +46,19 @@
   "provider" $provider
   "logical_path" $logicalPath
 ) -}}
+{{- $currentCollectionItems := dict -}}
+{{- if in (slice "all" "products" "section-d" "taxonomy") $provider -}}
+  {{- $currentCollectionItemsJson := partial (printf "entry-source/items-json-%s.html" $provider) (dict
+    "source" (dict
+      "page" $page
+      "provider" $provider
+      "logical_path" $logicalPath
+    )
+  ) -}}
+  {{- if ne (trim $currentCollectionItemsJson " \r\n\t") "" -}}
+    {{- $currentCollectionItems = transform.Unmarshal (dict "format" "json") $currentCollectionItemsJson -}}
+  {{- end -}}
+{{- end -}}
 {{- $result := dict
   "provider" $provider
   "page" $page
@@ -56,5 +69,6 @@
   "tail_items" $tailItems
   "levels" $levels
   "current_collection_source" $currentCollectionSource
+  "current_collection_items" $currentCollectionItems
  -}}
 {{- return $result -}}

@@ -82,6 +82,7 @@
         "tail_items" (index $source "tail_items")
         "levels" (index $source "levels")
         "current_collection_source" (index $source "current_collection_source")
+        "current_collection_items" (index $source "current_collection_items")
     ) }}
 {{ end }}
 {{ if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) }}
@@ -146,7 +147,20 @@
     {{/* 若当前 URL 带 from=，先进入 entry breadcrumb 预览/补全阶段：
          1) 预览阶段先屏蔽默认 breadcrumb，避免闪出错误路径；
          2) 运行时补全阶段继续隐藏 meta path，待异步修正完成后再显示。 */}}
-    <script>(function(){try{var from=(new URLSearchParams(window.location.search)).get('from')||'';var segments=typeof from==='string'?from.trim().split('/').filter(Boolean):[];if(segments.length>0){document.documentElement.setAttribute('data-entry-breadcrumb-preview-pending','true');document.documentElement.setAttribute('data-entry-breadcrumb-meta-pending','true');}}catch(e){}})();</script>
+    <script>(function(){try{var params=new URLSearchParams(window.location.search);var from=params.get('from')||'';var sort=(params.get('sort')||'').trim();var sorts=(params.get('sorts')||'').trim();var segments=typeof from==='string'?from.trim().split('/').filter(Boolean):[];var html=document.documentElement;var canSortCollectionBreadcrumb={{ if and (gt (len $pageCollectionSource) 0) (ne .Kind "page") }}true{{ else }}false{{ end }};if(segments.length>0){html.setAttribute('data-entry-breadcrumb-preview-pending','true');html.setAttribute('data-entry-breadcrumb-runtime-pending','true');html.setAttribute('data-entry-breadcrumb-meta-pending','true');}else if(canSortCollectionBreadcrumb&&(sort!==''||sorts!=='')){html.setAttribute('data-breadcrumb-sort-pending','true');}}catch(e){}})();</script>
+    {{/* 关键首帧遮罩必须内联在 head，而不是等外链 wide CSS 下载后才生效。
+         否则在慢设备/慢 CPU 下，默认 SSR breadcrumb 会先闪出错误路径，然后再被 preview/runtime 修正。 */}}
+    <style>
+    @media (min-width: 88rem) {
+      html[data-entry-breadcrumb-preview-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb,
+      html[data-entry-breadcrumb-preview-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .page-rail-context,
+      html[data-breadcrumb-sort-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb {
+        visibility: visible;
+        opacity: 0;
+        pointer-events: none;
+      }
+    }
+    </style>
     {{ block "styles" . }}{{ partial "head-styles.html" (dict "ctx" .) }}{{ end }}
     {{ block "head-extra" . }}{{ end }}
     {{ partial "page-resources-head.html" . }}
@@ -328,6 +342,8 @@
                 </div>
                 {{ end }}
             </div>
+            {{ partial "breadcrumb/data-core-script.html" (dict "ctx" $) }}
+            {{ partial "breadcrumb/ui-core-script.html" (dict "ctx" $) }}
             {{ partial "breadcrumb/entry-preview-script.html" (dict "ctx" $) }}
             {{ end }}
             <main id="main" class="slot slot-main" data-slot="main">

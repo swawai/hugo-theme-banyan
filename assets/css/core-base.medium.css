@@ -1,6 +1,7 @@
 @media (min-width: 64rem) {
     :root {
-        --page-shell-min-inline: min(78rem, 100%);
+        --page-shell-medium-inline: 78rem;
+        --page-shell-min-inline: min(var(--page-shell-medium-inline), 100%);
         --page-rail-inline: 10rem;
         --page-shell-gap-inline: .5rem;
         --page-rail-padding-inline-end: .5rem;
@@ -44,6 +45,10 @@
     .page-shell.page-shell--has-rail .slot-breadcrumb {
         display: inline-flex;
         align-items: center;
+    }
+
+    .page-shell.page-shell--has-rail.page-shell--has-breadcrumb-root.page-shell--no-breadcrumb-tail .slot-row-breadcrumb {
+        display: none;
     }
 
     .page-shell.page-shell--has-rail .slot-main {

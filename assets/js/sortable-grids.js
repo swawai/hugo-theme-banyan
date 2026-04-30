@@ -18,6 +18,12 @@ import {
 } from './nav-state.js';
 import { buildBreadcrumbMenuItems } from './breadcrumb-items.js';
 
+const BREADCRUMB_SORT_PENDING_ATTR = 'data-breadcrumb-sort-pending';
+
+function clearBreadcrumbSortPending() {
+    document.documentElement?.removeAttribute(BREADCRUMB_SORT_PENDING_ATTR);
+}
+
 function normalizePageCollectionSource(source) {
     if (!source || typeof source !== 'object') {
         return null;
@@ -155,6 +161,24 @@ async function updateBreadcrumbTrailMenus(pageCollectionSource) {
         const menuItems = await buildBreadcrumbMenuItems(fragmentRoot, collectionSource, { selectedPathname });
         if (renderId !== breadcrumbTrailMenuRenderId) {
             return;
+        }
+
+        if (menuItems.length === 0) {
+            return;
+        }
+
+        if (selectedPathname) {
+            const coversCurrentPage = menuItems.some((menuItem) => {
+                try {
+                    return normalizePathname(new URL(menuItem.href, window.location.origin).pathname) === selectedPathname;
+                } catch (error) {
+                    return false;
+                }
+            });
+
+            if (!coversCurrentPage) {
+                return;
+            }
         }
 
         const fragment = document.createDocumentFragment();
@@ -346,7 +370,7 @@ function updateSortControls(grid, variantName, currentToken, pageCollectionSourc
     });
 }
 
-function applySortableGrid(grid) {
+async function applySortableGrid(grid) {
     const variantName = (grid.dataset.sortVariant || '').toLowerCase();
     const variant = SORT_VARIANTS[variantName];
     const columnCount = Number(grid.dataset.sortColumns || 0);
@@ -370,7 +394,7 @@ function applySortableGrid(grid) {
         updateSortControls(grid, variantName, currentToken, pageCollectionSource);
         updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSource);
         updateBreadcrumbTrailLinks(variantName, currentToken, pageCollectionSource);
-        void updateBreadcrumbTrailMenus(pageCollectionSource);
+        await updateBreadcrumbTrailMenus(pageCollectionSource);
         return;
     }
 
@@ -401,17 +425,22 @@ function applySortableGrid(grid) {
     updateSortControls(grid, variantName, currentToken, pageCollectionSource);
     updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSource);
     updateBreadcrumbTrailLinks(variantName, currentToken, pageCollectionSource);
-    void updateBreadcrumbTrailMenus(pageCollectionSource);
+    await updateBreadcrumbTrailMenus(pageCollectionSource);
 }
 
-function applySortableGrids() {
-    document.querySelectorAll('[data-sortable="true"][data-sort-variant]').forEach((grid) => {
-        applySortableGrid(grid);
-    });
+async function applySortableGrids() {
+    const grids = Array.from(document.querySelectorAll('[data-sortable="true"][data-sort-variant]'));
+    if (grids.length === 0) {
+        clearBreadcrumbSortPending();
+        return;
+    }
+
+    await Promise.all(grids.map((grid) => applySortableGrid(grid)));
+    clearBreadcrumbSortPending();
 }
 
-function initSortableGrids() {
-    applySortableGrids();
+async function initSortableGrids() {
+    await applySortableGrids();
 
     document.addEventListener('click', (event) => {
         const control = event.target.closest('a[data-sort-control="true"]');
@@ -441,10 +470,10 @@ function initSortableGrids() {
 
         event.preventDefault();
         writeSortToken(nextToken, variant.defaultToken, pageCollectionSource);
-        applySortableGrids();
+        void applySortableGrids();
     });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    initSortableGrids();
+    void initSortableGrids();
 });

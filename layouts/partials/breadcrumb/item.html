@@ -7,7 +7,8 @@
 {{- $linkDataAttrs := .dataAttrs | default dict -}}
 {{- $itemCollectionHref := trim (printf "%v" (index $item "collection_href" | default "")) " " -}}
 {{- $itemCollectionSource := index $item "collection_source" | default dict -}}
-{{- $showCaret := or $itemIsCurrent (gt (len $itemMenu) 1) -}}
+{{- $hasMenu := gt (len $itemMenu) 0 -}}
+{{- $showCaret := or $itemIsCurrent $hasMenu -}}
 {{- $linkText := index $item "text" -}}
 {{- $linkSafeHTML := false -}}
 {{- if $itemIsCurrent -}}
@@ -18,12 +19,12 @@
   {{- $linkText = printf "%s<span class=\"breadcrumb-menu-caret\" aria-hidden=\"true\">▾</span>" ($linkText | htmlEscape) -}}
   {{- $linkSafeHTML = true -}}
 {{- end -}}
-{{- if gt (len $itemMenu) 1 -}}
+{{- if $hasMenu -}}
   {{- $linkDataAttrs = merge $linkDataAttrs (dict "breadcrumb-menu-link" "true") -}}
   {{- $hasHighlightedMenu := gt (len (where $itemMenu "highlighted" true)) 0 -}}
   {{- $hasCurrentMenu := gt (len (where $itemMenu "current" true)) 0 -}}
   {{- $hasSelectedMenu := gt (len (where $itemMenu "selected" true)) 0 -}}
-  <span class="{{ printf "%s breadcrumb-item-menu" $wrapperClass }}" data-breadcrumb-menu{{ with $itemCollectionHref }} data-breadcrumb-collection-href="{{ . }}"{{ end }}{{ if gt (len $itemCollectionSource) 0 }} data-breadcrumb-collection-source="{{ $itemCollectionSource | jsonify }}"{{ end }}>
+  <span class="{{ printf "%s breadcrumb-item-menu" $wrapperClass }}" data-breadcrumb-menu{{ with $itemCollectionHref }} data-breadcrumb-collection-href="{{ . }}"{{ end }}{{ if gt (len $itemCollectionSource) 0 }} data-breadcrumb-collection-source="{{ $itemCollectionSource | jsonify }}"{{ end }}{{ if eq (index $item "redundant_with_root_menu") true }} data-breadcrumb-redundant-root="true"{{ end }}>
     {{ partial "link.html" (dict
       "ctx" $ctx
       "href" (index $item "href")
@@ -61,7 +62,7 @@
     </span>
   </span>
 {{- else -}}
-  <span class="{{ $wrapperClass }}">
+  <span class="{{ $wrapperClass }}"{{ if eq (index $item "redundant_with_root_menu") true }} data-breadcrumb-redundant-root="true"{{ end }}>
     {{ partial "link.html" (dict
       "ctx" $ctx
       "href" (index $item "href")

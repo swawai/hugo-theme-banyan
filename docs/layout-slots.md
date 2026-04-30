@@ -113,3 +113,84 @@ slots:
 - slot 名是语义
 - rail / stage / column 是布局
 - 不要在 front matter 里声明 `slot.rail-*` 这类布局 slot
+
+## 与导航状态的边界
+
+`slots` 负责页面壳层装配，不负责 collection/browser 运行时状态。
+
+换句话说：
+
+- `slots` 回答的是“这个页面有哪些装配位”
+- `from / sort / sorts` 回答的是“当前用户是怎么浏览到这里的”
+
+这两类信息不要混在一起。
+
+### 对 wide browser / wide breadcrumb 的影响
+
+如果后续做 wide-only 的多列浏览或扩列 breadcrumb：
+
+- 不要新增 `slots.browser_mode`
+- 不要把每列排序、当前 lineage 之类状态塞进 `slots`
+- 也不要把 `primary_nav / utilities / footer` 误当成导航数据源
+
+更稳的做法是：
+
+- 继续使用现有 `slots.breadcrumb_root + slots.breadcrumb`
+- 再由运行时根据当前页面的 `collection_source`、`from`、`sorts` 决定 wide 视图如何展开
+
+### 当前内容中的实际分层
+
+从当前项目内容看，`slots` 大致可以分成 3 类：
+
+1. 壳层型页面
+   - 例如首页、About
+   - 常见写法：
+     - `primary_nav`
+     - `utilities`
+     - `footer`
+   - 这类页面不应显示 collection browser
+
+2. collection 导航页
+   - 例如 `tags`、`intent`、`products/*`
+   - 常见写法：
+     - `primary_nav`
+     - `utilities`
+     - `breadcrumb_root`
+     - `breadcrumb`
+   - 这类页面才是 wide browser / wide breadcrumb 的主目标
+
+3. 辅助工具页
+   - 例如 `me`、`offline`、`prefetch-debug`
+   - 常见写法通常只有：
+     - `primary_nav`
+     - `utilities`
+   - 这类页面一般也不应参与 collection browser
+
+### 一个具体例子
+
+根内容首页：
+
+```yaml
+slots:
+  primary_nav: /fragments/nav-primary-links
+  utilities: /fragments/nav-utilities
+  footer: /fragments/home-footer-shortcuts
+```
+
+这个配置说明的是：
+
+- 页面有主导航
+- 有 utilities
+- 有 footer
+
+它**不说明**：
+
+- 这是一个 collection page
+- 它应该有 breadcrumb lineage
+- 它应该参与 wide collection browser
+
+所以，后续判断某页是否启用 wide browser，不应看有没有 `primary_nav/utilities/footer`，而应看：
+
+- 当前页是否具备 breadcrumb 语义
+- 当前页是否有 collection source
+- 当前页是否属于我们要支持的 collection provider

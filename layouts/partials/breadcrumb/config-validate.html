@@ -1,0 +1,75 @@
+{{- $ctx := .ctx -}}
+{{- $source := .source -}}
+{{- $config := .config | default dict -}}
+{{- $sourcePath := $source.File.Path | default $source.RelPermalink | default "breadcrumb fragment" -}}
+
+{{- $variant := lower (trim (printf "%v" (index $config "variant" | default "")) " ") -}}
+{{- $allowedVariants := dict
+  "trail" true
+  "lead-menu" true
+  "lead-only" true
+-}}
+{{- if and (ne $variant "") (not (index $allowedVariants $variant)) -}}
+  {{- errorf "Build failed: breadcrumb fragment %q uses unsupported breadcrumb.variant=%q. Supported values: trail, lead-menu, lead-only." $sourcePath $variant -}}
+{{- end -}}
+
+{{- $autoTail := lower (trim (printf "%v" (index $config "auto_tail" | default "")) " ") -}}
+{{- $allowedAutoTail := dict
+  "current" true
+  "full" true
+-}}
+{{- if and (ne $autoTail "") (not (index $allowedAutoTail $autoTail)) -}}
+  {{- errorf "Build failed: breadcrumb fragment %q uses unsupported breadcrumb.auto_tail=%q. Supported values: current, full." $sourcePath $autoTail -}}
+{{- end -}}
+
+{{- $menuMode := lower (trim (printf "%v" (index $config "menu_mode" | default "")) " ") -}}
+{{- $allowedMenuModes := dict
+  "current-root" true
+-}}
+{{- if and (ne $menuMode "") (not (index $allowedMenuModes $menuMode)) -}}
+  {{- errorf "Build failed: breadcrumb fragment %q uses unsupported breadcrumb.menu_mode=%q. Supported values: current-root." $sourcePath $menuMode -}}
+{{- end -}}
+
+{{- $menuActiveHrefSource := lower (trim (printf "%v" (index $config "menu_active_href_source" | default "")) " ") -}}
+{{- $allowedMenuActiveHrefSources := dict
+  "products-family" true
+  "signals-family" true
+-}}
+{{- if and (ne $menuActiveHrefSource "") (not (index $allowedMenuActiveHrefSources $menuActiveHrefSource)) -}}
+  {{- errorf "Build failed: breadcrumb fragment %q uses unsupported breadcrumb.menu_active_href_source=%q. Supported values: products-family, signals-family." $sourcePath $menuActiveHrefSource -}}
+{{- end -}}
+
+{{- with index $config "lead" -}}
+  {{- $noop := partial "breadcrumb/item-from-spec.html" (dict "ctx" $ctx "spec" .) -}}
+{{- end -}}
+
+{{- $allowedMenuSources := dict
+  "section-children" true
+  "taxonomy-roots" true
+-}}
+{{- range $index, $sourceSpec := (index $config "menu_sources" | default slice) -}}
+  {{- $sourceKey := lower (trim (printf "%v" (index $sourceSpec "source" | default "")) " ") -}}
+  {{- if eq $sourceKey "" -}}
+    {{- errorf "Build failed: breadcrumb fragment %q has breadcrumb.menu_sources[%d] without source." $sourcePath $index -}}
+  {{- end -}}
+  {{- if not (index $allowedMenuSources $sourceKey) -}}
+    {{- errorf "Build failed: breadcrumb fragment %q uses unsupported breadcrumb.menu_sources[%d].source=%q. Supported values: section-children, taxonomy-roots." $sourcePath $index $sourceKey -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $menuItems := partial "breadcrumb/menu-items-from-config.html" (dict "ctx" $ctx "config" $config) -}}
+{{- if and (eq $menuMode "current-root") (eq (len $menuItems) 0) -}}
+  {{- errorf "Build failed: breadcrumb fragment %q uses breadcrumb.menu_mode=current-root but resolves no menu items. Configure breadcrumb.menu or breadcrumb.menu_sources." $sourcePath -}}
+{{- end -}}
+
+{{- $menuHrefSeen := dict -}}
+{{- range $menuItem := $menuItems -}}
+  {{- $menuHrefKey := trim (lower (printf "%v" (index $menuItem "href"))) "/" -}}
+  {{- if eq $menuHrefKey "" -}}{{- continue -}}{{- end -}}
+  {{- if index $menuHrefSeen $menuHrefKey -}}
+    {{- errorf "Build failed: breadcrumb fragment %q resolves duplicate breadcrumb menu href=%q. Root menus must have unique targets." $sourcePath (index $menuItem "href") -}}
+  {{- end -}}
+  {{- $menuHrefSeen = merge $menuHrefSeen (dict $menuHrefKey true) -}}
+{{- end -}}
+
+{{- return true -}}

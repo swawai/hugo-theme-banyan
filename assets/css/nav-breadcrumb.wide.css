@@ -1,2 +1,254 @@
 @media (min-width: 88rem) {
+    :root {
+        --breadcrumb-columns-inline: clamp(6rem, calc(var(--page-rail-inline) - 2rem), 9rem);
+        --breadcrumb-columns-gap-inline: 0.68rem;
+        --breadcrumb-main-gap-inline: 0.9rem;
+    }
+
+    html[data-entry-breadcrumb-preview-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb,
+    html[data-entry-breadcrumb-preview-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .page-rail-context {
+        visibility: visible;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    html[data-breadcrumb-sort-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb {
+        visibility: visible;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .page-stage {
+        display: grid;
+        grid-template-columns: max-content minmax(0, 1fr);
+        column-gap: var(--breadcrumb-main-gap-inline);
+        align-items: start;
+        overflow: visible;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb {
+        grid-column: 1;
+        grid-row: 1 / span 2;
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, var(--breadcrumb-columns-inline));
+        column-gap: var(--breadcrumb-columns-gap-inline);
+        align-items: start;
+        align-self: start;
+        min-width: max-content;
+        margin-bottom: 0;
+        padding-inline-end: 0.08rem;
+        position: sticky;
+        top: var(--page-edge-block-start);
+        z-index: 1;
+        max-block-size: calc(100vh - var(--page-edge-block-start) - 1rem);
+        overflow-y: auto;
+        overscroll-behavior-y: contain;
+        scrollbar-gutter: stable;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb.is-breadcrumb-menu-mode {
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb.is-breadcrumb-menu-mode::before {
+        display: none;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .slot-main {
+        grid-column: 2;
+        grid-row: 1;
+        min-width: 0;
+        padding-inline-start: 0.04rem;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .slot-main > .article:not(:has(.grid-list)) {
+        max-inline-size: min(calc(var(--page-shell-medium-inline, 78rem) - var(--page-rail-inline) - 0.5rem), 100%);
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .slot-main > .article:not(:has(.grid-list)) > .prose {
+        max-inline-size: none;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .slot-meta {
+        grid-column: 2;
+        grid-row: 2;
+        min-width: 0;
+        padding-block-start: 0.9rem;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .slot-breadcrumb-root-stage,
+    .page-shell.page-shell--has-breadcrumb-tail .slot-breadcrumb,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-root-nav-stage,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-nav {
+        display: contents;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .slot-breadcrumb-row-sep,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-sep {
+        display: none;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .slot-breadcrumb-root-stage {
+        display: none;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-item,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-item-menu {
+        position: static;
+        display: grid;
+        grid-template-rows: minmax(0, 1fr);
+        align-content: start;
+        min-width: 0;
+        inline-size: 100%;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-item:not(.breadcrumb-item-menu),
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-item-menu > .breadcrumb-link,
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-item-menu > .breadcrumb-menu-link {
+        display: none;
+    }
+
+    html[data-entry-breadcrumb-runtime-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-item:not(.breadcrumb-item-menu) {
+        display: grid;
+    }
+
+    html[data-entry-breadcrumb-runtime-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-item:not(.breadcrumb-item-menu) > .breadcrumb-link {
+        display: block;
+        inline-size: 100%;
+    }
+
+    html[data-entry-breadcrumb-runtime-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-item:not(.breadcrumb-item-menu) > .breadcrumb-link,
+    html[data-entry-breadcrumb-runtime-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-item:not(.breadcrumb-item-menu) > .breadcrumb-link:visited,
+    html[data-entry-breadcrumb-runtime-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-item:not(.breadcrumb-item-menu) > .breadcrumb-link:hover {
+        display: inline-flex;
+        align-items: center;
+        inline-size: fit-content;
+        max-inline-size: 100%;
+        padding: 0.09rem 0.18rem;
+        margin-inline: -0.18rem;
+        line-height: 1.18;
+        color: var(--link);
+        text-decoration: underline;
+        border-radius: 0.12rem;
+        overflow-wrap: anywhere;
+    }
+
+    html[data-entry-breadcrumb-runtime-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-item:not(.breadcrumb-item-menu) > .breadcrumb-link.is-current,
+    html[data-entry-breadcrumb-runtime-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-item:not(.breadcrumb-item-menu) > .breadcrumb-link.is-current:visited {
+        color: var(--focus);
+        background: color-mix(in srgb, var(--focus) 12%, transparent);
+        text-decoration-thickness: 1.5px;
+        text-underline-offset: 0.08em;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-root.page-shell--has-breadcrumb-tail .slot-row-breadcrumb [data-breadcrumb-redundant-root="true"] {
+        display: none;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-link,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-link:visited,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-link:hover,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-link,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-link:visited,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-link:hover {
+        display: block;
+        inline-size: 100%;
+        line-height: 1.25;
+        font-weight: 400;
+        color: var(--fg);
+        text-decoration: none;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-link::after,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-link::after {
+        display: none;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-link.is-current,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-link.is-current:visited,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-link.is-current,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-link.is-current:visited {
+        color: var(--focus);
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .crumb-text {
+        display: inline;
+        line-height: inherit;
+        font-weight: inherit;
+        overflow-wrap: anywhere;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-caret {
+        display: none !important;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail [data-breadcrumb-mode-toggle="true"] {
+        cursor: default;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-panel {
+        position: static;
+        inset: auto;
+        z-index: auto;
+        display: flex !important;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.42rem;
+        min-width: 0;
+        margin-block-start: 0;
+        padding: 0;
+        background: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        white-space: normal;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-panel[hidden] {
+        display: flex !important;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-option,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-option:visited {
+        display: inline-flex;
+        align-items: center;
+        width: fit-content;
+        max-width: 100%;
+        padding: 0.09rem 0.18rem;
+        margin-inline: -0.18rem;
+        line-height: 1.18;
+        font-weight: 400;
+        color: var(--link);
+        text-decoration: underline;
+        border-radius: 0.12rem;
+        overflow-wrap: anywhere;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-option.is-current,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-option.is-current:visited {
+        color: var(--focus);
+        background: color-mix(in srgb, var(--focus) 12%, transparent);
+        text-decoration-thickness: 1.5px;
+        text-underline-offset: 0.08em;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-option:hover,
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-option:focus-visible {
+        color: var(--focus);
+        background: color-mix(in srgb, var(--focus) 8%, transparent);
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-item-menu.is-open > .breadcrumb-menu-link {
+        background: transparent;
+        border-radius: 0;
+    }
+
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb [data-site-update-anchor] .crumb-text {
+        will-change: auto;
+        animation: none;
+        opacity: 1;
+        transform: none;
+    }
 }

@@ -1,6 +1,8 @@
 const MENU_MODE_CLASS = 'is-breadcrumb-menu-mode';
+const WIDE_COLUMNS_QUERY = '(min-width: 88rem)';
 let openMenuState = null;
 let activeModeRow = null;
+let wideColumnsMediaQuery = null;
 
 function getMenuLink(target) {
     return target instanceof Element ? target.closest('[data-breadcrumb-menu-link="true"]') : null;
@@ -20,6 +22,18 @@ function getMenuPanel(menuRoot) {
 
 function getBreadcrumbRow(target) {
     return target instanceof Element ? target.closest('.slot-row-breadcrumb') : null;
+}
+
+function isWideBreadcrumbColumnsActive() {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+        return false;
+    }
+
+    if (!wideColumnsMediaQuery) {
+        wideColumnsMediaQuery = window.matchMedia(WIDE_COLUMNS_QUERY);
+    }
+
+    return wideColumnsMediaQuery.matches;
 }
 
 function isModeActive(target) {
@@ -134,6 +148,21 @@ function handleClick(event) {
     const modeToggleLink = getModeToggleLink(event.target);
     const link = getMenuLink(event.target);
     const clickTarget = event.target instanceof Element ? event.target : null;
+
+    if (isWideBreadcrumbColumnsActive()) {
+        if (modeToggleLink) {
+            event.preventDefault();
+            deactivateMode();
+            return;
+        }
+
+        if (activeModeRow || openMenuState) {
+            deactivateMode();
+        }
+
+        return;
+    }
+
     if (modeToggleLink) {
         event.preventDefault();
         if (isModeActive(modeToggleLink)) {
@@ -175,6 +204,10 @@ function handleKeyDown(event) {
         } else {
             closeOpenMenu({ restoreFocus: true });
         }
+        return;
+    }
+
+    if (isWideBreadcrumbColumnsActive()) {
         return;
     }
 
@@ -230,6 +263,12 @@ function handleFocusIn(event) {
 
 let didInit = false;
 
+function handleWideColumnsLayoutChange() {
+    if (isWideBreadcrumbColumnsActive()) {
+        deactivateMode();
+    }
+}
+
 export function initBreadcrumbMenus() {
     if (didInit) {
         if (activeModeRow && !document.contains(activeModeRow)) {
@@ -237,6 +276,7 @@ export function initBreadcrumbMenus() {
             openMenuState = null;
         }
         initMenuLinkState();
+        handleWideColumnsLayoutChange();
         return;
     }
 
@@ -246,4 +286,13 @@ export function initBreadcrumbMenus() {
     document.addEventListener('click', handleClick);
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('focusin', handleFocusIn);
+
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+        wideColumnsMediaQuery = window.matchMedia(WIDE_COLUMNS_QUERY);
+        if (typeof wideColumnsMediaQuery.addEventListener === 'function') {
+            wideColumnsMediaQuery.addEventListener('change', handleWideColumnsLayoutChange);
+        }
+    }
+
+    handleWideColumnsLayoutChange();
 }

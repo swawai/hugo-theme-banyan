@@ -14,6 +14,12 @@
   {{- $source := . -}}
   {{- $config := index $source.Params "breadcrumb" | default dict -}}
 {{- if eq (len $config) 0 -}}{{- errorf "Build failed: breadcrumb fragment %q is missing the [breadcrumb] configuration block." $source.File.Path -}}{{- end -}}
+  {{- $validateKey := printf "%s:%s" ($ctx.Site.Language.Lang | default "") ($source.File.Path | default $source.RelPermalink | default $source.Kind) -}}
+  {{- $noop := partialCached "breadcrumb/config-validate.html" (dict
+    "ctx" $ctx
+    "source" $source
+    "config" $config
+  ) $validateKey -}}
   {{- $result = dict
     "source" $source
     "config" $config

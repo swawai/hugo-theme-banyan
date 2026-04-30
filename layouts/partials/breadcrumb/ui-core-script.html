@@ -1,0 +1,373 @@
+<script>
+(function () {
+    if (window.__banyanBreadcrumbUi) {
+        return;
+    }
+
+    function normalizePathname(pathname) {
+        if (typeof pathname !== 'string' || pathname === '') {
+            return '/';
+        }
+
+        var normalized = pathname.endsWith('/') ? pathname : pathname + '/';
+        return normalized === '//' ? '/' : normalized;
+    }
+
+    function normalizeLinkItem(item) {
+        if (!item || typeof item !== 'object') {
+            return null;
+        }
+
+        var text = typeof item.text === 'string' ? item.text.trim() : '';
+        var href = typeof item.href === 'string' ? item.href.trim() : '';
+        if (!text || !href) {
+            return null;
+        }
+
+        var normalized = { text: text, href: href };
+        if (typeof item.title === 'string' && item.title.trim() !== '') {
+            normalized.title = item.title.trim();
+        }
+        if (typeof item.current === 'boolean') {
+            normalized.current = item.current;
+        }
+        if (typeof item.selected === 'boolean') {
+            normalized.selected = item.selected;
+        }
+        if (typeof item.highlighted === 'boolean') {
+            normalized.highlighted = item.highlighted;
+        }
+        if (typeof item.redundant_with_root_menu === 'boolean') {
+            normalized.redundant_with_root_menu = item.redundant_with_root_menu;
+        }
+        if (typeof item.redundantWithRootMenu === 'boolean') {
+            normalized.redundant_with_root_menu = item.redundantWithRootMenu;
+        }
+        if (typeof item.menu_button_label === 'string' && item.menu_button_label.trim() !== '') {
+            normalized.menu_button_label = item.menu_button_label.trim();
+        }
+        if (Array.isArray(item.menu)) {
+            var menuItems = item.menu.map(normalizeLinkItem).filter(Boolean);
+            if (menuItems.length > 0) {
+                normalized.menu = menuItems;
+            }
+        }
+
+        return normalized;
+    }
+
+    function createCrumbText(text, options) {
+        var config = options && typeof options === 'object' ? options : {};
+        var span = document.createElement('span');
+        span.className = 'crumb-text';
+        span.textContent = text;
+        if (config.withCaret) {
+            var caret = document.createElement('span');
+            caret.className = 'breadcrumb-menu-caret';
+            caret.setAttribute('aria-hidden', 'true');
+            caret.textContent = '▾';
+            span.appendChild(caret);
+        }
+        return span;
+    }
+
+    function buildMenuPanel(menuItems) {
+        var panel = document.createElement('span');
+        panel.className = 'breadcrumb-menu-panel';
+        panel.hidden = true;
+        panel.dataset.breadcrumbMenuPanel = '';
+
+        menuItems.forEach(function (menuItem) {
+            var option = document.createElement('a');
+            option.href = menuItem.href;
+            option.className = menuItem.current ? 'breadcrumb-menu-option is-current' : 'breadcrumb-menu-option';
+            if (menuItem.current) {
+                option.dataset.siteUpdateAnchor = 'true';
+                option.setAttribute('aria-current', 'page');
+            }
+            option.textContent = menuItem.text;
+            panel.appendChild(option);
+        });
+
+        return panel;
+    }
+
+    function applyBreadcrumbLinkState(link, item, menuItems) {
+        if (!(link instanceof Element)) {
+            return;
+        }
+
+        if (item.current) {
+            link.dataset.breadcrumbModeToggle = 'true';
+        }
+
+        if (Array.isArray(menuItems) && menuItems.length > 0) {
+            link.classList.add('breadcrumb-menu-link');
+            link.dataset.breadcrumbMenuLink = 'true';
+            link.setAttribute('aria-haspopup', 'true');
+            link.setAttribute('aria-expanded', 'false');
+        }
+    }
+
+    function buildTopBreadcrumbItem(item, index) {
+        var isLead = index === 0;
+        var linkClasses = ['breadcrumb-link'];
+        if (isLead) {
+            linkClasses.push('breadcrumb-link-lead');
+        }
+        if (item.current) {
+            linkClasses.push('is-current');
+        }
+
+        var menuItems = Array.isArray(item.menu) ? item.menu.filter(Boolean) : [];
+        var itemSpan = document.createElement('span');
+        var collectionSource = item && typeof item === 'object' ? (item.collection_source || item.collectionSource) : null;
+        var collectionHref = item && typeof item === 'object'
+            ? (typeof (item.collection_href || item.collectionHref) === 'string'
+                ? (item.collection_href || item.collectionHref).trim()
+                : '')
+            : '';
+        itemSpan.className = menuItems.length > 0 ? 'breadcrumb-item breadcrumb-item-menu' : 'breadcrumb-item';
+        if (menuItems.length > 0) {
+            itemSpan.dataset.breadcrumbMenu = '';
+            if (collectionHref) {
+                itemSpan.dataset.breadcrumbCollectionHref = collectionHref;
+            }
+            if (collectionSource && typeof collectionSource === 'object') {
+                itemSpan.dataset.breadcrumbCollectionSource = JSON.stringify(collectionSource);
+            }
+        }
+        if (item.redundant_with_root_menu === true) {
+            itemSpan.dataset.breadcrumbRedundantRoot = 'true';
+        }
+
+        var link = document.createElement('a');
+        link.href = item.href;
+        link.className = linkClasses.join(' ');
+        if (item.current) {
+            link.dataset.siteUpdateAnchor = 'true';
+            link.setAttribute('aria-current', 'page');
+        }
+        if (item.title) {
+            link.title = item.title;
+        }
+        applyBreadcrumbLinkState(link, item, menuItems);
+        link.appendChild(createCrumbText(item.text, { withCaret: item.current || menuItems.length > 0 }));
+        itemSpan.appendChild(link);
+        if (menuItems.length > 0) {
+            itemSpan.appendChild(buildMenuPanel(menuItems));
+        }
+
+        return itemSpan;
+    }
+
+    function renderTopBreadcrumb(items) {
+        var container = document.querySelector('.slot-breadcrumb');
+        if (!container || !Array.isArray(items) || items.length === 0) {
+            return;
+        }
+
+        var nav = document.createElement('nav');
+        nav.className = 'breadcrumb-nav';
+        nav.setAttribute('aria-label', 'Breadcrumb');
+
+        items.forEach(function (item, index) {
+            if (index > 0) {
+                var sep = document.createElement('span');
+                sep.className = 'breadcrumb-sep';
+                sep.setAttribute('aria-hidden', 'true');
+                sep.textContent = '﹥';
+                nav.appendChild(sep);
+            }
+
+            nav.appendChild(buildTopBreadcrumbItem(item, index));
+        });
+
+        container.replaceChildren(nav);
+    }
+
+    function normalizeMenuState(rootItem, rootMenuItems) {
+        var menuItems = Array.isArray(rootMenuItems) ? rootMenuItems : [];
+        var highlightedItems = menuItems.filter(function (item) { return item && item.highlighted === true; });
+        if (highlightedItems.length > 0) {
+            return menuItems
+                .map(normalizeLinkItem)
+                .filter(Boolean)
+                .map(function (item) {
+                    item.current = item.highlighted === true;
+                    return item;
+                });
+        }
+
+        var currentItems = menuItems.filter(function (item) { return item && item.current === true; });
+        if (currentItems.length > 0) {
+            return menuItems
+                .map(normalizeLinkItem)
+                .filter(Boolean)
+                .map(function (item) {
+                    item.current = item.current === true;
+                    return item;
+                });
+        }
+
+        var selectedItems = menuItems.filter(function (item) { return item && item.selected === true; });
+        if (selectedItems.length > 0) {
+            return menuItems
+                .map(normalizeLinkItem)
+                .filter(Boolean)
+                .map(function (item) {
+                    item.current = item.selected === true;
+                    return item;
+                });
+        }
+
+        var selectedPathname = normalizePathname(new URL(rootItem.href, window.location.origin).pathname);
+
+        return menuItems
+            .map(normalizeLinkItem)
+            .filter(Boolean)
+            .map(function (item) {
+                item.current = normalizePathname(new URL(item.href, window.location.origin).pathname) === selectedPathname;
+                return item;
+            });
+    }
+
+    function buildRootStageNav(rootItem, rootMenuItems, rootMenuLabel) {
+        var nav = document.createElement('nav');
+        nav.className = 'breadcrumb-root-nav breadcrumb-root-nav-stage';
+        nav.setAttribute('aria-label', rootMenuLabel || rootItem.text || 'Breadcrumb root');
+
+        var menuItems = normalizeMenuState(rootItem, rootMenuItems);
+        var visibleItem = {
+            text: rootItem.text,
+            href: rootItem.href,
+            current: false,
+            menu: menuItems,
+            menu_button_label: rootMenuLabel || rootItem.text || 'Breadcrumb root'
+        };
+        if (rootItem.title) {
+            visibleItem.title = rootItem.title;
+        }
+
+        nav.appendChild(buildTopBreadcrumbItem(visibleItem, 0));
+        return nav;
+    }
+
+    function buildRootRailNav(rootItem, rootMenuItems, rootMenuLabel) {
+        var nav = document.createElement('nav');
+        nav.className = 'breadcrumb-root-nav breadcrumb-root-nav-list';
+        nav.setAttribute('aria-label', rootMenuLabel || rootItem.text || 'Breadcrumb root');
+
+        var menuItems = normalizeMenuState(rootItem, rootMenuItems);
+        if (menuItems.length <= 1) {
+            var link = document.createElement('a');
+            link.href = rootItem.href;
+            link.className = 'breadcrumb-root-link';
+            link.textContent = rootItem.text;
+            nav.appendChild(link);
+            return nav;
+        }
+
+        var list = document.createElement('div');
+        list.className = 'breadcrumb-root-list';
+        list.setAttribute('role', 'list');
+
+        menuItems.forEach(function (menuItem) {
+            var item = document.createElement('span');
+            item.className = 'breadcrumb-root-list-item';
+            item.setAttribute('role', 'listitem');
+
+            var link = document.createElement('a');
+            link.href = menuItem.href;
+            link.className = menuItem.current ? 'breadcrumb-root-link is-current' : 'breadcrumb-root-link';
+            link.textContent = menuItem.text;
+            if (menuItem.current) {
+                link.dataset.siteUpdateAnchor = 'true';
+                link.setAttribute('aria-current', 'page');
+            }
+            if (menuItem.title) {
+                link.title = menuItem.title;
+            }
+
+            item.appendChild(link);
+            list.appendChild(item);
+        });
+
+        nav.appendChild(list);
+        return nav;
+    }
+
+    function renderRootSelection(rootItem, rootMenuItems, rootMenuLabel) {
+        if (!rootItem || typeof rootItem.text !== 'string' || rootItem.text === '' || typeof rootItem.href !== 'string' || rootItem.href === '') {
+            return;
+        }
+
+        var stageContainer = document.querySelector('.slot-breadcrumb-root-stage');
+        if (stageContainer) {
+            stageContainer.replaceChildren(buildRootStageNav(rootItem, rootMenuItems, rootMenuLabel));
+        }
+
+        var railContainer = document.querySelector('.slot-breadcrumb-root-rail');
+        if (railContainer) {
+            railContainer.replaceChildren(buildRootRailNav(rootItem, rootMenuItems, rootMenuLabel));
+        }
+    }
+
+    function ensureArticleMetaPathNav(metaLabel) {
+        var existing = document.querySelector('.post-taxonomy-path');
+        if (existing) {
+            return existing;
+        }
+
+        var metaContainer = document.querySelector('.article-meta');
+        if (!metaContainer) {
+            return null;
+        }
+
+        var nav = document.createElement('nav');
+        nav.className = 'post-taxonomy post-taxonomy-path';
+        nav.setAttribute('aria-label', metaLabel || 'Path');
+        metaContainer.prepend(nav);
+        return nav;
+    }
+
+    function renderArticleMetaPath(metaLabel, items) {
+        var nav = ensureArticleMetaPathNav(metaLabel);
+        if (!nav || !Array.isArray(items) || items.length === 0) {
+            return;
+        }
+
+        nav.setAttribute('aria-label', metaLabel || 'Path');
+        nav.replaceChildren();
+
+        var label = document.createElement('span');
+        label.className = 'label';
+        label.textContent = metaLabel || 'Path';
+        nav.appendChild(label);
+
+        items.forEach(function (item, index) {
+            if (index > 0) {
+                var sep = document.createElement('span');
+                sep.className = 'sep';
+                sep.setAttribute('aria-hidden', 'true');
+                sep.textContent = '/';
+                nav.appendChild(sep);
+            }
+
+            var link = document.createElement('a');
+            link.href = item.href;
+            link.textContent = item.text;
+            if (item.current) {
+                link.setAttribute('aria-current', 'page');
+            }
+            nav.appendChild(link);
+        });
+    }
+
+    window.__banyanBreadcrumbUi = {
+        renderTopBreadcrumb: renderTopBreadcrumb,
+        renderRootSelection: renderRootSelection,
+        renderArticleMetaPath: renderArticleMetaPath
+    };
+})();
+</script>

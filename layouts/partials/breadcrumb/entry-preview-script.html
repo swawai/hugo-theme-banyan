@@ -1,1 +1,637 @@
-<script>(function(){try{var html=document.documentElement;if(html.getAttribute('data-entry-breadcrumb-preview-pending')!=='true'){return;}var body=document.body;if(!body){return;}var raw=body.dataset.entryBreadcrumbSources||'';if(!raw){return;}var params=new URLSearchParams(window.location.search);var from=params.get('from')||'';function normalizePath(value){if(typeof value!=='string'){return '';}var segments=value.trim().split('/').filter(Boolean);if(segments.length===0){return '';}return '/'+segments.join('/')+'/';}from=normalizePath(from);if(!from){return;}function normalizeLinkItem(item){if(!item||typeof item!=='object'){return null;}var text=typeof item.text==='string'?item.text.trim():'';var href=typeof item.href==='string'?item.href.trim():'';if(!text||!href){return null;}var normalized={text:text,href:href};if(typeof item.title==='string'&&item.title.trim()!==''){normalized.title=item.title.trim();}if(item.current===true){normalized.current=true;}if(item.selected===true){normalized.selected=true;}if(item.highlighted===true){normalized.highlighted=true;}if(typeof item.menu_button_label==='string'&&item.menu_button_label.trim()!==''){normalized.menu_button_label=item.menu_button_label.trim();}if(Array.isArray(item.menu)){var menuItems=item.menu.map(normalizeLinkItem).filter(Boolean);if(menuItems.length>0){normalized.menu=menuItems;}}return normalized;}function parseSources(rawValue){try{var parsed=JSON.parse(rawValue);if(!Array.isArray(parsed)){return [];}return parsed.map(function(source){if(!source||typeof source!=='object'){return null;}var logicalPath=normalizePath(source.logical_path||source.logicalPath||'');var rootItem=normalizeLinkItem(source.root_item||source.rootItem);if(!logicalPath||!rootItem){return null;}var rootMenuRaw=Array.isArray(source.root_menu||source.rootMenu)?(source.root_menu||source.rootMenu):[];var tailItemsRaw=Array.isArray(source.tail_items||source.tailItems)?(source.tail_items||source.tailItems):[];return{logicalPath:logicalPath,rootItem:rootItem,rootMenuItems:rootMenuRaw.map(normalizeLinkItem).filter(Boolean),rootMenuLabel:typeof(source.root_menu_label||source.rootMenuLabel)==='string'?(source.root_menu_label||source.rootMenuLabel).trim():'',tailItems:tailItemsRaw.map(normalizeLinkItem).filter(Boolean)};}).filter(Boolean);}catch(e){return [];}}function pickSource(sources,fromValue){if(!fromValue||!Array.isArray(sources)||sources.length===0){return null;}var sorted=sources.slice().sort(function(left,right){return right.logicalPath.length-left.logicalPath.length;});for(var i=0;i<sorted.length;i+=1){var source=sorted[i];if(fromValue.indexOf(source.logicalPath)!==0){continue;}var remainder=fromValue.slice(source.logicalPath.length);var parts=remainder.split('/').filter(Boolean);if(parts.length===1){return source;}}return null;}function normalizeMenuState(menuItems){var list=Array.isArray(menuItems)?menuItems:[];var highlighted=list.filter(function(item){return item&&item.highlighted===true;});if(highlighted.length>0){return list.map(function(item){return item?Object.assign({},item,{current:item.highlighted===true}):null;}).filter(Boolean);}var current=list.filter(function(item){return item&&item.current===true;});if(current.length>0){return list.map(function(item){return item?Object.assign({},item,{current:item.current===true}):null;}).filter(Boolean);}var selected=list.filter(function(item){return item&&item.selected===true;});if(selected.length>0){return list.map(function(item){return item?Object.assign({},item,{current:item.selected===true}):null;}).filter(Boolean);}return list.slice();}function createLink(href,text,className,title,isCurrent){var link=document.createElement('a');link.href=href;link.className=className;if(title){link.title=title;}if(isCurrent){link.setAttribute('aria-current','page');link.dataset.siteUpdateAnchor='true';}var span=document.createElement('span');span.className='crumb-text';span.textContent=text;link.appendChild(span);return link;}function buildRootRail(source){var nav=document.createElement('nav');nav.className='breadcrumb-root-nav breadcrumb-root-nav-list';nav.setAttribute('aria-label',source.rootMenuLabel||source.rootItem.text||'Breadcrumb root');var list=document.createElement('div');list.className='breadcrumb-root-list';list.setAttribute('role','list');var menuItems=normalizeMenuState(source.rootMenuItems.length>0?source.rootMenuItems:[source.rootItem]);menuItems.forEach(function(item){var row=document.createElement('span');row.className='breadcrumb-root-list-item';row.setAttribute('role','listitem');var className=item.current===true?'breadcrumb-root-link is-current':'breadcrumb-root-link';row.appendChild(createLink(item.href,item.text,className,item.title,item.current===true));list.appendChild(row);});nav.appendChild(list);return nav;}function buildRootStage(source){var nav=document.createElement('nav');nav.className='breadcrumb-root-nav breadcrumb-root-nav-stage';nav.setAttribute('aria-label',source.rootMenuLabel||source.rootItem.text||'Breadcrumb root');var menuItems=normalizeMenuState(source.rootMenuItems.length>0?source.rootMenuItems:[source.rootItem]);if(menuItems.length<=1){var wrap=document.createElement('span');wrap.className='breadcrumb-item';wrap.appendChild(createLink(source.rootItem.href,source.rootItem.text,'breadcrumb-link breadcrumb-link-lead',source.rootItem.title,false));nav.appendChild(wrap);return nav;}var wrapper=document.createElement('span');wrapper.className='breadcrumb-item breadcrumb-item-menu';wrapper.dataset.breadcrumbMenu='';var link=document.createElement('a');link.href=source.rootItem.href;link.className='breadcrumb-link breadcrumb-link-lead breadcrumb-menu-link';link.dataset.breadcrumbMenuLink='true';link.setAttribute('aria-haspopup','true');link.setAttribute('aria-expanded','false');if(source.rootItem.title){link.title=source.rootItem.title;}var text=document.createElement('span');text.className='crumb-text';text.textContent=source.rootItem.text;var caret=document.createElement('span');caret.className='breadcrumb-menu-caret';caret.setAttribute('aria-hidden','true');caret.textContent='▾';text.appendChild(caret);link.appendChild(text);wrapper.appendChild(link);var panel=document.createElement('span');panel.className='breadcrumb-menu-panel';panel.dataset.breadcrumbMenuPanel='';panel.hidden=true;menuItems.forEach(function(item){var className=item.current===true?'breadcrumb-menu-option is-current':'breadcrumb-menu-option';panel.appendChild(createLink(item.href,item.text,className,item.title,item.current===true));});wrapper.appendChild(panel);nav.appendChild(wrapper);return nav;}function buildTopBreadcrumb(source){var nav=document.createElement('nav');nav.className='breadcrumb-nav';nav.setAttribute('aria-label','Breadcrumb');var items=(source.tailItems||[]).slice();var currentText=body.dataset.currentPageTitle||document.title||'';var currentHref=window.location.pathname+window.location.search+window.location.hash;if(currentText&&currentHref){items.push({text:currentText,href:currentHref,current:true});}items.forEach(function(item,index){if(index>0){var sep=document.createElement('span');sep.className='breadcrumb-sep';sep.setAttribute('aria-hidden','true');sep.textContent='﹥';nav.appendChild(sep);}var wrapper=document.createElement('span');var menuItems=Array.isArray(item.menu)?item.menu.filter(Boolean):[];wrapper.className=menuItems.length>1?'breadcrumb-item breadcrumb-item-menu':'breadcrumb-item';if(menuItems.length>1){wrapper.dataset.breadcrumbMenu='';}var className='breadcrumb-link';if(index===0){className+=' breadcrumb-link-lead';}if(item.current===true){className+=' is-current';}if(menuItems.length>1){className+=' breadcrumb-menu-link';}var link=createLink(item.href,item.text,className,item.title,item.current===true);if(menuItems.length>1){link.dataset.breadcrumbMenuLink='true';link.setAttribute('aria-haspopup','true');link.setAttribute('aria-expanded','false');}if(item.current===true||menuItems.length>1){var crumbText=link.querySelector('.crumb-text');if(crumbText){var caret=document.createElement('span');caret.className='breadcrumb-menu-caret';caret.setAttribute('aria-hidden','true');caret.textContent='▾';crumbText.appendChild(caret);}}wrapper.appendChild(link);if(menuItems.length>1){var panel=document.createElement('span');panel.className='breadcrumb-menu-panel';panel.dataset.breadcrumbMenuPanel='';panel.hidden=true;menuItems.forEach(function(menuItem){var menuClassName=menuItem.current===true?'breadcrumb-menu-option is-current':'breadcrumb-menu-option';panel.appendChild(createLink(menuItem.href,menuItem.text,menuClassName,menuItem.title,menuItem.current===true));});wrapper.appendChild(panel);}nav.appendChild(wrapper);});return nav;}var sources=parseSources(raw);var source=pickSource(sources,from);if(!source){return;}var rail=document.querySelector('.slot-breadcrumb-root-rail');if(rail){rail.replaceChildren(buildRootRail(source));}var stage=document.querySelector('.slot-breadcrumb-root-stage');if(stage){stage.replaceChildren(buildRootStage(source));}var top=document.querySelector('.slot-breadcrumb');if(top){top.replaceChildren(buildTopBreadcrumb(source));}html.removeAttribute('data-entry-breadcrumb-preview-pending');}catch(e){}})();</script>
+<script>
+(function () {
+    try {
+        var html = document.documentElement;
+        var previewPending = html.getAttribute('data-entry-breadcrumb-preview-pending') === 'true';
+        var sortPending = html.getAttribute('data-breadcrumb-sort-pending') === 'true';
+        if (!previewPending && !sortPending) {
+            return;
+        }
+
+        var body = document.body;
+        if (!body) {
+            if (previewPending) {
+                html.removeAttribute('data-entry-breadcrumb-preview-pending');
+            }
+            if (sortPending) {
+                html.removeAttribute('data-breadcrumb-sort-pending');
+            }
+            return;
+        }
+
+        var breadcrumbData = window.__banyanBreadcrumbData;
+        var breadcrumbUi = window.__banyanBreadcrumbUi;
+        if (!breadcrumbData || !breadcrumbUi) {
+            if (previewPending) {
+                html.removeAttribute('data-entry-breadcrumb-preview-pending');
+            }
+            if (sortPending) {
+                html.removeAttribute('data-breadcrumb-sort-pending');
+            }
+            return;
+        }
+
+        var rawSources = body.dataset.entryBreadcrumbSources || '';
+        if (!rawSources) {
+            if (previewPending) {
+                html.removeAttribute('data-entry-breadcrumb-preview-pending');
+            }
+            if (sortPending) {
+                html.removeAttribute('data-breadcrumb-sort-pending');
+            }
+            return;
+        }
+
+        var SORTS_PLACEHOLDER = '_';
+        var SORT_VARIANTS = {
+            section: {
+                defaultToken: 'date-desc',
+                grouped: true,
+                fields: {
+                    name: { dataKey: 'sort_name', type: 'string' },
+                    date: { dataKey: 'sort_date', type: 'number' },
+                    count: { dataKey: 'sort_count', type: 'number' }
+                }
+            },
+            all: {
+                defaultToken: 'date-desc',
+                grouped: false,
+                fields: {
+                    name: { dataKey: 'sort_name', type: 'string' },
+                    date: { dataKey: 'sort_date', type: 'number' },
+                    size: { dataKey: 'sort_size', type: 'number' },
+                    path: { dataKey: 'sort_path', type: 'string' }
+                }
+            },
+            tree: {
+                defaultToken: 'date-desc',
+                grouped: true,
+                fields: {
+                    name: { dataKey: 'sort_name', type: 'string' },
+                    date: { dataKey: 'sort_date', type: 'number' },
+                    count: { dataKey: 'sort_count', type: 'number' }
+                }
+            },
+            products: {
+                defaultToken: 'name-asc',
+                grouped: false,
+                fields: {
+                    name: { dataKey: 'sort_name', type: 'string' },
+                    price: { dataKey: 'sort_price', type: 'number' },
+                    value: { dataKey: 'sort_value', type: 'string' }
+                }
+            }
+        };
+
+        var normalizePath = breadcrumbData.normalizeFromPath;
+        var normalizePathname = breadcrumbData.normalizePathname;
+        var normalizeCollectionSource = breadcrumbData.normalizeCollectionSource;
+        var parseSources = breadcrumbData.parseEntryBreadcrumbSources;
+        var parseEntrySelection = breadcrumbData.parseEntrySelection;
+        var pickSourceByLogicalPath = breadcrumbData.pickSourceByLogicalPath;
+
+        function parseRawSearchEntries(search) {
+            var raw = typeof search === 'string' ? search.replace(/^\?/, '') : '';
+            if (!raw) {
+                return [];
+            }
+
+            return raw
+                .split('&')
+                .filter(function (entry) { return entry !== ''; })
+                .map(function (entry) {
+                    var separatorIndex = entry.indexOf('=');
+                    if (separatorIndex === -1) {
+                        return [entry, ''];
+                    }
+
+                    return [entry.slice(0, separatorIndex), entry.slice(separatorIndex + 1)];
+                });
+        }
+
+        function safeDecode(value) {
+            if (typeof value !== 'string' || value === '') {
+                return '';
+            }
+
+            try {
+                return decodeURIComponent(value);
+            } catch (error) {
+                return value;
+            }
+        }
+
+        function stringifyRawSearchEntries(entries) {
+            if (!Array.isArray(entries) || entries.length === 0) {
+                return '';
+            }
+
+            return '?' + entries.map(function (entry) {
+                return entry[1] === '' ? entry[0] : entry[0] + '=' + entry[1];
+            }).join('&');
+        }
+
+        function applyRawQueryParamToUrl(url, key, value) {
+            if (!(url instanceof URL) || !key) {
+                return url;
+            }
+
+            var nextEntries = parseRawSearchEntries(url.search).filter(function (entry) {
+                return entry[0] !== key;
+            });
+            var normalizedValue = typeof value === 'string' ? value.trim() : '';
+            if (normalizedValue !== '') {
+                nextEntries.push([key, normalizedValue]);
+            }
+
+            url.search = stringifyRawSearchEntries(nextEntries);
+            return url;
+        }
+
+        function normalizeSortSlot(token) {
+            var value = String(token || '').trim().toLowerCase();
+            return value === '' || value === SORTS_PLACEHOLDER ? '' : value;
+        }
+
+        function normalizeSortSlots(tokens) {
+            return Array.isArray(tokens) ? tokens.map(normalizeSortSlot) : [];
+        }
+
+        function getLogicalPathDepth(logicalPath) {
+            return normalizePath(logicalPath).split('/').filter(Boolean).length;
+        }
+
+        function readCurrentSortTokenRaw() {
+            var value = new URLSearchParams(window.location.search).get('sort');
+            return safeDecode(typeof value === 'string' ? value : '').trim().toLowerCase();
+        }
+
+        function parseSortToken(token) {
+            var value = typeof token === 'string' ? token.trim().toLowerCase() : '';
+            if (!value) {
+                return { field: '', order: '' };
+            }
+
+            var parts = value.split('-');
+            if (parts.length !== 2) {
+                return { field: '', order: '' };
+            }
+
+            var field = parts[0];
+            var order = parts[1];
+            if (order !== 'asc' && order !== 'desc') {
+                return { field: '', order: '' };
+            }
+
+            return { field: field, order: order };
+        }
+
+        function getNormalizedSortToken(token, variantName, defaultTokenOverride) {
+            var variant = SORT_VARIANTS[variantName];
+            if (!variant) {
+                return '';
+            }
+
+            var parsed = parseSortToken(token);
+            if (!parsed.field || !variant.fields[parsed.field]) {
+                return defaultTokenOverride || variant.defaultToken;
+            }
+
+            return parsed.field + '-' + parsed.order;
+        }
+
+        function readCurrentSortsTokens() {
+            var rawValue = safeDecode(new URLSearchParams(window.location.search).get('sorts') || '');
+            if (!rawValue.trim()) {
+                return [];
+            }
+
+            return normalizeSortSlots(rawValue.split(/[|,]/));
+        }
+
+        function readEffectiveSortsTokens(logicalPath) {
+            var depth = getLogicalPathDepth(logicalPath);
+            var rawTokens = readCurrentSortsTokens();
+            if (depth <= 0) {
+                return rawTokens;
+            }
+
+            if (rawTokens.length === depth) {
+                return rawTokens.slice();
+            }
+            if (rawTokens.length > depth) {
+                return rawTokens.slice(0, depth);
+            }
+
+            return Array(depth - rawTokens.length).fill('').concat(rawTokens);
+        }
+
+        function readSortTokenForPath(logicalPath, fallbackToken) {
+            var slots = readEffectiveSortsTokens(logicalPath);
+            var current = slots.length > 0 ? slots[slots.length - 1] : '';
+            return current || String(fallbackToken || '').trim().toLowerCase();
+        }
+
+        function buildCurrentPageSortsTokens(logicalPath, currentToken) {
+            var slots = readEffectiveSortsTokens(logicalPath);
+            var normalizedCurrent = normalizeSortSlot(currentToken);
+            if (!normalizedCurrent) {
+                return slots;
+            }
+
+            if (slots.length === 0) {
+                return [normalizedCurrent];
+            }
+
+            var next = slots.slice();
+            next[next.length - 1] = normalizedCurrent;
+            return next;
+        }
+
+        function buildDescendantSortsTokens(logicalPath, currentToken) {
+            var normalizedCurrent = normalizeSortSlot(currentToken);
+            var currentSlots = buildCurrentPageSortsTokens(logicalPath, normalizedCurrent);
+            if (!normalizedCurrent) {
+                return currentSlots;
+            }
+
+            return currentSlots.concat([normalizedCurrent]);
+        }
+
+        function applySortTokenToUrl(url, token, defaultToken) {
+            return applyRawQueryParamToUrl(url, 'sort', !token || token === defaultToken ? '' : token);
+        }
+
+        function applySortsTokensToUrl(url, tokens) {
+            var normalizedTokens = normalizeSortSlots(tokens);
+            if (normalizedTokens.length === 0 || normalizedTokens.every(function (token) { return token === ''; })) {
+                return applyRawQueryParamToUrl(url, 'sorts', '');
+            }
+
+            var encoded = normalizedTokens.map(function (token) {
+                return token === '' ? SORTS_PLACEHOLDER : token;
+            });
+            return applyRawQueryParamToUrl(url, 'sorts', encoded.join(','));
+        }
+
+        function buildFromParamValue(logicalPath, entryKey) {
+            var normalizedPath = normalizePath(logicalPath);
+            if (!normalizedPath) {
+                return '';
+            }
+
+            var segments = normalizedPath.split('/').filter(Boolean);
+            var normalizedEntryKey = typeof entryKey === 'string' ? entryKey.trim() : '';
+            if (normalizedEntryKey !== '') {
+                segments.push(normalizedEntryKey);
+            }
+
+            return segments.join('/');
+        }
+
+        function applyFromPathToUrl(url, fromPath, entryKey) {
+            return applyRawQueryParamToUrl(url, 'from', buildFromParamValue(fromPath, entryKey));
+        }
+
+        function buildRelativeHref(url) {
+            if (!(url instanceof URL)) {
+                return '';
+            }
+
+            return url.origin === window.location.origin
+                ? url.pathname + url.search + url.hash
+                : url.toString();
+        }
+
+        function normalizeItemsPayload(payload) {
+            if (!payload || typeof payload !== 'object') {
+                return null;
+            }
+
+            var fields = Array.isArray(payload.f)
+                ? payload.f.filter(function (field) {
+                    return typeof field === 'string' && field.trim() !== '';
+                })
+                : [];
+            var rowVector = Array.isArray(payload.rv) ? payload.rv : [];
+            if (fields.length === 0 || rowVector.length % fields.length !== 0) {
+                return null;
+            }
+
+            return payload;
+        }
+
+        function decodeItemsPayload(payload) {
+            var normalizedPayload = normalizeItemsPayload(payload);
+            if (!normalizedPayload) {
+                return null;
+            }
+
+            var fields = normalizedPayload.f;
+            var rowVector = normalizedPayload.rv;
+            var constants = normalizedPayload.c && typeof normalizedPayload.c === 'object' ? normalizedPayload.c : {};
+            var rows = [];
+
+            for (var offset = 0, index = 0; offset < rowVector.length; offset += fields.length, index += 1) {
+                var row = {};
+                var constantKeys = Object.keys(constants);
+                for (var constantIndex = 0; constantIndex < constantKeys.length; constantIndex += 1) {
+                    var constantKey = constantKeys[constantIndex];
+                    row[constantKey] = constants[constantKey];
+                }
+                row._originalIndex = index;
+
+                for (var fieldIndex = 0; fieldIndex < fields.length; fieldIndex += 1) {
+                    var field = fields[fieldIndex];
+                    var rawValue = rowVector[offset + fieldIndex];
+                    row[field] = typeof rawValue === 'string' ? rawValue : String(rawValue == null ? '' : rawValue);
+                }
+
+                rows.push(row);
+            }
+
+            return {
+                provider: typeof normalizedPayload.p === 'string' ? normalizedPayload.p.trim().toLowerCase() : '',
+                logicalPath: typeof normalizedPayload.lp === 'string' ? normalizePath(normalizedPayload.lp) : '',
+                sortVariant: typeof normalizedPayload.sv === 'string' ? normalizedPayload.sv.trim().toLowerCase() : '',
+                defaultSort: typeof normalizedPayload.ds === 'string' ? normalizedPayload.ds.trim().toLowerCase() : '',
+                rows: rows
+            };
+        }
+
+        function isCollectionRowKind(kind) {
+            var normalized = String(kind || '').trim().toLowerCase();
+            return normalized !== '' && normalized !== 'page';
+        }
+
+        function readItemsRowValue(row, fieldConfig) {
+            if (!row || !fieldConfig) {
+                return '';
+            }
+
+            var raw = row[fieldConfig.dataKey] || '';
+            if (fieldConfig.type === 'number') {
+                var numeric = Number(raw);
+                return Number.isFinite(numeric) ? numeric : 0;
+            }
+
+            return String(raw);
+        }
+
+        function compareItemsRows(left, right, fieldConfig, order, grouped) {
+            if (grouped) {
+                var leftGroup = Number(left && left.sort_group || 0);
+                var rightGroup = Number(right && right.sort_group || 0);
+                if (leftGroup !== rightGroup) {
+                    return order === 'asc' ? leftGroup - rightGroup : rightGroup - leftGroup;
+                }
+            }
+
+            var leftValue = readItemsRowValue(left, fieldConfig);
+            var rightValue = readItemsRowValue(right, fieldConfig);
+            var result = 0;
+
+            if (fieldConfig.type === 'number') {
+                result = leftValue - rightValue;
+            } else {
+                result = String(leftValue).localeCompare(String(rightValue), undefined, {
+                    numeric: true,
+                    sensitivity: 'base'
+                });
+            }
+
+            if (result !== 0) {
+                return order === 'asc' ? result : -result;
+            }
+
+            return (left && left._originalIndex || 0) - (right && right._originalIndex || 0);
+        }
+
+        function sortItemsRows(payload, collectionSource) {
+            var decoded = decodeItemsPayload(payload);
+            if (!decoded) {
+                return [];
+            }
+
+            var sortVariant = decoded.sortVariant || collectionSource.sortVariant || '';
+            var variant = SORT_VARIANTS[sortVariant];
+            if (!variant) {
+                return decoded.rows.slice();
+            }
+
+            var defaultToken = decoded.defaultSort || collectionSource.defaultSort || variant.defaultToken;
+            var token = getNormalizedSortToken(
+                readSortTokenForPath(collectionSource.logicalPath, defaultToken),
+                sortVariant,
+                defaultToken
+            );
+            var parsed = parseSortToken(token);
+            var fieldConfig = variant.fields[parsed.field];
+            if (!fieldConfig) {
+                return decoded.rows.slice();
+            }
+
+            return decoded.rows.slice().sort(function (left, right) {
+                return compareItemsRows(left, right, fieldConfig, parsed.order, variant.grouped);
+            });
+        }
+
+        function buildCollectionPageHref(href, logicalPath, sortVariant, defaultSort) {
+            var rawHref = typeof href === 'string' ? href.trim() : '';
+            if (!rawHref || !logicalPath || !sortVariant) {
+                return rawHref;
+            }
+
+            try {
+                var url = new URL(rawHref, window.location.origin);
+                var sortToken = getNormalizedSortToken(
+                    readSortTokenForPath(logicalPath, defaultSort),
+                    sortVariant,
+                    defaultSort
+                );
+                applySortTokenToUrl(url, sortToken, defaultSort);
+                applySortsTokensToUrl(url, buildCurrentPageSortsTokens(logicalPath, sortToken));
+                return buildRelativeHref(url);
+            } catch (error) {
+                return rawHref;
+            }
+        }
+
+        function buildBreadcrumbRowHref(row, collectionSource, sortToken, defaultSort) {
+            var rawHref = typeof row.href === 'string' ? row.href.trim() : '';
+            if (!rawHref || !collectionSource || !collectionSource.logicalPath) {
+                return '';
+            }
+
+            try {
+                var url = new URL(rawHref, window.location.origin);
+                if (isCollectionRowKind(row.kind)) {
+                    applySortTokenToUrl(url, sortToken, defaultSort);
+                    applySortsTokensToUrl(url, buildDescendantSortsTokens(collectionSource.logicalPath, sortToken));
+                    return buildRelativeHref(url);
+                }
+
+                applyFromPathToUrl(url, collectionSource.logicalPath, row.key || '');
+                applySortTokenToUrl(url, sortToken, defaultSort);
+                applySortsTokensToUrl(url, buildCurrentPageSortsTokens(collectionSource.logicalPath, sortToken));
+                return buildRelativeHref(url);
+            } catch (error) {
+                return rawHref;
+            }
+        }
+
+        function buildMenuItemsFromPayload(payload, collectionSource, selection) {
+            if (!payload || !collectionSource || !collectionSource.logicalPath) {
+                return [];
+            }
+
+            var decoded = decodeItemsPayload(payload);
+            if (!decoded) {
+                return [];
+            }
+
+            var sortVariant = decoded.sortVariant || collectionSource.sortVariant || '';
+            var defaultSort = decoded.defaultSort || collectionSource.defaultSort || SORT_VARIANTS[sortVariant] && SORT_VARIANTS[sortVariant].defaultToken || '';
+            var sortToken = getNormalizedSortToken(
+                readSortTokenForPath(collectionSource.logicalPath, defaultSort),
+                sortVariant,
+                defaultSort
+            );
+            var selectedKey = selection && selection.selectedKey || '';
+            var selectedPathname = selection && selection.selectedPathname || '';
+
+            return sortItemsRows(payload, collectionSource).map(function (row) {
+                var href = buildBreadcrumbRowHref(row, collectionSource, sortToken, defaultSort);
+                if (!href) {
+                    return null;
+                }
+
+                var current = false;
+                if (selectedKey && row.key === selectedKey) {
+                    current = true;
+                } else if (selectedPathname) {
+                    try {
+                        current = normalizePathname(new URL(row.href, window.location.origin).pathname) === selectedPathname;
+                    } catch (error) {
+                        current = false;
+                    }
+                }
+
+                return {
+                    text: typeof row.text === 'string' && row.text !== '' ? row.text : row.key,
+                    href: href,
+                    current: current
+                };
+            }).filter(Boolean);
+        }
+
+        function buildPreviewLevelItems(source) {
+            var levels = Array.isArray(source && source.levels) ? source.levels : [];
+            return levels.map(function (level) {
+                var item = level && level.item ? Object.assign({}, level.item) : null;
+                if (!item) {
+                    return null;
+                }
+
+                if (level.collectionItems && level.collectionSource) {
+                    item.collection_source = level.collectionSource;
+                    item.collection_href = item.href;
+                    var selectedPathname = normalizePathname(new URL(item.href, window.location.origin).pathname);
+                    var menu = buildMenuItemsFromPayload(level.collectionItems, level.collectionSource, {
+                        selectedPathname: selectedPathname
+                    });
+                    if (menu.length > 0) {
+                        item.menu = menu;
+                    }
+                }
+
+                return item;
+            }).filter(Boolean);
+        }
+
+        function buildPreviewCurrentItem(source, currentText, currentHref, entryKey) {
+            var currentCollectionSource = source && source.currentCollectionSource;
+            var currentCollectionItems = source && source.currentCollectionItems;
+            if (currentCollectionSource && currentCollectionItems && entryKey) {
+                var menu = buildMenuItemsFromPayload(currentCollectionItems, currentCollectionSource, {
+                    selectedKey: entryKey
+                });
+                if (menu.length > 0) {
+                    var selectedItem = null;
+                    for (var index = 0; index < menu.length; index += 1) {
+                        if (menu[index].current === true) {
+                            selectedItem = menu[index];
+                            break;
+                        }
+                    }
+
+                    if (selectedItem) {
+                        return {
+                            text: selectedItem.text,
+                            href: currentHref,
+                            current: true,
+                            menu: menu,
+                            collection_source: currentCollectionSource,
+                            collection_href: currentHref
+                        };
+                    }
+                }
+            }
+
+            if (!currentText || !currentHref) {
+                return null;
+            }
+
+            return { text: currentText, href: currentHref, current: true };
+        }
+
+        var params = new URLSearchParams(window.location.search);
+        var from = normalizePath(params.get('from') || '');
+        var sources = parseSources(rawSources);
+
+        if (previewPending) {
+            var selection = parseEntrySelection(sources, from);
+            if (selection) {
+                var entrySource = selection.source;
+                var prefixItems = buildPreviewLevelItems(entrySource);
+                if (prefixItems.length === 0) {
+                    prefixItems = Array.isArray(entrySource.tailItems) ? entrySource.tailItems.slice() : [];
+                }
+
+                var currentText = body.dataset.currentPageTitle || document.title || '';
+                var currentHref = window.location.pathname + window.location.search + window.location.hash;
+                var currentItem = buildPreviewCurrentItem(entrySource, currentText, currentHref, selection.entryKey);
+                if (currentItem) {
+                    prefixItems.push(currentItem);
+                }
+
+                breadcrumbUi.renderRootSelection(entrySource.rootItem, entrySource.rootMenuItems, entrySource.rootMenuLabel);
+                breadcrumbUi.renderTopBreadcrumb(prefixItems);
+            }
+
+            html.removeAttribute('data-entry-breadcrumb-preview-pending');
+        }
+
+        if (sortPending) {
+            var pageCollectionSource = normalizeCollectionSource(JSON.parse(body.dataset.pageCollectionSource || '{}'));
+            if (pageCollectionSource) {
+                var collectionSource = pickSourceByLogicalPath(sources, pageCollectionSource.logicalPath);
+                if (collectionSource) {
+                    var collectionItems = buildPreviewLevelItems(collectionSource);
+                    if (collectionItems.length > 0) {
+                        breadcrumbUi.renderTopBreadcrumb(collectionItems);
+                    }
+                }
+            }
+
+            html.removeAttribute('data-breadcrumb-sort-pending');
+        }
+    } catch (error) {
+        try {
+            document.documentElement.removeAttribute('data-entry-breadcrumb-preview-pending');
+            document.documentElement.removeAttribute('data-breadcrumb-sort-pending');
+        } catch (cleanupError) {
+        }
+    }
+})();
+</script>

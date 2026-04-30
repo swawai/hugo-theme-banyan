@@ -2,11 +2,25 @@
 {{- $activeHref := "" -}}
 {{- if $ctx -}}
   {{- $firstPartyPage := $ctx.Site.GetPage "/products/first-party" -}}
+  {{- $paidPage := $ctx.Site.GetPage "/products/first-party/paid" -}}
+  {{- $freePage := $ctx.Site.GetPage "/products/first-party/free" -}}
   {{- $thirdPartyPage := $ctx.Site.GetPage "/products/third-party" -}}
   {{- if $thirdPartyPage -}}
     {{- $thirdPartyHref := $thirdPartyPage.RelPermalink -}}
     {{- if or (eq $ctx.RelPermalink $thirdPartyHref) (hasPrefix $ctx.RelPermalink $thirdPartyHref) -}}
       {{- $activeHref = $thirdPartyHref -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if and (eq $activeHref "") $paidPage -}}
+    {{- $paidHref := $paidPage.RelPermalink -}}
+    {{- if or (eq $ctx.RelPermalink $paidHref) (hasPrefix $ctx.RelPermalink $paidHref) -}}
+      {{- $activeHref = $paidHref -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if and (eq $activeHref "") $freePage -}}
+    {{- $freeHref := $freePage.RelPermalink -}}
+    {{- if or (eq $ctx.RelPermalink $freeHref) (hasPrefix $ctx.RelPermalink $freeHref) -}}
+      {{- $activeHref = $freeHref -}}
     {{- end -}}
   {{- end -}}
   {{- if and (eq $activeHref "") $firstPartyPage -}}
