@@ -180,15 +180,15 @@
         overflow-wrap: anywhere;
     }
 
-    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-caret {
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-caret {
         display: none !important;
     }
 
-    .page-shell.page-shell--has-breadcrumb-tail [data-breadcrumb-mode-toggle="true"] {
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb [data-breadcrumb-mode-toggle="true"] {
         cursor: default;
     }
 
-    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-panel {
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-panel {
         position: static;
         inset: auto;
         z-index: auto;
@@ -206,12 +206,12 @@
         white-space: normal;
     }
 
-    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-panel[hidden] {
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-panel[hidden] {
         display: flex !important;
     }
 
-    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-option,
-    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-option:visited {
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-option,
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-option:visited {
         display: inline-flex;
         align-items: center;
         width: fit-content;
@@ -226,21 +226,21 @@
         overflow-wrap: anywhere;
     }
 
-    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-option.is-current,
-    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-option.is-current:visited {
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-option.is-current,
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-option.is-current:visited {
         color: var(--focus);
         background: color-mix(in srgb, var(--focus) 12%, transparent);
         text-decoration-thickness: 1.5px;
         text-underline-offset: 0.08em;
     }
 
-    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-option:hover,
-    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-menu-option:focus-visible {
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-option:hover,
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-option:focus-visible {
         color: var(--focus);
         background: color-mix(in srgb, var(--focus) 8%, transparent);
     }
 
-    .page-shell.page-shell--has-breadcrumb-tail .breadcrumb-item-menu.is-open > .breadcrumb-menu-link {
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-item-menu.is-open > .breadcrumb-menu-link {
         background: transparent;
         border-radius: 0;
     }

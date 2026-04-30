@@ -1,23 +1,22 @@
+import { createDropdownController } from './ui-dropdown.js';
+
 const MENU_MODE_CLASS = 'is-breadcrumb-menu-mode';
 const WIDE_COLUMNS_QUERY = '(min-width: 88rem)';
-let openMenuState = null;
 let activeModeRow = null;
 let wideColumnsMediaQuery = null;
+const dropdown = createDropdownController({
+    rootSelector: '[data-breadcrumb-menu]',
+    triggerSelector: '[data-breadcrumb-menu-link="true"]',
+    panelSelector: '[data-breadcrumb-menu-panel]',
+    optionSelector: 'a[href]'
+});
 
 function getMenuLink(target) {
-    return target instanceof Element ? target.closest('[data-breadcrumb-menu-link="true"]') : null;
+    return dropdown.getTrigger(target);
 }
 
 function getModeToggleLink(target) {
     return target instanceof Element ? target.closest('[data-breadcrumb-mode-toggle="true"]') : null;
-}
-
-function getMenuRoot(link) {
-    return link instanceof Element ? link.closest('[data-breadcrumb-menu]') : null;
-}
-
-function getMenuPanel(menuRoot) {
-    return menuRoot instanceof Element ? menuRoot.querySelector('[data-breadcrumb-menu-panel]') : null;
 }
 
 function getBreadcrumbRow(target) {
@@ -63,35 +62,9 @@ function activateMode(target) {
     return row;
 }
 
-function setExpanded(link, expanded) {
-    if (!(link instanceof Element)) {
-        return;
-    }
-
-    link.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-}
-
-function closeOpenMenu({ restoreFocus = false } = {}) {
-    if (!openMenuState) {
-        return;
-    }
-
-    const { menuRoot, link, panel } = openMenuState;
-    menuRoot.classList.remove('is-open');
-    if (panel) {
-        panel.hidden = true;
-    }
-    setExpanded(link, false);
-    openMenuState = null;
-
-    if (restoreFocus && link instanceof HTMLElement) {
-        link.focus({ preventScroll: true });
-    }
-}
-
 function deactivateMode({ restoreFocus = false } = {}) {
     const row = activeModeRow;
-    closeOpenMenu({ restoreFocus: false });
+    dropdown.close({ restoreFocus: false });
     if (row instanceof Element) {
         row.classList.remove(MENU_MODE_CLASS);
     }
@@ -103,45 +76,6 @@ function deactivateMode({ restoreFocus = false } = {}) {
             toggleLink.focus({ preventScroll: true });
         }
     }
-}
-
-function openMenu(link) {
-    const menuRoot = getMenuRoot(link);
-    const panel = getMenuPanel(menuRoot);
-    if (!menuRoot || !panel) {
-        return false;
-    }
-
-    if (openMenuState && openMenuState.menuRoot !== menuRoot) {
-        closeOpenMenu();
-    }
-
-    menuRoot.classList.add('is-open');
-    panel.hidden = false;
-    setExpanded(link, true);
-    openMenuState = { menuRoot, link, panel };
-    return true;
-}
-
-function toggleMenu(link) {
-    const menuRoot = getMenuRoot(link);
-    if (!menuRoot) {
-        return false;
-    }
-
-    if (openMenuState?.menuRoot === menuRoot) {
-        closeOpenMenu();
-        return false;
-    }
-
-    return openMenu(link);
-}
-
-function initMenuLinkState() {
-    document.querySelectorAll('[data-breadcrumb-menu-link="true"]').forEach((link) => {
-        link.setAttribute('aria-haspopup', 'true');
-        setExpanded(link, false);
-    });
 }
 
 function handleClick(event) {
@@ -156,7 +90,7 @@ function handleClick(event) {
             return;
         }
 
-        if (activeModeRow || openMenuState) {
+        if (activeModeRow || dropdown.hasOpen()) {
             deactivateMode();
         }
 
@@ -172,7 +106,7 @@ function handleClick(event) {
 
         activateMode(modeToggleLink);
         if (link) {
-            openMenu(link);
+            dropdown.open(link);
         }
         return;
     }
@@ -180,19 +114,19 @@ function handleClick(event) {
     if (!link) {
         if (activeModeRow && (!clickTarget || !activeModeRow.contains(clickTarget))) {
             deactivateMode();
-        } else if (openMenuState && (!clickTarget || !openMenuState.menuRoot.contains(clickTarget))) {
-            closeOpenMenu();
+        } else if (dropdown.hasOpen() && (!clickTarget || !dropdown.contains(clickTarget))) {
+            dropdown.close();
         }
         return;
     }
 
     if (isModeActive(link)) {
         event.preventDefault();
-        toggleMenu(link);
+        dropdown.toggle(link);
         return;
     }
 
-    closeOpenMenu();
+    dropdown.close();
 }
 
 function handleKeyDown(event) {
@@ -202,8 +136,12 @@ function handleKeyDown(event) {
         if (activeModeRow) {
             deactivateMode({ restoreFocus: true });
         } else {
-            closeOpenMenu({ restoreFocus: true });
+            dropdown.close({ restoreFocus: true });
         }
+        return;
+    }
+
+    if (dropdown.handlePanelKeyDown(event)) {
         return;
     }
 
@@ -218,7 +156,7 @@ function handleKeyDown(event) {
         } else {
             activateMode(modeToggleLink);
             if (link) {
-                openMenu(link);
+                dropdown.open(link);
             }
         }
         return;
@@ -233,23 +171,20 @@ function handleKeyDown(event) {
     }
 
     event.preventDefault();
-    if (!openMenu(link)) {
-        return;
-    }
-
-    const firstOption = openMenuState?.panel?.querySelector('a[href]');
-    if (firstOption instanceof HTMLElement) {
-        firstOption.focus({ preventScroll: true });
-    }
+    dropdown.open(link, { focusPanel: true });
 }
 
 function handleFocusIn(event) {
     const focusTarget = event.target instanceof Element ? event.target : null;
-    if (!openMenuState && !activeModeRow) {
+    if (!dropdown.hasOpen() && !activeModeRow) {
         return;
     }
 
     if (activeModeRow && focusTarget && activeModeRow.contains(focusTarget)) {
+        return;
+    }
+
+    if (focusTarget && dropdown.contains(focusTarget)) {
         return;
     }
 
@@ -258,7 +193,7 @@ function handleFocusIn(event) {
         return;
     }
 
-    closeOpenMenu();
+    dropdown.close();
 }
 
 let didInit = false;
@@ -273,15 +208,15 @@ export function initBreadcrumbMenus() {
     if (didInit) {
         if (activeModeRow && !document.contains(activeModeRow)) {
             activeModeRow = null;
-            openMenuState = null;
         }
-        initMenuLinkState();
+        dropdown.close();
+        dropdown.initTriggers();
         handleWideColumnsLayoutChange();
         return;
     }
 
     didInit = true;
-    initMenuLinkState();
+    dropdown.initTriggers();
 
     document.addEventListener('click', handleClick);
     document.addEventListener('keydown', handleKeyDown);

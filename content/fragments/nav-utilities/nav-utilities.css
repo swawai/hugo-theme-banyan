@@ -1,23 +1,31 @@
-.site-nav-utilities .icon-select-wrapper > .icon,
+.site-nav-utilities .site-nav-link-account > .icon {
+    position: relative;
+}
+
+.site-nav-utilities .site-nav-utility-trigger {
+    gap: 0.15rem;
+    transition: color 0.3s, opacity 0.3s;
+}
+
+.site-nav-utilities .site-nav-utility-trigger:hover:not(:disabled) {
+    opacity: 0.8;
+}
+
+.site-nav-utilities .site-nav-utility-trigger > .icon,
 .site-nav-utilities .site-nav-link-account > .icon {
     display: block;
     flex: none;
     transform-origin: center center;
 }
 
-.site-nav-utilities .icon-select-wrapper select.icon-select {
-    position: absolute;
-    inset: 0;
-
-    opacity: 0;
-    cursor: pointer;
+.site-nav-utilities .site-nav-utility-caret {
+    font-size: 0.72em;
 }
 
-.site-nav-utilities .icon-select-wrapper:has(select.icon-select:focus-visible) {
-    outline: 2px dashed var(--focus);
-    outline-offset: 2px;
+.site-nav-utilities .site-nav-utility-menu.is-disabled {
+    opacity: 0.5;
 }
 
-.site-nav-utilities .icon-select-wrapper select.icon-select:focus {
-    outline: none;
+.site-nav-utilities :is(.site-nav-utility-trigger, .site-nav-utility-option):disabled {
+    cursor: default;
 }

@@ -186,7 +186,7 @@ async function updateBreadcrumbTrailMenus(pageCollectionSource) {
         menuItems.forEach((menuItem) => {
             const option = document.createElement('a');
             option.href = menuItem.href;
-            option.className = 'breadcrumb-menu-option';
+            option.className = 'ui-dropdown-option breadcrumb-menu-option';
             option.textContent = menuItem.text;
             if (menuItem.current) {
                 option.classList.add('is-current');

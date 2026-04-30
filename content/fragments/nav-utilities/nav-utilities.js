@@ -2,9 +2,231 @@
     const PREFERRED_LANG_KEY = 'preferred_lang';
     const LANG_SUGGEST_HANDLED_KEY = 'lang-suggest-handled-v1';
     const html = document.documentElement;
+    let dropdown = null;
 
     let runtimeManifestPromise = null;
     let runtimeManifestCache = null;
+
+    function getMenuRoot(target) {
+        return target instanceof Element ? target.closest('[data-nav-utility-menu]') : null;
+    }
+
+    function getMenuTrigger(menuRoot) {
+        return menuRoot instanceof Element ? menuRoot.querySelector('[data-nav-utility-trigger]') : null;
+    }
+
+    function getMenuPanel(menuRoot) {
+        return menuRoot instanceof Element ? menuRoot.querySelector('[data-nav-utility-panel]') : null;
+    }
+
+    function getMenuOptions(menuRoot) {
+        return menuRoot instanceof Element ? Array.from(menuRoot.querySelectorAll('[data-nav-utility-option]')) : [];
+    }
+
+    function getMenuSelectedOption(menuRoot) {
+        return getMenuOptions(menuRoot).find((option) => option.classList.contains('is-current')) || null;
+    }
+
+    function setTriggerState(menuRoot, selectedLabel = '') {
+        const trigger = getMenuTrigger(menuRoot);
+        if (!(menuRoot instanceof Element) || !(trigger instanceof Element)) {
+            return;
+        }
+
+        const baseLabel = menuRoot.dataset.navUtilityLabel || trigger.getAttribute('aria-label') || '';
+        const accessibleLabel = selectedLabel ? `${baseLabel}: ${selectedLabel}` : baseLabel;
+        if (!accessibleLabel) {
+            trigger.removeAttribute('title');
+            return;
+        }
+
+        trigger.setAttribute('aria-label', accessibleLabel);
+        trigger.title = accessibleLabel;
+    }
+
+    function setMenuDisabled(menuRoot, disabled) {
+        const trigger = getMenuTrigger(menuRoot);
+        if (!(menuRoot instanceof Element) || !(trigger instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        menuRoot.classList.toggle('is-disabled', disabled);
+        trigger.disabled = disabled;
+        if (disabled && dropdown?.isOpen(menuRoot)) {
+            dropdown.close();
+        }
+    }
+
+    function markCurrentOption(menuRoot, selectedValue = '') {
+        let selectedLabel = '';
+
+        getMenuOptions(menuRoot).forEach((option) => {
+            const isCurrent = option.dataset.value === selectedValue;
+            option.classList.toggle('is-current', isCurrent);
+            option.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
+            if (isCurrent) {
+                selectedLabel = option.textContent?.trim() || '';
+            }
+        });
+
+        setTriggerState(menuRoot, selectedLabel);
+    }
+
+    function bindMenuOption(option, onSelect) {
+        if (!(option instanceof HTMLButtonElement) || option.dataset.navUtilityBound === 'true') {
+            return;
+        }
+
+        option.dataset.navUtilityBound = 'true';
+        option.addEventListener('click', async () => {
+            if (option.disabled) {
+                return;
+            }
+
+            const menuRoot = getMenuRoot(option);
+            const value = option.dataset.value || '';
+            const shouldClose = await onSelect(value, option, menuRoot);
+            if (shouldClose !== false) {
+                dropdown?.close({ restoreFocus: true });
+            }
+        });
+    }
+
+    function replaceMenuOptions(menuRoot, optionDefs, onSelect) {
+        const panel = getMenuPanel(menuRoot);
+        if (!(panel instanceof Element)) {
+            return;
+        }
+
+        panel.replaceChildren();
+        optionDefs.forEach((definition) => {
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.className = 'ui-dropdown-option site-nav-utility-option';
+            option.dataset.navUtilityOption = 'true';
+            option.dataset.value = definition.value;
+            option.textContent = definition.label;
+            option.disabled = definition.disabled === true;
+            if (definition.hasTrans === false) {
+                option.dataset.hasTrans = 'false';
+            }
+            bindMenuOption(option, onSelect);
+            panel.appendChild(option);
+        });
+
+        setMenuDisabled(menuRoot, panel.childElementCount === 0);
+    }
+
+    function closeOpenMenu({ restoreFocus = false } = {}) {
+        dropdown?.close({ restoreFocus });
+    }
+
+    function openMenu(menuRoot, { focusSelected = false } = {}) {
+        if (!(menuRoot instanceof Element) || !dropdown) {
+            return false;
+        }
+
+        return dropdown.open(menuRoot, {
+            focusPanel: focusSelected,
+            focusSelector: '.site-nav-utility-option.is-current:not(:disabled)',
+            fallbackFocusSelector: '.site-nav-utility-option:not(:disabled)'
+        });
+    }
+
+    function toggleMenu(menuRoot, options = {}) {
+        if (!(menuRoot instanceof Element) || !dropdown) {
+            return false;
+        }
+
+        if (dropdown.isOpen(menuRoot)) {
+            dropdown.close();
+            return false;
+        }
+
+        return openMenu(menuRoot, options);
+    }
+
+    function initCustomMenus() {
+        if (!dropdown) {
+            const createDropdownController = window.__banyanUiDropdown?.createDropdownController;
+            if (typeof createDropdownController !== 'function') {
+                return false;
+            }
+
+            dropdown = createDropdownController({
+                rootSelector: '[data-nav-utility-menu]',
+                triggerSelector: '[data-nav-utility-trigger]',
+                panelSelector: '[data-nav-utility-panel]',
+                optionSelector: '.site-nav-utility-option:not(:disabled)'
+            });
+        }
+
+        document.querySelectorAll('[data-nav-utility-menu]').forEach((menuRoot) => {
+            const trigger = getMenuTrigger(menuRoot);
+            if (!(trigger instanceof HTMLElement)) {
+                return;
+            }
+
+            if (menuRoot.dataset.navUtilityInit !== 'true') {
+                menuRoot.dataset.navUtilityInit = 'true';
+            }
+
+            const selectedOption = getMenuSelectedOption(menuRoot);
+            setTriggerState(menuRoot, selectedOption?.textContent?.trim() || '');
+            setMenuDisabled(menuRoot, getMenuOptions(menuRoot).length === 0);
+        });
+
+        dropdown.initTriggers();
+
+        if (document.body.dataset.navUtilityEventsInit === 'true') {
+            return true;
+        }
+
+        document.body.dataset.navUtilityEventsInit = 'true';
+
+        document.addEventListener('click', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+            const trigger = target ? target.closest('[data-nav-utility-trigger]') : null;
+            if (trigger) {
+                event.preventDefault();
+                toggleMenu(getMenuRoot(trigger));
+                return;
+            }
+
+            if (dropdown?.hasOpen() && (!target || !dropdown.contains(target))) {
+                closeOpenMenu();
+            }
+        });
+
+        document.addEventListener('focusin', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+            if (dropdown?.hasOpen() && (!target || !dropdown.contains(target))) {
+                closeOpenMenu();
+            }
+        });
+
+        document.addEventListener('keydown', (event) => {
+            const target = event.target instanceof Element ? event.target : null;
+            const trigger = target ? target.closest('[data-nav-utility-trigger]') : null;
+
+            if (event.key === 'Escape' && dropdown?.hasOpen()) {
+                event.preventDefault();
+                closeOpenMenu({ restoreFocus: true });
+                return;
+            }
+
+            if (dropdown?.handlePanelKeyDown(event)) {
+                return;
+            }
+
+            if (trigger && (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown' || event.key === 'F4')) {
+                event.preventDefault();
+                toggleMenu(getMenuRoot(trigger), { focusSelected: true });
+            }
+        });
+
+        return true;
+    }
 
     function readRuntimeManifestUrl() {
         return document.body?.dataset.assetManifestUrl || '';
@@ -105,17 +327,13 @@
     void getRuntimeManifest();
 
     document.addEventListener('DOMContentLoaded', () => {
-        const themeSelect = document.getElementById('theme-select');
-        const langSelect = document.getElementById('lang-select');
-        if (!themeSelect && !langSelect) return;
+        const themeMenu = document.querySelector('[data-nav-utility-kind="theme"]');
+        const langMenu = document.querySelector('[data-nav-utility-kind="language"]');
+        if (!themeMenu && !langMenu) return;
+        if (!initCustomMenus()) return;
 
-        const updateFit = (el) => {
-            const wrapper = el?.parentElement?.classList.contains('icon-select-wrapper') ? el.parentElement : null;
-            if (wrapper) wrapper.setAttribute('data-value', el.options[el.selectedIndex]?.text || '');
-        };
-
-        if (langSelect && langSelect.dataset.navPrimaryInit !== 'true') {
-            langSelect.dataset.navPrimaryInit = 'true';
+        if (langMenu && langMenu.dataset.navPrimaryInit !== 'true') {
+            langMenu.dataset.navPrimaryInit = 'true';
             const normalizeLang = (code) => {
                 code = (code || '').toLowerCase();
                 if (code === 'zh-hk' || code === 'zh-mo') return 'zh-tw';
@@ -136,8 +354,8 @@
                 if (home !== '/' && !home.endsWith('/')) home += '/';
                 return home;
             };
-            const curLang = (langSelect.dataset.curLang || document.documentElement.lang || '').toLowerCase();
-            const transLangs = (langSelect.dataset.transLangs || '')
+            const curLang = (langMenu.dataset.curLang || document.documentElement.lang || '').toLowerCase();
+            const transLangs = (langMenu.dataset.transLangs || '')
                 .split(',')
                 .map((s) => s.trim().toLowerCase())
                 .filter(Boolean);
@@ -200,10 +418,10 @@
                 .then((list) => {
                     if (!Array.isArray(list) || !list.length) return;
 
-                    langSelect.replaceChildren();
                     const supportedLangs = [];
                     const langHomes = {};
                     const langNames = {};
+                    const optionDefs = [];
                     list.forEach((item) => {
                         const code = (item.code || '').toLowerCase();
                         const name = item.name || code;
@@ -212,17 +430,14 @@
                         supportedLangs.push(code);
                         langHomes[code] = homeUrl;
                         langNames[code] = name;
-
-                        const opt = document.createElement('option');
-                        opt.value = code;
-                        opt.textContent = name;
-                        if (code === curLang) opt.selected = true;
-                        opt.setAttribute('data-has-trans', transLangs.includes(code) ? 'true' : 'false');
-                        langSelect.appendChild(opt);
+                        optionDefs.push({
+                            value: code,
+                            label: name,
+                            hasTrans: transLangs.includes(code)
+                        });
                     });
 
-                    if (!langSelect.options.length) return;
-                    updateFit(langSelect);
+                    if (!optionDefs.length) return;
 
                     const defaultLang = supportedLangs.find((code) => langHomes[code] === '/') || supportedLangs[0] || 'en';
                     const getHomeUrl = (lang) => langHomes[lang] || (lang === defaultLang ? '/' : '/' + lang + '/');
@@ -275,13 +490,12 @@
                         }, 800);
                     };
 
-                    langSelect.addEventListener('change', async () => {
+                    replaceMenuOptions(langMenu, optionDefs, async (targetLang, option) => {
                         try {
-                            const option = langSelect.options[langSelect.selectedIndex];
-                            const targetLang = (option.value || '').toLowerCase();
+                            targetLang = (targetLang || '').toLowerCase();
                             if (!targetLang) return;
 
-                            const hasTrans = option.getAttribute('data-has-trans') === 'true';
+                            const hasTrans = option.dataset.hasTrans !== 'false';
                             const targetHome = getHomeUrl(targetLang);
                             if (!hasTrans) {
                                 const tpl = await getI18nMessage(
@@ -289,16 +503,10 @@
                                     'no_trans_msg',
                                     'This page is not available in [{lang}].\nRedirect to the homepage?'
                                 );
-                                const msg = formatMessage(tpl, { lang: option.text.trim() });
+                                const msg = formatMessage(tpl, { lang: option.textContent?.trim() || targetLang });
                                 if (!window.confirm(msg)) {
-                                    for (let i = 0; i < langSelect.options.length; i++) {
-                                        if (langSelect.options[i].value.toLowerCase() === curLang) {
-                                            langSelect.selectedIndex = i;
-                                            updateFit(langSelect);
-                                            break;
-                                        }
-                                    }
-                                    return;
+                                    markCurrentOption(langMenu, curLang);
+                                    return true;
                                 }
 
                                 const code = normalizeLang(targetLang);
@@ -306,7 +514,7 @@
                                     writeStorage(PREFERRED_LANG_KEY, code);
                                 }
                                 window.location.href = targetHome;
-                                return;
+                                return true;
                             }
 
                             const code = normalizeLang(targetLang);
@@ -318,39 +526,49 @@
                             const relativePath = toRelativePath(curUrl.pathname);
                             curUrl.pathname = buildTargetUrl(targetLang, relativePath);
                             window.location.href = curUrl.href;
+                            return true;
                         } catch (e) {
-                            const fallback = langSelect.options[langSelect.selectedIndex]?.value || 'en';
+                            const fallback = targetLang || curLang || 'en';
                             window.location.href = normalizeHomeUrl(langHomes[fallback], fallback);
+                            return true;
                         }
                     });
 
+                    markCurrentOption(langMenu, curLang);
                     suggestBrowserLanguage();
                 })
                 .catch(() => { });
         }
 
-        updateFit(langSelect);
-        if (!themeSelect || themeSelect.dataset.navPrimaryInit === 'true') return;
-        themeSelect.dataset.navPrimaryInit = 'true';
+        if (!themeMenu || themeMenu.dataset.navPrimaryInit === 'true') return;
+        themeMenu.dataset.navPrimaryInit = 'true';
 
         const media = window.matchMedia('(prefers-color-scheme: dark)');
         const setTheme = (mode) => html.setAttribute('data-theme', mode === 'auto' ? (media.matches ? 'dark' : 'light') : mode);
         const saved = readStorage('theme-preference') || 'auto';
-        themeSelect.value = saved;
         setTheme(saved);
-        updateFit(themeSelect);
+        markCurrentOption(themeMenu, saved);
 
         const handleMedia = () => {
-            if (themeSelect.value === 'auto') setTheme('auto');
+            const isAuto = getMenuSelectedOption(themeMenu)?.dataset.value === 'auto';
+            if (isAuto) setTheme('auto');
         };
         if (media?.addEventListener) media.addEventListener('change', handleMedia);
         else if (media?.addListener) media.addListener(handleMedia);
 
-        themeSelect.addEventListener('change', () => {
-            const mode = themeSelect.value;
-            writeStorage('theme-preference', mode);
-            setTheme(mode);
-            updateFit(themeSelect);
+        getMenuOptions(themeMenu).forEach((option) => {
+            bindMenuOption(option, (mode) => {
+                mode = mode || 'auto';
+                writeStorage('theme-preference', mode);
+                setTheme(mode);
+                markCurrentOption(themeMenu, mode);
+                return true;
+            });
         });
+
+        const activeMode = getMenuSelectedOption(themeMenu)?.dataset.value || saved || 'auto';
+        writeStorage('theme-preference', activeMode);
+        setTheme(activeMode);
+        markCurrentOption(themeMenu, activeMode);
     });
 })();

@@ -1,0 +1,108 @@
+.ui-dropdown {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.ui-dropdown-trigger,
+.ui-dropdown-trigger:visited,
+.ui-dropdown-trigger:hover,
+.ui-dropdown-option,
+.ui-dropdown-option:visited {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1;
+    text-decoration: none;
+}
+
+button.ui-dropdown-trigger,
+button.ui-dropdown-option {
+    font: inherit;
+}
+
+button.ui-dropdown-trigger {
+    margin: 0;
+    padding: 0;
+    color: inherit;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+button.ui-dropdown-option {
+    width: 100%;
+    margin: 0;
+    text-align: left;
+    white-space: nowrap;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.ui-dropdown-caret {
+    display: inline-block;
+    font-size: 0.8em;
+    margin-inline-start: 0.12rem;
+    line-height: 1;
+    vertical-align: 0.04em;
+    transition: transform 0.16s ease, color 0.16s ease;
+}
+
+.ui-dropdown-panel {
+    position: absolute;
+    inset-block-start: calc(100% + 0.28rem);
+    inset-inline-start: 0;
+    z-index: 12;
+    display: flex;
+    flex-direction: column;
+    gap: 0.08rem;
+    min-width: max-content;
+    padding: 0.26rem;
+    background: var(--bg);
+    border: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+    border-radius: 0.42rem;
+    box-shadow: 0 0.32rem 1rem color-mix(in srgb, var(--fg) 12%, transparent);
+    white-space: nowrap;
+}
+
+.ui-dropdown-panel[hidden] {
+    display: none;
+}
+
+.ui-dropdown-option,
+.ui-dropdown-option:visited {
+    display: flex;
+    align-items: center;
+    padding: 0.16rem 0.42rem;
+    line-height: 1.35;
+    color: var(--link);
+    border-radius: 0.32rem;
+}
+
+.ui-dropdown-option.is-current,
+.ui-dropdown-option.is-current:visited {
+    color: var(--focus);
+}
+
+.ui-dropdown-option:hover,
+.ui-dropdown-option:focus-visible {
+    color: var(--focus);
+    background: color-mix(in srgb, var(--focus) 8%, transparent);
+}
+
+.ui-dropdown.is-open > .ui-dropdown-trigger {
+    background: color-mix(in srgb, var(--focus) 8%, transparent);
+    border-radius: 0.28rem;
+}
+
+.ui-dropdown.is-open > .ui-dropdown-trigger .ui-dropdown-caret {
+    color: var(--focus);
+    transform: rotate(180deg);
+}
+
+.ui-dropdown-trigger:focus-visible,
+.ui-dropdown-option:focus-visible {
+    outline: 2px dashed var(--focus);
+    outline-offset: 2px;
+}

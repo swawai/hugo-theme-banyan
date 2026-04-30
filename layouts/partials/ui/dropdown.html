@@ -1,0 +1,14 @@
+{{- $rootClass := trim (printf "ui-dropdown %s" (.rootClass | default "")) " " -}}
+{{- $rootDataAttrs := merge (dict "ui-dropdown" "true") (.rootDataAttrs | default dict) -}}
+{{- $panelClass := trim (printf "ui-dropdown-panel %s" (.panelClass | default "")) " " -}}
+{{- $panelDataAttrs := merge (dict "ui-dropdown-panel" "true") (.panelDataAttrs | default dict) -}}
+{{- $triggerHTML := .triggerHTML | default "" -}}
+{{- $panelHTML := .panelHTML | default "" -}}
+{{- $panelHidden := true -}}
+{{- if isset . "panelHidden" }}{{- $panelHidden = eq .panelHidden true -}}{{- end -}}
+<span class="{{ $rootClass }}"{{ with .title }} title="{{ . }}"{{ end }}{{ with $rootDataAttrs }}{{ range $name, $value := . }} {{ printf "data-%s=%q" $name $value | safeHTMLAttr }}{{ end }}{{ end }}>
+  {{- $triggerHTML | safeHTML -}}
+  <span class="{{ $panelClass }}"{{ with $panelDataAttrs }}{{ range $name, $value := . }} {{ printf "data-%s=%q" $name $value | safeHTMLAttr }}{{ end }}{{ end }}{{ if $panelHidden }} hidden{{ end }}>
+    {{- $panelHTML | safeHTML -}}
+  </span>
+</span>

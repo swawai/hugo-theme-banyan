@@ -63,7 +63,7 @@
         span.textContent = text;
         if (config.withCaret) {
             var caret = document.createElement('span');
-            caret.className = 'breadcrumb-menu-caret';
+            caret.className = 'ui-dropdown-caret breadcrumb-menu-caret';
             caret.setAttribute('aria-hidden', 'true');
             caret.textContent = '▾';
             span.appendChild(caret);
@@ -73,14 +73,17 @@
 
     function buildMenuPanel(menuItems) {
         var panel = document.createElement('span');
-        panel.className = 'breadcrumb-menu-panel';
+        panel.className = 'ui-dropdown-panel breadcrumb-menu-panel';
         panel.hidden = true;
+        panel.dataset.uiDropdownPanel = 'true';
         panel.dataset.breadcrumbMenuPanel = '';
 
         menuItems.forEach(function (menuItem) {
             var option = document.createElement('a');
             option.href = menuItem.href;
-            option.className = menuItem.current ? 'breadcrumb-menu-option is-current' : 'breadcrumb-menu-option';
+            option.className = menuItem.current
+                ? 'ui-dropdown-option breadcrumb-menu-option is-current'
+                : 'ui-dropdown-option breadcrumb-menu-option';
             if (menuItem.current) {
                 option.dataset.siteUpdateAnchor = 'true';
                 option.setAttribute('aria-current', 'page');
@@ -102,7 +105,9 @@
         }
 
         if (Array.isArray(menuItems) && menuItems.length > 0) {
+            link.classList.add('ui-dropdown-trigger');
             link.classList.add('breadcrumb-menu-link');
+            link.dataset.uiDropdownTrigger = 'true';
             link.dataset.breadcrumbMenuLink = 'true';
             link.setAttribute('aria-haspopup', 'true');
             link.setAttribute('aria-expanded', 'false');
@@ -127,8 +132,9 @@
                 ? (item.collection_href || item.collectionHref).trim()
                 : '')
             : '';
-        itemSpan.className = menuItems.length > 0 ? 'breadcrumb-item breadcrumb-item-menu' : 'breadcrumb-item';
+        itemSpan.className = menuItems.length > 0 ? 'breadcrumb-item ui-dropdown breadcrumb-item-menu' : 'breadcrumb-item';
         if (menuItems.length > 0) {
+            itemSpan.dataset.uiDropdown = 'true';
             itemSpan.dataset.breadcrumbMenu = '';
             if (collectionHref) {
                 itemSpan.dataset.breadcrumbCollectionHref = collectionHref;

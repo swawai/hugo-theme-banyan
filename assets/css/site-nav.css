@@ -16,7 +16,7 @@
     flex-shrink: 0;
 }
 
-.site-nav :is(a, a:visited, .icon-select-wrapper) {
+.site-nav :is(a, a:visited, .site-nav-utility-menu) {
     position: relative;
     display: inline-flex;
     align-items: center;
@@ -40,7 +40,7 @@
     opacity: 1;
 }
 
-.site-nav :is(a, .icon-select-wrapper):hover {
+.site-nav a:hover {
     opacity: 0.8;
 }
 
@@ -54,7 +54,7 @@
     opacity: 1;
 }
 
-.site-nav > :is(a, .icon-select-wrapper)::after {
+.site-nav > :is(a, .site-nav-utility-menu)::after {
     content: "";
     position: absolute;
     left: 0;

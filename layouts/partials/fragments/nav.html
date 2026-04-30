@@ -195,29 +195,43 @@
     {{ $transLangs := slice $cur }}
     {{ range $ctx.AllTranslations }}{{ $transLangs = $transLangs | append .Language.Lang }}{{ end }}
     {{ $transLangs = $transLangs | uniq }}
-    <span class="icon-select-wrapper" title="{{ $labelLanguage }}">
-        <span class="sr-only">{{ $labelLanguage }}</span>
-        {{ partial "icon" (dict "name" "language") }}
-        <select
-            id="lang-select"
-            class="icon-select"
-            aria-label="{{ $labelLanguage }}"
-            data-cur-lang="{{ $cur }}"
-            data-trans-langs="{{ delimit $transLangs "," }}">
-        </select>
-    </span>
+    {{ $labelLanguageEsc := $labelLanguage | htmlEscape }}
+    {{ $languageTriggerHTML := printf "<button type=\"button\" class=\"ui-dropdown-trigger site-nav-utility-trigger\" aria-label=\"%s\" aria-haspopup=\"true\" aria-expanded=\"false\" data-ui-dropdown-trigger=\"true\" data-nav-utility-trigger=\"true\"><span class=\"sr-only\">%s</span>%s<span class=\"ui-dropdown-caret site-nav-utility-caret\" aria-hidden=\"true\">▾</span></button>" $labelLanguageEsc $labelLanguageEsc (partial "icon" (dict "name" "language")) }}
+    {{ partial "ui/dropdown.html" (dict
+        "rootClass" "site-nav-utility-menu"
+        "rootDataAttrs" (dict
+            "nav-utility-menu" "true"
+            "nav-utility-kind" "language"
+            "nav-utility-label" $labelLanguage
+            "cur-lang" $cur
+            "trans-langs" (delimit $transLangs ",")
+        )
+        "triggerHTML" $languageTriggerHTML
+        "panelClass" "site-nav-utility-panel"
+        "panelDataAttrs" (dict "nav-utility-panel" "true")
+        "panelHTML" ""
+    ) }}
     {{ end }}
 
     {{ if $showTheme }}
-    <span class="icon-select-wrapper" title="{{ $labelTheme }}">
-        <span class="sr-only">{{ $labelTheme }}</span>
-        {{ partial "icon" (dict "name" "theme") }}
-        <select id="theme-select" class="icon-select" aria-label="{{ $labelTheme }}">
-            <option value="auto">{{ $themeAuto }}</option>
-            <option value="light">{{ $themeLight }}</option>
-            <option value="dark">{{ $themeDark }}</option>
-        </select>
-    </span>
+    {{ $labelThemeEsc := $labelTheme | htmlEscape }}
+    {{ $themeTriggerHTML := printf "<button type=\"button\" class=\"ui-dropdown-trigger site-nav-utility-trigger\" aria-label=\"%s\" aria-haspopup=\"true\" aria-expanded=\"false\" data-ui-dropdown-trigger=\"true\" data-nav-utility-trigger=\"true\"><span class=\"sr-only\">%s</span>%s<span class=\"ui-dropdown-caret site-nav-utility-caret\" aria-hidden=\"true\">▾</span></button>" $labelThemeEsc $labelThemeEsc (partial "icon" (dict "name" "theme")) }}
+    {{ $themeOptionParts := slice }}
+    {{ $themeOptionParts = $themeOptionParts | append (printf "<button type=\"button\" class=\"ui-dropdown-option site-nav-utility-option\" data-nav-utility-option=\"true\" data-value=\"auto\">%s</button>" ($themeAuto | htmlEscape)) }}
+    {{ $themeOptionParts = $themeOptionParts | append (printf "<button type=\"button\" class=\"ui-dropdown-option site-nav-utility-option\" data-nav-utility-option=\"true\" data-value=\"light\">%s</button>" ($themeLight | htmlEscape)) }}
+    {{ $themeOptionParts = $themeOptionParts | append (printf "<button type=\"button\" class=\"ui-dropdown-option site-nav-utility-option\" data-nav-utility-option=\"true\" data-value=\"dark\">%s</button>" ($themeDark | htmlEscape)) }}
+    {{ partial "ui/dropdown.html" (dict
+        "rootClass" "site-nav-utility-menu"
+        "rootDataAttrs" (dict
+            "nav-utility-menu" "true"
+            "nav-utility-kind" "theme"
+            "nav-utility-label" $labelTheme
+        )
+        "triggerHTML" $themeTriggerHTML
+        "panelClass" "site-nav-utility-panel"
+        "panelDataAttrs" (dict "nav-utility-panel" "true")
+        "panelHTML" (delimit $themeOptionParts "")
+    ) }}
     {{ end }}
 </nav>
 {{ end }}

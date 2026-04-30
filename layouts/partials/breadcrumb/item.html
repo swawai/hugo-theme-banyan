@@ -16,39 +16,40 @@
   {{- $linkDataAttrs = merge $linkDataAttrs (dict "breadcrumb-mode-toggle" "true") -}}
 {{- end -}}
 {{- if $showCaret -}}
-  {{- $linkText = printf "%s<span class=\"breadcrumb-menu-caret\" aria-hidden=\"true\">▾</span>" ($linkText | htmlEscape) -}}
+  {{- $linkText = printf "%s<span class=\"ui-dropdown-caret breadcrumb-menu-caret\" aria-hidden=\"true\">▾</span>" ($linkText | htmlEscape) -}}
   {{- $linkSafeHTML = true -}}
 {{- end -}}
 {{- if $hasMenu -}}
-  {{- $linkDataAttrs = merge $linkDataAttrs (dict "breadcrumb-menu-link" "true") -}}
+  {{- $linkDataAttrs = merge $linkDataAttrs (dict "breadcrumb-menu-link" "true" "ui-dropdown-trigger" "true") -}}
   {{- $hasHighlightedMenu := gt (len (where $itemMenu "highlighted" true)) 0 -}}
   {{- $hasCurrentMenu := gt (len (where $itemMenu "current" true)) 0 -}}
   {{- $hasSelectedMenu := gt (len (where $itemMenu "selected" true)) 0 -}}
-  <span class="{{ printf "%s breadcrumb-item-menu" $wrapperClass }}" data-breadcrumb-menu{{ with $itemCollectionHref }} data-breadcrumb-collection-href="{{ . }}"{{ end }}{{ if gt (len $itemCollectionSource) 0 }} data-breadcrumb-collection-source="{{ $itemCollectionSource | jsonify }}"{{ end }}{{ if eq (index $item "redundant_with_root_menu") true }} data-breadcrumb-redundant-root="true"{{ end }}>
-    {{ partial "link.html" (dict
+  {{- $triggerHTML := partial "link.html" (dict
       "ctx" $ctx
       "href" (index $item "href")
       "text" $linkText
       "textClass" "crumb-text"
-      "class" (printf "%s breadcrumb-menu-link" $linkClass)
+      "class" (printf "%s ui-dropdown-trigger breadcrumb-menu-link" $linkClass)
       "title" (index $item "title")
       "dataAttrs" $linkDataAttrs
       "ariaCurrent" (cond $itemIsCurrent "page" "")
+      "ariaHaspopup" "true"
+      "ariaExpanded" "false"
       "safeHTML" $linkSafeHTML
       "linkSlot" "nav"
-    ) }}
-    <span class="breadcrumb-menu-panel" data-breadcrumb-menu-panel hidden>
-      {{- range $menuItem := $itemMenu -}}
-        {{- $menuItemIsCurrent := eq (index $menuItem "highlighted") true -}}
-        {{- if and (not $hasHighlightedMenu) $hasCurrentMenu (eq (index $menuItem "current") true) -}}
-          {{- $menuItemIsCurrent = true -}}
-        {{- end -}}
-        {{- if and (not $hasHighlightedMenu) (not $hasCurrentMenu) $hasSelectedMenu (eq (index $menuItem "selected") true) -}}
-          {{- $menuItemIsCurrent = true -}}
-        {{- end -}}
-        {{- $menuItemClass := "breadcrumb-menu-option" -}}
-        {{- if $menuItemIsCurrent -}}{{- $menuItemClass = printf "%s is-current" $menuItemClass -}}{{- end -}}
-        {{ partial "link.html" (dict
+    ) -}}
+  {{- $panelParts := slice -}}
+  {{- range $menuItem := $itemMenu -}}
+    {{- $menuItemIsCurrent := eq (index $menuItem "highlighted") true -}}
+    {{- if and (not $hasHighlightedMenu) $hasCurrentMenu (eq (index $menuItem "current") true) -}}
+      {{- $menuItemIsCurrent = true -}}
+    {{- end -}}
+    {{- if and (not $hasHighlightedMenu) (not $hasCurrentMenu) $hasSelectedMenu (eq (index $menuItem "selected") true) -}}
+      {{- $menuItemIsCurrent = true -}}
+    {{- end -}}
+    {{- $menuItemClass := "ui-dropdown-option breadcrumb-menu-option" -}}
+    {{- if $menuItemIsCurrent -}}{{- $menuItemClass = printf "%s is-current" $menuItemClass -}}{{- end -}}
+    {{- $panelParts = $panelParts | append (partial "link.html" (dict
           "ctx" $ctx
           "href" (index $menuItem "href")
           "text" (index $menuItem "text")
@@ -57,10 +58,26 @@
           "dataAttrs" (cond $menuItemIsCurrent (dict "site-update-anchor" "true") (dict))
           "ariaCurrent" (cond $menuItemIsCurrent "page" "")
           "linkSlot" "nav"
-        ) }}
-      {{- end -}}
-    </span>
-  </span>
+        )) -}}
+  {{- end -}}
+  {{- $menuDataAttrs := dict "breadcrumb-menu" "true" -}}
+  {{- with $itemCollectionHref -}}
+    {{- $menuDataAttrs = merge $menuDataAttrs (dict "breadcrumb-collection-href" .) -}}
+  {{- end -}}
+  {{- if gt (len $itemCollectionSource) 0 -}}
+    {{- $menuDataAttrs = merge $menuDataAttrs (dict "breadcrumb-collection-source" ($itemCollectionSource | jsonify)) -}}
+  {{- end -}}
+  {{- if eq (index $item "redundant_with_root_menu") true -}}
+    {{- $menuDataAttrs = merge $menuDataAttrs (dict "breadcrumb-redundant-root" "true") -}}
+  {{- end -}}
+  {{- partial "ui/dropdown.html" (dict
+    "rootClass" (printf "%s breadcrumb-item-menu" $wrapperClass)
+    "rootDataAttrs" $menuDataAttrs
+    "triggerHTML" $triggerHTML
+    "panelClass" "breadcrumb-menu-panel"
+    "panelDataAttrs" (dict "breadcrumb-menu-panel" "true")
+    "panelHTML" (delimit $panelParts "")
+  ) -}}
 {{- else -}}
   <span class="{{ $wrapperClass }}"{{ if eq (index $item "redundant_with_root_menu") true }} data-breadcrumb-redundant-root="true"{{ end }}>
     {{ partial "link.html" (dict

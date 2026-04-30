@@ -15,10 +15,12 @@
 {{ $navBreadcrumbMedium := resources.Get "css/nav-breadcrumb.medium.css" }}
 {{ $navBreadcrumbWide := resources.Get "css/nav-breadcrumb.wide.css" }}
 {{ $siteHeader := resources.Get "css/site-header.css" }}
+{{ $uiDropdown := resources.Get "css/ui-dropdown.css" }}
 {{ $swUpdateAnchor := resources.Get "css/sw-update-anchor.css" }}
 {{ $swModeRaw := $ctx.Site.Params.service_worker.mode | default "off" }}
 {{ $swMode := lower (printf "%v" $swModeRaw) }}
 {{ $pageBundleParts := slice $coreBase $coreBaseMedium $coreBaseWide $siteHeader }}
+{{ $pageBundleParts = $pageBundleParts | append $uiDropdown }}
 {{ $pageBundleParts = $pageBundleParts | append $coreA11y }}
 {{ $pageBundleParts = $pageBundleParts | append $coreMotion }}
 {{ $pageBundle := $pageBundleParts | resources.Concat "css/bundle-page.css" }}
@@ -39,6 +41,7 @@
 {{ $allBundle := $allBundleParts | resources.Concat "css/bundle-all.css" }}
 {{ $allBundle = partial "css-process.html" (dict "resource" $allBundle "fingerprint" true) }}
 {{ $homeCriticalParts := slice $coreBase $coreBaseMedium $coreBaseWide $siteHeader }}
+{{ $homeCriticalParts = $homeCriticalParts | append $uiDropdown }}
 {{ $homeCriticalParts = $homeCriticalParts | append $navBreadcrumb }}
 {{ $homeCriticalParts = $homeCriticalParts | append $navBreadcrumbMedium }}
 {{ $homeCriticalParts = $homeCriticalParts | append $navBreadcrumbWide }}
