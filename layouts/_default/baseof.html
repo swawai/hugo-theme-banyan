@@ -1,139 +1,130 @@
-{{ $swConfig := site.Params.service_worker | default dict }}
-{{ $swModeRaw := index $swConfig "mode" | default "off" }}
-{{ $swMode := lower (printf "%v" $swModeRaw) }}
-{{ $offlineNoticePathRaw := printf "%v" (index $swConfig "offline_notice_path" | default "offline/") }}
-{{ $offlineNoticePath := trim $offlineNoticePathRaw "/" }}
-{{ if eq $offlineNoticePath "" }}
-{{ errorf "Build failed: params.service_worker.offline_notice_path cannot be empty." }}
-{{ end }}
-{{ $offlineNoticeRelPermalinks := slice }}
-{{ range sort .Sites "Language.Weight" }}
-    {{ $offlineNoticeRelPermalinks = $offlineNoticeRelPermalinks | append (lower (printf "%s%s/" .Home.RelPermalink $offlineNoticePath)) }}
-{{ end }}
-{{ $isOfflinePage := in $offlineNoticeRelPermalinks (lower .RelPermalink) }}
-{{ .Scratch.Set "is_offline_page" $isOfflinePage }}
-{{ $allowedSwModes := slice "enable" "disable" "off" }}
-{{ if not (in $allowedSwModes $swMode) }}
-{{ errorf "Build failed: params.service_worker.mode only supports enable/disable/off; got %q." $swModeRaw }}
-{{ end }}
-{{ partialCached "audit/permalink-collision.html" (dict "ctx" .) "audit-permalink-collision" }}
-{{ $primarySite := index (sort .Sites "Language.Weight") 0 }}
-{{ $buildVersion := partialCached "build-version.html" $primarySite.Home "build-version-primary" }}
-{{ with index $swConfig "cache_first_extensions" }}
-{{ errorf "Build failed: params.service_worker.cache_first_extensions has moved to data/cache-policy.toml (or the theme default cache policy) routes[].sw config; do not keep setting it in hugo.toml." }}
-{{ end }}
-{{ $themeCachePolicy := index site.Data "cache-policy-default" | default dict }}
-{{ if eq (len $themeCachePolicy) 0 }}
-{{ errorf "Build failed: missing theme default cache policy data %q." "themes/<theme>/data/cache-policy-default.toml" }}
-{{ end }}
-{{ $siteCachePolicy := index site.Data "cache-policy" | default dict }}
-{{ $themeCachePolicyRoutes := index $themeCachePolicy "routes" | default slice }}
-{{ $siteCachePolicyRoutes := index $siteCachePolicy "routes" }}
-{{ $cachePolicyRoutes := $themeCachePolicyRoutes }}
-{{ with $siteCachePolicyRoutes }}
-    {{ $cachePolicyRoutes = . }}
-{{ end }}
-{{ $themeCachePolicyEdgeone := index $themeCachePolicy "edgeone" | default dict }}
-{{ $siteCachePolicyEdgeone := index $siteCachePolicy "edgeone" | default dict }}
-{{ $cachePolicyEdgeone := merge $themeCachePolicyEdgeone $siteCachePolicyEdgeone }}
-{{ $cachePolicyHeaderRoutes := partial "cache-policy-header-routes.html" (dict "routes" $cachePolicyRoutes) }}
-{{ $swRoutes := slice }}
-{{ range $route := $cachePolicyRoutes }}
-    {{ with index $route "sw" }}
-        {{ $routeBucket := lower (printf "%v" (index . "bucket" | default "none")) }}
-        {{ $swRoute := dict
+{{- $swConfig := site.Params.service_worker | default dict -}}
+{{- $swModeRaw := index $swConfig "mode" | default "off" -}}
+{{- $swMode := lower (printf "%v" $swModeRaw) -}}
+{{- $offlineNoticePathRaw := printf "%v" (index $swConfig "offline_notice_path" | default "offline/") -}}
+{{- $offlineNoticePath := trim $offlineNoticePathRaw "/" -}}
+{{- if eq $offlineNoticePath "" -}}
+{{- errorf "Build failed: params.service_worker.offline_notice_path cannot be empty." -}}
+{{- end -}}
+{{- $offlineNoticeRelPermalinks := slice -}}
+{{- range sort .Sites "Language.Weight" -}}
+    {{- $offlineNoticeRelPermalinks = $offlineNoticeRelPermalinks | append (lower (printf "%s%s/" .Home.RelPermalink $offlineNoticePath)) -}}
+{{- end -}}
+{{- $isOfflinePage := in $offlineNoticeRelPermalinks (lower .RelPermalink) -}}
+{{- .Scratch.Set "is_offline_page" $isOfflinePage -}}
+{{- $allowedSwModes := slice "enable" "disable" "off" -}}
+{{- if not (in $allowedSwModes $swMode) -}}
+{{- errorf "Build failed: params.service_worker.mode only supports enable/disable/off; got %q." $swModeRaw -}}
+{{- end -}}
+{{- partialCached "audit/permalink-collision.html" (dict "ctx" .) "audit-permalink-collision" -}}
+{{- $primarySite := index (sort .Sites "Language.Weight") 0 -}}
+{{- $buildVersion := partialCached "build-version.html" $primarySite.Home "build-version-primary" -}}
+{{- with index $swConfig "cache_first_extensions" -}}
+{{- errorf "Build failed: params.service_worker.cache_first_extensions has moved to data/cache-policy.toml (or the theme default cache policy) routes[].sw config; do not keep setting it in hugo.toml." -}}
+{{- end -}}
+{{- $themeCachePolicy := index site.Data "cache-policy-default" | default dict -}}
+{{- if eq (len $themeCachePolicy) 0 -}}
+{{- errorf "Build failed: missing theme default cache policy data %q." "themes/<theme>/data/cache-policy-default.toml" -}}
+{{- end -}}
+{{- $siteCachePolicy := index site.Data "cache-policy" | default dict -}}
+{{- $themeCachePolicyRoutes := index $themeCachePolicy "routes" | default slice -}}
+{{- $siteCachePolicyRoutes := index $siteCachePolicy "routes" -}}
+{{- $cachePolicyRoutes := $themeCachePolicyRoutes -}}
+{{- with $siteCachePolicyRoutes -}}
+    {{- $cachePolicyRoutes = . -}}
+{{- end -}}
+{{- $themeCachePolicyEdgeone := index $themeCachePolicy "edgeone" | default dict -}}
+{{- $siteCachePolicyEdgeone := index $siteCachePolicy "edgeone" | default dict -}}
+{{- $cachePolicyEdgeone := merge $themeCachePolicyEdgeone $siteCachePolicyEdgeone -}}
+{{- $cachePolicyHeaderRoutes := partial "cache-policy-header-routes.html" (dict "routes" $cachePolicyRoutes) -}}
+{{- $swRoutes := slice -}}
+{{- range $route := $cachePolicyRoutes -}}
+    {{- with index $route "sw" -}}
+        {{- $routeBucket := lower (printf "%v" (index . "bucket" | default "none")) -}}
+        {{- $swRoute := dict
             "scope" (lower (printf "%v" (index $route "scope" | default "")))
             "path" (printf "%v" (index $route "path" | default ""))
             "mode" (lower (printf "%v" (index . "mode" | default "ignore")))
             "bucket" $routeBucket
-        }}
-        {{ $swRoutes = $swRoutes | append $swRoute }}
-    {{ end }}
-{{ end }}
-{{ $runtimeI18nConfig := site.Params.runtime_i18n | default dict }}
-{{ $runtimeI18nFallbacks := dict }}
-{{ with index $runtimeI18nConfig "fallbacks" }}
-    {{ range $from, $to := . }}
-        {{ $fromLang := lower (printf "%v" $from) }}
-        {{ $toLang := lower (printf "%v" $to) }}
-        {{ if and $fromLang $toLang }}
-            {{ $runtimeI18nFallbacks = merge $runtimeI18nFallbacks (dict $fromLang $toLang) }}
-        {{ end }}
-    {{ end }}
-{{ end }}
-{{ $offlineFallbacks := slice }}
-{{ range sort .Sites "Language.Weight" }}
-    {{ $offlineFallbacks = $offlineFallbacks | append (dict
+        -}}
+        {{- $swRoutes = $swRoutes | append $swRoute -}}
+    {{- end -}}
+{{- end -}}
+{{- $runtimeI18nConfig := site.Params.runtime_i18n | default dict -}}
+{{- $runtimeI18nFallbacks := dict -}}
+{{- with index $runtimeI18nConfig "fallbacks" -}}
+    {{- range $from, $to := . -}}
+        {{- $fromLang := lower (printf "%v" $from) -}}
+        {{- $toLang := lower (printf "%v" $to) -}}
+        {{- if and $fromLang $toLang -}}
+            {{- $runtimeI18nFallbacks = merge $runtimeI18nFallbacks (dict $fromLang $toLang) -}}
+        {{- end -}}
+    {{- end -}}
+{{- end -}}
+{{- $offlineFallbacks := slice -}}
+{{- range sort .Sites "Language.Weight" -}}
+    {{- $offlineFallbacks = $offlineFallbacks | append (dict
         "path_prefix" (lower (printf "%v" .Home.RelPermalink))
         "url" (printf "%s%s/" .Home.RelPermalink $offlineNoticePath)
-    ) }}
-{{ end }}
-{{ $slotSources := partial "slots/prepare.html" (dict "ctx" .) }}
-{{ $pageCollectionSource := partial "entry-source/model-current.html" (dict "page" .) }}
-{{ $entryBreadcrumbSourceModels := partialCached "entry-source/models.html" (dict "ctx" .) .Site.Language.Lang }}
-{{ $entryBreadcrumbSources := slice }}
-{{ range $source := $entryBreadcrumbSourceModels }}
-    {{ $entryBreadcrumbSources = $entryBreadcrumbSources | append (dict
-        "provider" (index $source "provider")
-        "logical_path" (index $source "logical_path")
-        "root_item" (index $source "root_item")
-        "root_menu" (index $source "root_menu")
-        "root_menu_label" (index $source "root_menu_label")
-        "tail_items" (index $source "tail_items")
-        "levels" (index $source "levels")
-        "current_collection_source" (index $source "current_collection_source")
-        "current_collection_items" (index $source "current_collection_items")
-    ) }}
-{{ end }}
-{{ if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) }}
-    {{ partialCached "entry-fragments-publish.html" (dict "ctx" . "build_version" $buildVersion) $buildVersion }}
-    {{ $headersBody := partial "cache-policy-cloudflare-headers-body.txt" (dict "routes" $cachePolicyHeaderRoutes) }}
-    {{ $headersResource := resources.FromString "_headers" $headersBody }}
-    {{ $publishHeaders := $headersResource.RelPermalink }}
-    {{ $edgeoneConfig := partial "cache-policy-edgeone-config.html" (dict
+    ) -}}
+{{- end -}}
+{{- $slotSources := partial "slots/prepare.html" (dict "ctx" .) -}}
+{{- $pageCollectionSource := partial "entry-source/model-current.html" (dict "page" .) -}}
+{{- $entryBreadcrumbSourceModels := partialCached "entry-source/models.html" (dict "ctx" .) .Site.Language.Lang -}}
+{{- $entryBreadcrumbSources := partial "entry-source/browser-sources.html" (dict
+    "page" .
+    "source_models" $entryBreadcrumbSourceModels
+    "page_collection_source" $pageCollectionSource
+) -}}
+{{- if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) -}}
+    {{- partialCached "entry-fragments-publish.html" (dict "ctx" . "build_version" $buildVersion) $buildVersion -}}
+    {{- $headersBody := partial "cache-policy-cloudflare-headers-body.txt" (dict "routes" $cachePolicyHeaderRoutes) -}}
+    {{- $headersResource := resources.FromString "_headers" $headersBody -}}
+    {{- $publishHeaders := $headersResource.RelPermalink -}}
+    {{- $edgeoneConfig := partial "cache-policy-edgeone-config.html" (dict
         "edgeone" $cachePolicyEdgeone
         "routes" $cachePolicyHeaderRoutes
-    ) }}
-    {{ $edgeoneBody := $edgeoneConfig | jsonify (dict "indent" "  ") }}
-    {{ $edgeoneResource := resources.FromString "edgeone.json" $edgeoneBody }}
-    {{ $publishEdgeone := $edgeoneResource.RelPermalink }}
-{{ end }}
+    ) -}}
+    {{- $edgeoneBody := $edgeoneConfig | jsonify (dict "indent" "  ") -}}
+    {{- $edgeoneResource := resources.FromString "edgeone.json" $edgeoneBody -}}
+    {{- $publishEdgeone := $edgeoneResource.RelPermalink -}}
+{{- end -}}
 <!DOCTYPE html>
 <html lang="{{ .Site.Language.Lang }}">
 
 <head>
-    {{ $faviconSvg := resources.Get "site/favicon.svg" }}
-{{ if not $faviconSvg }}{{ errorf "Build failed: missing resource %q." "site/favicon.svg" }}{{ end }}
-    {{ $faviconSvg = $faviconSvg | fingerprint }}
-    {{ $appleTouchIcon := resources.Get "site/swaw180x180.png" }}
-{{ if not $appleTouchIcon }}{{ errorf "Build failed: missing resource %q." "site/swaw180x180.png" }}{{ end }}
-    {{ $appleTouchIcon = $appleTouchIcon | fingerprint }}
-    {{ $defaultSite := $primarySite }}
-    {{ $manifest := "" }}
-    {{ if $defaultSite }}
-        {{ $manifestTmpl := resources.Get "site/manifest.webmanifest.tmpl" }}
-        {{ if $manifestTmpl }}
-            {{ $manifest = $manifestTmpl | resources.ExecuteAsTemplate "site/site.webmanifest" $defaultSite.Home | fingerprint }}
-        {{ else }}
-{{ errorf "Build failed: missing resource %q." "site/manifest.webmanifest.tmpl" }}
-        {{ end }}
-    {{ end }}
-    {{ $runtimeI18n := dict }}
-    {{ range sort .Sites "Language.Weight" }}
-        {{ $langCode := .Language.Lang }}
-        {{ $i18nBody := partial "runtime/i18n-body.json" . }}
-        {{ $i18nResource := resources.FromString (printf "runtime/i18n.%s.%s.json" $langCode (md5 $i18nBody)) $i18nBody | fingerprint }}
-        {{ $runtimeI18n = merge $runtimeI18n (dict $langCode $i18nResource.RelPermalink) }}
-    {{ end }}
-    {{ $langListBody := partial "runtime/lang-list-body.json" . }}
-    {{ $langListResource := resources.FromString (printf "runtime/lang-list.%s.json" (md5 $langListBody)) $langListBody | fingerprint }}
-    {{ $assetManifestBody := dict
+    {{- $faviconSvg := resources.Get "site/favicon.svg" -}}
+{{- if not $faviconSvg -}}{{- errorf "Build failed: missing resource %q." "site/favicon.svg" -}}{{- end -}}
+    {{- $faviconSvg = $faviconSvg | fingerprint -}}
+    {{- $appleTouchIcon := resources.Get "site/swaw180x180.png" -}}
+{{- if not $appleTouchIcon -}}{{- errorf "Build failed: missing resource %q." "site/swaw180x180.png" -}}{{- end -}}
+    {{- $appleTouchIcon = $appleTouchIcon | fingerprint -}}
+    {{- $defaultSite := $primarySite -}}
+    {{- $manifest := "" -}}
+    {{- if $defaultSite -}}
+        {{- $manifestTmpl := resources.Get "site/manifest.webmanifest.tmpl" -}}
+        {{- if $manifestTmpl -}}
+            {{- $manifest = $manifestTmpl | resources.ExecuteAsTemplate "site/site.webmanifest" $defaultSite.Home | fingerprint -}}
+        {{- else -}}
+{{- errorf "Build failed: missing resource %q." "site/manifest.webmanifest.tmpl" -}}
+        {{- end -}}
+    {{- end -}}
+    {{- $runtimeI18n := dict -}}
+    {{- range sort .Sites "Language.Weight" -}}
+        {{- $langCode := .Language.Lang -}}
+        {{- $i18nBody := partial "runtime/i18n-body.json" . -}}
+        {{- $i18nResource := resources.FromString (printf "runtime/i18n.%s.%s.json" $langCode (md5 $i18nBody)) $i18nBody | fingerprint -}}
+        {{- $runtimeI18n = merge $runtimeI18n (dict $langCode $i18nResource.RelPermalink) -}}
+    {{- end -}}
+    {{- $langListBody := partial "runtime/lang-list-body.json" . -}}
+    {{- $langListResource := resources.FromString (printf "runtime/lang-list.%s.json" (md5 $langListBody)) $langListBody | fingerprint -}}
+    {{- $assetManifestBody := dict
         "langList" $langListResource.RelPermalink
         "i18n" $runtimeI18n
         "i18nFallbacks" $runtimeI18nFallbacks
         "siteManifest" (cond (ne $manifest "") $manifest.RelPermalink "")
-      | jsonify }}
-    {{ $assetManifest := resources.FromString (printf "runtime/asset-manifest.%s.json" (md5 $assetManifestBody)) $assetManifestBody | fingerprint }}
+      | jsonify -}}
+    {{- $assetManifest := resources.FromString (printf "runtime/asset-manifest.%s.json" (md5 $assetManifestBody)) $assetManifestBody | fingerprint -}}
     <meta charset="utf-8">
     <link rel="icon" href="{{ $faviconSvg.RelPermalink }}" type="image/svg+xml" fetchpriority="low">
     <link rel="apple-touch-icon" href="{{ $appleTouchIcon.RelPermalink }}" fetchpriority="low">
@@ -161,214 +152,217 @@
       }
     }
     </style>
-    {{ block "styles" . }}{{ partial "head-styles.html" (dict "ctx" .) }}{{ end }}
-    {{ block "head-extra" . }}{{ end }}
-    {{ partial "page-resources-head.html" . }}
-    {{ $prefetchConfig := site.Params.link_prefetch | default dict }}
-    {{ $prefetchLabels := slice "menu" "nav" "sort_siblings" "descendants" "post" }}
-    {{ range $label := $prefetchLabels }}
-        {{ if isset $prefetchConfig $label }}
-          {{ errorf "Build failed: params.link_prefetch.%s global defaults have been removed. Use explicit environment tables such as params.link_prefetch.env.TTT.%s or params.link_prefetch.env.FTT.%s instead." $label $label $label }}
-        {{ end }}
-    {{ end }}
-    {{ $prefetchEnvConfig := partial "prefetch-env-config-map.html" (dict "prefetch_config" $prefetchConfig "prefetch_labels" $prefetchLabels) }}
-    {{ range $envKey, $envConfig := $prefetchEnvConfig }}
-        {{ range $label := $prefetchLabels }}
-            {{ if isset $envConfig $label }}
-                {{ $parsed := partial "prefetch-env-actions-mode.html" (index $envConfig $label) }}
-                {{ if eq (index $parsed "kind") "invalid" }}
-            {{ errorf "Build failed: params.link_prefetch.env.%s.%s only supports empty/off or short codes (for example spec_xf, spec_xf_g, spec_xr, link_mf, sw_sf); got %q." $envKey $label (index $parsed "value") }}
-                {{ end }}
-                {{ if and (eq (index $parsed "transport") "speculationrules") (eq (substr $envKey 0 1) "F") }}
-            {{ errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires Speculation Rules transport, but the first flag of environment key %s is F." $envKey $label (index $parsed "value") $envKey }}
-                {{ end }}
-                {{ if and (eq (index $parsed "transport") "link") (eq (substr $envKey 1 1) "F") }}
-            {{ errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires link transport, but the second flag of environment key %s is F." $envKey $label (index $parsed "value") $envKey }}
-                {{ end }}
-                {{ if and (eq (index $parsed "transport") "sw") (eq (substr $envKey 2 1) "F") }}
-            {{ errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires SW transport, but the third flag of environment key %s is F." $envKey $label (index $parsed "value") $envKey }}
-                {{ end }}
-                {{ if and (eq (index $parsed "transport") "sw") (ne $swMode "enable") }}
-            {{ errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires SW transport, but params.service_worker.mode=%q." $envKey $label (index $parsed "value") $swMode }}
-                {{ end }}
-                {{ if and (eq (index $parsed "kind") "prerender") (eq (substr $envKey 0 1) "F") }}
-            {{ errorf "Build failed: params.link_prefetch.env.%s.%s=%q uses prerender, but environment key %s does not support Speculation Rules transport." $envKey $label (index $parsed "value") $envKey }}
-                {{ end }}
-            {{ end }}
-        {{ end }}
-    {{ end }}
-    {{ hugo.Generator }}
-    {{ partial "seo.html" . }}
-    {{/* 主站通用前端逻辑，defer 下载与执行，不阻塞 HTML 解析。 */}}
-    {{ $js := resources.Get "js/main.js" | js.Build }}
-    {{ if not hugo.IsServer }}{{ $js = $js | minify }}{{ end }}
-    {{ $js = $js | fingerprint }}
+    {{- block "styles" . -}}{{ partial "head-styles.html" (dict "ctx" .) }}{{- end -}}
+    {{- block "head-extra" . -}}{{- end -}}
+    {{- partial "page-resources-head.html" . -}}
+    {{- $prefetchConfig := site.Params.link_prefetch | default dict -}}
+    {{- $prefetchLabels := slice "menu" "nav" "sort_siblings" "descendants" "post" -}}
+    {{- range $label := $prefetchLabels -}}
+        {{- if isset $prefetchConfig $label -}}
+          {{- errorf "Build failed: params.link_prefetch.%s global defaults have been removed. Use explicit environment tables such as params.link_prefetch.env.TTT.%s or params.link_prefetch.env.FTT.%s instead." $label $label $label -}}
+        {{- end -}}
+    {{- end -}}
+    {{- $prefetchEnvConfig := partial "prefetch-env-config-map.html" (dict "prefetch_config" $prefetchConfig "prefetch_labels" $prefetchLabels) -}}
+    {{- range $envKey, $envConfig := $prefetchEnvConfig -}}
+        {{- range $label := $prefetchLabels -}}
+            {{- if isset $envConfig $label -}}
+                {{- $parsed := partial "prefetch-env-actions-mode.html" (index $envConfig $label) -}}
+                {{- if eq (index $parsed "kind") "invalid" -}}
+            {{- errorf "Build failed: params.link_prefetch.env.%s.%s only supports empty/off or short codes (for example spec_xf, spec_xf_g, spec_xr, link_mf, sw_sf); got %q." $envKey $label (index $parsed "value") -}}
+                {{- end -}}
+                {{- if and (eq (index $parsed "transport") "speculationrules") (eq (substr $envKey 0 1) "F") -}}
+            {{- errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires Speculation Rules transport, but the first flag of environment key %s is F." $envKey $label (index $parsed "value") $envKey -}}
+                {{- end -}}
+                {{- if and (eq (index $parsed "transport") "link") (eq (substr $envKey 1 1) "F") -}}
+            {{- errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires link transport, but the second flag of environment key %s is F." $envKey $label (index $parsed "value") $envKey -}}
+                {{- end -}}
+                {{- if and (eq (index $parsed "transport") "sw") (eq (substr $envKey 2 1) "F") -}}
+            {{- errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires SW transport, but the third flag of environment key %s is F." $envKey $label (index $parsed "value") $envKey -}}
+                {{- end -}}
+                {{- if and (eq (index $parsed "transport") "sw") (ne $swMode "enable") -}}
+            {{- errorf "Build failed: params.link_prefetch.env.%s.%s=%q requires SW transport, but params.service_worker.mode=%q." $envKey $label (index $parsed "value") $swMode -}}
+                {{- end -}}
+                {{- if and (eq (index $parsed "kind") "prerender") (eq (substr $envKey 0 1) "F") -}}
+            {{- errorf "Build failed: params.link_prefetch.env.%s.%s=%q uses prerender, but environment key %s does not support Speculation Rules transport." $envKey $label (index $parsed "value") $envKey -}}
+                {{- end -}}
+            {{- end -}}
+        {{- end -}}
+    {{- end -}}
+    {{- hugo.Generator -}}
+    {{- partial "seo.html" . -}}
+    {{- /* 主站通用前端逻辑，defer 下载与执行，不阻塞 HTML 解析。 */ -}}
+    {{- $js := resources.Get "js/main.js" | js.Build -}}
+    {{- if not hugo.IsServer -}}{{- $js = $js | minify -}}{{- end -}}
+    {{- $js = $js | fingerprint -}}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
-    {{ if and (ne $swMode "off") (not $isOfflinePage) }}
-        {{/* 源文件命名约定：含模板语法的资源用 .tmpl，纯 JS 用 .js。 */}}
-        {{ if eq $swMode "enable" }}
-            {{ $swScriptTemplatePath := "js/sw.enable.js.tmpl" }}
-            {{ $swScriptTemplate := resources.Get $swScriptTemplatePath }}
-  {{ if not $swScriptTemplate }}{{ errorf "Build failed: missing resource %q." $swScriptTemplatePath }}{{ end }}
-            {{ $swScriptContext := dict
+    {{- if and (ne $swMode "off") (not $isOfflinePage) -}}
+        {{- /* 源文件命名约定：含模板语法的资源用 .tmpl，纯 JS 用 .js。 */ -}}
+        {{- if eq $swMode "enable" -}}
+            {{- $swScriptTemplatePath := "js/sw.enable.js.tmpl" -}}
+            {{- $swScriptTemplate := resources.Get $swScriptTemplatePath -}}
+  {{- if not $swScriptTemplate -}}{{- errorf "Build failed: missing resource %q." $swScriptTemplatePath -}}{{- end -}}
+            {{- $swScriptContext := dict
                 "build_version" $buildVersion
                 "offline_fallbacks" $offlineFallbacks
                 "sw_routes" $swRoutes
-            }}
-            {{ $swScriptEntry := $swScriptTemplate | resources.ExecuteAsTemplate "js/sw.enable.entry.js" $swScriptContext }}
-            {{ $swScript := $swScriptEntry | js.Build (dict
+            -}}
+            {{- $swScriptEntry := $swScriptTemplate | resources.ExecuteAsTemplate "js/sw.enable.entry.js" $swScriptContext -}}
+            {{- $swScript := $swScriptEntry | js.Build (dict
                 "targetPath" "sw.js"
                 "minify" (not hugo.IsServer)
-            ) }}
-            {{ $publishSw := $swScript.RelPermalink }}
-            {{ $swUrl := "sw.js" | relURL }}
-            {{ $swUpdatePopover := resources.Get "css/sw-update-popover.css" }}
-  {{ if not $swUpdatePopover }}{{ errorf "Build failed: missing resource %q." "css/sw-update-popover.css" }}{{ end }}
-            {{ $swUpdatePopover = partial "css-process.html" (dict "resource" $swUpdatePopover "fingerprint" true) }}
-            {{ $swManagerEntryPath := "js/sw-manager.enable.entry.js.tmpl" }}
-            {{ $swManagerEntryTemplate := resources.Get $swManagerEntryPath }}
-  {{ if not $swManagerEntryTemplate }}{{ errorf "Build failed: missing resource %q." $swManagerEntryPath }}{{ end }}
-            {{ $swCheckInterval := index $swConfig "update_check_interval" | default 15 }}
-            {{ $swVisibilityThrottle := index $swConfig "update_visibility_throttle" | default 3 }}
-            {{ $swManagerEntryCtx := dict 
-                "sw_url" $swUrl 
-                "update_style_url" $swUpdatePopover.RelPermalink 
-                "check_interval" $swCheckInterval 
-                "visibility_throttle" $swVisibilityThrottle 
-            }}
-            {{ $swManagerEntry := $swManagerEntryTemplate | resources.ExecuteAsTemplate "js/sw-manager.enable.entry.js" $swManagerEntryCtx }}
-            {{/* Hugo 当前会为这条 bundle 生成错误的 SRI；保留指纹 URL 做缓存失效，避免浏览器因假阳性 integrity 直接拦截。 */}}
-            {{ $swManagerTargetPath := cond hugo.IsServer "js/sw-manager.enable.bundle.js" "js/sw-manager.enable.bundle.min.js" }}
-            {{ $swManagerBuilt := $swManagerEntry | js.Build (dict
+            ) -}}
+            {{- $publishSw := $swScript.RelPermalink -}}
+            {{- $swUrl := "sw.js" | relURL -}}
+            {{- $swUpdatePopover := resources.Get "css/sw-update-popover.css" -}}
+  {{- if not $swUpdatePopover -}}{{- errorf "Build failed: missing resource %q." "css/sw-update-popover.css" -}}{{- end -}}
+            {{- $swUpdatePopover = partial "css-process.html" (dict "resource" $swUpdatePopover "fingerprint" true) -}}
+            {{- $swManagerEntryPath := "js/sw-manager.enable.entry.js.tmpl" -}}
+            {{- $swManagerEntryTemplate := resources.Get $swManagerEntryPath -}}
+  {{- if not $swManagerEntryTemplate -}}{{- errorf "Build failed: missing resource %q." $swManagerEntryPath -}}{{- end -}}
+            {{- $swCheckInterval := index $swConfig "update_check_interval" | default 15 -}}
+            {{- $swVisibilityThrottle := index $swConfig "update_visibility_throttle" | default 3 -}}
+            {{- $swManagerEntryCtx := dict
+                "sw_url" $swUrl
+                "update_style_url" $swUpdatePopover.RelPermalink
+                "check_interval" $swCheckInterval
+                "visibility_throttle" $swVisibilityThrottle
+            -}}
+            {{- $swManagerEntry := $swManagerEntryTemplate | resources.ExecuteAsTemplate "js/sw-manager.enable.entry.js" $swManagerEntryCtx -}}
+            {{- /* Hugo 当前会为这条 bundle 生成错误的 SRI；保留指纹 URL 做缓存失效，避免浏览器因假阳性 integrity 直接拦截。 */ -}}
+            {{- $swManagerTargetPath := cond hugo.IsServer "js/sw-manager.enable.bundle.js" "js/sw-manager.enable.bundle.min.js" -}}
+            {{- $swManagerBuilt := $swManagerEntry | js.Build (dict
                 "targetPath" $swManagerTargetPath
                 "minify" (not hugo.IsServer)
-            ) }}
-            {{ $swManagerBundle := resources.FromString $swManagerTargetPath $swManagerBuilt.Content }}
-            {{ $swManager := $swManagerBundle | fingerprint }}
+            ) -}}
+            {{- $swManagerBundle := resources.FromString $swManagerTargetPath $swManagerBuilt.Content -}}
+            {{- $swManager := $swManagerBundle | fingerprint -}}
             <script src="{{ $swManager.RelPermalink }}" defer></script>
-        {{ else }}
-            {{ $swScriptPath := "js/sw.disable.js" }}
-            {{ $swScriptSource := resources.Get $swScriptPath }}
-{{ if not $swScriptSource }}{{ errorf "Build failed: missing resource %q." $swScriptPath }}{{ end }}
-            {{ $swScript := $swScriptSource | resources.Copy "sw.js" }}
-            {{ $publishSw := $swScript.RelPermalink }}
-            {{ $swUrl := "sw.js" | relURL }}
-            {{ $swManagerPath := "js/sw-manager.disable.js" }}
-            {{ $swManagerSource := resources.Get $swManagerPath }}
-{{ if not $swManagerSource }}{{ errorf "Build failed: missing resource %q." $swManagerPath }}{{ end }}
-            {{ $swManager := $swManagerSource | fingerprint }}
+        {{- else -}}
+            {{- $swScriptPath := "js/sw.disable.js" -}}
+            {{- $swScriptSource := resources.Get $swScriptPath -}}
+{{- if not $swScriptSource -}}{{- errorf "Build failed: missing resource %q." $swScriptPath -}}{{- end -}}
+            {{- $swScript := $swScriptSource | resources.Copy "sw.js" -}}
+            {{- $publishSw := $swScript.RelPermalink -}}
+            {{- $swUrl := "sw.js" | relURL -}}
+            {{- $swManagerPath := "js/sw-manager.disable.js" -}}
+            {{- $swManagerSource := resources.Get $swManagerPath -}}
+{{- if not $swManagerSource -}}{{- errorf "Build failed: missing resource %q." $swManagerPath -}}{{- end -}}
+            {{- $swManager := $swManagerSource | fingerprint -}}
             <script src="{{ $swManager.RelPermalink }}" integrity="{{ $swManager.Data.Integrity }}" defer></script>
-        {{ end }}
-    {{ end }}
+        {{- end -}}
+    {{- end -}}
 </head>
 <body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-fragment-root="{{ printf "/__fragments/%s/%s/" $buildVersion .Site.Language.Lang }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $entryBreadcrumbSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}" data-current-page-title="{{ (.Title | default .LinkTitle) | htmlEscape }}" data-current-page-href="{{ .RelPermalink }}">
-    {{ if and .IsPage (not .Params.slug) }}
-{{ errorf "Build failed: page %q (title: %q) is missing the slug field." .File.Path .Title }}
-    {{ end }}
+    {{- if and .IsPage (not .Params.slug) -}}
+{{- errorf "Build failed: page %q (title: %q) is missing the slug field." .File.Path .Title -}}
+    {{- end -}}
     <div class="page">
         <a class="skip" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
-        {{ $hasTopbar := or (index $slotSources "primary_nav") (index $slotSources "utilities") }}
-        {{ $hasBreadcrumbRoot := index $slotSources "breadcrumb_root" }}
-        {{ $hasBreadcrumb := eq (index $slotSources "breadcrumb") true }}
-        {{ $hasBreadcrumbTail := false }}
-        {{ if $hasBreadcrumb }}
-            {{ $breadcrumbModel := partial "breadcrumb/model.html" (dict "ctx" $ "slot" "breadcrumb") }}
-            {{ $breadcrumbItems := index $breadcrumbModel "items" | default slice }}
-            {{ if $hasBreadcrumbRoot }}
-                {{ $hasBreadcrumbTail = gt (len $breadcrumbItems) 1 }}
-            {{ else }}
-                {{ $hasBreadcrumbTail = gt (len $breadcrumbItems) 0 }}
-            {{ end }}
-        {{ end }}
-        {{ $hasRail := or $hasTopbar $hasBreadcrumbRoot (index $slotSources "footer") }}
-        {{ $pageShellClasses := slice "page-shell" }}
-        {{ if $hasRail }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--has-rail" }}{{ end }}
-        {{ if $hasTopbar }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--has-topbar" }}{{ end }}
-        {{ if $hasBreadcrumbRoot }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--has-breadcrumb-root" }}{{ else }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--no-breadcrumb-root" }}{{ end }}
-        {{ if $hasBreadcrumbTail }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--has-breadcrumb-tail" }}{{ else }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--no-breadcrumb-tail" }}{{ end }}
-        {{ with index $slotSources "footer" }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--has-footer" }}{{ else }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--no-footer" }}{{ end }}
-        {{ with index $slotSources "meta" }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--has-meta" }}{{ else }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--no-meta" }}{{ end }}
-        {{ $footerInRail := and (index $slotSources "footer") (not $hasBreadcrumbRoot) }}
-        {{ if $footerInRail }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--footer-in-rail" }}{{ else }}{{ $pageShellClasses = $pageShellClasses | append "page-shell--footer-in-stage" }}{{ end }}
+        {{- $hasTopbar := or (index $slotSources "primary_nav") (index $slotSources "utilities") -}}
+        {{- $hasBreadcrumbRoot := index $slotSources "breadcrumb_root" -}}
+        {{- $hasBreadcrumb := eq (index $slotSources "breadcrumb") true -}}
+        {{- $hasBreadcrumbTail := false -}}
+        {{- if $hasBreadcrumb -}}
+            {{- $breadcrumbModel := partial "breadcrumb/model.html" (dict "ctx" $ "slot" "breadcrumb") -}}
+            {{- $breadcrumbItems := index $breadcrumbModel "items" | default slice -}}
+            {{- if $hasBreadcrumbRoot -}}
+                {{- $hasBreadcrumbTail = gt (len $breadcrumbItems) 1 -}}
+            {{- else -}}
+                {{- $hasBreadcrumbTail = gt (len $breadcrumbItems) 0 -}}
+            {{- end -}}
+        {{- end -}}
+        {{- $hasRail := or $hasTopbar $hasBreadcrumbRoot (index $slotSources "footer") -}}
+        {{- $pageShellClasses := slice "page-shell" -}}
+        {{- if $hasRail -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-rail" -}}{{- end -}}
+        {{- if $hasTopbar -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-topbar" -}}{{- end -}}
+        {{- if $hasBreadcrumbRoot -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-breadcrumb-root" -}}{{- else -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--no-breadcrumb-root" -}}{{- end -}}
+        {{- if $hasBreadcrumbTail -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-breadcrumb-tail" -}}{{- else -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--no-breadcrumb-tail" -}}{{- end -}}
+        {{- with index $slotSources "footer" -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-footer" -}}{{- else -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--no-footer" -}}{{- end -}}
+        {{- with index $slotSources "meta" -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-meta" -}}{{- else -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--no-meta" -}}{{- end -}}
+        {{- $footerInRail := and (index $slotSources "footer") (not $hasBreadcrumbRoot) -}}
+        {{- if $footerInRail -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--footer-in-rail" -}}{{- else -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--footer-in-stage" -}}{{- end -}}
         <div class="{{ delimit $pageShellClasses " " }}">
-            {{ if $hasRail }}
+            {{- if $hasRail -}}
             <div class="page-rail">
-            {{ end }}
-                {{ if $hasTopbar }}
+            {{- end -}}
+                {{- if $hasTopbar -}}
                 <div class="page-topbar">
-                    {{ with index $slotSources "primary_nav" }}
+                    {{- with index $slotSources "primary_nav" -}}
                     <div class="slot slot-primary-nav" data-slot="primary_nav">
-                        {{ partial "slots/render.html" (dict "ctx" $ "slot" "primary_nav") }}
+                        {{- partial "slots/render.html" (dict "ctx" $ "slot" "primary_nav") -}}
                     </div>
-                    {{ end }}
-                    {{ with index $slotSources "utilities" }}
+                    {{- end -}}
+                    {{- with index $slotSources "utilities" -}}
                     <div class="slot slot-utilities" data-slot="utilities">
-                        {{ partial "slots/render.html" (dict "ctx" $ "slot" "utilities") }}
+                        {{- partial "slots/render.html" (dict "ctx" $ "slot" "utilities") -}}
                     </div>
-                    {{ end }}
+                    {{- end -}}
                 </div>
-                {{ end }}
-                {{ with index $slotSources "breadcrumb_root" }}
+                {{- end -}}
+                {{- with index $slotSources "breadcrumb_root" -}}
                 <div class="page-rail-context">
                     <div class="slot slot-breadcrumb-root slot-breadcrumb-root-rail" data-slot="breadcrumb_root">
-                        {{ partial "breadcrumb/root.html" (dict "ctx" $ "slot" "breadcrumb_root" "source" . "mode" "list") }}
+                        {{- partial "breadcrumb/root.html" (dict "ctx" $ "slot" "breadcrumb_root" "source" . "mode" "list") -}}
                     </div>
                 </div>
-                {{ end }}
-                {{ if $footerInRail }}
+                {{- end -}}
+                {{- if $footerInRail -}}
                 <div class="slot slot-footer" data-slot="footer">
-                    {{ partial "slots/render.html" (dict "ctx" $ "slot" "footer") }}
+                    {{- partial "slots/render.html" (dict "ctx" $ "slot" "footer") -}}
                 </div>
-                {{ end }}
-            {{ if $hasRail }}
+                {{- end -}}
+            {{- if $hasRail -}}
             </div>
-            {{ end }}
+            {{- end -}}
             <div class="page-stage">
-            {{ if or $hasBreadcrumbRoot $hasBreadcrumbTail }}
-            {{/* 单列下把 breadcrumb_root 与 breadcrumb tail 放在同一行：
-                 root 渲染为首字段下拉，tail 渲染为后续路径，不再拆成两行。 */}}
+            {{- if or $hasBreadcrumbRoot $hasBreadcrumbTail -}}
+            {{- /* 单列下把 breadcrumb_root 与 breadcrumb tail 放在同一行：
+                  root 渲染为首字段下拉，tail 渲染为后续路径，不再拆成两行。 */ -}}
             <div class="slot-row slot-row-breadcrumb">
-                {{ with index $slotSources "breadcrumb_root" }}
+                {{- with index $slotSources "breadcrumb_root" -}}
                 <div class="slot slot-breadcrumb-root slot-breadcrumb-root-stage" data-slot="breadcrumb_root">
-                    {{ partial "breadcrumb/root.html" (dict "ctx" $ "slot" "breadcrumb_root" "source" . "mode" "stage" "is_terminal" (not $hasBreadcrumbTail)) }}
+                    {{- partial "breadcrumb/root.html" (dict "ctx" $ "slot" "breadcrumb_root" "source" . "mode" "stage" "is_terminal" (not $hasBreadcrumbTail)) -}}
                 </div>
-                {{ end }}
-                {{ if and $hasBreadcrumbRoot $hasBreadcrumbTail }}
+                {{- end -}}
+                {{- if and $hasBreadcrumbRoot $hasBreadcrumbTail -}}
                 <span class="breadcrumb-sep slot-breadcrumb-row-sep" aria-hidden="true">﹥</span>
-                {{ end }}
-                {{ if $hasBreadcrumbTail }}
+                {{- end -}}
+                {{- if $hasBreadcrumbTail -}}
                 <div class="slot slot-breadcrumb" data-slot="breadcrumb">
-                    {{ partial "slots/render.html" (dict "ctx" $ "slot" "breadcrumb") }}
+                    {{- partial "slots/render.html" (dict "ctx" $ "slot" "breadcrumb") -}}
                 </div>
-                {{ end }}
+                {{- end -}}
             </div>
-            {{ partial "breadcrumb/data-core-script.html" (dict "ctx" $) }}
-            {{ partial "breadcrumb/ui-core-script.html" (dict "ctx" $) }}
-            {{ partial "breadcrumb/entry-preview-script.html" (dict "ctx" $) }}
-            {{ end }}
+            {{- /* wide 布局下，breadcrumb 列数会直接参与 page-stage 网格排版。
+                  当 from= 进入路径的层级数与 SSR 默认 breadcrumb 不一致时，
+                  需要在 main 内容被解析前，先把 trail 容器撑成正确列数，
+                  否则 main 会先按错误列数占位，再被 preview/runtime 推到右侧，产生抖动。
+                  这里只做“列数骨架”预留，不负责渲染真实内容。 */ -}}
+            <script>(function(){try{var e=document.documentElement,t=e.getAttribute("data-entry-breadcrumb-preview-pending")==="true",n=e.getAttribute("data-breadcrumb-sort-pending")==="true";if(!t&&!n)return;if(!(window.matchMedia&&window.matchMedia("(min-width: 88rem)").matches))return;var r=document.body;if(!r)return;var i=document.querySelector(".slot-row-breadcrumb .slot-breadcrumb");if(!i)return;var o=r.dataset.entryBreadcrumbSources||"";if(!o)return;var a=JSON.parse(o);if(!Array.isArray(a)||a.length===0)return;var l=document.querySelector(".page-shell.page-shell--has-breadcrumb-root.page-shell--has-breadcrumb-tail")!==null;function d(c){if(typeof c!=="string")return"";var u;try{u=decodeURIComponent(c.trim())}catch(_){u=c.trim()}var s=u.split("/").filter(Boolean);return s.length===0?"":"/"+s.join("/")+"/"}function f(c){if(!Array.isArray(c)||c.length===0)return 0;for(var u=0,s=0;s<c.length;s+=1){var m=c[s];if(!m||typeof m!=="object")continue;if(l&&(m.redundant_with_root_menu===true||m.redundantWithRootMenu===true))continue;u+=1}return u}function p(c){var u=Array.isArray(c&&c.levels)?c.levels:[];if(u.length>0){return f(u.map(function(s){return s&&typeof s.item==="object"?s.item:null}).filter(Boolean))}var s=Array.isArray(c&&(c.tail_items||c.tailItems))?(c.tail_items||c.tailItems):[];return f(s)}function h(c){var u=d(c);if(!u)return null;var s=a.slice().sort(function(v,b){return d(b&&(b.logical_path||b.logicalPath||"")).length-d(v&&(v.logical_path||v.logicalPath||"")).length});for(var m=0;m<s.length;m+=1){var g=s[m];if(!g||typeof g!=="object")continue;var y=d(g.logical_path||g.logicalPath||"");if(!y||u.indexOf(y)!==0)continue;var w=u.slice(y.length).split("/").filter(Boolean);if(w.length!==1)continue;var k=w[0];if(!k||k==="."||k===".."||/[/?#]/.test(k))return null;return g}return null}function T(c){var u=d(c);if(!u)return null;for(var s=0;s<a.length;s+=1){var m=a[s];if(!m||typeof m!=="object")continue;var g=d(m.logical_path||m.logicalPath||"");if(g===u)return m}return null}var x=0;if(t){var C=h(new URLSearchParams(window.location.search).get("from")||"");if(C){x=p(C);var P=r.dataset.currentPageTitle||document.title||"",S=window.location.pathname+window.location.search+window.location.hash;if(P&&S)x+=1}}else if(n){var R={};try{R=JSON.parse(r.dataset.pageCollectionSource||"{}")}catch(_){R={}}var H=T(R.logical_path||R.logicalPath||"");if(H){var E=Array.isArray(H.levels)?H.levels:[];x=f(E.map(function(c){return c&&typeof c.item==="object"?c.item:null}).filter(Boolean))}}if(x<=0)return;var q=document.createElement("nav");q.className="breadcrumb-nav";q.setAttribute("aria-hidden","true");for(var j=0;j<x;j+=1){var A=document.createElement("span");A.className="breadcrumb-item-menu";q.appendChild(A)}i.replaceChildren(q)}catch(_){}})();</script>
+            {{- end -}}
             <main id="main" class="slot slot-main" data-slot="main">
-                {{ block "main" . }}{{ end }}
+                {{- block "main" . -}}{{- end -}}
             </main>
-            {{ with index $slotSources "meta" }}
+            {{- with index $slotSources "meta" -}}
             <div class="slot slot-meta" data-slot="meta">
-                {{ partial "slots/render.html" (dict "ctx" $ "slot" "meta") }}
+                {{- partial "slots/render.html" (dict "ctx" $ "slot" "meta") -}}
             </div>
-            {{ end }}
+            {{- end -}}
             </div>
-            {{ if not $footerInRail }}
-            {{ with index $slotSources "footer" }}
+            {{- if not $footerInRail -}}
+            {{- with index $slotSources "footer" -}}
             <div class="slot slot-footer" data-slot="footer">
-                {{ partial "slots/render.html" (dict "ctx" $ "slot" "footer") }}
+                {{- partial "slots/render.html" (dict "ctx" $ "slot" "footer") -}}
             </div>
-            {{ end }}
-            {{ end }}
+            {{- end -}}
+            {{- end -}}
         </div>
     </div>
-    {{ partial "page-resources-body.html" . }}
-    {{ if not $isOfflinePage }}
-    {{ partial "prefetch-runtime-embed.html" (dict "ctx" . "sw_mode" $swMode "env_config_map" $prefetchEnvConfig) }}
-    {{ end }}
-    {{ partial "icon-sprite-dynamic.html" . }}
+    {{- partial "page-resources-body.html" . -}}
+    {{- if not $isOfflinePage -}}
+    {{- partial "prefetch-runtime-embed.html" (dict "ctx" . "sw_mode" $swMode "env_config_map" $prefetchEnvConfig) -}}
+    {{- end -}}
+    {{- partial "icon-sprite-dynamic.html" . -}}
 </body>
 
 </html>

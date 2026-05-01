@@ -7,6 +7,15 @@ import {
     normalizeBreadcrumbCollectionSource as normalizeCollectionSource,
 } from './breadcrumb-items.js';
 import {
+    parseEntryBreadcrumbSources,
+    parseEntrySelection,
+} from './breadcrumb-source.js';
+import {
+    renderArticleMetaPath,
+    renderRootSelection,
+    renderTopBreadcrumb,
+} from './breadcrumb-ui.js';
+import {
     normalizeCollectionLogicalPathFromUrl as normalizeLogicalPathFromUrl,
     normalizePathname,
     readCurrentFromPath,
@@ -24,14 +33,6 @@ function clearEntryBreadcrumbPending() {
 
 function readFragmentRoot() {
     return document.body?.dataset.fragmentRoot || '';
-}
-
-function readBreadcrumbUi() {
-    return window.__banyanBreadcrumbUi || null;
-}
-
-function readBreadcrumbData() {
-    return window.__banyanBreadcrumbData || null;
 }
 
 async function buildPrefixLevelItem(fragmentRoot, source, level) {
@@ -116,14 +117,9 @@ async function buildEntryState() {
         return null;
     }
 
-    const breadcrumbData = readBreadcrumbData();
-    if (!breadcrumbData) {
-        return null;
-    }
-
     const rawSources = document.body?.dataset.entryBreadcrumbSources || '';
-    const sources = breadcrumbData.parseEntryBreadcrumbSources(rawSources);
-    const selection = breadcrumbData.parseEntrySelection(sources, readCurrentFromPath());
+    const sources = parseEntryBreadcrumbSources(rawSources);
+    const selection = parseEntrySelection(sources, readCurrentFromPath());
     if (!selection) {
         return null;
     }
@@ -159,14 +155,9 @@ export async function initEntryBreadcrumb() {
             return;
         }
 
-        const breadcrumbUi = readBreadcrumbUi();
-        if (!breadcrumbUi) {
-            return;
-        }
-
-        breadcrumbUi.renderRootSelection(state.rootItem, state.rootMenuItems, state.rootMenuLabel);
-        breadcrumbUi.renderTopBreadcrumb(state.breadcrumbItems);
-        breadcrumbUi.renderArticleMetaPath(state.metaLabel, state.metaItems || []);
+        renderRootSelection(state.rootItem, state.rootMenuItems, state.rootMenuLabel);
+        renderTopBreadcrumb(state.breadcrumbItems);
+        renderArticleMetaPath(state.metaLabel, state.metaItems || []);
         initBreadcrumbMenus();
     } finally {
         clearEntryBreadcrumbPending();

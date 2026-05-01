@@ -1,0 +1,11 @@
+{{- $source := .source | default . | default dict -}}
+{{- $provider := trim (printf "%v" (index $source "provider" | default "")) " \r\n\t" -}}
+{{- $logicalPath := trim (printf "%v" (index $source "logical_path" | default "")) " \r\n\t" -}}
+{{- $result := dict -}}
+{{- if ne $provider "" -}}
+  {{- $result = merge $result (dict "provider" $provider) -}}
+{{- end -}}
+{{- if ne $logicalPath "" -}}
+  {{- $result = merge $result (dict "logical_path" $logicalPath) -}}
+{{- end -}}
+{{- return $result -}}

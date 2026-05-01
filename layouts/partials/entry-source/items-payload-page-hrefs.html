@@ -1,0 +1,39 @@
+{{- $payload := .payload | default . | default dict -}}
+{{- $fields := index $payload "f" | default slice -}}
+{{- $rowVector := index $payload "rv" | default slice -}}
+{{- $constants := index $payload "c" | default dict -}}
+{{- $fieldCount := len $fields -}}
+{{- $hrefIndex := -1 -}}
+{{- $kindIndex := -1 -}}
+
+{{- range $index, $field := $fields -}}
+  {{- $name := trim (printf "%v" $field) " \r\n\t" -}}
+  {{- if eq $name "href" -}}
+    {{- $hrefIndex = $index -}}
+  {{- else if eq $name "kind" -}}
+    {{- $kindIndex = $index -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $constantKind := lower (trim (printf "%v" (index $constants "kind" | default "")) " \r\n\t") -}}
+{{- $hrefs := slice -}}
+
+{{- if and (ge $hrefIndex 0) (gt $fieldCount 0) (eq (mod (len $rowVector) $fieldCount) 0) -}}
+  {{- $rowCount := div (len $rowVector) $fieldCount -}}
+  {{- range seq $rowCount -}}
+    {{- $rowIndex := sub . 1 -}}
+    {{- $offset := mul $rowIndex $fieldCount -}}
+    {{- $href := trim (printf "%v" (index $rowVector (add $offset $hrefIndex) | default "")) " \r\n\t" -}}
+    {{- if ne $href "" -}}
+      {{- $kind := $constantKind -}}
+      {{- if ge $kindIndex 0 -}}
+        {{- $kind = lower (trim (printf "%v" (index $rowVector (add $offset $kindIndex) | default $kind)) " \r\n\t") -}}
+      {{- end -}}
+      {{- if and (or (eq $kind "") (eq $kind "page")) (not (in $hrefs $href)) -}}
+        {{- $hrefs = $hrefs | append $href -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- return $hrefs -}}

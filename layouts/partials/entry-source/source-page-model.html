@@ -47,6 +47,7 @@
   "logical_path" $logicalPath
 ) -}}
 {{- $currentCollectionItems := dict -}}
+{{- $entryHrefs := slice -}}
 {{- if in (slice "all" "products" "section-d" "taxonomy") $provider -}}
   {{- $currentCollectionItemsJson := partial (printf "entry-source/items-json-%s.html" $provider) (dict
     "source" (dict
@@ -57,6 +58,7 @@
   ) -}}
   {{- if ne (trim $currentCollectionItemsJson " \r\n\t") "" -}}
     {{- $currentCollectionItems = transform.Unmarshal (dict "format" "json") $currentCollectionItemsJson -}}
+    {{- $entryHrefs = partial "entry-source/items-payload-page-hrefs.html" (dict "payload" $currentCollectionItems) | default slice -}}
   {{- end -}}
 {{- end -}}
 {{- $result := dict
@@ -70,5 +72,6 @@
   "levels" $levels
   "current_collection_source" $currentCollectionSource
   "current_collection_items" $currentCollectionItems
+  "entry_hrefs" $entryHrefs
  -}}
 {{- return $result -}}

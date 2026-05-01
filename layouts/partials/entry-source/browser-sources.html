@@ -1,0 +1,89 @@
+{{- $page := .page | default (.ctx | default .) -}}
+{{- $sourceModels := .source_models | default slice -}}
+{{- $pageCollectionSource := .page_collection_source | default dict -}}
+{{- $currentHref := trim (printf "%v" ($page.RelPermalink | default "")) " \r\n\t" -}}
+{{- $includedKeys := dict -}}
+
+{{- $pageCollectionProvider := lower (trim (printf "%v" (index $pageCollectionSource "provider" | default "")) " \r\n\t") -}}
+{{- $pageCollectionLogicalPath := trim (printf "%v" (index $pageCollectionSource "logical_path" | default "")) " \r\n\t" -}}
+{{- if and (ne $pageCollectionProvider "") (ne $pageCollectionLogicalPath "") -}}
+  {{- $includedKeys = merge $includedKeys (dict (printf "%s|%s" $pageCollectionProvider $pageCollectionLogicalPath) true) -}}
+{{- end -}}
+
+{{- if ne $currentHref "" -}}
+  {{- range $source := $sourceModels -}}
+    {{- $provider := lower (trim (printf "%v" (index $source "provider" | default "")) " \r\n\t") -}}
+    {{- $logicalPath := trim (printf "%v" (index $source "logical_path" | default "")) " \r\n\t" -}}
+    {{- if or (eq $provider "") (eq $logicalPath "") -}}
+      {{- continue -}}
+    {{- end -}}
+    {{- $entryHrefs := index $source "entry_hrefs" | default slice -}}
+    {{- if in $entryHrefs $currentHref -}}
+      {{- $includedKeys = merge $includedKeys (dict (printf "%s|%s" $provider $logicalPath) true) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $browserSources := slice -}}
+
+{{- range $source := $sourceModels -}}
+  {{- $provider := lower (trim (printf "%v" (index $source "provider" | default "")) " \r\n\t") -}}
+  {{- $logicalPath := trim (printf "%v" (index $source "logical_path" | default "")) " \r\n\t" -}}
+  {{- $sourceKey := printf "%s|%s" $provider $logicalPath -}}
+  {{- if not (index $includedKeys $sourceKey) -}}
+    {{- continue -}}
+  {{- end -}}
+
+  {{- /* 浏览器首帧只需要 breadcrumb source 的最小骨架。
+        但 wide 布局防闪仍依赖：
+        1. current_collection_items：稳定“当前列 + 兄弟项”
+        2. levels[].collection_items：稳定祖先列排序结果
+        因此保留首帧所需集合数据，移除可由它们重建的冗余 item.menu。 */ -}}
+  {{- $levels := slice -}}
+  {{- range $level := index $source "levels" | default slice -}}
+    {{- $item := index $level "item" | default dict -}}
+    {{- if gt (len $item) 0 -}}
+      {{- $collectionSource := index $level "collection_source" | default dict -}}
+      {{- $collectionItems := index $level "collection_items" | default dict -}}
+      {{- $slimItem := $item -}}
+      {{- if and (gt (len $collectionSource) 0) (gt (len $collectionItems) 0) -}}
+        {{- $rebuiltItem := dict -}}
+        {{- range $itemKey, $itemValue := $item -}}
+          {{- if ne $itemKey "menu" -}}
+            {{- $rebuiltItem = merge $rebuiltItem (dict $itemKey $itemValue) -}}
+          {{- end -}}
+        {{- end -}}
+        {{- $slimItem = $rebuiltItem -}}
+      {{- end -}}
+      {{- $slimLevel := dict "item" $slimItem -}}
+      {{- $browserCollectionSource := partial "entry-source/browser-collection-source.html" (dict "source" $collectionSource) -}}
+      {{- if gt (len $browserCollectionSource) 0 -}}
+        {{- $slimLevel = merge $slimLevel (dict "collection_source" $browserCollectionSource) -}}
+      {{- end -}}
+      {{- if gt (len $collectionItems) 0 -}}
+        {{- $slimLevel = merge $slimLevel (dict "collection_items" $collectionItems) -}}
+      {{- end -}}
+      {{- $levels = $levels | append $slimLevel -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $tailItems := index $source "tail_items" | default slice -}}
+  {{- if gt (len $levels) 0 -}}
+    {{- /* levels 非空时，preview/runtime 都优先消费 levels；
+          tail_items 只会重复同一路径与菜单，不再输出到浏览器。 */ -}}
+    {{- $tailItems = slice -}}
+  {{- end -}}
+
+  {{- $browserSource := dict
+    "provider" (index $source "provider")
+    "logical_path" (index $source "logical_path")
+    "root_item" (index $source "root_item")
+    "root_menu" (index $source "root_menu")
+    "root_menu_label" (index $source "root_menu_label")
+    "tail_items" $tailItems
+    "levels" $levels
+    "current_collection_items" (index $source "current_collection_items")
+  -}}
+  {{- $browserSources = $browserSources | append $browserSource -}}
+{{- end -}}
+
+{{- return $browserSources -}}
