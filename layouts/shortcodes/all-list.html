@@ -8,16 +8,13 @@
 {{ if not $gridList }}{{ errorf "Build failed: missing resource %q." "css/grid-list.css" }}{{ end }}
 {{ if not $gridAll }}{{ errorf "Build failed: missing resource %q." "css/grid-all.css" }}{{ end }}
 {{ $gridCss := slice $gridList $gridAll | resources.Concat "css/all-list.embed.css" }}
-{{ $sortJsSource := resources.Get "js/sortable-grids.js" }}
-{{ if not $sortJsSource }}{{ errorf "Build failed: missing resource %q." "js/sortable-grids.js" }}{{ end }}
-{{ $sortJs := $sortJsSource | js.Build }}
 {{ partial "page-resources/register.html" (dict
   "ctx" $host
   "key" "shortcode:all-list"
   "descriptor" (dict
     "css_resources" (slice $gridCss)
-    "js_resources" (slice $sortJs)
   )
 ) }}
+{{ $host.Scratch.Set "needs_sortable_grids_runtime" true }}
 
 {{ partial "list-all-common.html" (dict "ctx" $target "host" $host) }}

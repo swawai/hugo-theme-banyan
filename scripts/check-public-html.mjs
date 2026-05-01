@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { gzipSync } from 'node:zlib';
 
@@ -120,6 +121,25 @@ async function collectHtmlFiles(rootDir, currentDir = rootDir) {
     return files;
 }
 
+async function collectFilesByExtension(rootDir, extension, currentDir = rootDir) {
+    const entries = await fs.readdir(currentDir, { withFileTypes: true });
+    const files = [];
+
+    for (const entry of entries) {
+        const absolutePath = path.join(currentDir, entry.name);
+        if (entry.isDirectory()) {
+            files.push(...await collectFilesByExtension(rootDir, extension, absolutePath));
+            continue;
+        }
+        if (!entry.isFile() || path.extname(entry.name).toLowerCase() !== extension) {
+            continue;
+        }
+        files.push(absolutePath);
+    }
+
+    return files;
+}
+
 function formatBytes(bytes) {
     if (bytes < 1024) {
         return `${bytes} B`;
@@ -149,6 +169,11 @@ function decodeHtmlAttribute(value) {
         .replace(/&gt;/g, '>');
 }
 
+function normalizeAssetPath(relativePath) {
+    const normalized = `${relativePath ?? ''}`.trim().replace(/\\/g, '/');
+    return normalized.startsWith('/') ? normalized : `/${normalized}`;
+}
+
 function extractAttribute(text, attributeName) {
     const escapedName = attributeName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const pattern = new RegExp(`${escapedName}=(?:"([^"]*)"|'([^']*)')`);
@@ -157,6 +182,18 @@ function extractAttribute(text, attributeName) {
         return '';
     }
     return match[1] ?? match[2] ?? '';
+}
+
+function extractExternalScriptSrcs(text) {
+    const matches = text.matchAll(/<script\b[^>]*\bsrc=(?:"([^"]*)"|'([^']*)'|([^"' >]+))/gi);
+    const refs = [];
+    for (const match of matches) {
+        const raw = match[1] ?? match[2] ?? match[3] ?? '';
+        if (raw) {
+            refs.push(raw.trim());
+        }
+    }
+    return refs;
 }
 
 function hasCanonical(text) {
@@ -186,6 +223,43 @@ function printRankedRows(title, rows, valueSelector) {
     }
 }
 
+function printPageCostRows(title, rows, valueSelector) {
+    console.log(`\n${title}`);
+    for (const row of rows) {
+        console.log(
+            `${row.relativePath}\tgzip=${formatByteMetric(row.gzipBytes)}\tjs_gzip=${formatByteMetric(row.jsDependencyGzipBytes)}\tcold=${formatByteMetric(row.coldGzipBytes)}\tscripts=${row.scriptDependencyCount}\tkey=${formatByteMetric(valueSelector(row))}`
+        );
+    }
+}
+
+function printJsAssetRows(title, rows, valueSelector) {
+    console.log(`\n${title}`);
+    for (const row of rows) {
+        console.log(
+            `${row.relativePath}\traw=${formatByteMetric(row.rawBytes)}\tgzip=${formatByteMetric(row.gzipBytes)}\tpages=${row.pageReferenceCount}\tkey=${formatByteMetric(valueSelector(row))}`
+        );
+    }
+}
+
+function printJsReferenceRows(title, rows) {
+    console.log(`\n${title}`);
+    for (const row of rows) {
+        console.log(
+            `${row.relativePath}\traw=${formatByteMetric(row.rawBytes)}\tgzip=${formatByteMetric(row.gzipBytes)}\tpages=${row.pageReferenceCount}\tkey=${row.pageReferenceCount}`
+        );
+    }
+}
+
+function printVariantRows(title, rows) {
+    console.log(`\n${title}`);
+    for (const row of rows) {
+        console.log(
+            `${row.familyKey}\tvariants=${row.variantCount}\traw=${formatByteMetric(row.rawBytes)}\tgzip=${formatByteMetric(row.gzipBytes)}`
+        );
+        console.log(`  files=${row.files.join(', ')}`);
+    }
+}
+
 function printSentinelRows(rows) {
     console.log('\nSentinel pages');
     for (const row of rows) {
@@ -193,12 +267,61 @@ function printSentinelRows(rows) {
             continue;
         }
         console.log(
-            `${row.relativePath}\traw=${formatByteMetric(row.rawBytes)}\tgzip=${formatByteMetric(row.gzipBytes)}\tbreadcrumb=${formatByteMetric(row.breadcrumbPayloadBytes)}\tsources=${row.breadcrumbSourceCount}`
+            `${row.relativePath}\traw=${formatByteMetric(row.rawBytes)}\tgzip=${formatByteMetric(row.gzipBytes)}\tjs_gzip=${formatByteMetric(row.jsDependencyGzipBytes)}\tcold_gzip=${formatByteMetric(row.coldGzipBytes)}\tbreadcrumb=${formatByteMetric(row.breadcrumbPayloadBytes)}\tsources=${row.breadcrumbSourceCount}\tscripts=${row.scriptDependencyCount}`
         );
         if (row.breadcrumbSourcePaths.length > 0) {
             console.log(`  source_paths=${row.breadcrumbSourcePaths.join(', ')}`);
         }
+        if (row.scriptDependencyPaths.length > 0) {
+            console.log(`  script_deps=${row.scriptDependencyPaths.join(', ')}`);
+        }
     }
+}
+
+function normalizeJsAssetFamilyKey(relativePath) {
+    let normalized = `${relativePath ?? ''}`.replace(/\\/g, '/');
+    normalized = normalized.replace(/\.([0-9a-f]{16,})(?=\.[^.]+$)/i, '');
+    normalized = normalized.replace(/\.min\.min(?=\.[^.]+$)/i, '.min');
+    return normalized;
+}
+
+function toAssetContentHash(buffer) {
+    return createHash('sha256').update(buffer).digest('hex');
+}
+
+function normalizeScriptReference(ref, pageRelativePath) {
+    const trimmed = `${ref ?? ''}`.trim();
+    if (!trimmed) {
+        return '';
+    }
+
+    try {
+        const pageBase = `https://audit.local/${pageRelativePath}`;
+        const url = new URL(trimmed, pageBase);
+        if (url.origin !== 'https://audit.local') {
+            return '';
+        }
+        return normalizeAssetPath(url.pathname);
+    } catch (error) {
+        return '';
+    }
+}
+
+async function inspectJsAsset(rootDir, absolutePath) {
+    const buffer = await fs.readFile(absolutePath);
+    const relativePath = normalizeAssetPath(
+        path.relative(rootDir, absolutePath).split(path.sep).join('/')
+    );
+
+    return {
+        absolutePath,
+        relativePath,
+        rawBytes: buffer.length,
+        gzipBytes: gzipSync(buffer, { level: 9 }).length,
+        familyKey: normalizeJsAssetFamilyKey(relativePath),
+        contentHash: toAssetContentHash(buffer),
+        pageReferenceCount: 0,
+    };
 }
 
 async function inspectHtmlFile(rootDir, absolutePath) {
@@ -247,7 +370,32 @@ async function inspectHtmlFile(rootDir, absolutePath) {
         breadcrumbPayloadBytes,
         breadcrumbSourceCount,
         breadcrumbSourcePaths,
-        breadcrumbParseError
+        breadcrumbParseError,
+        externalScriptRefs: extractExternalScriptSrcs(text),
+    };
+}
+
+function buildJsDependencyStats(pageRelativePath, externalScriptRefs, jsAssetsByPath) {
+    const scriptDependencyPaths = [];
+    const missingScriptRefs = [];
+    const seen = new Set();
+
+    for (const ref of externalScriptRefs) {
+        const normalizedRef = normalizeScriptReference(ref, pageRelativePath);
+        if (!normalizedRef || seen.has(normalizedRef)) {
+            continue;
+        }
+        seen.add(normalizedRef);
+        if (!jsAssetsByPath.has(normalizedRef)) {
+            missingScriptRefs.push(normalizedRef);
+            continue;
+        }
+        scriptDependencyPaths.push(normalizedRef);
+    }
+
+    return {
+        scriptDependencyPaths,
+        missingScriptRefs,
     };
 }
 
@@ -263,6 +411,9 @@ function buildIntegrityIssues(rows) {
         }
         if (row.breadcrumbParseError) {
             issues.push(`Invalid breadcrumb payload on ${row.relativePath}: ${row.breadcrumbParseError}`);
+        }
+        for (const missingScriptRef of row.missingScriptRefs || []) {
+            issues.push(`Missing script asset ${missingScriptRef} referenced by ${row.relativePath}`);
         }
     }
 
@@ -317,10 +468,63 @@ async function main() {
     if (htmlPaths.length === 0) {
         throw new Error(`No HTML files found under: ${publicRoot}`);
     }
+    const jsPaths = await collectFilesByExtension(publicRoot, '.js');
 
     const rows = [];
     for (const htmlPath of htmlPaths) {
         rows.push(await inspectHtmlFile(publicRoot, htmlPath));
+    }
+    const jsAssets = [];
+    for (const jsPath of jsPaths) {
+        jsAssets.push(await inspectJsAsset(publicRoot, jsPath));
+    }
+
+    const jsAssetsByPath = new Map(jsAssets.map((asset) => [asset.relativePath, asset]));
+    const jsAssetsByHash = new Map();
+    for (const asset of jsAssets) {
+        const existing = jsAssetsByHash.get(asset.contentHash) || [];
+        existing.push(asset);
+        jsAssetsByHash.set(asset.contentHash, existing);
+    }
+
+    const variantFamilies = new Map();
+    for (const asset of jsAssets) {
+        const row = variantFamilies.get(asset.familyKey) || {
+            familyKey: asset.familyKey,
+            variantCount: 0,
+            rawBytes: 0,
+            gzipBytes: 0,
+            files: [],
+        };
+        row.variantCount += 1;
+        row.rawBytes += asset.rawBytes;
+        row.gzipBytes += asset.gzipBytes;
+        row.files.push(asset.relativePath);
+        variantFamilies.set(asset.familyKey, row);
+    }
+
+    for (const row of rows) {
+        const jsDeps = buildJsDependencyStats(row.relativePath, row.externalScriptRefs, jsAssetsByPath);
+        let jsDependencyRawBytes = 0;
+        let jsDependencyGzipBytes = 0;
+
+        for (const depPath of jsDeps.scriptDependencyPaths) {
+            const asset = jsAssetsByPath.get(depPath);
+            if (!asset) {
+                continue;
+            }
+            jsDependencyRawBytes += asset.rawBytes;
+            jsDependencyGzipBytes += asset.gzipBytes;
+            asset.pageReferenceCount += 1;
+        }
+
+        row.scriptDependencyPaths = jsDeps.scriptDependencyPaths;
+        row.missingScriptRefs = jsDeps.missingScriptRefs;
+        row.scriptDependencyCount = jsDeps.scriptDependencyPaths.length;
+        row.jsDependencyRawBytes = jsDependencyRawBytes;
+        row.jsDependencyGzipBytes = jsDependencyGzipBytes;
+        row.coldRawBytes = row.rawBytes + jsDependencyRawBytes;
+        row.coldGzipBytes = row.gzipBytes + jsDependencyGzipBytes;
     }
 
     const rowsByPath = new Map(rows.map((row) => [row.relativePath, row]));
@@ -328,6 +532,13 @@ async function main() {
     const gzipTotal = rows.reduce((sum, row) => sum + row.gzipBytes, 0);
     const breadcrumbTotal = rows.reduce((sum, row) => sum + row.breadcrumbPayloadBytes, 0);
     const redirectCount = rows.filter((row) => row.isRedirect).length;
+    const jsRawTotal = jsAssets.reduce((sum, asset) => sum + asset.rawBytes, 0);
+    const jsGzipTotal = jsAssets.reduce((sum, asset) => sum + asset.gzipBytes, 0);
+    const referencedJsAssets = jsAssets.filter((asset) => asset.pageReferenceCount > 0);
+    const duplicateContentAssets = [...jsAssetsByHash.values()].filter((group) => group.length > 1);
+    const multiVariantFamilies = [...variantFamilies.values()]
+        .filter((group) => group.variantCount > 1)
+        .sort((left, right) => right.rawBytes - left.rawBytes || left.familyKey.localeCompare(right.familyKey));
 
     console.log('Public HTML audit');
     console.log(`Root\t${publicRoot}`);
@@ -339,6 +550,11 @@ async function main() {
     console.log(`Breadcrumb payload total\t${breadcrumbTotal}\t${formatBytes(breadcrumbTotal)}`);
     console.log(`Raw average\t${Math.round(rawTotal / rows.length)}\t${formatBytes(rawTotal / rows.length)}`);
     console.log(`Gzip average\t${Math.round(gzipTotal / rows.length)}\t${formatBytes(gzipTotal / rows.length)}`);
+    console.log(`JS assets\t${jsAssets.length}`);
+    console.log(`JS raw total\t${jsRawTotal}\t${formatBytes(jsRawTotal)}`);
+    console.log(`JS gzip total\t${jsGzipTotal}\t${formatBytes(jsGzipTotal)}`);
+    console.log(`Referenced JS assets\t${referencedJsAssets.length}`);
+    console.log(`Duplicate JS content groups\t${duplicateContentAssets.length}`);
 
     printRankedRows(
         `\nLargest raw HTML pages (top ${options.top})`,
@@ -355,6 +571,28 @@ async function main() {
         summarizeRows(rows, options.top, (row) => row.breadcrumbPayloadBytes),
         (row) => row.breadcrumbPayloadBytes
     );
+    printPageCostRows(
+        `Largest cold page cost (HTML + JS gzip, top ${options.top})`,
+        summarizeRows(rows, options.top, (row) => row.coldGzipBytes),
+        (row) => row.coldGzipBytes
+    );
+    printJsAssetRows(
+        `Largest JS assets (top ${options.top})`,
+        summarizeRows(jsAssets, options.top, (row) => row.rawBytes),
+        (row) => row.rawBytes
+    );
+    printJsReferenceRows(
+        `Most referenced JS assets (top ${options.top})`,
+        [...jsAssets]
+            .sort((left, right) => right.pageReferenceCount - left.pageReferenceCount || left.relativePath.localeCompare(right.relativePath))
+            .slice(0, options.top)
+    );
+    if (multiVariantFamilies.length > 0) {
+        printVariantRows(
+            `JS asset families with multiple emitted variants (top ${Math.min(options.top, multiVariantFamilies.length)})`,
+            multiVariantFamilies.slice(0, options.top)
+        );
+    }
 
     printSentinelRows(
         productionGuardrails.map((guardrail) => rowsByPath.get(guardrail.relativePath))

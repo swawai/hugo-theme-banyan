@@ -7,14 +7,14 @@
         {{ $pageJsSpecs := partial "page-resource-specs.html" (dict "source" $sourcePage "key" "page_js") }}
         {{ range $spec := $pageJsSpecs }}
             {{ $pageJs := partial "page-resource-resolve.html" (dict "source" $sourcePage "spec" $spec "asset_dir" "js" "kind" "page_js") }}
-            {{ if not hugo.IsServer }}{{ $pageJs = $pageJs | minify }}{{ end }}
             {{ $emitKey := printf "js-resource:%s" $pageJs.RelPermalink }}
             {{ if isset $emitted $emitKey }}{{ continue }}{{ end }}
             {{ $emitted = merge $emitted (dict $emitKey true) }}
             {{ if $isOfflinePage }}
+                {{ $pageJs = partial "js-process.html" (dict "resource" $pageJs "fingerprint" false) }}
 <script>{{ $pageJs.Content | safeJS }}</script>
             {{ else }}
-                {{ $pageJs = $pageJs | fingerprint }}
+                {{ $pageJs = partial "js-process.html" (dict "resource" $pageJs "fingerprint" true) }}
 <script src="{{ $pageJs.RelPermalink }}"></script>
             {{ end }}
         {{ end }}
@@ -30,14 +30,14 @@
     {{ with index $descriptor "js_resources" }}
         {{ range $resource := . }}
             {{ $pageJs := $resource }}
-            {{ if not hugo.IsServer }}{{ $pageJs = $pageJs | minify }}{{ end }}
             {{ $emitKey := printf "js-resource:%s" $pageJs.RelPermalink }}
             {{ if isset $emitted $emitKey }}{{ continue }}{{ end }}
             {{ $emitted = merge $emitted (dict $emitKey true) }}
             {{ if $isOfflinePage }}
+                {{ $pageJs = partial "js-process.html" (dict "resource" $pageJs "fingerprint" false) }}
 <script>{{ $pageJs.Content | safeJS }}</script>
             {{ else }}
-                {{ $pageJs = $pageJs | fingerprint }}
+                {{ $pageJs = partial "js-process.html" (dict "resource" $pageJs "fingerprint" true) }}
 <script src="{{ $pageJs.RelPermalink }}"></script>
             {{ end }}
         {{ end }}

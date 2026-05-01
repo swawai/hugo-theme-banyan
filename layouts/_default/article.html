@@ -10,7 +10,7 @@
 {{ $isSectionListNode := false }}
 {{ if and (eq .Kind "section") (isset .Params "banyan_article_section_list") }}{{ $isSectionListNode = index .Params "banyan_article_section_list" }}{{ end }}
 {{ partial "article/styles.html" (dict "ctx" . "with_meta" true) }}
-{{ if or $isTaxonomyNode $isSectionListNode }}{{ partial "head-sort-script.html" . }}{{ end }}
+{{ if or $isTaxonomyNode $isSectionListNode }}{{ .Scratch.Set "needs_sortable_grids_runtime" true }}{{ end }}
 {{ end }}
 
 {{ define "main" }}

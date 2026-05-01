@@ -1,5 +1,8 @@
 {{ $css := .resource }}
-{{ if not hugo.IsServer }}{{ $css = $css | minify }}{{ end }}
+{{ if not $css }}{{ return }}{{ end }}
+{{ $pathHint := lower (printf "%v" ($css.RelPermalink | default ($css.Name | default ""))) }}
+{{ $alreadyMinified := in $pathHint ".min.css" }}
+{{ if and (not hugo.IsServer) (not $alreadyMinified) }}{{ $css = $css | minify }}{{ end }}
 {{ if .fingerprint }}{{ $css = $css | fingerprint }}{{ end }}
 {{ if not hugo.IsServer }}{{ $css = $css | resources.PostProcess }}{{ end }}
 {{ return $css }}

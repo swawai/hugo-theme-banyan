@@ -7,14 +7,14 @@
         {{ $pageCssSpecs := partial "page-resource-specs.html" (dict "source" $sourcePage "key" "page_css") }}
         {{ range $spec := $pageCssSpecs }}
             {{ $pageCss := partial "page-resource-resolve.html" (dict "source" $sourcePage "spec" $spec "asset_dir" "css" "kind" "page_css") }}
-            {{ if not hugo.IsServer }}{{ $pageCss = $pageCss | minify }}{{ end }}
             {{ $emitKey := printf "css-resource:%s" $pageCss.RelPermalink }}
             {{ if isset $emitted $emitKey }}{{ continue }}{{ end }}
             {{ $emitted = merge $emitted (dict $emitKey true) }}
             {{ if $isOfflinePage }}
+                {{ $pageCss = partial "css-process.html" (dict "resource" $pageCss "fingerprint" false) }}
 <style>{{ $pageCss.Content | safeCSS }}</style>
             {{ else }}
-                {{ $pageCss = $pageCss | fingerprint }}
+                {{ $pageCss = partial "css-process.html" (dict "resource" $pageCss "fingerprint" true) }}
 <link rel="stylesheet" href="{{ $pageCss.RelPermalink }}">
             {{ end }}
         {{ end }}
@@ -30,14 +30,14 @@
     {{ with index $descriptor "css_resources" }}
         {{ range $resource := . }}
             {{ $pageCss := $resource }}
-            {{ if not hugo.IsServer }}{{ $pageCss = $pageCss | minify }}{{ end }}
             {{ $emitKey := printf "css-resource:%s" $pageCss.RelPermalink }}
             {{ if isset $emitted $emitKey }}{{ continue }}{{ end }}
             {{ $emitted = merge $emitted (dict $emitKey true) }}
             {{ if $isOfflinePage }}
+                {{ $pageCss = partial "css-process.html" (dict "resource" $pageCss "fingerprint" false) }}
 <style>{{ $pageCss.Content | safeCSS }}</style>
             {{ else }}
-                {{ $pageCss = $pageCss | fingerprint }}
+                {{ $pageCss = partial "css-process.html" (dict "resource" $pageCss "fingerprint" true) }}
 <link rel="stylesheet" href="{{ $pageCss.RelPermalink }}">
             {{ end }}
         {{ end }}

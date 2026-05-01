@@ -1,0 +1,7 @@
+{{ $js := .resource }}
+{{ if not $js }}{{ return }}{{ end }}
+{{ $pathHint := lower (printf "%v" ($js.RelPermalink | default ($js.Name | default ""))) }}
+{{ $alreadyMinified := or (in $pathHint ".min.js") (in $pathHint ".min.mjs") }}
+{{ if and (not hugo.IsServer) (not $alreadyMinified) }}{{ $js = $js | minify }}{{ end }}
+{{ if .fingerprint }}{{ $js = $js | fingerprint }}{{ end }}
+{{ return $js }}

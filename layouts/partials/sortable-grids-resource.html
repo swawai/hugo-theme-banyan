@@ -1,0 +1,3 @@
+{{ $sortJs := resources.Get "js/sortable-grids.js" | js.Build }}
+{{ if not hugo.IsServer }}{{ $sortJs = $sortJs | minify }}{{ end }}
+{{ return $sortJs }}

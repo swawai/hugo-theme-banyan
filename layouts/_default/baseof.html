@@ -359,6 +359,9 @@
         </div>
     </div>
     {{- partial "page-resources-body.html" . -}}
+    {{- if eq (.Scratch.Get "needs_sortable_grids_runtime") true -}}
+    {{- partial "sortable-grids-script.html" . -}}
+    {{- end -}}
     {{- if not $isOfflinePage -}}
     {{- partial "prefetch-runtime-embed.html" (dict "ctx" . "sw_mode" $swMode "env_config_map" $prefetchEnvConfig) -}}
     {{- end -}}

@@ -1,4 +1,3 @@
-{{ $sortJs := resources.Get "js/sortable-grids.js" | js.Build }}
-{{ if not hugo.IsServer }}{{ $sortJs = $sortJs | minify }}{{ end }}
+{{ $sortJs := partial "sortable-grids-resource.html" . }}
 {{ $sortJs = $sortJs | fingerprint }}
 <script src="{{ $sortJs.RelPermalink }}" integrity="{{ $sortJs.Data.Integrity }}" defer></script>
