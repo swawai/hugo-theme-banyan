@@ -4,7 +4,7 @@ linkTitle: 免費
 description: 免費產品列表。
 weight: 20
 nav_primary: products
-layout: "article"
+layout: "article-list"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

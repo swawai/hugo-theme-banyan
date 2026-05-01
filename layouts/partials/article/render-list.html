@@ -1,0 +1,54 @@
+{{- $isTaxonomyNode := or (eq .Kind "taxonomy") (eq .Kind "term") -}}
+{{- $isSectionListNode := false -}}
+{{- if eq .Kind "section" -}}
+  {{- if eq (.Store.Get "banyan_article_section_list") true -}}{{- $isSectionListNode = true -}}{{- end -}}
+  {{- if isset .Params "banyan_article_section_list" -}}{{- $isSectionListNode = index .Params "banyan_article_section_list" -}}{{- end -}}
+{{- end -}}
+{{- $slotSources := .Scratch.Get "slot_sources" | default dict -}}
+{{- $contentHTML := printf "%s" .Content -}}
+{{- $content := trim $contentHTML " \r\n\t" -}}
+{{- $renderTaxonomyList := false -}}
+{{- if $isTaxonomyNode -}}
+  {{- $renderTaxonomyList = eq .Kind "term" -}}
+  {{- if eq (.Store.Get "banyan_article_taxonomy_list") true -}}{{- $renderTaxonomyList = true -}}{{- end -}}
+  {{- if isset .Params "banyan_article_taxonomy_list" -}}{{- $renderTaxonomyList = index .Params "banyan_article_taxonomy_list" -}}{{- end -}}
+{{- end -}}
+{{- $renderSectionList := $isSectionListNode -}}
+{{- $sectionListMarker := "<div data-banyan-section-list-anchor=\"true\"></div>" -}}
+{{- $sectionListMarkerCount := 0 -}}
+{{- $sectionListParts := slice -}}
+{{- $hasSectionListMarker := false -}}
+{{- if and $renderSectionList (ne $content "") -}}
+  {{- $sectionListParts = split $contentHTML $sectionListMarker -}}
+  {{- $sectionListMarkerCount = sub (len $sectionListParts) 1 -}}
+  {{- if gt $sectionListMarkerCount 1 -}}{{- errorf "Build failed: page %q may include the section-list shortcode at most once." .File.Path -}}{{- end -}}
+  {{- $hasSectionListMarker = eq $sectionListMarkerCount 1 -}}
+{{- end -}}
+{{- $contentBeforeSectionList := $contentHTML -}}
+{{- $contentAfterSectionList := "" -}}
+{{- if $hasSectionListMarker -}}
+  {{- $contentBeforeSectionList = index $sectionListParts 0 -}}
+  {{- $contentAfterSectionList = index $sectionListParts 1 -}}
+{{- end -}}
+{{- $contentBefore := trim $contentBeforeSectionList " \r\n\t" -}}
+{{- $contentAfter := trim $contentAfterSectionList " \r\n\t" -}}
+<article class="article">
+  {{- if or (and (not $hasSectionListMarker) (ne $content "")) (and $hasSectionListMarker (ne $contentBefore "")) -}}
+  <div class="prose">
+    {{- if $hasSectionListMarker -}}
+      {{- if ne $contentBefore "" -}}{{- $contentBeforeSectionList | safeHTML -}}{{- end -}}
+    {{- else if ne $content "" -}}
+      {{- $contentHTML | safeHTML -}}
+    {{- end -}}
+  </div>
+  {{- end -}}
+  {{- if $renderTaxonomyList -}}{{- partial "taxonomy/render-article-list.html" (dict "ctx" .) -}}{{- end -}}
+  {{- if $renderSectionList -}}{{- partial "section/render-article-list.html" (dict "ctx" .) -}}{{- end -}}
+  {{- if and $hasSectionListMarker (ne $contentAfter "") -}}
+  <div class="prose">
+    {{- $contentAfterSectionList | safeHTML -}}
+  </div>
+  {{- end -}}
+</article>
+{{- if and .IsPage (eq .Section "d") -}}{{- partial "article/schema.html" . -}}{{- end -}}
+{{- with index $slotSources "breadcrumb" -}}{{- partial "breadcrumb/schema.html" (dict "ctx" $) -}}{{- end -}}

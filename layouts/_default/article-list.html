@@ -1,0 +1,15 @@
+{{ define "styles" }}
+{{ partial "head-styles.html" (dict "ctx" . "variant" "list") }}
+{{ end }}
+
+{{ define "head-extra" }}
+{{ $isTaxonomyNode := or (eq .Kind "taxonomy") (eq .Kind "term") }}
+{{ $isSectionListNode := false }}
+{{ if and (eq .Kind "section") (isset .Params "banyan_article_section_list") }}{{ $isSectionListNode = index .Params "banyan_article_section_list" }}{{ end }}
+{{ partial "article/styles.html" (dict "ctx" . "with_meta" true) }}
+{{ if or $isTaxonomyNode $isSectionListNode }}{{ .Scratch.Set "needs_sortable_grids_runtime" true }}{{ end }}
+{{ end }}
+
+{{ define "main" }}
+{{ partial "article/render-list.html" . }}
+{{ end }}

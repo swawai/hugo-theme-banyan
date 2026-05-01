@@ -4,7 +4,7 @@ linkTitle: 付费
 description: 付费产品列表。
 weight: 10
 nav_primary: products
-layout: "article"
+layout: "article-list"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

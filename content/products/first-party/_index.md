@@ -4,7 +4,7 @@ linkTitle: First-party
 description: Products built and produced in-house, including both paid and free offerings.
 weight: 10
 nav_primary: products
-layout: "article"
+layout: "article-list"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

@@ -1,0 +1,12 @@
+{{- $slotSources := .Scratch.Get "slot_sources" | default dict -}}
+{{- $contentHTML := printf "%s" .Content -}}
+{{- $content := trim $contentHTML " \r\n\t" -}}
+<article class="article">
+  {{- if ne $content "" -}}
+  <div class="prose">
+    {{- $contentHTML | safeHTML -}}
+  </div>
+  {{- end -}}
+</article>
+{{- if and .IsPage (eq .Section "d") -}}{{- partial "article/schema.html" . -}}{{- end -}}
+{{- with index $slotSources "breadcrumb" -}}{{- partial "breadcrumb/schema.html" (dict "ctx" $) -}}{{- end -}}

@@ -4,7 +4,7 @@ title: "我"
 slug: "me"
 nav_primary: me
 type: "me"
-layout: "article"
+layout: "article-page"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

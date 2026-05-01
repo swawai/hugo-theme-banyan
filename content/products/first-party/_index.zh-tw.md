@@ -4,7 +4,7 @@ linkTitle: 自建
 description: 自建生產的產品都會彙整在這裡，包含付費與免費，不含第三方產品。
 weight: 10
 nav_primary: products
-layout: "article"
+layout: "article-list"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

@@ -3,7 +3,7 @@ title: All
 linkTitle: ALL
 slug: "all"
 nav_primary: signals
-layout: article
+layout: article-list
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

@@ -4,7 +4,7 @@ linkTitle: Paid
 description: Paid products list.
 weight: 10
 nav_primary: products
-layout: "article"
+layout: "article-list"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

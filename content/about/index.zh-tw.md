@@ -4,7 +4,7 @@ draft: false
 title: "關於"
 slug: "about"
 type: "page"
-layout: "article"
+layout: "article-page"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

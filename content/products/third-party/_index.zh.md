@@ -4,7 +4,7 @@ linkTitle: 第三方
 description: 第三方产品列表。
 weight: 30
 nav_primary: products
-layout: "article"
+layout: "article-list"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

@@ -1,0 +1,11 @@
+{{ define "styles" }}
+{{ partial "head-styles.html" (dict "ctx" . "variant" "page-crumb") }}
+{{ end }}
+
+{{ define "head-extra" }}
+{{ partial "article/styles.html" (dict "ctx" . "with_meta" true) }}
+{{ end }}
+
+{{ define "main" }}
+{{ partial "article/render-page.html" . }}
+{{ end }}

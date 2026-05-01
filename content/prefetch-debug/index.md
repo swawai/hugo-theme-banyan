@@ -6,7 +6,7 @@ slug: "prefetchdebug"
 nav_primary: home
 url: "prefetchdebug"
 type: "page"
-layout: "article"
+layout: "article-page"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

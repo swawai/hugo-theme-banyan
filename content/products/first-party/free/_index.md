@@ -4,7 +4,7 @@ linkTitle: Free
 description: Free products list.
 weight: 20
 nav_primary: products
-layout: "article"
+layout: "article-list"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

@@ -4,7 +4,7 @@ linkTitle: Third-party
 description: Third-party products list.
 weight: 30
 nav_primary: products
-layout: "article"
+layout: "article-list"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities
