@@ -1,17 +1,32 @@
-import { createDropdownController } from './ui-dropdown.js';
-
 const MENU_MODE_CLASS = 'is-breadcrumb-menu-mode';
 const WIDE_COLUMNS_QUERY = '(min-width: 88rem)';
 let activeModeRow = null;
 let wideColumnsMediaQuery = null;
-const dropdown = createDropdownController({
-    rootSelector: '[data-breadcrumb-menu]',
-    triggerSelector: '[data-breadcrumb-menu-link="true"]',
-    panelSelector: '[data-breadcrumb-menu-panel]',
-    optionSelector: 'a[href]'
-});
+let dropdown = null;
+
+function ensureDropdown() {
+    if (dropdown) {
+        return true;
+    }
+
+    const createDropdownController = window.__banyanUiDropdown?.createDropdownController;
+    if (typeof createDropdownController !== 'function') {
+        return false;
+    }
+
+    dropdown = createDropdownController({
+        rootSelector: '[data-breadcrumb-menu]',
+        triggerSelector: '[data-breadcrumb-menu-link="true"]',
+        panelSelector: '[data-breadcrumb-menu-panel]',
+        optionSelector: 'a[href]'
+    });
+    return true;
+}
 
 function getMenuLink(target) {
+    if (!ensureDropdown()) {
+        return null;
+    }
     return dropdown.getTrigger(target);
 }
 
@@ -64,7 +79,9 @@ function activateMode(target) {
 
 function deactivateMode({ restoreFocus = false } = {}) {
     const row = activeModeRow;
-    dropdown.close({ restoreFocus: false });
+    if (ensureDropdown()) {
+        dropdown.close({ restoreFocus: false });
+    }
     if (row instanceof Element) {
         row.classList.remove(MENU_MODE_CLASS);
     }
@@ -79,6 +96,10 @@ function deactivateMode({ restoreFocus = false } = {}) {
 }
 
 function handleClick(event) {
+    if (!ensureDropdown()) {
+        return;
+    }
+
     const modeToggleLink = getModeToggleLink(event.target);
     const link = getMenuLink(event.target);
     const clickTarget = event.target instanceof Element ? event.target : null;
@@ -130,6 +151,10 @@ function handleClick(event) {
 }
 
 function handleKeyDown(event) {
+    if (!ensureDropdown()) {
+        return;
+    }
+
     const modeToggleLink = getModeToggleLink(event.target);
     const link = getMenuLink(event.target);
     if (event.key === 'Escape') {
@@ -175,6 +200,10 @@ function handleKeyDown(event) {
 }
 
 function handleFocusIn(event) {
+    if (!ensureDropdown()) {
+        return;
+    }
+
     const focusTarget = event.target instanceof Element ? event.target : null;
     if (!dropdown.hasOpen() && !activeModeRow) {
         return;
@@ -205,6 +234,10 @@ function handleWideColumnsLayoutChange() {
 }
 
 export function initBreadcrumbMenus() {
+    if (!ensureDropdown()) {
+        return false;
+    }
+
     if (didInit) {
         if (activeModeRow && !document.contains(activeModeRow)) {
             activeModeRow = null;
@@ -230,4 +263,5 @@ export function initBreadcrumbMenus() {
     }
 
     handleWideColumnsLayoutChange();
+    return true;
 }

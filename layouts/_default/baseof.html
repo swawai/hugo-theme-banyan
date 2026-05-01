@@ -69,13 +69,21 @@
     ) -}}
 {{- end -}}
 {{- $slotSources := partial "slots/prepare.html" (dict "ctx" .) -}}
-{{- $pageCollectionSource := partial "entry-source/model-current.html" (dict "page" .) -}}
-{{- $entryBreadcrumbSourceModels := partialCached "entry-source/models.html" (dict "ctx" .) .Site.Language.Lang -}}
-{{- $entryBreadcrumbSources := partial "entry-source/browser-sources.html" (dict
-    "page" .
-    "source_models" $entryBreadcrumbSourceModels
-    "page_collection_source" $pageCollectionSource
-) -}}
+{{- $hasBreadcrumbCapability := eq (index $slotSources "breadcrumb") true -}}
+{{- $hasUtilitiesCapability := not (eq (index $slotSources "utilities") false) -}}
+{{- .Scratch.Set "needs_breadcrumb_runtime" $hasBreadcrumbCapability -}}
+{{- .Scratch.Set "needs_ui_dropdown_runtime" (or $hasBreadcrumbCapability $hasUtilitiesCapability) -}}
+{{- $pageCollectionSource := dict -}}
+{{- $entryBreadcrumbSources := slice -}}
+{{- if $hasBreadcrumbCapability -}}
+    {{- $pageCollectionSource = partial "entry-source/model-current.html" (dict "page" .) -}}
+    {{- $entryBreadcrumbSourceModels := partialCached "entry-source/models.html" (dict "ctx" .) .Site.Language.Lang -}}
+    {{- $entryBreadcrumbSources = partial "entry-source/browser-sources.html" (dict
+        "page" .
+        "source_models" $entryBreadcrumbSourceModels
+        "page_collection_source" $pageCollectionSource
+    ) -}}
+{{- end -}}
 {{- if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) -}}
     {{- partialCached "entry-fragments-publish.html" (dict "ctx" . "build_version" $buildVersion) $buildVersion -}}
     {{- $headersBody := partial "cache-policy-cloudflare-headers-body.txt" (dict "routes" $cachePolicyHeaderRoutes) -}}
@@ -113,18 +121,18 @@
     {{- range sort .Sites "Language.Weight" -}}
         {{- $langCode := .Language.Lang -}}
         {{- $i18nBody := partial "runtime/i18n-body.json" . -}}
-        {{- $i18nResource := resources.FromString (printf "runtime/i18n.%s.%s.json" $langCode (md5 $i18nBody)) $i18nBody | fingerprint -}}
+        {{- $i18nResource := resources.FromString (printf "runtime/i18n.%s.json" $langCode) $i18nBody | fingerprint -}}
         {{- $runtimeI18n = merge $runtimeI18n (dict $langCode $i18nResource.RelPermalink) -}}
     {{- end -}}
     {{- $langListBody := partial "runtime/lang-list-body.json" . -}}
-    {{- $langListResource := resources.FromString (printf "runtime/lang-list.%s.json" (md5 $langListBody)) $langListBody | fingerprint -}}
+    {{- $langListResource := resources.FromString "runtime/lang-list.json" $langListBody | fingerprint -}}
     {{- $assetManifestBody := dict
         "langList" $langListResource.RelPermalink
         "i18n" $runtimeI18n
         "i18nFallbacks" $runtimeI18nFallbacks
         "siteManifest" (cond (ne $manifest "") $manifest.RelPermalink "")
       | jsonify -}}
-    {{- $assetManifest := resources.FromString (printf "runtime/asset-manifest.%s.json" (md5 $assetManifestBody)) $assetManifestBody | fingerprint -}}
+    {{- $assetManifest := resources.FromString "runtime/asset-manifest.json" $assetManifestBody | fingerprint -}}
     <meta charset="utf-8">
     <link rel="icon" href="{{ $faviconSvg.RelPermalink }}" type="image/svg+xml" fetchpriority="low">
     <link rel="apple-touch-icon" href="{{ $appleTouchIcon.RelPermalink }}" fetchpriority="low">
@@ -135,9 +143,10 @@
     <link rel="canonical" href="{{ .Permalink }}">
     {{/* 首屏阻塞性状态初始化：同步主题以防闪烁，并恢复 MPA 跨页导航进度条。 */}}
     <script>(function(){try{var pref=localStorage.getItem('theme-preference');var media=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)');var theme=(!pref||pref==='auto')?((media&&media.matches)?'dark':'light'):pref;document.documentElement.setAttribute('data-theme',theme);}catch(e){}})();</script>
-    {{/* 若当前 URL 带 from=，先进入 entry breadcrumb 预览/补全阶段：
+    {{/* 若当前页面启用了 breadcrumb 能力，且 URL 带 from=，先进入 entry breadcrumb 预览/补全阶段：
          1) 预览阶段先屏蔽默认 breadcrumb，避免闪出错误路径；
          2) 运行时补全阶段继续隐藏 meta path，待异步修正完成后再显示。 */}}
+    {{- if $hasBreadcrumbCapability }}
     <script>(function(){try{var params=new URLSearchParams(window.location.search);var from=params.get('from')||'';var sort=(params.get('sort')||'').trim();var sorts=(params.get('sorts')||'').trim();var segments=typeof from==='string'?from.trim().split('/').filter(Boolean):[];var html=document.documentElement;var canSortCollectionBreadcrumb={{ if and (gt (len $pageCollectionSource) 0) (ne .Kind "page") }}true{{ else }}false{{ end }};if(segments.length>0){html.setAttribute('data-entry-breadcrumb-preview-pending','true');html.setAttribute('data-entry-breadcrumb-runtime-pending','true');html.setAttribute('data-entry-breadcrumb-meta-pending','true');}else if(canSortCollectionBreadcrumb&&(sort!==''||sorts!=='')){html.setAttribute('data-breadcrumb-sort-pending','true');}}catch(e){}})();</script>
     {{/* 关键首帧遮罩必须内联在 head，而不是等外链 wide CSS 下载后才生效。
          否则在慢设备/慢 CPU 下，默认 SSR breadcrumb 会先闪出错误路径，然后再被 preview/runtime 修正。 */}}
@@ -152,6 +161,7 @@
       }
     }
     </style>
+    {{- end }}
     {{- block "styles" . -}}{{ partial "head-styles.html" (dict "ctx" .) }}{{- end -}}
     {{- block "head-extra" . -}}{{- end -}}
     {{- partial "page-resources-head.html" . -}}
@@ -195,6 +205,18 @@
     {{- if not hugo.IsServer -}}{{- $js = $js | minify -}}{{- end -}}
     {{- $js = $js | fingerprint -}}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+    {{- if eq (.Scratch.Get "needs_ui_dropdown_runtime") true -}}
+        {{- $uiRuntime := resources.Get "js/ui-runtime.js" | js.Build -}}
+        {{- if not hugo.IsServer -}}{{- $uiRuntime = $uiRuntime | minify -}}{{- end -}}
+        {{- $uiRuntime = $uiRuntime | fingerprint -}}
+    <script src="{{ $uiRuntime.RelPermalink }}" integrity="{{ $uiRuntime.Data.Integrity }}" defer></script>
+    {{- end -}}
+    {{- if eq (.Scratch.Get "needs_breadcrumb_runtime") true -}}
+        {{- $breadcrumbRuntime := resources.Get "js/breadcrumb-runtime.js" | js.Build -}}
+        {{- if not hugo.IsServer -}}{{- $breadcrumbRuntime = $breadcrumbRuntime | minify -}}{{- end -}}
+        {{- $breadcrumbRuntime = $breadcrumbRuntime | fingerprint -}}
+    <script src="{{ $breadcrumbRuntime.RelPermalink }}" integrity="{{ $breadcrumbRuntime.Data.Integrity }}" defer></script>
+    {{- end -}}
     {{- if and (ne $swMode "off") (not $isOfflinePage) -}}
         {{- /* 源文件命名约定：含模板语法的资源用 .tmpl，纯 JS 用 .js。 */ -}}
         {{- if eq $swMode "enable" -}}
@@ -252,7 +274,7 @@
         {{- end -}}
     {{- end -}}
 </head>
-<body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-fragment-root="{{ printf "/__fragments/%s/%s/" $buildVersion .Site.Language.Lang }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $entryBreadcrumbSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}" data-current-page-title="{{ (.Title | default .LinkTitle) | htmlEscape }}" data-current-page-href="{{ .RelPermalink }}">
+<body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-fragment-root="{{ printf "/__fragments/%s/%s/" $buildVersion .Site.Language.Lang }}" data-site-root="{{ .Site.Home.RelPermalink }}"{{- if $hasBreadcrumbCapability }} data-entry-breadcrumb-sources="{{ $entryBreadcrumbSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}" data-current-page-title="{{ (.Title | default .LinkTitle) | htmlEscape }}" data-current-page-href="{{ .RelPermalink }}"{{- end }}>
     {{- if and .IsPage (not .Params.slug) -}}
 {{- errorf "Build failed: page %q (title: %q) is missing the slug field." .File.Path .Title -}}
     {{- end -}}
@@ -260,7 +282,7 @@
         <a class="skip" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
         {{- $hasTopbar := or (index $slotSources "primary_nav") (index $slotSources "utilities") -}}
         {{- $hasBreadcrumbRoot := index $slotSources "breadcrumb_root" -}}
-        {{- $hasBreadcrumb := eq (index $slotSources "breadcrumb") true -}}
+        {{- $hasBreadcrumb := $hasBreadcrumbCapability -}}
         {{- $hasBreadcrumbTail := false -}}
         {{- if $hasBreadcrumb -}}
             {{- $breadcrumbModel := partial "breadcrumb/model.html" (dict "ctx" $ "slot" "breadcrumb") -}}
