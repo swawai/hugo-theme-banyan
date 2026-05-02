@@ -1,32 +1,43 @@
-let runtimeManifestPromise = null;
-let runtimeManifestCache = null;
+const runtimeJsonPromises = new Map();
+const runtimeJsonCache = new Map();
 
 export function readRuntimeManifestUrl() {
     return document.body?.dataset.assetManifestUrl || '';
 }
 
-export function getRuntimeManifest() {
-    if (runtimeManifestCache) {
-        return Promise.resolve(runtimeManifestCache);
+export function fetchRuntimeJson(url) {
+    const normalizedUrl = typeof url === 'string' ? url.trim() : '';
+    if (!normalizedUrl) {
+        return Promise.resolve(null);
+    }
+    if (runtimeJsonCache.has(normalizedUrl)) {
+        return Promise.resolve(runtimeJsonCache.get(normalizedUrl));
     }
 
-    if (!runtimeManifestPromise) {
-        const manifestUrl = readRuntimeManifestUrl();
-        if (!manifestUrl) {
-            runtimeManifestCache = {};
-            return Promise.resolve(runtimeManifestCache);
-        }
-
-        runtimeManifestPromise = fetch(manifestUrl, { credentials: 'include' })
-            .then((res) => (res && res.ok ? res.json() : {}))
-            .catch(() => ({}))
-            .then((manifest) => {
-                runtimeManifestCache = manifest && typeof manifest === 'object' ? manifest : {};
-                return runtimeManifestCache;
+    let promise = runtimeJsonPromises.get(normalizedUrl);
+    if (!promise) {
+        promise = fetch(normalizedUrl, { credentials: 'same-origin' })
+            .then((res) => (res && res.ok ? res.json() : null))
+            .catch(() => null)
+            .then((data) => {
+                runtimeJsonCache.set(normalizedUrl, data);
+                return data;
             });
+        runtimeJsonPromises.set(normalizedUrl, promise);
     }
 
-    return runtimeManifestPromise;
+    return promise;
+}
+
+export function getRuntimeManifest() {
+    const manifestUrl = readRuntimeManifestUrl();
+    if (!manifestUrl) {
+        return Promise.resolve({});
+    }
+
+    return fetchRuntimeJson(manifestUrl).then((manifest) => (
+        manifest && typeof manifest === 'object' && !Array.isArray(manifest) ? manifest : {}
+    ));
 }
 
 export function getRuntimeLangListUrl(manifest) {
@@ -36,10 +47,21 @@ export function getRuntimeLangListUrl(manifest) {
 export function getRuntimeI18nUrl(manifest, lang) {
     const normalized = typeof lang === 'string' ? lang.toLowerCase() : '';
     const i18nMap = manifest && typeof manifest.i18n === 'object' ? manifest.i18n : null;
-    if (i18nMap) {
-        if (typeof i18nMap[normalized] === 'string' && i18nMap[normalized]) return i18nMap[normalized];
-        if (normalized === 'zh-hk' || normalized === 'zh-mo') {
-            if (typeof i18nMap['zh-tw'] === 'string' && i18nMap['zh-tw']) return i18nMap['zh-tw'];
+    const fallbackMap = manifest && typeof manifest.i18nFallbacks === 'object' ? manifest.i18nFallbacks : null;
+    if (!i18nMap || !normalized) return '';
+
+    if (typeof i18nMap[normalized] === 'string' && i18nMap[normalized]) {
+        return i18nMap[normalized];
+    }
+
+    let current = normalized;
+    const visited = new Set([current]);
+    while (fallbackMap && typeof fallbackMap[current] === 'string' && fallbackMap[current]) {
+        current = fallbackMap[current].toLowerCase();
+        if (!current || visited.has(current)) break;
+        visited.add(current);
+        if (typeof i18nMap[current] === 'string' && i18nMap[current]) {
+            return i18nMap[current];
         }
     }
 

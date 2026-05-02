@@ -1,8 +1,9 @@
 {{- $ctx := .ctx -}}
 {{- $sort := printf "%v" (.sort | default "") -}}
 {{- $href := printf "%v" (.baseHref | default $ctx.RelPermalink) -}}
+{{- $activeSortParam := partialCached "navigation-state-param-name.html" (dict "semantic" "active_sort") "navigation-state-param:active_sort" -}}
 {{- if ne $sort "" -}}
-  {{- $href = printf "%s?sort=%s" $href $sort -}}
+  {{- $href = printf "%s?%s=%s" $href $activeSortParam $sort -}}
 {{- end -}}
 {{- with .fragment -}}
   {{- $href = printf "%s#%s" $href . -}}

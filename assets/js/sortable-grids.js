@@ -17,6 +17,10 @@ import {
     readSortTokenForPath,
 } from './nav-state.js';
 import { buildBreadcrumbMenuItems } from './breadcrumb-items.js';
+import {
+    ENTRY_LINEAGE_FIELD,
+    hasFieldValue,
+} from './navigation-state.contract.js';
 
 const BREADCRUMB_SORT_PENDING_ATTR = 'data-breadcrumb-sort-pending';
 
@@ -233,7 +237,7 @@ function updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSou
 
         applySortTokenToUrl(url, currentToken, variant.defaultToken);
         if (pageCollectionSource?.logicalPath) {
-            const isEntryLink = new URLSearchParams(url.search).has('from');
+            const isEntryLink = hasFieldValue(url.search, ENTRY_LINEAGE_FIELD);
             applySortsTokensToUrl(url, isEntryLink ? currentSorts : descendantSorts);
         }
         link.href = buildRelativeHref(url);

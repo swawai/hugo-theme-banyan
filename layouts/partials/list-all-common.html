@@ -11,6 +11,7 @@
 {{ $currentAllHref := $host.RelPermalink }}
 {{ $entrySource := partial "entry-source/model-page.html" (dict "page" $host) }}
 {{ $entrySourcePath := printf "%v" (index $entrySource "logical_path") }}
+{{ $entryLineageParam := partialCached "navigation-state-param-name.html" (dict "semantic" "entry_lineage") "navigation-state-param:entry_lineage" }}
 {{ $rows := partial "collection/rows-all.html" (dict "ctx" $ctx) }}
 
 <div class="grid-list grid-all" data-sortable="true" data-sort-variant="all" data-sort-columns="4" data-sort-default="date-desc">
@@ -61,7 +62,7 @@
 
   {{ range $rows }}
     {{ $fromValue := partial "entry-source/from-param-value.html" (dict "logical_path" $entrySourcePath "entry_key" .key) }}
-    {{ $entryHref := printf "%s?from=%s" .href $fromValue }}
+    {{ $entryHref := printf "%s?%s=%s" .href $entryLineageParam $fromValue }}
     {{ partial "grid-title-cell.html" (dict
       "ctx" $ctx
       "href" $entryHref

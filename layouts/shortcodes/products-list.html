@@ -20,6 +20,7 @@
 {{ $rows := partial "collection/rows-products.html" (dict "host" $host) }}
 {{ $entrySource := partial "entry-source/model-page.html" (dict "page" $host) }}
 {{ $entrySourcePath := printf "%v" (index $entrySource "logical_path") }}
+{{ $entryLineageParam := partialCached "navigation-state-param-name.html" (dict "semantic" "entry_lineage") "navigation-state-param:entry_lineage" }}
 
 <div class="grid-list grid-products" data-sortable="true" data-sort-variant="products" data-sort-columns="3" data-sort-default="name-asc">
   {{ partial "grid-sort-cell.html" (dict
@@ -58,7 +59,7 @@
 
   {{ range $rows }}
     {{ $fromValue := partial "entry-source/from-param-value.html" (dict "logical_path" $entrySourcePath "entry_key" .key) }}
-    {{ $entryHref := printf "%s?from=%s" .href $fromValue }}
+    {{ $entryHref := printf "%s?%s=%s" .href $entryLineageParam $fromValue }}
     {{ partial "grid-title-cell.html" (dict
       "ctx" $host
       "href" $entryHref

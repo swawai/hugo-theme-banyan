@@ -1,7 +1,16 @@
-export const FROM_PARAM_KEY = 'from';
-export const SORT_PARAM_KEY = 'sort';
-export const SORTS_PARAM_KEY = 'sorts';
-export const SORTS_PLACEHOLDER = '_';
+import {
+    ACTIVE_SORT_FIELD,
+    ENTRY_LINEAGE_FIELD,
+    LINEAGE_SORTS_FIELD,
+    SORTS_PLACEHOLDER,
+    fieldHasParamName,
+    readFieldValue,
+} from './navigation-state.contract.js';
+
+export const FROM_PARAM_KEY = ENTRY_LINEAGE_FIELD.name;
+export const SORT_PARAM_KEY = ACTIVE_SORT_FIELD.name;
+export const SORTS_PARAM_KEY = LINEAGE_SORTS_FIELD.name;
+export { SORTS_PLACEHOLDER };
 
 function parseRawSearchEntries(search) {
     const raw = typeof search === 'string' ? search.replace(/^\?/, '') : '';
@@ -42,20 +51,21 @@ function safeDecode(value) {
     }
 }
 
-function readSearchParam(key, search = window.location.search) {
-    const value = new URLSearchParams(search).get(key);
-    return typeof value === 'string' ? value : '';
+function readSearchParam(field, search = window.location.search) {
+    return readFieldValue(search, field);
 }
 
-function applyRawQueryParamToUrl(url, key, value) {
-    if (!(url instanceof URL) || !key) {
+function applyRawQueryParamToUrl(url, field, value) {
+    if (!(url instanceof URL) || !field?.name) {
         return url;
     }
 
-    const nextEntries = parseRawSearchEntries(url.search).filter(([entryKey]) => entryKey !== key);
+    const nextEntries = parseRawSearchEntries(url.search).filter(
+        ([entryKey]) => !fieldHasParamName(field, entryKey)
+    );
     const normalizedValue = typeof value === 'string' ? value.trim() : '';
     if (normalizedValue !== '') {
-        nextEntries.push([key, normalizedValue]);
+        nextEntries.push([field.name, normalizedValue]);
     }
 
     url.search = stringifyRawSearchEntries(nextEntries);
@@ -88,11 +98,11 @@ export function buildFromParamValue(logicalPath, entryKey = '') {
 }
 
 export function readCurrentFromPath() {
-    return normalizeFromPath(readSearchParam(FROM_PARAM_KEY));
+    return normalizeFromPath(readSearchParam(ENTRY_LINEAGE_FIELD));
 }
 
 export function readCurrentSortTokenRaw() {
-    return safeDecode(readSearchParam(SORT_PARAM_KEY)).trim().toLowerCase();
+    return safeDecode(readSearchParam(ACTIVE_SORT_FIELD)).trim().toLowerCase();
 }
 
 function normalizeSortSlot(token) {
@@ -139,7 +149,7 @@ export function normalizeCollectionLogicalPathFromUrl(url, siteRoot = '/') {
 }
 
 export function readCurrentSortsTokens() {
-    const rawValue = safeDecode(readSearchParam(SORTS_PARAM_KEY));
+    const rawValue = safeDecode(readSearchParam(LINEAGE_SORTS_FIELD));
     if (!rawValue.trim()) {
         return [];
     }
@@ -197,19 +207,19 @@ export function buildDescendantSortsTokens(logicalPath, currentToken = '') {
 }
 
 export function applyFromPathToUrl(url, fromPath) {
-    return applyRawQueryParamToUrl(url, FROM_PARAM_KEY, buildFromParamValue(fromPath));
+    return applyRawQueryParamToUrl(url, ENTRY_LINEAGE_FIELD, buildFromParamValue(fromPath));
 }
 
 export function applySortQueryTokenToUrl(url, token) {
-    return applyRawQueryParamToUrl(url, SORT_PARAM_KEY, token);
+    return applyRawQueryParamToUrl(url, ACTIVE_SORT_FIELD, token);
 }
 
 export function applySortsTokensToUrl(url, tokens) {
     const normalizedTokens = normalizeSortSlots(tokens);
     if (normalizedTokens.length === 0 || normalizedTokens.every((token) => token === '')) {
-        return applyRawQueryParamToUrl(url, SORTS_PARAM_KEY, '');
+        return applyRawQueryParamToUrl(url, LINEAGE_SORTS_FIELD, '');
     }
 
     const encoded = normalizedTokens.map((token) => (token === '' ? SORTS_PLACEHOLDER : token));
-    return applyRawQueryParamToUrl(url, SORTS_PARAM_KEY, encoded.join(','));
+    return applyRawQueryParamToUrl(url, LINEAGE_SORTS_FIELD, encoded.join(','));
 }

@@ -1,0 +1,12 @@
+{{- $semantic := lower (trim (printf "%v" (.semantic | default "")) " \r\n\t") -}}
+{{- if eq $semantic "" -}}
+  {{- errorf "Build failed: navigation-state-param-name.html requires semantic." -}}
+{{- end -}}
+{{- $config := partialCached "navigation-state-config.html" site "navigation-state-config" -}}
+{{- $fields := index $config "fields" | default dict -}}
+{{- $field := index $fields $semantic | default dict -}}
+{{- $name := printf "%v" (index $field "name" | default "") -}}
+{{- if eq $name "" -}}
+  {{- errorf "Build failed: navigation-state field %q does not resolve a canonical param name." $semantic -}}
+{{- end -}}
+{{- return $name -}}

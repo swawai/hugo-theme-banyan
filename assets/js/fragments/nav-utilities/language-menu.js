@@ -1,4 +1,4 @@
-import { getRuntimeI18nUrl, getRuntimeLangListUrl, getRuntimeManifest } from '../../runtime-manifest.js';
+import { fetchRuntimeJson, getRuntimeI18nUrl, getRuntimeLangListUrl, getRuntimeManifest } from '../../runtime-manifest.js';
 import { bindMenuOption, markCurrentOption, replaceMenuOptions } from './menu-runtime.js';
 import {
     LANG_SUGGEST_HANDLED_KEY,
@@ -77,10 +77,8 @@ export async function initLanguageMenu(langMenu) {
                     i18nCache[lang] = {};
                     return i18nCache[lang];
                 }
-                const res = await fetch(url, { credentials: 'same-origin' });
-                if (res.ok) {
-                    i18nCache[lang] = await res.json();
-                }
+                const data = await fetchRuntimeJson(url);
+                i18nCache[lang] = data && typeof data === 'object' && !Array.isArray(data) ? data : {};
             } catch (e) { }
         }
         return i18nCache[lang] || {};
@@ -95,9 +93,8 @@ export async function initLanguageMenu(langMenu) {
     const langListUrl = getRuntimeLangListUrl(manifest);
     if (!langListUrl) return;
 
-    const list = await fetch(langListUrl, { credentials: 'same-origin' })
-        .then((res) => (res && res.ok ? res.json() : []))
-        .catch(() => []);
+    const listData = await fetchRuntimeJson(langListUrl);
+    const list = Array.isArray(listData) ? listData : [];
     if (!Array.isArray(list) || !list.length) return;
 
     const supportedLangs = [];

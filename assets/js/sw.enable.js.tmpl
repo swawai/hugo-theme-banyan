@@ -1,3 +1,5 @@
+import { normalizeNavigationCacheUrl } from './navigation-state.contract.js';
+
 const NAVIGATION_CACHE_PREFIX = 'nav-html-';
 const VERSIONED_ASSET_CACHE_PREFIX = 'asset-versioned-';
 const LEGACY_VERSIONED_ASSET_CACHE_PREFIX = 'asset-static-';
@@ -152,7 +154,30 @@ function normalizeSameOriginUrl(urlValue, baseUrl) {
 }
 
 function normalizeWarmNavigationUrl(urlValue) {
-    return normalizeSameOriginUrl(urlValue, self.location.origin);
+    const normalizedUrl = normalizeNavigationCacheUrl(urlValue, self.location.origin);
+    if (!normalizedUrl) return '';
+
+    try {
+        const url = new URL(normalizedUrl);
+        if (url.origin !== self.location.origin) return '';
+        return url.toString();
+    } catch (error) {
+        return '';
+    }
+}
+
+function createNavigationCacheKeyRequest(request) {
+    if (!request) return null;
+
+    const normalizedUrl = normalizeNavigationCacheUrl(request.url, self.location.origin);
+    if (!normalizedUrl) return request;
+
+    return new Request(normalizedUrl, {
+        credentials: 'same-origin',
+        headers: {
+            Accept: 'text/html'
+        }
+    });
 }
 
 function normalizePathnameForPrefixMatch(pathname) {
@@ -244,6 +269,7 @@ async function warmAssetsFromHtmlResponse(response, baseUrl) {
 
 async function updateNavigationCache(request, cache, consumeNavigationPreload, waitForAssetWarmup = false) {
     try {
+        const cacheKeyRequest = createNavigationCacheKeyRequest(request);
         let response = await fetchNavigationResponse(request, consumeNavigationPreload);
         if (response && response.status === 304) {
             // Browser-level prefetch often revalidates from HTTP cache and returns 304.
@@ -251,7 +277,7 @@ async function updateNavigationCache(request, cache, consumeNavigationPreload, w
             response = await fetch(new Request(request, { cache: 'reload' }));
         }
         if (isCacheableHtmlResponse(response)) {
-            await cache.put(request, response.clone());
+            await cache.put(cacheKeyRequest || request, response.clone());
             const assetWarmupTask = warmAssetsFromHtmlResponse(response.clone(), response.url || request.url);
             if (waitForAssetWarmup) {
                 await assetWarmupTask;
@@ -288,7 +314,7 @@ async function getOfflineFallbackResponse(pathname) {
             Accept: 'text/html'
         }
     });
-    const cachedResponse = await cache.match(offlineRequest);
+    const cachedResponse = await cache.match(createNavigationCacheKeyRequest(offlineRequest) || offlineRequest);
     if (cachedResponse) {
         return cachedResponse;
     }
@@ -342,7 +368,8 @@ async function warmNavigationUrl(urlValue) {
                 Accept: 'text/html'
             }
         });
-        const cachedResponse = await cache.match(request);
+        const cacheKeyRequest = createNavigationCacheKeyRequest(request);
+        const cachedResponse = await cache.match(cacheKeyRequest || request);
         if (cachedResponse) {
             await warmAssetsFromHtmlResponse(cachedResponse.clone(), href);
             return;
@@ -376,7 +403,8 @@ async function handleNavigationRequest(request, consumeNavigationPreload) {
     }
 
     const cache = await caches.open(getCacheNameForRoute(route));
-    const cachedResponse = await cache.match(request);
+    const cacheKeyRequest = createNavigationCacheKeyRequest(request);
+    const cachedResponse = await cache.match(cacheKeyRequest || request);
     if (cachedResponse) {
         return cachedResponse;
     }

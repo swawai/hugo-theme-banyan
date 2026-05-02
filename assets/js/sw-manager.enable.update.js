@@ -1,3 +1,5 @@
+import { fetchRuntimeJson, getRuntimeI18nUrl, getRuntimeManifest } from './runtime-manifest.js';
+
 const UPDATE_STATE_ATTR = 'data-site-update';
 const UPDATE_STATE_READY = 'ready';
 
@@ -33,17 +35,19 @@ function setUpdateReadyState(ready) {
     hideUpdatePopover();
 }
 
-function getBreadcrumbCurrentLink() {
-    return document.querySelector('[data-site-update-anchor]');
+function getUpdateAnchors() {
+    return Array.from(document.querySelectorAll('[data-site-update-anchor]'));
 }
 
-function matchBreadcrumbCurrentLink(target) {
-    const breadcrumbLink = getBreadcrumbCurrentLink();
-    if (!isUsableUpdateAnchor(breadcrumbLink)) return null;
+function getUsableUpdateAnchor() {
+    return getUpdateAnchors().find(isUsableUpdateAnchor) || null;
+}
+
+function matchUpdateAnchorTarget(target) {
     if (!(target instanceof Element)) return null;
 
     const currentTarget = target.closest('[data-site-update-anchor]');
-    return currentTarget === breadcrumbLink ? breadcrumbLink : null;
+    return isUsableUpdateAnchor(currentTarget) ? currentTarget : null;
 }
 
 function clearActivationFallbackTimer() {
@@ -85,43 +89,6 @@ function getFallbackUpdateCopy() {
     };
 }
 
-function readRuntimeManifestUrl() {
-    return document.body?.dataset.assetManifestUrl || '';
-}
-
-async function getRuntimeManifest() {
-    const manifestUrl = readRuntimeManifestUrl();
-    if (!manifestUrl) return {};
-
-    try {
-        const response = await fetch(manifestUrl, {
-            credentials: 'same-origin'
-        });
-        return response && response.ok ? await response.json() : {};
-    } catch (error) {
-        return {};
-    }
-}
-
-function getRuntimeI18nUrl(manifest, lang) {
-    const normalized = typeof lang === 'string' ? lang.toLowerCase() : '';
-    const i18nMap = manifest && typeof manifest.i18n === 'object' ? manifest.i18n : null;
-    const fallbackMap = manifest && typeof manifest.i18nFallbacks === 'object' ? manifest.i18nFallbacks : null;
-    if (!i18nMap) return '';
-
-    if (typeof i18nMap[normalized] === 'string' && i18nMap[normalized]) return i18nMap[normalized];
-
-    let current = normalized;
-    const visited = new Set();
-    while (fallbackMap && typeof fallbackMap[current] === 'string' && fallbackMap[current] && !visited.has(current)) {
-        visited.add(current);
-        current = fallbackMap[current].toLowerCase();
-        if (typeof i18nMap[current] === 'string' && i18nMap[current]) return i18nMap[current];
-    }
-
-    return '';
-}
-
 function normalizeUpdateCopy(messages) {
     const fallback = getFallbackUpdateCopy();
     if (!messages || typeof messages !== 'object') return fallback;
@@ -146,10 +113,7 @@ async function hydrateUpdateCopy() {
             }
 
             try {
-                const response = await fetch(url, {
-                    credentials: 'same-origin'
-                });
-                const data = response && response.ok ? await response.json() : {};
+                const data = await fetchRuntimeJson(url);
                 updateCopyCache = normalizeUpdateCopy(data);
                 return updateCopyCache;
             } catch (error) {
@@ -165,7 +129,7 @@ async function hydrateUpdateCopy() {
 async function maybePromptUpdateFallback() {
     if (updateFallbackPrompted) return;
 
-    const anchor = getBreadcrumbCurrentLink();
+    const anchor = getUsableUpdateAnchor();
     if (isUsableUpdateAnchor(anchor)) return;
 
     updateFallbackPrompted = true;
@@ -448,7 +412,7 @@ function bindUpdateUi(runtime) {
     document.addEventListener('pointerdown', (event) => {
         if (root.getAttribute(UPDATE_STATE_ATTR) !== UPDATE_STATE_READY) return;
 
-        const breadcrumbLink = matchBreadcrumbCurrentLink(event.target);
+        const breadcrumbLink = matchUpdateAnchorTarget(event.target);
         if (!breadcrumbLink) return;
 
         event.preventDefault();
@@ -457,7 +421,7 @@ function bindUpdateUi(runtime) {
     document.addEventListener('click', (event) => {
         if (root.getAttribute(UPDATE_STATE_ATTR) !== UPDATE_STATE_READY) return;
 
-        const breadcrumbLink = matchBreadcrumbCurrentLink(event.target);
+        const breadcrumbLink = matchUpdateAnchorTarget(event.target);
         if (!breadcrumbLink) {
             if (updatePopover && !updatePopover.hidden) {
                 const clickTarget = event.target instanceof Element ? event.target : null;

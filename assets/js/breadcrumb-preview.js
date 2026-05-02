@@ -3,7 +3,7 @@ import {
     normalizeBreadcrumbCollectionSource,
 } from './breadcrumb-items.js';
 import { decodeItemsPayload } from './collection-items.js';
-import { normalizeFromPath, normalizePathname } from './nav-state.js';
+import { normalizePathname, readCurrentFromPath } from './nav-state.js';
 import {
     parseEntryBreadcrumbSources,
     parseEntrySelection,
@@ -140,7 +140,7 @@ export function runBreadcrumbPreview() {
         if (previewPending) {
             const selection = parseEntrySelection(
                 sources,
-                normalizeFromPath(new URLSearchParams(window.location.search).get('from') || '')
+                readCurrentFromPath()
             );
             if (selection) {
                 const entrySource = selection.source;

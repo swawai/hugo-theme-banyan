@@ -1,0 +1,101 @@
+{{- $themeConfig := index site.Data "navigation-state-default" | default dict -}}
+{{- if eq (len $themeConfig) 0 -}}
+  {{- errorf "Build failed: missing theme default navigation state data %q." "themes/<theme>/data/navigation-state-default.toml" -}}
+{{- end -}}
+{{- $siteConfig := index site.Data "navigation-state" | default dict -}}
+{{- $themeFields := index $themeConfig "fields" | default dict -}}
+{{- $siteFields := index $siteConfig "fields" | default dict -}}
+{{- $fields := dict -}}
+{{- $fieldKeys := slice -}}
+{{- $requiredFieldKeys := slice "entry_lineage" "active_sort" "lineage_sorts" -}}
+
+{{- range $key, $_ := $themeFields -}}
+  {{- $normalizedKey := lower (printf "%v" $key) -}}
+  {{- if not (in $fieldKeys $normalizedKey) -}}
+    {{- $fieldKeys = $fieldKeys | append $normalizedKey -}}
+  {{- end -}}
+{{- end -}}
+{{- range $key, $_ := $siteFields -}}
+  {{- $normalizedKey := lower (printf "%v" $key) -}}
+  {{- if not (in $fieldKeys $normalizedKey) -}}
+    {{- $fieldKeys = $fieldKeys | append $normalizedKey -}}
+  {{- end -}}
+{{- end -}}
+{{- $fieldKeys = sort $fieldKeys -}}
+
+{{- range $fieldKey := $fieldKeys -}}
+  {{- $themeField := index $themeFields $fieldKey | default dict -}}
+  {{- $siteField := index $siteFields $fieldKey | default dict -}}
+  {{- $mergedField := merge $themeField $siteField -}}
+  {{- $fieldName := lower (trim (printf "%v" (index $mergedField "name" | default "")) " \r\n\t") -}}
+  {{- if eq $fieldName "" -}}
+    {{- errorf "Build failed: navigation-state field %q must define a non-empty name." $fieldKey -}}
+  {{- end -}}
+  {{- $fieldLocation := lower (trim (printf "%v" (index $mergedField "location" | default "query")) " \r\n\t") -}}
+  {{- if ne $fieldLocation "query" -}}
+    {{- errorf "Build failed: navigation-state field %q uses unsupported location=%q. Only query is supported." $fieldKey $fieldLocation -}}
+  {{- end -}}
+  {{- $fieldCacheKey := lower (trim (printf "%v" (index $mergedField "cache_key" | default "keep")) " \r\n\t") -}}
+  {{- if and (ne $fieldCacheKey "ignore") (ne $fieldCacheKey "keep") -}}
+    {{- errorf "Build failed: navigation-state field %q uses unsupported cache_key=%q. Supported values: ignore, keep." $fieldKey $fieldCacheKey -}}
+  {{- end -}}
+  {{- $fieldAliases := slice -}}
+  {{- with index $mergedField "aliases" -}}
+    {{- range . -}}
+      {{- $alias := lower (trim (printf "%v" .) " \r\n\t") -}}
+      {{- if and $alias (ne $alias $fieldName) (not (in $fieldAliases $alias)) -}}
+        {{- $fieldAliases = $fieldAliases | append $alias -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $fieldKeysForLookup := slice $fieldName -}}
+  {{- range $fieldAliases -}}
+    {{- if not (in $fieldKeysForLookup .) -}}
+      {{- $fieldKeysForLookup = $fieldKeysForLookup | append . -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $normalizedField := dict
+    "name" $fieldName
+    "aliases" $fieldAliases
+    "keys" $fieldKeysForLookup
+    "location" $fieldLocation
+    "cache_key" $fieldCacheKey
+  -}}
+  {{- with index $mergedField "placeholder" -}}
+    {{- $placeholder := printf "%v" . -}}
+    {{- if ne $placeholder "" -}}
+      {{- $normalizedField = merge $normalizedField (dict "placeholder" $placeholder) -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $fields = merge $fields (dict $fieldKey $normalizedField) -}}
+{{- end -}}
+
+{{- range $fieldKey := $requiredFieldKeys -}}
+  {{- if not (isset $fields $fieldKey) -}}
+    {{- errorf "Build failed: navigation-state config is missing required field %q." $fieldKey -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $seenQueryKeys := dict -}}
+{{- $cacheIgnoredQueryKeys := slice -}}
+{{- range $fieldKey, $field := $fields -}}
+  {{- $fieldKeysForLookup := index $field "keys" | default slice -}}
+  {{- range $queryKey := $fieldKeysForLookup -}}
+    {{- if isset $seenQueryKeys $queryKey -}}
+      {{- errorf "Build failed: navigation-state query key %q is assigned to both %q and %q." $queryKey (index $seenQueryKeys $queryKey) $fieldKey -}}
+    {{- end -}}
+    {{- $seenQueryKeys = merge $seenQueryKeys (dict $queryKey $fieldKey) -}}
+  {{- end -}}
+  {{- if eq (index $field "cache_key") "ignore" -}}
+    {{- range $queryKey := $fieldKeysForLookup -}}
+      {{- if not (in $cacheIgnoredQueryKeys $queryKey) -}}
+        {{- $cacheIgnoredQueryKeys = $cacheIgnoredQueryKeys | append $queryKey -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- return dict
+  "fields" $fields
+  "cache_ignored_query_keys" (sort $cacheIgnoredQueryKeys)
+-}}

@@ -3,6 +3,7 @@
 {{ $pathHint := lower (printf "%v" ($js.Name | default "")) }}
 {{ $alreadyMinified := or (in $pathHint ".min.js") (in $pathHint ".min.mjs") }}
 {{ $targetPath := printf "%v" ($js.Name | default "js/page-resource.js") }}
+{{ $buildParams := .params | default (partialCached "js-build-params.html" site "js-build-params") }}
 {{ if and (not hugo.IsServer) (not $alreadyMinified) }}
     {{ if hasSuffix $targetPath ".mjs" }}
         {{ $targetPath = replaceRE `\.mjs$` ".min.mjs" $targetPath }}
@@ -10,9 +11,11 @@
         {{ $targetPath = replaceRE `\.js$` ".min.js" $targetPath }}
     {{ end }}
 {{ end }}
-{{ $js = $js | js.Build (dict
+{{ $buildOptions := dict
     "targetPath" $targetPath
     "minify" (and (not hugo.IsServer) (not $alreadyMinified))
-) }}
+}}
+{{ with $buildParams }}{{ $buildOptions = merge $buildOptions (dict "params" .) }}{{ end }}
+{{ $js = $js | js.Build $buildOptions }}
 {{ if .fingerprint }}{{ $js = $js | fingerprint }}{{ end }}
 {{ return $js }}

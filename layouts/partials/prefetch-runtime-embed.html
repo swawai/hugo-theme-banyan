@@ -65,7 +65,11 @@
     "has_moderate_module" $hasModerateModule
     "has_sw_module" $hasSwModule
   ) -}}
-  {{- $runtimeBundle := $runtimeEntry | js.Build (dict "targetPath" (printf "js/prefetch.runtime.%s.bundle.js" $runtimeVariant)) -}}
+  {{- $buildParams := partialCached "js-build-params.html" site "js-build-params" -}}
+  {{- $runtimeBundle := $runtimeEntry | js.Build (dict
+    "targetPath" (printf "js/prefetch.runtime.%s.bundle.js" $runtimeVariant)
+    "params" $buildParams
+  ) -}}
   {{- if not $isServer }}{{ $runtimeBundle = $runtimeBundle | minify }}{{ end -}}
   {{- $runtimeBundle = $runtimeBundle | fingerprint -}}
 <script id="site-prefetch-data" type="application/json">{{ $actionsPayloadByEnv | jsonify | safeJS }}</script>
