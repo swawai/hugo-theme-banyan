@@ -6,12 +6,9 @@ build:
 slot_resources:
   utilities:
     page_css:
-      - site-nav.css
-      - site-nav.medium.css
-      - site-nav.wide.css
-      - nav-utilities.css
+      - fragments/nav-utilities/nav-utilities.css
     page_js:
-      - nav-utilities.js
+      - fragments/nav-utilities/nav-utilities.js
 nav:
   labels:
     language: 语言

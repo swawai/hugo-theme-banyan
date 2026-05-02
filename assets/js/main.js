@@ -1,3 +1,5 @@
+import { getRuntimeManifest } from './runtime-manifest.js';
+
 // 针对微信安卓版：通过 WeixinJSBridge 强制覆盖字体大小并禁止用户修改，缓解字体缩放导致的页面跳变
 (function () {
     if (typeof WeixinJSBridge == "object" && typeof WeixinJSBridge.invoke == "function") {
@@ -19,37 +21,6 @@
         } catch (e) { }
     }
 })();
-
-let runtimeManifestPromise = null;
-let runtimeManifestCache = null;
-
-function readRuntimeManifestUrl() {
-    return document.body?.dataset.assetManifestUrl || '';
-}
-
-function getRuntimeManifest() {
-    if (runtimeManifestCache) {
-        return Promise.resolve(runtimeManifestCache);
-    }
-
-    if (!runtimeManifestPromise) {
-        const manifestUrl = readRuntimeManifestUrl();
-        if (!manifestUrl) {
-            runtimeManifestCache = {};
-            return Promise.resolve(runtimeManifestCache);
-        }
-
-        runtimeManifestPromise = fetch(manifestUrl, { credentials: 'include' })
-            .then((res) => (res && res.ok ? res.json() : {}))
-            .catch(() => ({}))
-            .then((manifest) => {
-                runtimeManifestCache = manifest && typeof manifest === 'object' ? manifest : {};
-                return runtimeManifestCache;
-            });
-    }
-
-    return runtimeManifestPromise;
-}
 
 void getRuntimeManifest();
 

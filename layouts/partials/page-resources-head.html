@@ -7,7 +7,7 @@
         {{ $pageCssSpecs := partial "page-resource-specs.html" (dict "source" $sourcePage "key" "page_css") }}
         {{ range $spec := $pageCssSpecs }}
             {{ $pageCss := partial "page-resource-resolve.html" (dict "source" $sourcePage "spec" $spec "asset_dir" "css" "kind" "page_css") }}
-            {{ $emitKey := printf "css-resource:%s" $pageCss.RelPermalink }}
+            {{ $emitKey := printf "css-resource:%s:%s:%s" (printf "%v" ($pageCss.ResourceType | default "")) (printf "%v" ($pageCss.Name | default "")) (md5 $pageCss.Content) }}
             {{ if isset $emitted $emitKey }}{{ continue }}{{ end }}
             {{ $emitted = merge $emitted (dict $emitKey true) }}
             {{ if $isOfflinePage }}
@@ -30,7 +30,7 @@
     {{ with index $descriptor "css_resources" }}
         {{ range $resource := . }}
             {{ $pageCss := $resource }}
-            {{ $emitKey := printf "css-resource:%s" $pageCss.RelPermalink }}
+            {{ $emitKey := printf "css-resource:%s:%s:%s" (printf "%v" ($pageCss.ResourceType | default "")) (printf "%v" ($pageCss.Name | default "")) (md5 $pageCss.Content) }}
             {{ if isset $emitted $emitKey }}{{ continue }}{{ end }}
             {{ $emitted = merge $emitted (dict $emitKey true) }}
             {{ if $isOfflinePage }}

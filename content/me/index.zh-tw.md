@@ -10,7 +10,7 @@ slots:
   utilities: /fragments/nav-utilities
 build:
   list: "never"
-page_js: "page.js"
+page_js: "me/page.js"
 ---
 
 

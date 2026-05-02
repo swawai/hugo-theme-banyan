@@ -14,12 +14,18 @@
 {{ $navBreadcrumb := resources.Get "css/nav-breadcrumb.css" }}
 {{ $navBreadcrumbMedium := resources.Get "css/nav-breadcrumb.medium.css" }}
 {{ $navBreadcrumbWide := resources.Get "css/nav-breadcrumb.wide.css" }}
+{{ $siteNav := resources.Get "css/site-nav.css" }}
+{{ $siteNavMedium := resources.Get "css/site-nav.medium.css" }}
+{{ $siteNavWide := resources.Get "css/site-nav.wide.css" }}
 {{ $siteHeader := resources.Get "css/site-header.css" }}
 {{ $uiDropdown := resources.Get "css/ui-dropdown.css" }}
 {{ $swUpdateAnchor := resources.Get "css/sw-update-anchor.css" }}
 {{ $swModeRaw := $ctx.Site.Params.service_worker.mode | default "off" }}
 {{ $swMode := lower (printf "%v" $swModeRaw) }}
 {{ $pageBundleParts := slice $coreBase $coreBaseMedium $coreBaseWide $siteHeader }}
+{{ $pageBundleParts = $pageBundleParts | append $siteNav }}
+{{ $pageBundleParts = $pageBundleParts | append $siteNavMedium }}
+{{ $pageBundleParts = $pageBundleParts | append $siteNavWide }}
 {{ $pageBundleParts = $pageBundleParts | append $uiDropdown }}
 {{ $pageBundleParts = $pageBundleParts | append $coreA11y }}
 {{ $pageBundleParts = $pageBundleParts | append $coreMotion }}
@@ -40,28 +46,11 @@
 {{ $allBundleParts := $listBundleParts | append $gridAll }}
 {{ $allBundle := $allBundleParts | resources.Concat "css/bundle-all.css" }}
 {{ $allBundle = partial "css-process.html" (dict "resource" $allBundle "fingerprint" true) }}
-{{ $homeCriticalParts := slice $coreBase $coreBaseMedium $coreBaseWide $siteHeader }}
-{{ $homeCriticalParts = $homeCriticalParts | append $uiDropdown }}
-{{ $homeCriticalParts = $homeCriticalParts | append $navBreadcrumb }}
-{{ $homeCriticalParts = $homeCriticalParts | append $navBreadcrumbMedium }}
-{{ $homeCriticalParts = $homeCriticalParts | append $navBreadcrumbWide }}
-{{ $homeCriticalParts = $homeCriticalParts | append $coreA11y }}
-{{ $homeCriticalParts = $homeCriticalParts | append $gridList }}
-{{ $homeCritical := $homeCriticalParts | resources.Concat "css/home-critical.css" }}
-{{ $homeCritical = partial "css-process.html" (dict "resource" $homeCritical) }}
-{{ $homeAddonParts := slice $coreMotion }}
-{{ if eq $swMode "enable" }}{{ $homeAddonParts = $homeAddonParts | append $swUpdateAnchor }}{{ end }}
-{{ $homeAddon := $homeAddonParts | resources.Concat "css/home-addon.css" }}
-{{ $homeAddon = partial "css-process.html" (dict "resource" $homeAddon "fingerprint" true) }}
 {{ $resolvedVariant := $variant }}
 {{ if not $resolvedVariant }}
 {{ $resolvedVariant = index $flags "defaultVariant" }}
 {{ end }}
-{{ if eq $resolvedVariant "home" }}
-<style>{{ $homeCritical.Content | safeCSS }}</style>
-<link rel="preload" href="{{ $homeAddon.RelPermalink }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="{{ $homeAddon.RelPermalink }}"></noscript>
-{{ else if eq $resolvedVariant "all" }}
+{{ if eq $resolvedVariant "all" }}
 <link rel="stylesheet" href="{{ $allBundle.RelPermalink }}">
 {{ else if eq $resolvedVariant "products" }}
 <link rel="stylesheet" href="{{ $productsBundle.RelPermalink }}">

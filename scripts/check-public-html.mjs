@@ -196,12 +196,27 @@ function extractExternalScriptSrcs(text) {
     return refs;
 }
 
+function extractInlineScriptTextById(text, scriptId) {
+    const escapedId = scriptId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = text.match(
+        new RegExp(`<script\\b[^>]*\\bid=(?:"${escapedId}"|'${escapedId}'|${escapedId})[^>]*>([\\s\\S]*?)<\\/script>`, 'i')
+    );
+    if (!match) {
+        return '';
+    }
+    return match[1] ?? '';
+}
+
 function hasCanonical(text) {
     return /<link\b[^>]*\brel=(?:"canonical"|'canonical'|canonical(?:\s|>|\/))/i.test(text);
 }
 
 function hasMainBundle(text) {
     return /\/js\/main(?:\.min)?\.[^"' >]+/i.test(text);
+}
+
+function hasPrefetchRuntimeBundle(text) {
+    return /\/js\/prefetch\.runtime[^"' >]*\.js/i.test(text);
 }
 
 function isRedirectPage(text) {
@@ -219,6 +234,15 @@ function printRankedRows(title, rows, valueSelector) {
     for (const row of rows) {
         console.log(
             `${row.relativePath}\traw=${formatByteMetric(row.rawBytes)}\tgzip=${formatByteMetric(row.gzipBytes)}\tbreadcrumb=${formatByteMetric(row.breadcrumbPayloadBytes)}\tsources=${row.breadcrumbSourceCount}\tkey=${formatByteMetric(valueSelector(row))}`
+        );
+    }
+}
+
+function printPrefetchRows(title, rows, valueSelector, { formatKey = (value) => formatByteMetric(value) } = {}) {
+    console.log(`\n${title}`);
+    for (const row of rows) {
+        console.log(
+            `${row.relativePath}\tprefetch=${formatByteMetric(row.prefetchPayloadBytes)}\tenvs=${row.prefetchEnvCount}\tcanonical_envs=${row.prefetchCanonicalEnvCount}\turls=${row.prefetchUniqueUrlCount}\tspec=${row.prefetchSpecUrlCount}\tlink=${row.prefetchLinkUrlCount}\tsw=${row.prefetchSwUrlCount}\tkey=${formatKey(valueSelector(row))}`
         );
     }
 }
@@ -267,10 +291,13 @@ function printSentinelRows(rows) {
             continue;
         }
         console.log(
-            `${row.relativePath}\traw=${formatByteMetric(row.rawBytes)}\tgzip=${formatByteMetric(row.gzipBytes)}\tjs_gzip=${formatByteMetric(row.jsDependencyGzipBytes)}\tcold_gzip=${formatByteMetric(row.coldGzipBytes)}\tbreadcrumb=${formatByteMetric(row.breadcrumbPayloadBytes)}\tsources=${row.breadcrumbSourceCount}\tscripts=${row.scriptDependencyCount}`
+            `${row.relativePath}\traw=${formatByteMetric(row.rawBytes)}\tgzip=${formatByteMetric(row.gzipBytes)}\tjs_gzip=${formatByteMetric(row.jsDependencyGzipBytes)}\tcold_gzip=${formatByteMetric(row.coldGzipBytes)}\tbreadcrumb=${formatByteMetric(row.breadcrumbPayloadBytes)}\tsources=${row.breadcrumbSourceCount}\tprefetch=${formatByteMetric(row.prefetchPayloadBytes)}\tprefetch_urls=${row.prefetchUniqueUrlCount}\tscripts=${row.scriptDependencyCount}`
         );
         if (row.breadcrumbSourcePaths.length > 0) {
             console.log(`  source_paths=${row.breadcrumbSourcePaths.join(', ')}`);
+        }
+        if (row.prefetchUniqueUrls.length > 0) {
+            console.log(`  prefetch_targets=${row.prefetchUniqueUrls.join(', ')}`);
         }
         if (row.scriptDependencyPaths.length > 0) {
             console.log(`  script_deps=${row.scriptDependencyPaths.join(', ')}`);
@@ -307,6 +334,100 @@ function normalizeScriptReference(ref, pageRelativePath) {
     }
 }
 
+function shouldIgnoreScriptReference(ref) {
+    return ref === '/livereload.js';
+}
+
+function parsePrefetchPayload(scriptText) {
+    const empty = {
+        prefetchPayloadBytes: 0,
+        prefetchEnvCount: 0,
+        prefetchCanonicalEnvCount: 0,
+        prefetchUniqueUrlCount: 0,
+        prefetchUniqueUrls: [],
+        prefetchSpecUrlCount: 0,
+        prefetchLinkUrlCount: 0,
+        prefetchSwUrlCount: 0,
+        prefetchGlobalGateUrlCount: 0,
+        prefetchParseError: '',
+    };
+
+    if (scriptText === '') {
+        return empty;
+    }
+
+    const trimmed = scriptText.trim();
+    const stats = {
+        ...empty,
+        prefetchPayloadBytes: Buffer.byteLength(trimmed),
+    };
+
+    let parsed;
+    try {
+        parsed = JSON.parse(trimmed);
+    } catch (error) {
+        stats.prefetchParseError = error instanceof Error ? error.message : String(error);
+        return stats;
+    }
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        stats.prefetchParseError = 'site-prefetch-data is not a JSON object';
+        return stats;
+    }
+
+    stats.prefetchEnvCount = Object.keys(parsed).length;
+
+    const uniqueUrls = new Set();
+    const canonicalEntries = Object.values(parsed).filter((value) => value && typeof value === 'object' && !Array.isArray(value));
+    stats.prefetchCanonicalEnvCount = canonicalEntries.length;
+
+    for (const entry of canonicalEntries) {
+        for (const [actionCode, actionValue] of Object.entries(entry)) {
+            if (actionCode === 'sp' || actionCode === 'sg') {
+                if (!actionValue || typeof actionValue !== 'object' || Array.isArray(actionValue)) {
+                    continue;
+                }
+                for (const ruleKind of ['prefetch', 'prerender']) {
+                    const rules = Array.isArray(actionValue[ruleKind]) ? actionValue[ruleKind] : [];
+                    for (const rule of rules) {
+                        const urls = Array.isArray(rule?.urls) ? rule.urls.filter((url) => typeof url === 'string' && url) : [];
+                        stats.prefetchSpecUrlCount += urls.length;
+                        if (actionCode === 'sg') {
+                            stats.prefetchGlobalGateUrlCount += urls.length;
+                        }
+                        for (const url of urls) {
+                            uniqueUrls.add(url);
+                        }
+                    }
+                }
+                continue;
+            }
+
+            if (!Array.isArray(actionValue)) {
+                continue;
+            }
+
+            const urls = actionValue.filter((url) => typeof url === 'string' && url);
+            if (actionCode.startsWith('l')) {
+                stats.prefetchLinkUrlCount += urls.length;
+            }
+            if (actionCode.startsWith('w')) {
+                stats.prefetchSwUrlCount += urls.length;
+            }
+            if (actionCode.endsWith('g')) {
+                stats.prefetchGlobalGateUrlCount += urls.length;
+            }
+            for (const url of urls) {
+                uniqueUrls.add(url);
+            }
+        }
+    }
+
+    stats.prefetchUniqueUrls = [...uniqueUrls];
+    stats.prefetchUniqueUrlCount = stats.prefetchUniqueUrls.length;
+    return stats;
+}
+
 async function inspectJsAsset(rootDir, absolutePath) {
     const buffer = await fs.readFile(absolutePath);
     const relativePath = normalizeAssetPath(
@@ -334,6 +455,8 @@ async function inspectHtmlFile(rootDir, absolutePath) {
     let breadcrumbSourceCount = 0;
     let breadcrumbSourcePaths = [];
     let breadcrumbParseError = '';
+    const prefetchPayloadScript = extractInlineScriptTextById(text, 'site-prefetch-data');
+    const prefetchStats = parsePrefetchPayload(prefetchPayloadScript);
 
     if (encodedBreadcrumbSources !== '') {
         const decodedBreadcrumbSources = decodeHtmlAttribute(encodedBreadcrumbSources);
@@ -367,10 +490,12 @@ async function inspectHtmlFile(rootDir, absolutePath) {
         isRedirect: isRedirectPage(text),
         hasCanonical: hasCanonical(text),
         hasMainBundle: hasMainBundle(text),
+        hasPrefetchRuntimeBundle: hasPrefetchRuntimeBundle(text),
         breadcrumbPayloadBytes,
         breadcrumbSourceCount,
         breadcrumbSourcePaths,
         breadcrumbParseError,
+        ...prefetchStats,
         externalScriptRefs: extractExternalScriptSrcs(text),
     };
 }
@@ -382,7 +507,7 @@ function buildJsDependencyStats(pageRelativePath, externalScriptRefs, jsAssetsBy
 
     for (const ref of externalScriptRefs) {
         const normalizedRef = normalizeScriptReference(ref, pageRelativePath);
-        if (!normalizedRef || seen.has(normalizedRef)) {
+        if (!normalizedRef || shouldIgnoreScriptReference(normalizedRef) || seen.has(normalizedRef)) {
             continue;
         }
         seen.add(normalizedRef);
@@ -411,6 +536,15 @@ function buildIntegrityIssues(rows) {
         }
         if (row.breadcrumbParseError) {
             issues.push(`Invalid breadcrumb payload on ${row.relativePath}: ${row.breadcrumbParseError}`);
+        }
+        if (row.prefetchParseError) {
+            issues.push(`Invalid prefetch payload on ${row.relativePath}: ${row.prefetchParseError}`);
+        }
+        if (row.prefetchPayloadBytes > 0 && !row.hasPrefetchRuntimeBundle) {
+            issues.push(`Missing prefetch runtime bundle on page with prefetch payload: ${row.relativePath}`);
+        }
+        if (row.prefetchPayloadBytes === 0 && row.hasPrefetchRuntimeBundle) {
+            issues.push(`Unexpected prefetch runtime bundle without payload: ${row.relativePath}`);
         }
         for (const missingScriptRef of row.missingScriptRefs || []) {
             issues.push(`Missing script asset ${missingScriptRef} referenced by ${row.relativePath}`);
@@ -531,6 +665,12 @@ async function main() {
     const rawTotal = rows.reduce((sum, row) => sum + row.rawBytes, 0);
     const gzipTotal = rows.reduce((sum, row) => sum + row.gzipBytes, 0);
     const breadcrumbTotal = rows.reduce((sum, row) => sum + row.breadcrumbPayloadBytes, 0);
+    const prefetchTotal = rows.reduce((sum, row) => sum + row.prefetchPayloadBytes, 0);
+    const prefetchPages = rows.filter((row) => row.prefetchPayloadBytes > 0);
+    const prefetchEnvTotal = rows.reduce((sum, row) => sum + row.prefetchEnvCount, 0);
+    const prefetchCanonicalEnvTotal = rows.reduce((sum, row) => sum + row.prefetchCanonicalEnvCount, 0);
+    const prefetchPageLocalUrlTotal = rows.reduce((sum, row) => sum + row.prefetchUniqueUrlCount, 0);
+    const prefetchGlobalUniqueUrls = new Set(rows.flatMap((row) => row.prefetchUniqueUrls));
     const redirectCount = rows.filter((row) => row.isRedirect).length;
     const jsRawTotal = jsAssets.reduce((sum, asset) => sum + asset.rawBytes, 0);
     const jsGzipTotal = jsAssets.reduce((sum, asset) => sum + asset.gzipBytes, 0);
@@ -548,8 +688,18 @@ async function main() {
     console.log(`Raw total\t${rawTotal}\t${formatBytes(rawTotal)}`);
     console.log(`Gzip total\t${gzipTotal}\t${formatBytes(gzipTotal)}`);
     console.log(`Breadcrumb payload total\t${breadcrumbTotal}\t${formatBytes(breadcrumbTotal)}`);
+    console.log(`Prefetch payload total\t${prefetchTotal}\t${formatBytes(prefetchTotal)}`);
+    console.log(`Prefetch pages\t${prefetchPages.length}`);
+    console.log(`Prefetch env entries\t${prefetchEnvTotal}`);
+    console.log(`Prefetch canonical env entries\t${prefetchCanonicalEnvTotal}`);
+    console.log(`Prefetch page-local URLs\t${prefetchPageLocalUrlTotal}`);
+    console.log(`Prefetch global unique URLs\t${prefetchGlobalUniqueUrls.size}`);
     console.log(`Raw average\t${Math.round(rawTotal / rows.length)}\t${formatBytes(rawTotal / rows.length)}`);
     console.log(`Gzip average\t${Math.round(gzipTotal / rows.length)}\t${formatBytes(gzipTotal / rows.length)}`);
+    if (prefetchPages.length > 0) {
+        const prefetchAverage = Math.round(prefetchTotal / prefetchPages.length);
+        console.log(`Prefetch average\t${prefetchAverage}\t${formatBytes(prefetchAverage)}`);
+    }
     console.log(`JS assets\t${jsAssets.length}`);
     console.log(`JS raw total\t${jsRawTotal}\t${formatBytes(jsRawTotal)}`);
     console.log(`JS gzip total\t${jsGzipTotal}\t${formatBytes(jsGzipTotal)}`);
@@ -570,6 +720,17 @@ async function main() {
         `Largest breadcrumb payload pages (top ${options.top})`,
         summarizeRows(rows, options.top, (row) => row.breadcrumbPayloadBytes),
         (row) => row.breadcrumbPayloadBytes
+    );
+    printPrefetchRows(
+        `Largest prefetch payload pages (top ${options.top})`,
+        summarizeRows(rows, options.top, (row) => row.prefetchPayloadBytes),
+        (row) => row.prefetchPayloadBytes
+    );
+    printPrefetchRows(
+        `Most prefetch target URLs (top ${options.top})`,
+        summarizeRows(rows, options.top, (row) => row.prefetchUniqueUrlCount),
+        (row) => row.prefetchUniqueUrlCount,
+        { formatKey: (value) => `${value}` }
     );
     printPageCostRows(
         `Largest cold page cost (HTML + JS gzip, top ${options.top})`,

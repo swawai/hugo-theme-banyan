@@ -1,8 +1,10 @@
 {{ $ctx := . }}
 {{ with .ctx }}{{ $ctx = . }}{{ end }}
 {{ $defaultVariant := "page-crumb" }}
-{{ if $ctx.IsHome }}
-{{ $defaultVariant = "home" }}
+{{ $slotSources := $ctx.Scratch.Get "slot_sources" | default dict }}
+{{ $hasBreadcrumbShell := or (index $slotSources "breadcrumb_root") (index $slotSources "breadcrumb") }}
+{{ if not $hasBreadcrumbShell }}
+{{ $defaultVariant = "page" }}
 {{ end }}
 {{ return dict
     "defaultVariant" $defaultVariant

@@ -10,7 +10,7 @@ layout: "article-page"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities
-page_js: "page.js"
+page_js: "prefetchdebug/page.js"
 build:
   list: "never"
 ---

@@ -7,7 +7,7 @@
         {{ $pageJsSpecs := partial "page-resource-specs.html" (dict "source" $sourcePage "key" "page_js") }}
         {{ range $spec := $pageJsSpecs }}
             {{ $pageJs := partial "page-resource-resolve.html" (dict "source" $sourcePage "spec" $spec "asset_dir" "js" "kind" "page_js") }}
-            {{ $emitKey := printf "js-resource:%s" $pageJs.RelPermalink }}
+            {{ $emitKey := printf "js-resource:%s:%s:%s" (printf "%v" ($pageJs.ResourceType | default "")) (printf "%v" ($pageJs.Name | default "")) (md5 $pageJs.Content) }}
             {{ if isset $emitted $emitKey }}{{ continue }}{{ end }}
             {{ $emitted = merge $emitted (dict $emitKey true) }}
             {{ if $isOfflinePage }}
@@ -30,7 +30,7 @@
     {{ with index $descriptor "js_resources" }}
         {{ range $resource := . }}
             {{ $pageJs := $resource }}
-            {{ $emitKey := printf "js-resource:%s" $pageJs.RelPermalink }}
+            {{ $emitKey := printf "js-resource:%s:%s:%s" (printf "%v" ($pageJs.ResourceType | default "")) (printf "%v" ($pageJs.Name | default "")) (md5 $pageJs.Content) }}
             {{ if isset $emitted $emitKey }}{{ continue }}{{ end }}
             {{ $emitted = merge $emitted (dict $emitKey true) }}
             {{ if $isOfflinePage }}

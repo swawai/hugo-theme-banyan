@@ -1,7 +1,18 @@
 {{ $js := .resource }}
 {{ if not $js }}{{ return }}{{ end }}
-{{ $pathHint := lower (printf "%v" ($js.RelPermalink | default ($js.Name | default ""))) }}
+{{ $pathHint := lower (printf "%v" ($js.Name | default "")) }}
 {{ $alreadyMinified := or (in $pathHint ".min.js") (in $pathHint ".min.mjs") }}
-{{ if and (not hugo.IsServer) (not $alreadyMinified) }}{{ $js = $js | minify }}{{ end }}
+{{ $targetPath := printf "%v" ($js.Name | default "js/page-resource.js") }}
+{{ if and (not hugo.IsServer) (not $alreadyMinified) }}
+    {{ if hasSuffix $targetPath ".mjs" }}
+        {{ $targetPath = replaceRE `\.mjs$` ".min.mjs" $targetPath }}
+    {{ else if hasSuffix $targetPath ".js" }}
+        {{ $targetPath = replaceRE `\.js$` ".min.js" $targetPath }}
+    {{ end }}
+{{ end }}
+{{ $js = $js | js.Build (dict
+    "targetPath" $targetPath
+    "minify" (and (not hugo.IsServer) (not $alreadyMinified))
+) }}
 {{ if .fingerprint }}{{ $js = $js | fingerprint }}{{ end }}
 {{ return $js }}
