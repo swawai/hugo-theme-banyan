@@ -1,0 +1,139 @@
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const MIME_TYPES = new Map([
+    ['.css', 'text/css; charset=utf-8'],
+    ['.html', 'text/html; charset=utf-8'],
+    ['.ico', 'image/x-icon'],
+    ['.js', 'text/javascript; charset=utf-8'],
+    ['.json', 'application/json; charset=utf-8'],
+    ['.png', 'image/png'],
+    ['.svg', 'image/svg+xml'],
+    ['.txt', 'text/plain; charset=utf-8'],
+    ['.webmanifest', 'application/manifest+json; charset=utf-8'],
+    ['.xml', 'application/xml; charset=utf-8']
+]);
+
+function normalizeRequestPath(urlPathname) {
+    let pathname = decodeURIComponent(urlPathname || '/');
+    if (!pathname.startsWith('/')) pathname = `/${pathname}`;
+    return pathname;
+}
+
+function resolveRequestFile(rootDir, pathname) {
+    const safePathname = normalizeRequestPath(pathname);
+    const rawPath = safePathname.endsWith('/')
+        ? `${safePathname}index.html`
+        : safePathname;
+    const absPath = path.normalize(path.join(rootDir, rawPath));
+    if (!absPath.startsWith(path.normalize(rootDir))) return '';
+
+    if (fs.existsSync(absPath) && fs.statSync(absPath).isFile()) {
+        return absPath;
+    }
+
+    if (!path.extname(absPath)) {
+        const nestedIndex = path.join(absPath, 'index.html');
+        if (fs.existsSync(nestedIndex) && fs.statSync(nestedIndex).isFile()) {
+            return nestedIndex;
+        }
+    }
+
+    return '';
+}
+
+function getContentType(filePath) {
+    return MIME_TYPES.get(path.extname(filePath).toLowerCase()) || 'application/octet-stream';
+}
+
+function getCacheControl(filePath) {
+    const fileName = path.basename(filePath).toLowerCase();
+    const ext = path.extname(filePath).toLowerCase();
+    if (fileName === 'sw.js') {
+        return 'no-cache, max-age=0, must-revalidate';
+    }
+    if (ext === '.html' || ext === '.json' || ext === '.webmanifest' || ext === '.xml' || ext === '.txt') {
+        return 'no-cache, max-age=0, must-revalidate';
+    }
+    return 'public, max-age=31536000, immutable';
+}
+
+export async function createStaticSiteServer(options = {}) {
+    let rootDir = options.rootDir;
+    if (!rootDir) {
+        throw new Error('createStaticSiteServer requires rootDir.');
+    }
+
+    let server = null;
+    let port = null;
+
+    function setRoot(nextRootDir) {
+        rootDir = nextRootDir;
+    }
+
+    function getBaseUrl() {
+        if (!port) {
+            throw new Error('Static site server has not started yet.');
+        }
+        return `http://127.0.0.1:${port}`;
+    }
+
+    async function start() {
+        if (server) return api;
+
+        server = http.createServer((req, res) => {
+            const url = new URL(req.url || '/', 'http://127.0.0.1');
+            const filePath = resolveRequestFile(rootDir, url.pathname);
+            if (!filePath) {
+                res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+                res.end('Not Found');
+                return;
+            }
+
+            try {
+                const body = fs.readFileSync(filePath);
+                res.writeHead(200, {
+                    'Cache-Control': getCacheControl(filePath),
+                    'Content-Type': getContentType(filePath)
+                });
+                res.end(body);
+            } catch (error) {
+                res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+                res.end('Internal Server Error');
+            }
+        });
+
+        await new Promise((resolve, reject) => {
+            server.once('error', reject);
+            server.listen(0, '127.0.0.1', () => {
+                const address = server.address();
+                port = address && typeof address === 'object' ? address.port : null;
+                resolve();
+            });
+        });
+
+        return api;
+    }
+
+    async function stop() {
+        if (!server) return;
+        await new Promise((resolve, reject) => {
+            server.close((error) => {
+                if (error) reject(error);
+                else resolve();
+            });
+        });
+        server = null;
+        port = null;
+    }
+
+    const api = {
+        getBaseUrl,
+        setRoot,
+        start,
+        stop
+    };
+
+    return api;
+}
