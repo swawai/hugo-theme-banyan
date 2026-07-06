@@ -36,7 +36,7 @@
 例子：
 
 ```txt
-?from=d/products/xvenv
+?from=d/products
 ```
 
 含义：
@@ -44,7 +44,9 @@
 - 当前页是 `xvenv`
 - 它是从 `/d/products/` 这一层点进去的
 
-`from` 只表达路径 lineage，不表达排序。
+`from` 只表达来源 collection lineage，不表达当前 entry，也不表达排序。
+当前 entry 由页面路径表达，例如 `/p/xvenv/`。因此
+`from=d/products/xvenv` 不是有效的新协议状态。
 
 ### `sort`
 
@@ -65,7 +67,7 @@
 例子：
 
 ```txt
-?from=d/products/xvenv&sorts=name-asc,date-desc
+?from=d/products&sorts=name-asc,date-desc
 ```
 
 含义：
@@ -78,6 +80,9 @@
 - `sorts` 按路径层级位置对齐
 - 它不是全站排序
 - 它只对当前 `from` lineage 有意义
+- 当路径上的排序都等于对应 collection 的默认排序时，URL 应省略
+  `sorts`；只有出现非默认排序时才写入完整 lineage，必要时用 `_`
+  保持层级占位。
 
 ## `_items.json`
 

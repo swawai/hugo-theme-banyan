@@ -85,33 +85,16 @@ function findEntrySource(sources, logicalPath) {
         return null;
     }
 
-    var sortedSources = sources.slice().sort(function (left, right) {
-        return normalizePath(right && (right.logical_path || right.logicalPath || "")).length
-            - normalizePath(left && (left.logical_path || left.logicalPath || "")).length;
-    });
-
-    for (var index = 0; index < sortedSources.length; index += 1) {
-        var source = sortedSources[index];
+    for (var index = 0; index < sources.length; index += 1) {
+        var source = sources[index];
         if (!source || typeof source !== "object") {
             continue;
         }
 
         var sourcePath = normalizePath(source.logical_path || source.logicalPath || "");
-        if (!sourcePath || normalizedPath.indexOf(sourcePath) !== 0) {
-            continue;
+        if (sourcePath === normalizedPath) {
+            return source;
         }
-
-        var remainder = normalizedPath.slice(sourcePath.length).split("/").filter(Boolean);
-        if (remainder.length !== 1) {
-            continue;
-        }
-
-        var slug = remainder[0];
-        if (!slug || slug === "." || slug === ".." || /[/?#]/.test(slug)) {
-            return null;
-        }
-
-        return source;
     }
 
     return null;

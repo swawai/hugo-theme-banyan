@@ -2,13 +2,13 @@ const defaultBaseUrl = process.env.BANYAN_SECURITY_BASE_URL || 'http://127.0.0.1
 
 function printHelp() {
     console.log(`Usage:
-  bun themes/banyan/scripts/checks/check-security-headers.mjs [baseUrl]
+  node themes/banyan/scripts/checks/check-security-headers.mjs [baseUrl]
 
 Examples:
   bun run check:security:headers
   BANYAN_SECURITY_BASE_URL=https://example.com/ bun run check:security:headers
-  bun themes/banyan/scripts/checks/check-security-headers.mjs https://example.com/
-  bun themes/banyan/scripts/checks/check-security-headers.mjs http://127.0.0.1:8787/
+  node themes/banyan/scripts/checks/check-security-headers.mjs https://example.com/
+  node themes/banyan/scripts/checks/check-security-headers.mjs http://127.0.0.1:8787/
 
 Notes:
   - Checks the real response headers returned by the target server.

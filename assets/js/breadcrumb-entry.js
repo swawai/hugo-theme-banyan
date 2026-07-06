@@ -122,12 +122,16 @@ async function buildEntryState() {
     }
 
     const prefixItemsPromise = buildPrefixItems(fragmentRoot, selection.source);
-    const currentItem = await buildSelectedBreadcrumbItem(fragmentRoot, selection.source, selection.entryKey);
+    const currentPathname = normalizePathname(window.location.pathname);
+    const currentItem = await buildSelectedBreadcrumbItem(
+        fragmentRoot,
+        selection.source,
+        currentPathname
+    );
     if (!currentItem) {
         return null;
     }
 
-    const currentPathname = normalizePathname(window.location.pathname);
     const resolvedPathname = normalizePathname(new URL(currentItem.href, window.location.origin).pathname);
     if (currentPathname !== resolvedPathname) {
         return null;

@@ -9,6 +9,7 @@ import {
 } from './collection-items.js';
 import {
     applyFromPathToUrl,
+    buildDefaultSortsTokens,
     applySortsTokensToUrl,
     buildCurrentPageSortsTokens,
     buildDescendantSortsTokens,
@@ -86,11 +87,15 @@ function readRequestedSortState(source, sortVariant, defaultSort = '') {
     const sortsTokens = source?.logicalPath
         ? buildCurrentPageSortsTokens(source.logicalPath, sortToken)
         : [];
+    const defaultSortsTokens = source?.logicalPath
+        ? buildDefaultSortsTokens(source.logicalPath, fallbackToken)
+        : [];
 
     return {
         sortToken,
         defaultSort: fallbackToken,
         sortsTokens,
+        defaultSortsTokens,
     };
 }
 
@@ -105,7 +110,7 @@ export function buildCollectionPageHref(href, logicalPath, sortVariant, defaultS
         const sortToken = readRequestedSortToken(sortVariant, logicalPath, defaultSort);
         const sortsTokens = buildCurrentPageSortsTokens(logicalPath, sortToken);
         applySortTokenToUrl(url, sortToken, defaultSort);
-        applySortsTokensToUrl(url, sortsTokens);
+        applySortsTokensToUrl(url, sortsTokens, buildDefaultSortsTokens(logicalPath, defaultSort));
         return toRelativeHref(url);
     } catch (error) {
         return rawHref;
@@ -121,14 +126,18 @@ function buildDescendantCollectionHref(href, collectionSource, sortToken = '', d
     try {
         const url = new URL(rawHref, window.location.origin);
         applySortTokenToUrl(url, sortToken, defaultSort);
-        applySortsTokensToUrl(url, buildDescendantSortsTokens(collectionSource.logicalPath, sortToken));
+        applySortsTokensToUrl(
+            url,
+            buildDescendantSortsTokens(collectionSource.logicalPath, sortToken),
+            buildDefaultSortsTokens(collectionSource.logicalPath, defaultSort, 1)
+        );
         return toRelativeHref(url);
     } catch (error) {
         return rawHref;
     }
 }
 
-export function buildEntrySourceHref(href, logicalPath, entryKey, sortToken = '', defaultSort = '', sortsTokens = []) {
+export function buildEntrySourceHref(href, logicalPath, sortToken = '', defaultSort = '', sortsTokens = [], defaultSortsTokens = []) {
     const rawHref = typeof href === 'string' ? href.trim() : '';
     if (!rawHref) {
         return '';
@@ -136,11 +145,15 @@ export function buildEntrySourceHref(href, logicalPath, entryKey, sortToken = ''
 
     try {
         const url = new URL(rawHref, window.location.origin);
-        if (logicalPath && entryKey) {
-            applyFromPathToUrl(url, `${logicalPath}${entryKey}/`);
+        if (logicalPath) {
+            applyFromPathToUrl(url, logicalPath);
         }
         applySortTokenToUrl(url, sortToken, defaultSort);
-        applySortsTokensToUrl(url, sortsTokens);
+        applySortsTokensToUrl(
+            url,
+            sortsTokens,
+            defaultSortsTokens.length > 0 ? defaultSortsTokens : buildDefaultSortsTokens(logicalPath, defaultSort)
+        );
         return toRelativeHref(url);
     } catch (error) {
         return rawHref;
@@ -164,10 +177,10 @@ export function buildBreadcrumbRowHref(row, collectionSource, sortState) {
     return buildEntrySourceHref(
         row.href,
         collectionSource.logicalPath,
-        row.key,
         sortState?.sortToken || '',
         sortState?.defaultSort || '',
-        sortState?.sortsTokens || []
+        sortState?.sortsTokens || [],
+        sortState?.defaultSortsTokens || []
     );
 }
 
@@ -229,8 +242,33 @@ export async function buildBreadcrumbMenuItems(fragmentRoot, collectionSource, s
     return buildBreadcrumbMenuItemsFromDecodedRows(decoded, collectionSource, selection);
 }
 
-export async function buildSelectedBreadcrumbItem(fragmentRoot, source, entryKey) {
-    if (!fragmentRoot || !source?.logicalPath || !entryKey) {
+function findSelectedRow(rows, selectedPathname = '') {
+    if (!Array.isArray(rows) || rows.length === 0) {
+        return null;
+    }
+
+    const rawSelectedPathname = typeof selectedPathname === 'string' ? selectedPathname.trim() : '';
+    if (!rawSelectedPathname) {
+        return null;
+    }
+    const normalizedSelectedPathname = normalizePathname(rawSelectedPathname);
+
+    return rows.find((row) => {
+        if (!row?.href) {
+            return false;
+        }
+
+        try {
+            return normalizePathname(new URL(row.href, window.location.origin).pathname) === normalizedSelectedPathname;
+        } catch (error) {
+            return false;
+        }
+    }) || null;
+}
+
+export async function buildSelectedBreadcrumbItem(fragmentRoot, source, selectedPathname = '') {
+    const normalizedSelectedPathname = typeof selectedPathname === 'string' ? selectedPathname.trim() : '';
+    if (!fragmentRoot || !source?.logicalPath || !normalizedSelectedPathname) {
         return null;
     }
 
@@ -246,12 +284,16 @@ export async function buildSelectedBreadcrumbItem(fragmentRoot, source, entryKey
         return null;
     }
 
-    const selectedRow = decoded.rows.find((row) => row?.key === entryKey);
+    const selectedRow = findSelectedRow(decoded.rows, normalizedSelectedPathname);
     if (!selectedRow) {
         return null;
     }
 
-    const menu = buildBreadcrumbMenuItemsFromDecodedRows(decoded, collectionSource, { selectedKey: entryKey });
+    const selectedKey = selectedRow.key || '';
+    const menu = buildBreadcrumbMenuItemsFromDecodedRows(decoded, collectionSource, {
+        selectedKey,
+        selectedPathname: normalizedSelectedPathname,
+    });
     const sortState = readRequestedSortState(collectionSource, decoded.sortVariant, decoded.defaultSort);
     const href = buildBreadcrumbRowHref(selectedRow, collectionSource, sortState);
     if (!href) {
@@ -259,7 +301,7 @@ export async function buildSelectedBreadcrumbItem(fragmentRoot, source, entryKey
     }
 
     const item = {
-        text: typeof selectedRow.text === 'string' && selectedRow.text !== '' ? selectedRow.text : entryKey,
+        text: typeof selectedRow.text === 'string' && selectedRow.text !== '' ? selectedRow.text : selectedKey,
         href,
         current: true,
         menu,

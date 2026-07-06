@@ -68,13 +68,20 @@ function buildPreviewLevelItems(source) {
         .filter(Boolean);
 }
 
-function buildPreviewCurrentItem(source, currentText, currentHref, entryKey) {
+function buildPreviewCurrentItem(source, currentText, currentHref) {
     const currentCollectionSource = normalizeBreadcrumbCollectionSource(source?.currentCollectionSource)
         || normalizeBreadcrumbCollectionSource(source);
     const currentCollectionItems = source?.currentCollectionItems;
-    if (currentCollectionSource && currentCollectionItems && entryKey) {
+    let selectedPathname = '';
+    try {
+        selectedPathname = normalizePathname(new URL(currentHref, window.location.origin).pathname);
+    } catch (error) {
+        selectedPathname = '';
+    }
+
+    if (currentCollectionSource && currentCollectionItems && selectedPathname) {
         const menu = buildMenuItemsFromPayload(currentCollectionItems, currentCollectionSource, {
-            selectedKey: entryKey,
+            selectedPathname,
         });
         if (menu.length > 0) {
             const selectedItem = menu.find((item) => item.current === true) || null;
@@ -156,8 +163,7 @@ export function runBreadcrumbPreview() {
                 const currentItem = buildPreviewCurrentItem(
                     entrySource,
                     currentText,
-                    currentHref,
-                    selection.entryKey
+                    currentHref
                 );
                 if (currentItem) {
                     prefixItems.push(currentItem);

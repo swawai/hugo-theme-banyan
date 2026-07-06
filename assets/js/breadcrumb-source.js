@@ -139,44 +139,14 @@ export function parseEntryBreadcrumbSources(rawValue) {
     }
 }
 
-function isEntryKeySafe(value) {
-    return typeof value === 'string' && value !== '' && value !== '.' && value !== '..' && !/[/?#]/.test(value);
-}
-
 export function parseEntrySelection(sources, fromPath) {
     const normalized = normalizeFromPath(fromPath);
     if (!normalized || !Array.isArray(sources) || sources.length === 0) {
         return null;
     }
 
-    const sortedSources = sources
-        .slice()
-        .sort((left, right) => right.logicalPath.length - left.logicalPath.length);
-
-    for (let index = 0; index < sortedSources.length; index += 1) {
-        const source = sortedSources[index];
-        if (!source || !normalized.startsWith(source.logicalPath)) {
-            continue;
-        }
-
-        const remainder = normalized.slice(source.logicalPath.length);
-        const parts = remainder.split('/').filter(Boolean);
-        if (parts.length !== 1) {
-            continue;
-        }
-
-        const entryKey = parts[0];
-        if (!isEntryKeySafe(entryKey)) {
-            return null;
-        }
-
-        return {
-            source,
-            entryKey,
-        };
-    }
-
-    return null;
+    const source = sources.find((item) => item?.logicalPath === normalized) || null;
+    return source ? { source } : null;
 }
 
 export function pickSourceByLogicalPath(sources, logicalPath) {

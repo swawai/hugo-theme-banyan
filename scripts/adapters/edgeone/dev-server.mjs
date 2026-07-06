@@ -4,6 +4,7 @@ import net from 'node:net';
 import path from 'node:path';
 
 import { createHugoEnv } from '../../build/hugo-env.mjs';
+import { resolveHugoCommand } from '../../build/hugo-command.mjs';
 
 // EdgeOne adapter: runs Hugo behind a local proxy for development.
 // The production edgeone.json is synced only by the full build pipeline.
@@ -303,7 +304,7 @@ async function main() {
         '--appendPort=false'
     ];
 
-    const child = spawn(process.execPath, ['x', 'hugo', ...hugoArgs], {
+    const child = spawn(resolveHugoCommand({ cwd: siteRoot }), hugoArgs, {
         cwd: siteRoot,
         env: createHugoEnv({ cwd: siteRoot }),
         shell: false,

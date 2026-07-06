@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { createHugoEnv } from '../build/hugo-env.mjs';
+import { resolveHugoCommand } from '../build/hugo-command.mjs';
 
 const siteRoot = path.resolve(process.cwd());
 const themeRoot = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
@@ -36,11 +37,11 @@ function parseCli(argv) {
 
 function printHelp() {
     console.log(`Usage:
-  bun themes/banyan/scripts/dev/build-browser-temp.mjs [note]
+  node themes/banyan/scripts/dev/build-browser-temp.mjs [note]
 
 Examples:
   bun run build:browser:temp
-  bun themes/banyan/scripts/dev/build-browser-temp.mjs prefetch-debug
+  node themes/banyan/scripts/dev/build-browser-temp.mjs prefetch-debug
 
 Notes:
   - Builds a minified Hugo output into temp_workspace/public/<timestamp>-<note>
@@ -115,9 +116,10 @@ if (options.help) {
 
 const destinationDir = buildDestination(options.note);
 const destinationRel = relFromSite(destinationDir);
+const hugoCommand = resolveHugoCommand({ cwd: siteRoot });
 runProcess(
-    process.execPath,
-    ['x', 'hugo', '--gc', '--cleanDestinationDir', '--minify', '--destination', destinationRel],
+    hugoCommand,
+    ['--gc', '--cleanDestinationDir', '--minify', '--destination', destinationRel],
     {
         env: createHugoEnv({ cwd: siteRoot }),
         shell: false

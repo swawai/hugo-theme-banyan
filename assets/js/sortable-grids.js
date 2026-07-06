@@ -8,6 +8,7 @@ import {
 } from './sort-shared.js';
 import {
     applySortsTokensToUrl,
+    buildDefaultSortsTokens,
     buildCurrentPageSortsTokens,
     buildDescendantSortsTokens,
     getLogicalPathDepth,
@@ -75,7 +76,11 @@ function buildSortHref(token, defaultToken, pageCollectionSource) {
     const url = new URL(window.location.href);
     applySortTokenToUrl(url, token, defaultToken);
     if (pageCollectionSource?.logicalPath) {
-        applySortsTokensToUrl(url, buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, token));
+        applySortsTokensToUrl(
+            url,
+            buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, token),
+            buildDefaultSortsTokens(pageCollectionSource.logicalPath, defaultToken)
+        );
     }
     return `${url.pathname}${url.search}${url.hash}`;
 }
@@ -84,7 +89,11 @@ function writeSortToken(token, defaultToken, pageCollectionSource) {
     const url = new URL(window.location.href);
     applySortTokenToUrl(url, token, defaultToken);
     if (pageCollectionSource?.logicalPath) {
-        applySortsTokensToUrl(url, buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, token));
+        applySortsTokensToUrl(
+            url,
+            buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, token),
+            buildDefaultSortsTokens(pageCollectionSource.logicalPath, defaultToken)
+        );
     }
     window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
 }
@@ -228,6 +237,12 @@ function updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSou
     const descendantSorts = pageCollectionSource?.logicalPath
         ? buildDescendantSortsTokens(pageCollectionSource.logicalPath, currentToken)
         : [];
+    const currentDefaultSorts = pageCollectionSource?.logicalPath
+        ? buildDefaultSortsTokens(pageCollectionSource.logicalPath, variant.defaultToken)
+        : [];
+    const descendantDefaultSorts = pageCollectionSource?.logicalPath
+        ? buildDefaultSortsTokens(pageCollectionSource.logicalPath, variant.defaultToken, 1)
+        : [];
 
     grid.querySelectorAll('.cell-title .title-link[href]').forEach((link) => {
         const rawHref = link.getAttribute('href') || '';
@@ -247,7 +262,11 @@ function updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSou
         applySortTokenToUrl(url, currentToken, variant.defaultToken);
         if (pageCollectionSource?.logicalPath) {
             const isEntryLink = hasFieldValue(url.search, ENTRY_LINEAGE_FIELD);
-            applySortsTokensToUrl(url, isEntryLink ? currentSorts : descendantSorts);
+            applySortsTokensToUrl(
+                url,
+                isEntryLink ? currentSorts : descendantSorts,
+                isEntryLink ? currentDefaultSorts : descendantDefaultSorts
+            );
         }
         link.href = buildRelativeHref(url);
     });
@@ -263,6 +282,9 @@ function updateBreadcrumbTrailLinks(variantName, currentToken, pageCollectionSou
     const currentDepth = pageCollectionSource?.logicalPath
         ? getLogicalPathDepth(pageCollectionSource.logicalPath)
         : 0;
+    const defaultSorts = pageCollectionSource?.logicalPath
+        ? buildDefaultSortsTokens(pageCollectionSource.logicalPath, variant.defaultToken)
+        : [];
 
     document.querySelectorAll('.slot-breadcrumb a[href]').forEach((link) => {
         const rawHref = link.getAttribute('href') || '';
@@ -281,14 +303,16 @@ function updateBreadcrumbTrailLinks(variantName, currentToken, pageCollectionSou
 
         let targetToken = currentToken;
         let targetSorts = currentSorts;
+        let targetDefaultSorts = defaultSorts;
         if (pageCollectionSource?.logicalPath) {
             const targetLogicalPath = normalizeCollectionLogicalPathFromUrl(url, pageCollectionSource);
             const targetDepth = getLogicalPathDepth(targetLogicalPath);
             if (targetDepth > 0 && targetDepth <= currentDepth) {
                 targetSorts = currentSorts.slice(0, targetDepth);
                 targetToken = targetSorts[targetSorts.length - 1] || '';
+                targetDefaultSorts = buildDefaultSortsTokens(targetLogicalPath, variant.defaultToken);
             }
-            applySortsTokensToUrl(url, targetSorts);
+            applySortsTokensToUrl(url, targetSorts, targetDefaultSorts);
         }
 
         applySortTokenToUrl(url, targetToken, variant.defaultToken);

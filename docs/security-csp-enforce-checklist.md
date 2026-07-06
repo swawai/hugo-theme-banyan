@@ -65,7 +65,7 @@
 secondary speculation header 回归当前也已覆盖：
 
 - `/all/`
-- `/p/xvenv/?from=products/first-party/xvenv&sorts=_,name-asc`
+- `/p/xvenv/?from=products/first-party&sorts=_,name-asc`
 
 它们确认：
 

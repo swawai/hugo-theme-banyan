@@ -35,6 +35,7 @@
 - `bun run check:browser:trace`
 - `bun run check:browser:install`
 
+
 ## 设计原则
 
 ### 一套场景，同时给人类和 agent 用
@@ -333,7 +334,7 @@ bun run check:security:headers
 它当前覆盖：
 
 - `/all/`
-- `/p/xvenv/?from=products/first-party/xvenv&sorts=_,name-asc`
+- `/p/xvenv/?from=products/first-party&sorts=_,name-asc`
 - `/prefetchdebug`
 
 把它单独拆成一个入口，而不是塞进默认 `check:browser:security`，是刻意的：

@@ -7,8 +7,4 @@
     {{- $cleanSegments = $cleanSegments | append $value -}}
   {{- end -}}
 {{- end -}}
-{{- $entryKey := trim (printf "%v" (.entry_key | default "")) " " -}}
-{{- if ne $entryKey "" -}}
-  {{- $cleanSegments = $cleanSegments | append $entryKey -}}
-{{- end -}}
 {{- return (delimit $cleanSegments "/") -}}

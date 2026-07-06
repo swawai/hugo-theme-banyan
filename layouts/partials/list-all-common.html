@@ -61,7 +61,7 @@
     "titleDesc" (i18n "list_sort_path_desc")) }}
 
   {{ range $rows }}
-    {{ $fromValue := partial "entry-source/from-param-value.html" (dict "logical_path" $entrySourcePath "entry_key" .key) }}
+    {{ $fromValue := partial "entry-source/from-param-value.html" (dict "logical_path" $entrySourcePath) }}
     {{ $entryHref := printf "%s?%s=%s" .href $entryLineageParam $fromValue }}
     {{ partial "grid-title-cell.html" (dict
       "ctx" $ctx

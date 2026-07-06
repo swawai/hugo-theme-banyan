@@ -61,7 +61,7 @@ function applyRawQueryParamToUrl(url, field, value) {
     }
 
     const nextEntries = parseRawSearchEntries(url.search).filter(
-        ([entryKey]) => !fieldHasParamName(field, entryKey)
+        ([paramName]) => !fieldHasParamName(field, paramName)
     );
     const normalizedValue = typeof value === 'string' ? value.trim() : '';
     if (normalizedValue !== '') {
@@ -82,19 +82,13 @@ export function normalizeFromPath(value) {
     return `/${segments.join('/')}/`;
 }
 
-export function buildFromParamValue(logicalPath, entryKey = '') {
+export function buildFromParamValue(logicalPath) {
     const normalizedPath = normalizeFromPath(logicalPath);
     if (!normalizedPath) {
         return '';
     }
 
-    const segments = normalizedPath.split('/').filter(Boolean);
-    const normalizedEntryKey = typeof entryKey === 'string' ? entryKey.trim() : '';
-    if (normalizedEntryKey !== '') {
-        segments.push(normalizedEntryKey);
-    }
-
-    return segments.join('/');
+    return normalizedPath.split('/').filter(Boolean).join('/');
 }
 
 export function readCurrentFromPath() {
@@ -206,6 +200,16 @@ export function buildDescendantSortsTokens(logicalPath, currentToken = '') {
     return [...currentSlots, normalizedCurrent];
 }
 
+export function buildDefaultSortsTokens(logicalPath, defaultToken = '', extraDepth = 0) {
+    const depth = getLogicalPathDepth(logicalPath) + Math.max(0, Number(extraDepth) || 0);
+    const normalizedDefault = normalizeSortSlot(defaultToken);
+    if (depth <= 0 || !normalizedDefault) {
+        return [];
+    }
+
+    return Array(depth).fill(normalizedDefault);
+}
+
 export function applyFromPathToUrl(url, fromPath) {
     return applyRawQueryParamToUrl(url, ENTRY_LINEAGE_FIELD, buildFromParamValue(fromPath));
 }
@@ -214,9 +218,24 @@ export function applySortQueryTokenToUrl(url, token) {
     return applyRawQueryParamToUrl(url, ACTIVE_SORT_FIELD, token);
 }
 
-export function applySortsTokensToUrl(url, tokens) {
+function everySortSlotIsDefault(tokens, defaultTokens) {
+    if (!Array.isArray(defaultTokens) || defaultTokens.length === 0) {
+        return false;
+    }
+
+    return tokens.every((token, index) => {
+        const defaultToken = normalizeSortSlot(defaultTokens[index] ?? '');
+        return token === '' || (defaultToken !== '' && token === defaultToken);
+    });
+}
+
+export function applySortsTokensToUrl(url, tokens, defaultTokens = []) {
     const normalizedTokens = normalizeSortSlots(tokens);
-    if (normalizedTokens.length === 0 || normalizedTokens.every((token) => token === '')) {
+    if (
+        normalizedTokens.length === 0
+        || normalizedTokens.every((token) => token === '')
+        || everySortSlotIsDefault(normalizedTokens, normalizeSortSlots(defaultTokens))
+    ) {
         return applyRawQueryParamToUrl(url, LINEAGE_SORTS_FIELD, '');
     }
 

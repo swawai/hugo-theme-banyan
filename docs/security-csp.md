@@ -162,13 +162,13 @@ bun run build
 如果你只想对某个临时产物目录补策略头，可以直接运行：
 
 ```bash
-bun themes/banyan/scripts/build/patch-csp.mjs temp_workspace/public/<build>
+node themes/banyan/scripts/build/patch-csp.mjs temp_workspace/public/<build>
 ```
 
 如果你还想同时补全 speculation header 栈，可继续运行：
 
 ```bash
-bun themes/banyan/scripts/build/emit-speculation-rules-headers.mjs temp_workspace/public/<build>
+node themes/banyan/scripts/build/emit-speculation-rules-headers.mjs temp_workspace/public/<build>
 ```
 
 注意：
@@ -186,7 +186,7 @@ bun run check:security:headers
 默认检查 `https://swaw.com/` 和 `/sw.js`。如果要检查其他环境，可以传入 base URL：
 
 ```bash
-bun themes/banyan/scripts/checks/check-security-headers.mjs https://example.com/
+node themes/banyan/scripts/checks/check-security-headers.mjs https://example.com/
 ```
 
 这条命令验证的是浏览器真正会收到的响应头，包括：
@@ -208,9 +208,7 @@ bun run check:browser:security
 如果你想单独验证 secondary speculation header 栈，可运行：
 
 ```bash
-bunx hugo --gc --cleanDestinationDir --minify --destination temp_workspace/public/<build>
-bun themes/banyan/scripts/build/patch-csp.mjs temp_workspace/public/<build>
-bun themes/banyan/scripts/build/emit-speculation-rules-headers.mjs temp_workspace/public/<build>
+bun run build:browser:temp -- speculation-header
 bun run check:browser:speculation
 ```
 

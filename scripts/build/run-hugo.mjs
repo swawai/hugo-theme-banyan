@@ -1,10 +1,12 @@
 import { spawn } from 'node:child_process';
 
 import { createHugoEnv } from './hugo-env.mjs';
+import { resolveHugoCommand } from './hugo-command.mjs';
 
 const siteRoot = process.cwd();
+const hugoCommand = resolveHugoCommand({ cwd: siteRoot });
 
-const child = spawn(process.execPath, ['x', 'hugo', ...process.argv.slice(2)], {
+const child = spawn(hugoCommand, process.argv.slice(2), {
     cwd: siteRoot,
     env: createHugoEnv({ cwd: siteRoot }),
     shell: false,

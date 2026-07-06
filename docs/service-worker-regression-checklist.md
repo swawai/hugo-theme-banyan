@@ -83,8 +83,8 @@
 例子：
 
 ```powershell
-bunx hugo --gc --minify --destination temp_workspace/public/<build-a>
-bunx hugo --gc --minify --destination temp_workspace/public/<build-b>
+bun run build:browser:temp -- sw-upgrade-before
+bun run build:browser:temp -- sw-upgrade-after
 ```
 
 如果要做真实升级链，应该让浏览器先跑 `build-a`，再切换到 `build-b`。
@@ -170,7 +170,7 @@ bunx hugo --gc --minify --destination temp_workspace/public/<build-b>
 - `/`
 - `/all/`
 - `/d/`
-- `/p/xvenv/?from=tags/tooling/devtools/windows/xvenv&sorts=date-desc,date-desc,date-desc,date-desc`
+- `/p/xvenv/?from=tags/tooling/devtools/windows`
 
 操作：
 
