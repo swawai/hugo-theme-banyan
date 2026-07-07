@@ -19,18 +19,9 @@
       {{- errorf "Build failed: page %q cannot resolve local page resource %q. Put the file in the same page bundle, or use an absolute/remote URL." ($page.File.Path | default $page.RelPermalink) $src -}}
     {{- end -}}
   {{- else -}}
-    {{- $pageDir := "" -}}
-    {{- with $page.File -}}
-      {{- $pageDir = strings.TrimSuffix "/" .Dir -}}
-    {{- end -}}
-    {{- if eq $pageDir "" -}}
-      {{- $pageDir = strings.Trim (printf "%v" ($page.RelPermalink | default "root")) "/" -}}
-    {{- end -}}
-    {{- if eq $pageDir "" -}}
-      {{- $pageDir = "root" -}}
-    {{- end -}}
-
-    {{- $targetPath := path.Join "media/content" $pageDir $resource.Name -}}
+    {{- $pathInfo := partial "page-resource/path-info.html" $page -}}
+    {{- $targetDir := index $pathInfo "targetDir" -}}
+    {{- $targetPath := path.Join $targetDir $resource.Name -}}
     {{- $published := $resource | resources.Copy $targetPath | fingerprint -}}
     {{- $result = dict
       "resolved" true
@@ -38,6 +29,8 @@
       "published" $published
       "src" $published.RelPermalink
       "source" "page"
+      "targetDir" $targetDir
+      "pageDir" (index $pathInfo "pageDir")
     -}}
   {{- end -}}
 {{- end -}}

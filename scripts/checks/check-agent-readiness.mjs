@@ -8,7 +8,6 @@ const assetLikeExtensionPattern = /\.(?:avif|bmp|csv|gif|ico|jpe?g|json|pdf|png|
 const markdownMirrorHeaderRoute = '/*.md';
 const expectedMarkdownRobotsTag = 'noindex';
 const expectedMarkdownContentType = 'text/markdown';
-const maxLocalShareImageBytes = 1_000_000;
 const expectedRobotsAgentHints = [
     'ChatGPT-User',
     'OAI-SearchBot',
@@ -515,11 +514,6 @@ async function inspectShareImageSetting({ record, recordsByKey, languageInfo, is
         : path.resolve(path.dirname(ownerRecord.contentPath), normalized);
     if (!await fileExists(localPath)) {
         issues.push(`Content page share_image points to a missing local file: ${ownerRecord.relativePath} -> ${shareImage}`);
-    } else {
-        const stat = await fs.stat(localPath);
-        if (stat.size > maxLocalShareImageBytes) {
-            issues.push(`Content page share_image is too large (${stat.size} bytes > ${maxLocalShareImageBytes} bytes): ${ownerRecord.relativePath} -> ${shareImage}`);
-        }
     }
 
     return { configured: true, disabled: false, inherited };

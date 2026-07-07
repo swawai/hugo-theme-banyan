@@ -9,6 +9,7 @@
     --media-frame-bg: color-mix(in srgb, var(--focus) 3%, var(--bg));
     --media-frame-border: color-mix(in srgb, var(--focus) 16%, #D7D7D7);
     --media-frame-shadow: color-mix(in srgb, var(--fg) 10%, transparent);
+    /* Keep aligned with params.media.responsive_images.sizes fallback. */
     --article-prose-max-inline: 88ch;
     --border-subtle: #888888;
 

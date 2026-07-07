@@ -30,7 +30,8 @@
         {{- $url = absURL $src -}}
       {{- else -}}
         {{- $published := partialCached "page-resource/publish.html" (dict "ctx" (dict "Page" $owner) "src" $src) $owner.RelPermalink $src -}}
-        {{- $url = absURL (index $published "src") -}}
+        {{- $shareSrc := partialCached "share-image/publish.html" $published $owner.RelPermalink $src "share" -}}
+        {{- $url = absURL $shareSrc -}}
       {{- end -}}
 
       {{- $result = dict "url" $url "disabled" false "configured" true "source" $src "owner" $owner -}}

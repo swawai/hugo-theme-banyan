@@ -1,0 +1,10 @@
+{{- $resource := . -}}
+{{- $name := path.Base (printf "%v" ($resource.Name | default "image")) -}}
+{{- $stem := replaceRE `\.[^.]+$` "" $name -}}
+{{- $stem = replaceRE `[^A-Za-z0-9._-]+` "-" $stem -}}
+{{- $stem = strings.Trim $stem "-" -}}
+{{- if eq $stem "" -}}
+  {{- $stem = "image" -}}
+{{- end -}}
+
+{{- return $stem -}}

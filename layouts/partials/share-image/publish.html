@@ -1,0 +1,13 @@
+{{- $published := . -}}
+{{- $src := index $published "src" -}}
+{{- $resource := index $published "resource" -}}
+{{- if and $resource (partial "media/is-processable-raster.html" $resource) -}}
+  {{- $targetDir := index $published "targetDir" -}}
+  {{- $stem := partial "media/resource-stem.html" $resource -}}
+  {{- $variant := $resource.Fit "1200x630 jpg q82" -}}
+  {{- $targetPath := path.Join $targetDir (printf "%s-card.jpg" $stem) -}}
+  {{- $copied := $variant | resources.Copy $targetPath | fingerprint -}}
+  {{- $src = $copied.RelPermalink -}}
+{{- end -}}
+
+{{- return $src -}}

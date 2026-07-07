@@ -1,0 +1,10 @@
+{{- $resource := . -}}
+{{- $result := false -}}
+{{- with $resource -}}
+  {{- if eq .ResourceType "image" -}}
+    {{- $subtype := lower (printf "%v" .MediaType.SubType) -}}
+    {{- $result = in (slice "jpeg" "jpg" "png" "webp") $subtype -}}
+  {{- end -}}
+{{- end -}}
+
+{{- return $result -}}

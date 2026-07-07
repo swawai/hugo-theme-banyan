@@ -88,6 +88,16 @@ disallow_user_agents = [
 # off   = do not generate or link the web app manifest
 mode = "defer"
 
+[params.media.responsive_images]
+# Keep this fallback aligned with the article prose layout in
+# assets/css/article-base.css. The browser uses sizes with srcset and the
+# device DPR to choose a generated WebP candidate.
+sizes = "auto, (max-width: 820px) calc(100vw - 32px), 800px"
+widths = [768, 1200, 1600]
+# Reading pages should not auto-download source-size images; click-through
+# links still expose the original file when details matter.
+max_width = 1600
+
 [params.prefetch_runtime]
 mode = "off"
 # Runtime warmup stack:

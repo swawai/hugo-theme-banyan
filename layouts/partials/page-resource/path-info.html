@@ -1,0 +1,16 @@
+{{- $page := . -}}
+{{- $pageDir := "" -}}
+{{- with $page.File -}}
+  {{- $pageDir = strings.TrimSuffix "/" .Dir -}}
+{{- end -}}
+{{- if eq $pageDir "" -}}
+  {{- $pageDir = strings.Trim (printf "%v" ($page.RelPermalink | default "root")) "/" -}}
+{{- end -}}
+{{- if eq $pageDir "" -}}
+  {{- $pageDir = "root" -}}
+{{- end -}}
+
+{{- return (dict
+  "pageDir" $pageDir
+  "targetDir" (path.Join "media/content" $pageDir)
+) -}}
