@@ -34,6 +34,15 @@ const BREADCRUMB_WIDE_CANVAS_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_WIDE_C
     || '/zh/p/wsl-guide/';
 const BREADCRUMB_WIDE_CANVAS_FROM = process.env.BANYAN_BROWSER_BREADCRUMB_WIDE_CANVAS_FROM
     || '/tags/tooling/devtools/windows/wsl';
+const GRID_LIST_COLUMN_CASES = [
+    { id: 'section-wide', path: '/zh/d/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
+    { id: 'all-wide', path: '/zh/all/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
+    { id: 'intent-wide', path: '/zh/intent/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
+    { id: 'tags-wide', path: '/zh/tags/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
+    { id: 'section-medium', path: '/zh/d/', viewport: { width: 1024, height: 960 } },
+    { id: 'section-mobile', path: '/zh/d/', viewport: { width: 390, height: 844 }, containDocument: true },
+    { id: 'products-wide', path: '/zh/products/first-party/', viewport: WIDE_VIEWPORT, product: true }
+];
 const DESIGN_AUDIT_VIEWPORTS = [
     {
         id: 'mobile',
@@ -705,6 +714,54 @@ export const scenarios = [
                 from: BREADCRUMB_WIDE_CANVAS_FROM,
                 path: BREADCRUMB_WIDE_CANVAS_PATH
             };
+        }
+    },
+    {
+        id: 'grid-list-name-column-contract',
+        kind: 'single',
+        title: 'Grid List Name Column Contract',
+        viewport: WIDE_VIEWPORT,
+        async run({ page, baseUrl }) {
+            const results = [];
+            for (const target of GRID_LIST_COLUMN_CASES) {
+                await page.setViewportSize(target.viewport);
+                await gotoAndWait(page, `${baseUrl}${target.path}`);
+                await page.waitForSelector('.grid-list > .cell-title');
+                const geometry = await page.evaluate(() => {
+                    const grid = document.querySelector('.grid-list');
+                    const nameCell = grid?.querySelector(':scope > .cell-title');
+                    if (!(grid instanceof HTMLElement) || !(nameCell instanceof HTMLElement)) return null;
+
+                    const probe = document.createElement('div');
+                    probe.style.cssText = 'position:absolute;visibility:hidden;block-size:0;padding:0;border:0';
+                    document.body.appendChild(probe);
+                    const measure = (value) => {
+                        probe.style.inlineSize = value;
+                        return probe.getBoundingClientRect().width;
+                    };
+                    const result = {
+                        breadcrumbInline: measure('var(--breadcrumb-column-inline)'),
+                        documentClientInline: document.documentElement.clientWidth,
+                        documentScrollInline: document.documentElement.scrollWidth,
+                        nameInline: nameCell.getBoundingClientRect().width,
+                        navigationInline: measure('var(--navigation-column-inline)'),
+                        productInline: measure('8rem')
+                    };
+                    probe.remove();
+                    return result;
+                });
+                const expectedInline = target.product ? geometry?.productInline : geometry?.navigationInline;
+                const invalid = !geometry
+                    || expectedInline <= 0
+                    || Math.abs(geometry.nameInline - expectedInline) > 1
+                    || (target.compareBreadcrumb && Math.abs(geometry.breadcrumbInline - expectedInline) > 1)
+                    || (target.containDocument && geometry.documentScrollInline > geometry.documentClientInline + 1);
+                if (invalid) {
+                    fail('Grid list name column contract failed.', { ...target, ...geometry, expectedInline });
+                }
+                results.push({ ...target, ...geometry, expectedInline });
+            }
+            return { cases: results };
         }
     },
     {

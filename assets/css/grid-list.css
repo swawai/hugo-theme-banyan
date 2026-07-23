@@ -8,7 +8,7 @@
     overscroll-behavior-x: none;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
-    grid-template-columns: 12rem minmax(5rem, max-content) minmax(4rem, max-content);
+    grid-template-columns: var(--navigation-column-inline) minmax(5.1rem, max-content) minmax(4rem, max-content);
     justify-content: start;
     align-items: end;
     column-gap: 0.6rem;

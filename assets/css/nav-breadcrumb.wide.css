@@ -2,7 +2,7 @@
    assets/js/breadcrumb-menu.js and assets/js/inline/breadcrumb-skeleton.js. */
 @media (min-width: 75rem) {
     :root {
-        --breadcrumb-column-inline: 15rem;
+        --breadcrumb-column-inline: var(--navigation-column-inline);
         --breadcrumb-columns-gap-inline: 0.68rem;
         --breadcrumb-main-gap-inline: 0.9rem;
         --breadcrumb-main-inline: calc(var(--page-shell-medium-inline, 78rem) - var(--page-rail-inline) - var(--page-shell-gap-inline));

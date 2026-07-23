@@ -14,6 +14,7 @@
     --page-edge-inline: 8px;
     --page-edge-block-start: 12px;
     --page-edge-block-end: 6rem;
+    --navigation-column-inline: 15rem;
     --page-shell-min-inline: min(88ch, 100%);
     --page-shell-min-block: calc(100vh - var(--page-edge-block-start));
     /* Keep a safety tail after the visible footer so mobile bounce / toolbar reflow
