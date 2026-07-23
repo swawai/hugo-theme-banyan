@@ -46,11 +46,9 @@ Sitemap: {{ absURL "sitemap.xml" }}
 - Canonical human-facing pages are HTML.
 {{- if $isGlobal }}
 - This global file is a compact directory of language-specific agent indexes.
-- Language-specific indexes list pages that opt in with the AGENT_MARKDOWN output format.
+- Language-specific indexes link directly to canonical HTML pages.
 {{- else }}
-- Agent Markdown mirrors are generated from the same Hugo Markdown source and linked below when available.
-- Pages listed here opt in with the AGENT_MARKDOWN output format.
-- This language file lists {{ $currentSite.Language.LanguageName | default $currentSite.Language.Lang }} entry points and key content.
+- This language file lists {{ $currentSite.Language.LanguageName | default $currentSite.Language.Lang }} canonical HTML entry points and key content.
 {{- end }}
 
 {{ if $isGlobal }}
@@ -79,28 +77,25 @@ Sitemap: {{ absURL "sitemap.xml" }}
 {{- with index $homeMeta "description" -}}{{- $homeDescription = trim (printf "%v" .) " \r\n\t" -}}{{- end -}}
 {{- $homeLabel := printf "%s Home" ($site.Language.LanguageName | default $site.Language.Lang) }}
 - [{{ $homeLabel }}]({{ $site.Home.Permalink }}){{ with $homeDescription }}: {{ . }}{{ end }}
-{{- with $site.GetPage "/about" }}
-{{- if partial "agent-access/page-index-enabled.html" . }}
+{{ with $site.GetPage "/about" }}
+{{ if .IsPage }}
 {{- $aboutDescription := trim (printf "%v" (.Params.description | default "")) " \r\n\t" -}}
-{{- $aboutURL := .Permalink -}}
-{{- with .OutputFormats.Get "AGENT_MARKDOWN" -}}{{- $aboutURL = .Permalink -}}{{- end }}
-- [{{ .Title }}]({{ $aboutURL }}){{ with $aboutDescription }}: {{ . }}{{ end }} HTML: {{ .Permalink }}
-{{- end }}
-{{- end }}
+- [{{ .Title }}]({{ .Permalink }}){{ with $aboutDescription }}: {{ . }}{{ end }}
+{{ end }}
+{{ end }}
 {{- end }}
 
 {{- $contentPages := slice -}}
 {{- $seenContentPages := dict -}}
-{{- $seedSites := sort $page.Sites "Language.Weight" -}}
-{{- range $site := $seedSites -}}
-{{- range where $site.Pages "Kind" "page" -}}
+{{- range $seedSite := sort $page.Sites "Language.Weight" -}}
+{{- range where $seedSite.Pages "Kind" "page" -}}
   {{- $entryPage := . -}}
   {{- range .AllTranslations -}}
     {{- if eq .Language.Lang $currentSite.Language.Lang -}}
       {{- $entryPage = . -}}
     {{- end -}}
   {{- end -}}
-  {{- if and (eq $entryPage.Language.Lang $currentSite.Language.Lang) (partial "agent-access/page-index-enabled.html" $entryPage) -}}
+  {{- if and (eq $entryPage.Language.Lang $currentSite.Language.Lang) (eq $entryPage.Section "d") -}}
     {{- $entryKey := $entryPage.Permalink -}}
     {{- if not (index $seenContentPages $entryKey) -}}
       {{- $contentPages = $contentPages | append $entryPage -}}
@@ -113,14 +108,10 @@ Sitemap: {{ absURL "sitemap.xml" }}
 
 ## Key Content Pages
 {{ range sort $contentPages "Lastmod" "desc" }}
-{{- $entryPage := . -}}
 {{- $description := trim (printf "%v" (.Params.description | default "")) " \r\n\t" -}}
-{{- $markdownURL := "" -}}
-{{- with .OutputFormats.Get "AGENT_MARKDOWN" -}}{{- $markdownURL = .Permalink -}}{{- end -}}
-{{- $targetURL := cond (ne $markdownURL "") $markdownURL .Permalink -}}
 {{- $updated := .Lastmod -}}
 {{- if le $updated.Unix 0 -}}{{- $updated = .Date -}}{{- end }}
-- [{{ .Title }}]({{ $targetURL }}){{ with $description }}: {{ . }}{{ end }} HTML: {{ $entryPage.Permalink }}{{ if gt $updated.Unix 0 }} Updated: {{ $updated.Format "2006-01-02" }}{{ end }}
+- [{{ .Title }}]({{ .Permalink }}){{ with $description }}: {{ . }}{{ end }}{{ if gt $updated.Unix 0 }} Updated: {{ $updated.Format "2006-01-02" }}{{ end }}
 {{- end }}
 {{- end }}
 {{- end }}

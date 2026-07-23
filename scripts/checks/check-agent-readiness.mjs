@@ -4,10 +4,7 @@ import { parse as parseYaml } from 'yaml';
 
 const siteRoot = process.cwd();
 const defaultPublicDir = 'public';
-const assetLikeExtensionPattern = /\.(?:avif|bmp|csv|gif|ico|jpe?g|json|pdf|png|svg|txt|webp|xml|zip)(?:[?#]|$)/i;
-const markdownMirrorHeaderRoute = '/*.md';
-const expectedMarkdownRobotsTag = 'noindex';
-const expectedMarkdownContentType = 'text/markdown';
+const legacyMarkdownOutputs = new Set(['AGENT_MARKDOWN', 'MARKDOWN']);
 const expectedRobotsAgentHints = [
     'ChatGPT-User',
     'OAI-SearchBot',
@@ -37,8 +34,7 @@ function parseCli(argv) {
         help: false
     };
 
-    for (let index = 0; index < argv.length; index += 1) {
-        const arg = argv[index];
+    for (const arg of argv) {
         if (!arg) {
             continue;
         }
@@ -72,10 +68,9 @@ async function collectFiles(rootDir, predicate, currentDir = rootDir) {
             files.push(...await collectFiles(rootDir, predicate, absolutePath));
             continue;
         }
-        if (!entry.isFile() || !predicate(absolutePath, entry.name)) {
-            continue;
+        if (entry.isFile() && predicate(absolutePath, entry.name)) {
+            files.push(absolutePath);
         }
-        files.push(absolutePath);
     }
 
     return files;
@@ -127,15 +122,13 @@ function extractTagAttribute(tagText, attributeName) {
     const escapedName = attributeName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const pattern = new RegExp(`${escapedName}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'<>]+))`, 'i');
     const match = tagText.match(pattern);
-    if (!match) {
-        return '';
-    }
-    return decodeHtmlAttribute(match[1] ?? match[2] ?? match[3] ?? '');
+    return match ? decodeHtmlAttribute(match[1] ?? match[2] ?? match[3] ?? '') : '';
 }
 
 function extractStartTags(text, tagName) {
     const escapedTagName = tagName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return [...text.matchAll(new RegExp(`<${escapedTagName}\\b[^>]*>`, 'gi'))].map((match) => match[0]);
+    return [...text.matchAll(new RegExp(`<${escapedTagName}\\b[^>]*>`, 'gi'))]
+        .map((match) => match[0]);
 }
 
 function hasRelToken(tagText, relToken) {
@@ -150,14 +143,6 @@ function isIgnoredHref(href) {
         || /^(?:data|javascript|mailto|tel):/i.test(href);
 }
 
-function isRelativeHref(href) {
-    const trimmed = `${href ?? ''}`.trim();
-    return trimmed !== ''
-        && !trimmed.startsWith('/')
-        && !trimmed.startsWith('#')
-        && !/^[a-z][a-z0-9+.-]*:/i.test(trimmed);
-}
-
 function stripMarkdownTitle(rawTarget) {
     let target = `${rawTarget ?? ''}`.trim();
     if (target.startsWith('<')) {
@@ -166,8 +151,7 @@ function stripMarkdownTitle(rawTarget) {
             return target.slice(1, closeIndex).trim();
         }
     }
-    target = target.replace(/\s+["'][\s\S]*$/, '');
-    return target.trim();
+    return target.replace(/\s+["'][\s\S]*$/, '').trim();
 }
 
 function extractMarkdownLinks(text) {
@@ -176,17 +160,23 @@ function extractMarkdownLinks(text) {
 
     for (const match of text.matchAll(pattern)) {
         const target = stripMarkdownTitle(match[2] ?? '');
-        if (!target) {
-            continue;
+        if (target) {
+            links.push({
+                isImage: match[1] === '!',
+                target
+            });
         }
-        links.push({
-            isImage: match[1] === '!',
-            target,
-            raw: match[0]
-        });
     }
 
     return links;
+}
+
+function isMarkdownTarget(target) {
+    try {
+        return new URL(target, 'https://agent-audit.local/').pathname.toLowerCase().endsWith('.md');
+    } catch {
+        return `${target ?? ''}`.split(/[?#]/, 1)[0].toLowerCase().endsWith('.md');
+    }
 }
 
 function extractCanonicalOrigin(llmsText) {
@@ -206,84 +196,6 @@ function hasPerPageMirrorList(llmsText) {
     return /^\s*Mirrors:/m.test(llmsText);
 }
 
-function parseGeneratedHeaders(body) {
-    const blocks = [];
-    let currentBlock = null;
-
-    for (const rawLine of `${body ?? ''}`.replace(/\r\n/g, '\n').split('\n')) {
-        const line = rawLine.trimEnd();
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) {
-            continue;
-        }
-
-        if (!/^\s/.test(line)) {
-            currentBlock = {
-                headers: new Map(),
-                source: trimmed
-            };
-            blocks.push(currentBlock);
-            continue;
-        }
-
-        if (!currentBlock) {
-            continue;
-        }
-
-        const separatorIndex = trimmed.indexOf(':');
-        if (separatorIndex <= 0) {
-            continue;
-        }
-
-        const key = trimmed.slice(0, separatorIndex).trim();
-        const value = trimmed.slice(separatorIndex + 1).trim();
-        if (key) {
-            currentBlock.headers.set(key.toLowerCase(), value);
-        }
-    }
-
-    return blocks;
-}
-
-function toHeaderMap(headers) {
-    const headerMap = new Map();
-    if (!Array.isArray(headers)) {
-        return headerMap;
-    }
-
-    for (const header of headers) {
-        if (!header || typeof header !== 'object') {
-            continue;
-        }
-        const key = `${header.key ?? ''}`.trim();
-        const value = `${header.value ?? ''}`.trim();
-        if (key) {
-            headerMap.set(key.toLowerCase(), value);
-        }
-    }
-
-    return headerMap;
-}
-
-function headerIncludesToken(value, token) {
-    return `${value ?? ''}`
-        .split(',')
-        .map((item) => item.trim().toLowerCase())
-        .includes(token.toLowerCase());
-}
-
-function inspectMarkdownHeaderMap(headers, sourceLabel, issues) {
-    const robotsTag = headers.get('x-robots-tag') ?? '';
-    const contentType = headers.get('content-type') ?? '';
-
-    if (!headerIncludesToken(robotsTag, expectedMarkdownRobotsTag)) {
-        issues.push(`${sourceLabel} is missing X-Robots-Tag: ${expectedMarkdownRobotsTag}.`);
-    }
-    if (!contentType.toLowerCase().startsWith(expectedMarkdownContentType)) {
-        issues.push(`${sourceLabel} should declare Content-Type: ${expectedMarkdownContentType}.`);
-    }
-}
-
 function resolvePublicPathFromHref(href, { canonicalOrigin, currentRelativePath = '' }) {
     const trimmed = decodeHtmlAttribute(`${href ?? ''}`.trim());
     if (isIgnoredHref(trimmed)) {
@@ -291,7 +203,7 @@ function resolvePublicPathFromHref(href, { canonicalOrigin, currentRelativePath 
     }
 
     try {
-        const basePath = currentRelativePath ? currentRelativePath : 'index.html';
+        const basePath = currentRelativePath || 'index.html';
         const url = new URL(trimmed, `https://agent-audit.local/${basePath}`);
 
         if (url.protocol !== 'http:' && url.protocol !== 'https:') {
@@ -317,22 +229,13 @@ function resolvePublicPathFromHref(href, { canonicalOrigin, currentRelativePath 
     }
 }
 
-function markdownPathToHtmlPath(markdownPath) {
-    if (!markdownPath.endsWith('/index.md') && markdownPath !== 'index.md') {
-        return '';
-    }
-    return markdownPath.replace(/index\.md$/, 'index.html');
-}
-
 function extractFrontMatter(text) {
-    text = `${text ?? ''}`.replace(/^\uFEFF/, '');
-    if (text.startsWith('---\n') || text.startsWith('---\r\n')) {
-        const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/);
-        return match?.[1] ?? '';
+    const normalized = `${text ?? ''}`.replace(/^\uFEFF/, '');
+    if (normalized.startsWith('---\n') || normalized.startsWith('---\r\n')) {
+        return normalized.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n/)?.[1] ?? '';
     }
-    if (text.startsWith('+++\n') || text.startsWith('+++\r\n')) {
-        const match = text.match(/^\+\+\+\r?\n([\s\S]*?)\r?\n\+\+\+\r?\n/);
-        return match?.[1] ?? '';
+    if (normalized.startsWith('+++\n') || normalized.startsWith('+++\r\n')) {
+        return normalized.match(/^\+\+\+\r?\n([\s\S]*?)\r?\n\+\+\+\r?\n/)?.[1] ?? '';
     }
     return '';
 }
@@ -350,33 +253,12 @@ function parseFrontMatterData(frontMatter, relativePath, issues) {
     }
 }
 
-function extractFrontMatterOutputList(frontMatter) {
-    const outputs = [];
-
-    const addOutput = (name) => {
-        const normalized = `${name ?? ''}`.trim().toUpperCase();
-        if (normalized) {
-            outputs.push(normalized);
-        }
-    };
-
-    for (const match of frontMatter.matchAll(/^\s*outputs\s*[:=]\s*\[([^\]]*)\]/gmi)) {
-        for (const name of match[1].matchAll(/["']?([A-Za-z0-9_-]+)["']?/g)) {
-            addOutput(name[1]);
-        }
-    }
-
-    const yamlBlockMatch = frontMatter.match(/^\s*outputs\s*:\s*\r?\n((?:\s+-\s*[^\r\n]+\r?\n?)+)/mi);
-    if (yamlBlockMatch) {
-        for (const line of yamlBlockMatch[1].split(/\r?\n/)) {
-            const match = line.match(/^\s+-\s*["']?([A-Za-z0-9_-]+)["']?\s*$/);
-            if (match) {
-                addOutput(match[1]);
-            }
-        }
-    }
-
-    return outputs;
+function outputNames(frontMatterData) {
+    const raw = frontMatterData.outputs;
+    const values = Array.isArray(raw) ? raw : raw == null ? [] : [raw];
+    return values
+        .map((value) => `${value ?? ''}`.trim().toUpperCase())
+        .filter(Boolean);
 }
 
 function hasOwn(object, key) {
@@ -393,9 +275,8 @@ async function readSiteLanguageInfo() {
     const languages = new Set([defaultLanguage]);
 
     for (const match of configText.matchAll(/^\s*\[languages\.([^\]\s]+)\]\s*$/gmi)) {
-        const language = match[1];
-        if (!language.includes('.')) {
-            languages.add(language);
+        if (!match[1].includes('.')) {
+            languages.add(match[1]);
         }
     }
 
@@ -423,7 +304,6 @@ function parseContentIdentity(relativePath, languageInfo) {
     }
 
     return {
-        contentRelativePath,
         dir,
         stem,
         language
@@ -443,11 +323,10 @@ function parentContentDir(dir) {
 }
 
 function buildContentRecordIndex(records) {
-    const byKey = new Map();
-    for (const record of records) {
-        byKey.set(contentRecordKey(record.identity.dir, record.identity.stem, record.identity.language), record);
-    }
-    return byKey;
+    return new Map(records.map((record) => [
+        contentRecordKey(record.identity.dir, record.identity.stem, record.identity.language),
+        record
+    ]));
 }
 
 function findSectionRecord(recordsByKey, dir, language) {
@@ -474,13 +353,7 @@ function resolveShareImageRecord(record, recordsByKey, languageInfo) {
         candidates.push(homeRecord);
     }
 
-    for (const candidate of candidates) {
-        if (hasOwn(candidate.frontMatterData, 'share_image')) {
-            return candidate;
-        }
-    }
-
-    return null;
+    return candidates.find((candidate) => hasOwn(candidate.frontMatterData, 'share_image')) ?? null;
 }
 
 async function inspectShareImageSetting({ record, recordsByKey, languageInfo, issues }) {
@@ -505,49 +378,105 @@ async function inspectShareImageSetting({ record, recordsByKey, languageInfo, is
     }
 
     const normalized = shareImage.trim();
-    if (isExternalShareImage(normalized)) {
-        return { configured: true, disabled: false, inherited };
-    }
-
-    const localPath = normalized.startsWith('/')
-        ? path.join(siteRoot, 'static', normalized.replace(/^\/+/, ''))
-        : path.resolve(path.dirname(ownerRecord.contentPath), normalized);
-    if (!await fileExists(localPath)) {
-        issues.push(`Content page share_image points to a missing local file: ${ownerRecord.relativePath} -> ${shareImage}`);
+    if (!isExternalShareImage(normalized)) {
+        const localPath = normalized.startsWith('/')
+            ? path.join(siteRoot, 'static', normalized.replace(/^\/+/, ''))
+            : path.resolve(path.dirname(ownerRecord.contentPath), normalized);
+        if (!await fileExists(localPath)) {
+            issues.push(`Content page share_image points to a missing local file: ${ownerRecord.relativePath} -> ${shareImage}`);
+        }
     }
 
     return { configured: true, disabled: false, inherited };
 }
 
-function extractMarkdownAlternates(htmlText) {
-    const alternates = [];
+function isAgentIndexedContentRecord(record) {
+    const { dir, stem } = record.identity;
+    return stem === 'index' && (dir === 'about' || dir.startsWith('d/'));
+}
 
-    for (const tag of extractStartTags(htmlText, 'link')) {
-        if (!hasRelToken(tag, 'alternate')) {
+async function inspectSourceSettings(issues) {
+    const contentRoot = path.join(siteRoot, 'content');
+    if (!await fileExists(contentRoot)) {
+        return {
+            contentFiles: 0,
+            indexedContentFiles: 0,
+            legacyMarkdownOptIns: 0,
+            shareImageConfigured: 0,
+            shareImageDisabled: 0,
+            shareImageInherited: 0
+        };
+    }
+
+    const languageInfo = await readSiteLanguageInfo();
+    const contentFiles = await collectFiles(
+        contentRoot,
+        (_absolutePath, name) => /\.(?:md|markdown)$/i.test(name)
+    );
+    const records = [];
+
+    for (const contentPath of contentFiles) {
+        const relativePath = toPublicRelativePath(siteRoot, contentPath);
+        const frontMatter = extractFrontMatter(await fs.readFile(contentPath, 'utf8'));
+        records.push({
+            contentPath,
+            relativePath,
+            frontMatterData: parseFrontMatterData(frontMatter, relativePath, issues),
+            identity: parseContentIdentity(relativePath, languageInfo)
+        });
+    }
+
+    const recordsByKey = buildContentRecordIndex(records);
+    let indexedContentFiles = 0;
+    let legacyMarkdownOptIns = 0;
+    let shareImageConfigured = 0;
+    let shareImageDisabled = 0;
+    let shareImageInherited = 0;
+
+    for (const record of records) {
+        const legacyOutputs = outputNames(record.frontMatterData)
+            .filter((name) => legacyMarkdownOutputs.has(name));
+        if (legacyOutputs.length > 0) {
+            legacyMarkdownOptIns += 1;
+            issues.push(`Content page still configures a retired Markdown output (${legacyOutputs.join(', ')}): ${record.relativePath}`);
+        }
+        if (!isAgentIndexedContentRecord(record)) {
             continue;
         }
-        if (extractTagAttribute(tag, 'type').toLowerCase() !== 'text/markdown') {
-            continue;
+
+        indexedContentFiles += 1;
+        const shareImage = await inspectShareImageSetting({
+            record,
+            recordsByKey,
+            languageInfo,
+            issues
+        });
+        if (shareImage.configured) {
+            shareImageConfigured += 1;
         }
-        const href = extractTagAttribute(tag, 'href');
-        if (href) {
-            alternates.push(href);
+        if (shareImage.disabled) {
+            shareImageDisabled += 1;
+        }
+        if (shareImage.inherited) {
+            shareImageInherited += 1;
         }
     }
 
-    return alternates;
+    return {
+        contentFiles: contentFiles.length,
+        indexedContentFiles,
+        legacyMarkdownOptIns,
+        shareImageConfigured,
+        shareImageDisabled,
+        shareImageInherited
+    };
 }
 
 async function inspectRobots(publicRoot, issues) {
-    const robotsPath = path.join(publicRoot, 'robots.txt');
-    const robotsText = await readUtf8IfExists(robotsPath);
+    const robotsText = await readUtf8IfExists(path.join(publicRoot, 'robots.txt'));
     if (!robotsText) {
         issues.push('Missing robots.txt.');
-        return {
-            hasRobots: false,
-            userAgentCount: 0,
-            missingAgentHints: expectedRobotsAgentHints
-        };
+        return { hasRobots: false, userAgentCount: 0 };
     }
 
     const userAgentCount = (robotsText.match(/^User-agent:/gim) ?? []).length;
@@ -562,229 +491,186 @@ async function inspectRobots(publicRoot, issues) {
         issues.push(`robots.txt is missing expected AI crawler policy hints: ${missingAgentHints.join(', ')}.`);
     }
 
-    return {
-        hasRobots: true,
-        userAgentCount,
-        missingAgentHints
-    };
+    return { hasRobots: true, userAgentCount };
 }
 
-async function inspectMarkdownMirrorHeaderPolicy(publicRoot, issues) {
-    const headersPath = path.join(publicRoot, '_headers');
-    const edgeonePath = path.join(publicRoot, 'edgeone.json');
-    const headersText = await readUtf8IfExists(headersPath);
-    const edgeoneText = await readUtf8IfExists(edgeonePath);
+function parseGeneratedHeaders(body) {
+    const sources = [];
+    for (const rawLine of `${body ?? ''}`.replace(/\r\n/g, '\n').split('\n')) {
+        const line = rawLine.trimEnd();
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#') && !/^\s/.test(line)) {
+            sources.push(trimmed);
+        }
+    }
+    return sources;
+}
+
+async function inspectRetiredMarkdownSurface(publicRoot, issues) {
+    const headersText = await readUtf8IfExists(path.join(publicRoot, '_headers'));
+    const edgeoneText = await readUtf8IfExists(path.join(publicRoot, 'edgeone.json'));
     let generatedHeadersRoute = false;
     let edgeoneRoute = false;
 
     if (!headersText) {
-        issues.push('Missing generated _headers; Markdown mirror noindex headers cannot be verified.');
+        issues.push('Missing generated _headers.');
     } else {
-        const route = parseGeneratedHeaders(headersText)
-            .find((block) => block.source === markdownMirrorHeaderRoute);
-        if (!route) {
-            issues.push(`Generated _headers is missing the Markdown mirror route: ${markdownMirrorHeaderRoute}.`);
-        } else {
-            generatedHeadersRoute = true;
-            inspectMarkdownHeaderMap(route.headers, `_headers ${markdownMirrorHeaderRoute}`, issues);
+        generatedHeadersRoute = parseGeneratedHeaders(headersText).includes('/*.md');
+        if (generatedHeadersRoute) {
+            issues.push('Generated _headers still contains the retired Markdown route /*.md.');
         }
     }
 
     if (!edgeoneText) {
-        issues.push('Missing generated edgeone.json; Markdown mirror noindex headers cannot be verified.');
+        issues.push('Missing generated edgeone.json.');
     } else {
         try {
             const parsed = JSON.parse(edgeoneText);
-            const route = Array.isArray(parsed.headers)
-                ? parsed.headers.find((entry) => entry && entry.source === markdownMirrorHeaderRoute)
-                : null;
-            if (!route) {
-                issues.push(`edgeone.json is missing the Markdown mirror route: ${markdownMirrorHeaderRoute}.`);
-            } else {
-                edgeoneRoute = true;
-                inspectMarkdownHeaderMap(toHeaderMap(route.headers), `edgeone.json ${markdownMirrorHeaderRoute}`, issues);
+            edgeoneRoute = Array.isArray(parsed.headers)
+                && parsed.headers.some((entry) => entry?.source === '/*.md');
+            if (edgeoneRoute) {
+                issues.push('Generated edgeone.json still contains the retired Markdown route /*.md.');
             }
         } catch {
             issues.push('Generated edgeone.json is not valid JSON.');
         }
     }
 
+    const markdownPaths = await collectFiles(
+        publicRoot,
+        (_absolutePath, name) => path.extname(name).toLowerCase() === '.md'
+    );
+    const generatedMarkdownFiles = markdownPaths
+        .map((markdownPath) => toPublicRelativePath(publicRoot, markdownPath))
+        .sort();
+    if (generatedMarkdownFiles.length > 0) {
+        issues.push(`Generated output still contains Markdown files: ${generatedMarkdownFiles.slice(0, 8).join(', ')}`);
+    }
+
     return {
         edgeoneRoute,
-        generatedHeadersRoute
+        generatedHeadersRoute,
+        generatedMarkdownFiles
     };
 }
 
-async function inspectSourceOutputSettings(issues) {
-    const contentRoot = path.join(siteRoot, 'content');
-    if (!await fileExists(contentRoot)) {
-        return {
-            contentFiles: 0,
-            agentMarkdownOptIns: 0,
-            markdownOnlyOptIns: 0,
-            shareImageConfigured: 0,
-            shareImageDisabled: 0,
-            shareImageInherited: 0
-        };
-    }
-
-    const languageInfo = await readSiteLanguageInfo();
-    const contentFiles = await collectFiles(
-        contentRoot,
-        (_absolutePath, name) => /\.(?:md|markdown)$/i.test(name)
-    );
-    const records = [];
-    let agentMarkdownOptIns = 0;
-    let markdownOnlyOptIns = 0;
-    let shareImageConfigured = 0;
-    let shareImageDisabled = 0;
-    let shareImageInherited = 0;
-
-    for (const contentPath of contentFiles) {
-        const relativePath = toPublicRelativePath(siteRoot, contentPath);
-        const text = await fs.readFile(contentPath, 'utf8');
-        const frontMatter = extractFrontMatter(text);
-        const frontMatterData = parseFrontMatterData(frontMatter, relativePath, issues);
-        const outputList = extractFrontMatterOutputList(frontMatter);
-        const outputs = new Set(outputList);
-        records.push({
-            contentPath,
-            relativePath,
-            frontMatterData,
-            outputList,
-            outputs,
-            identity: parseContentIdentity(relativePath, languageInfo)
-        });
-    }
-
-    const recordsByKey = buildContentRecordIndex(records);
-
-    for (const record of records) {
-        const hasHtml = record.outputs.has('HTML');
-        const hasMarkdown = record.outputs.has('MARKDOWN');
-        const hasAgentMarkdown = record.outputs.has('AGENT_MARKDOWN');
-
-        if (hasAgentMarkdown) {
-            agentMarkdownOptIns += 1;
-        }
-        if (hasMarkdown && !hasAgentMarkdown) {
-            markdownOnlyOptIns += 1;
-        }
-        if (hasMarkdown && hasAgentMarkdown) {
-            issues.push(`Content page configures both MARKDOWN and AGENT_MARKDOWN outputs: ${record.relativePath}`);
-        }
-        if ((hasMarkdown || hasAgentMarkdown) && record.outputList[0] !== 'HTML') {
-            issues.push(`Content page opts into a Markdown mirror without keeping HTML as the first output: ${record.relativePath}`);
-        }
-
-        if (hasHtml || hasMarkdown || hasAgentMarkdown) {
-            const shareImage = await inspectShareImageSetting({
-                record,
-                recordsByKey,
-                languageInfo,
-                issues
-            });
-            if (shareImage.configured) {
-                shareImageConfigured += 1;
-            }
-            if (shareImage.disabled) {
-                shareImageDisabled += 1;
-            }
-            if (shareImage.inherited) {
-                shareImageInherited += 1;
-            }
-        }
-    }
-
-    return {
-        contentFiles: contentFiles.length,
-        agentMarkdownOptIns,
-        markdownOnlyOptIns,
-        shareImageConfigured,
-        shareImageDisabled,
-        shareImageInherited
-    };
-}
-
-async function inspectLlms(publicRoot, issues) {
-    const llmsPath = path.join(publicRoot, 'llms.txt');
-    const llmsText = await readUtf8IfExists(llmsPath);
-    if (!llmsText) {
-        issues.push('Missing root llms.txt.');
-        return {
-            hasLlms: false,
-            canonicalOrigin: '',
-            localLinkCount: 0,
-            markdownLinks: new Set(),
-            text: ''
-        };
-    }
-
-    const canonicalOrigin = extractCanonicalOrigin(llmsText);
-    if (!canonicalOrigin) {
-        issues.push('llms.txt is missing a parseable Canonical site URL.');
-    }
-    if (!/^## Agent Notes\b/m.test(llmsText)) {
-        issues.push('llms.txt is missing the Agent Notes section.');
-    }
-    if (hasPerPageMirrorList(llmsText)) {
-        issues.push('llms.txt should not contain per-page Mirrors entries; use language indexes and sitemap hreflang for alternate-language discovery.');
-    }
-    if (!/^## Languages?\b/m.test(llmsText) && !/^## Key Content Pages\b/m.test(llmsText)) {
-        issues.push('llms.txt is missing a Languages or Key Content Pages section.');
-    }
-
+async function inspectLlmsFile({
+    publicRoot,
+    relativePath,
+    canonicalOrigin,
+    rootText,
+    languageFile,
+    issues
+}) {
+    const absolutePath = path.join(publicRoot, relativePath);
+    const text = await fs.readFile(absolutePath, 'utf8');
     const localLinks = new Set();
     const markdownLinks = new Set();
-    const links = extractMarkdownLinks(llmsText);
-    for (const link of links) {
-        const resolved = resolvePublicPathFromHref(link.target, { canonicalOrigin });
+    const fileCanonicalOrigin = extractCanonicalOrigin(text);
+
+    if (!fileCanonicalOrigin) {
+        issues.push(`${relativePath} is missing a parseable Canonical site URL.`);
+    } else if (canonicalOrigin && fileCanonicalOrigin !== canonicalOrigin) {
+        issues.push(`${relativePath} Canonical site origin differs from root llms.txt: ${fileCanonicalOrigin}`);
+    }
+    if (languageFile && rootText && text.trim() === rootText) {
+        issues.push(`Language llms.txt duplicates the root llms.txt exactly: ${relativePath}`);
+    }
+    if (!/^## Agent Notes\b/m.test(text)) {
+        issues.push(`${relativePath} is missing the Agent Notes section.`);
+    }
+    if (!/^- Canonical human-facing pages are HTML\.\s*$/m.test(text)) {
+        issues.push(`${relativePath} does not declare canonical human-facing pages as HTML.`);
+    }
+    if (hasPerPageMirrorList(text)) {
+        issues.push(`${relativePath} still contains a retired per-page Mirrors list.`);
+    }
+    if (languageFile) {
+        if (!/^## Site Entry Points\b/m.test(text)) {
+            issues.push(`${relativePath} is missing the Site Entry Points section.`);
+        }
+        if (!/^## Key Content Pages\b/m.test(text)) {
+            issues.push(`${relativePath} is missing the Key Content Pages section.`);
+        }
+    } else if (!/^## Languages?\b/m.test(text) && !/^## Key Content Pages\b/m.test(text)) {
+        issues.push(`${relativePath} is missing a Languages or Key Content Pages section.`);
+    }
+
+    for (const link of extractMarkdownLinks(text)) {
+        if (isMarkdownTarget(link.target)) {
+            markdownLinks.add(link.target);
+            issues.push(`${relativePath} links to retired Markdown content: ${link.target}`);
+        }
+
+        const resolved = resolvePublicPathFromHref(link.target, {
+            canonicalOrigin: canonicalOrigin || fileCanonicalOrigin,
+            currentRelativePath: relativePath
+        });
         if (resolved.kind === 'ignored' || resolved.kind === 'external') {
             continue;
         }
         if (resolved.kind === 'invalid') {
-            issues.push(`llms.txt contains an invalid link target: ${link.target}`);
+            issues.push(`${relativePath} contains an invalid link target: ${link.target}`);
             continue;
         }
 
         localLinks.add(resolved.relativePath);
         if (!await fileExists(path.join(publicRoot, resolved.relativePath))) {
-            issues.push(`llms.txt points to a missing local file: ${link.target} -> ${resolved.relativePath}`);
-        }
-        if (resolved.relativePath.endsWith('.md')) {
-            markdownLinks.add(resolved.relativePath);
+            issues.push(`${relativePath} points to a missing local file: ${link.target} -> ${resolved.relativePath}`);
         }
     }
 
-    const sitemapMatch = llmsText.match(/^Sitemap:\s*(\S+)/mi);
+    const sitemapMatch = text.match(/^Sitemap:\s*(\S+)/mi);
     if (!sitemapMatch) {
-        issues.push('llms.txt is missing a Sitemap line.');
+        issues.push(`${relativePath} is missing a Sitemap line.`);
     } else {
-        const resolved = resolvePublicPathFromHref(sitemapMatch[1], { canonicalOrigin });
+        const resolved = resolvePublicPathFromHref(sitemapMatch[1], {
+            canonicalOrigin: canonicalOrigin || fileCanonicalOrigin,
+            currentRelativePath: relativePath
+        });
         if (resolved.kind === 'local' && !await fileExists(path.join(publicRoot, resolved.relativePath))) {
-            issues.push(`llms.txt Sitemap points to a missing local file: ${resolved.relativePath}`);
+            issues.push(`${relativePath} Sitemap points to a missing local file: ${resolved.relativePath}`);
         }
     }
 
     return {
-        hasLlms: true,
-        canonicalOrigin,
-        localLinkCount: localLinks.size,
+        localLinks,
         markdownLinks,
-        text: llmsText
+        text
     };
 }
 
-async function inspectLanguageLlms(publicRoot, rootLlms, issues) {
+async function inspectLlms(publicRoot, issues) {
+    const rootPath = path.join(publicRoot, 'llms.txt');
+    const rootText = await readUtf8IfExists(rootPath);
+    if (!rootText) {
+        issues.push('Missing root llms.txt.');
+        return {
+            hasLlms: false,
+            canonicalOrigin: '',
+            fileCount: 0,
+            languageFiles: [],
+            localLinkCount: 0,
+            markdownLinkCount: 0
+        };
+    }
+
+    const canonicalOrigin = extractCanonicalOrigin(rootText);
+    const rootResult = await inspectLlmsFile({
+        publicRoot,
+        relativePath: 'llms.txt',
+        canonicalOrigin,
+        rootText: '',
+        languageFile: false,
+        issues
+    });
     const llmsPaths = await collectFiles(
         publicRoot,
         (_absolutePath, name) => name.toLowerCase() === 'llms.txt'
     );
-    const languageLlmsFiles = [];
-    const markdownLinks = new Set();
-    const localLinks = new Set();
-    const rootText = `${rootLlms.text ?? ''}`.trim();
-    const canonicalOrigin = rootLlms.canonicalOrigin;
+    const languageFiles = [];
+    const localLinks = new Set(rootResult.localLinks);
+    const markdownLinks = new Set(rootResult.markdownLinks);
 
     for (const llmsPath of llmsPaths) {
         const relativePath = toPublicRelativePath(publicRoot, llmsPath);
@@ -792,176 +678,74 @@ async function inspectLanguageLlms(publicRoot, rootLlms, issues) {
             continue;
         }
 
-        languageLlmsFiles.push(relativePath);
-        const llmsText = await fs.readFile(llmsPath, 'utf8');
-        const trimmedText = llmsText.trim();
-        if (rootText && trimmedText === rootText) {
-            issues.push(`Language llms.txt duplicates the root llms.txt exactly: ${relativePath}`);
+        languageFiles.push(relativePath);
+        const result = await inspectLlmsFile({
+            publicRoot,
+            relativePath,
+            canonicalOrigin,
+            rootText: rootText.trim(),
+            languageFile: true,
+            issues
+        });
+        for (const link of result.localLinks) {
+            localLinks.add(link);
         }
-
-        const fileCanonicalOrigin = extractCanonicalOrigin(llmsText);
-        if (!fileCanonicalOrigin) {
-            issues.push(`${relativePath} is missing a parseable Canonical site URL.`);
-        } else if (canonicalOrigin && fileCanonicalOrigin !== canonicalOrigin) {
-            issues.push(`${relativePath} Canonical site origin differs from root llms.txt: ${fileCanonicalOrigin}`);
-        }
-        if (!/^## Agent Notes\b/m.test(llmsText)) {
-            issues.push(`${relativePath} is missing the Agent Notes section.`);
-        }
-        if (hasPerPageMirrorList(llmsText)) {
-            issues.push(`${relativePath} should not contain per-page Mirrors entries; use language indexes and sitemap hreflang for alternate-language discovery.`);
-        }
-        if (!/^## Site Entry Points\b/m.test(llmsText)) {
-            issues.push(`${relativePath} is missing the Site Entry Points section.`);
-        }
-        if (!/^## Key Content Pages\b/m.test(llmsText)) {
-            issues.push(`${relativePath} is missing the Key Content Pages section.`);
-        }
-
-        const fileMarkdownLinks = new Set();
-        for (const link of extractMarkdownLinks(llmsText)) {
-            const resolved = resolvePublicPathFromHref(link.target, {
-                canonicalOrigin,
-                currentRelativePath: relativePath
-            });
-            if (resolved.kind === 'ignored' || resolved.kind === 'external') {
-                continue;
-            }
-            if (resolved.kind === 'invalid') {
-                issues.push(`${relativePath} contains an invalid link target: ${link.target}`);
-                continue;
-            }
-
-            localLinks.add(resolved.relativePath);
-            if (!await fileExists(path.join(publicRoot, resolved.relativePath))) {
-                issues.push(`${relativePath} points to a missing local file: ${link.target} -> ${resolved.relativePath}`);
-            }
-            if (resolved.relativePath.endsWith('.md')) {
-                markdownLinks.add(resolved.relativePath);
-                fileMarkdownLinks.add(resolved.relativePath);
-            }
-        }
-
-        const sitemapMatch = llmsText.match(/^Sitemap:\s*(\S+)/mi);
-        if (!sitemapMatch) {
-            issues.push(`${relativePath} is missing a Sitemap line.`);
-        } else {
-            const resolved = resolvePublicPathFromHref(sitemapMatch[1], {
-                canonicalOrigin,
-                currentRelativePath: relativePath
-            });
-            if (resolved.kind === 'local' && !await fileExists(path.join(publicRoot, resolved.relativePath))) {
-                issues.push(`${relativePath} Sitemap points to a missing local file: ${resolved.relativePath}`);
-            }
-        }
-
-        if (fileMarkdownLinks.size === 0) {
-            issues.push(`${relativePath} does not link to any Markdown mirrors.`);
+        for (const link of result.markdownLinks) {
+            markdownLinks.add(link);
         }
     }
 
     return {
+        hasLlms: true,
+        canonicalOrigin,
         fileCount: llmsPaths.length,
-        languageFileCount: languageLlmsFiles.length,
-        languageLlmsFiles: languageLlmsFiles.sort(),
+        languageFiles: languageFiles.sort(),
         localLinkCount: localLinks.size,
-        markdownLinks
+        markdownLinkCount: markdownLinks.size
     };
 }
 
-async function inspectHtmlAlternates(publicRoot, canonicalOrigin, issues) {
+async function inspectHtmlPublishingContract(publicRoot, canonicalOrigin, issues) {
     const htmlPaths = await collectFiles(
         publicRoot,
         (_absolutePath, name) => path.extname(name).toLowerCase() === '.html'
     );
-    const alternatesByMarkdownPath = new Map();
+    let markdownAlternates = 0;
+    let localMarkdownLinks = 0;
 
     for (const htmlPath of htmlPaths) {
-        const htmlRelativePath = toPublicRelativePath(publicRoot, htmlPath);
+        const relativePath = toPublicRelativePath(publicRoot, htmlPath);
         const htmlText = await fs.readFile(htmlPath, 'utf8');
-        const alternateTargets = extractMarkdownAlternates(htmlText);
 
-        for (const target of alternateTargets) {
-            const resolved = resolvePublicPathFromHref(target, {
+        for (const tag of extractStartTags(htmlText, 'link')) {
+            if (hasRelToken(tag, 'alternate')
+                && extractTagAttribute(tag, 'type').toLowerCase() === 'text/markdown') {
+                markdownAlternates += 1;
+                issues.push(`HTML page still advertises a Markdown alternate: ${relativePath}`);
+            }
+        }
+
+        for (const tag of extractStartTags(htmlText, 'a')) {
+            const href = extractTagAttribute(tag, 'href');
+            if (!isMarkdownTarget(href)) {
+                continue;
+            }
+            const resolved = resolvePublicPathFromHref(href, {
                 canonicalOrigin,
-                currentRelativePath: htmlRelativePath
+                currentRelativePath: relativePath
             });
-            if (resolved.kind === 'ignored') {
-                continue;
+            if (resolved.kind === 'local') {
+                localMarkdownLinks += 1;
+                issues.push(`HTML page still links to retired local Markdown content: ${relativePath} -> ${href}`);
             }
-            if (resolved.kind === 'external') {
-                issues.push(`Markdown alternate on ${htmlRelativePath} points outside the canonical site: ${target}`);
-                continue;
-            }
-            if (resolved.kind === 'invalid') {
-                issues.push(`Markdown alternate on ${htmlRelativePath} is invalid: ${target}`);
-                continue;
-            }
-            if (!resolved.relativePath.endsWith('.md')) {
-                issues.push(`Markdown alternate on ${htmlRelativePath} does not point to a .md file: ${target}`);
-                continue;
-            }
-            if (!await fileExists(path.join(publicRoot, resolved.relativePath))) {
-                issues.push(`Markdown alternate on ${htmlRelativePath} points to a missing file: ${resolved.relativePath}`);
-                continue;
-            }
-
-            const existing = alternatesByMarkdownPath.get(resolved.relativePath) ?? [];
-            existing.push(htmlRelativePath);
-            alternatesByMarkdownPath.set(resolved.relativePath, existing);
         }
     }
 
     return {
         htmlCount: htmlPaths.length,
-        alternatesByMarkdownPath
+        markdownAlternates,
+        localMarkdownLinks
     };
-}
-
-async function inspectMarkdownMirror(publicRoot, markdownPath, canonicalOrigin, issues) {
-    const markdownAbsolutePath = path.join(publicRoot, markdownPath);
-    const markdownText = await fs.readFile(markdownAbsolutePath, 'utf8');
-
-    if (!/^#\s+\S+/m.test(markdownText)) {
-        issues.push(`Markdown mirror is missing a top-level title: ${markdownPath}`);
-    }
-    if (!/^- Canonical:\s+\S+/m.test(markdownText)) {
-        issues.push(`Markdown mirror is missing Canonical metadata: ${markdownPath}`);
-    }
-    if (!/^>\s+\S+/m.test(markdownText)) {
-        issues.push(`Advertised Markdown mirror is missing a description blockquote: ${markdownPath}`);
-    }
-    if (/{{[<%]/.test(markdownText)) {
-        issues.push(`Markdown mirror still contains raw Hugo shortcode syntax: ${markdownPath}`);
-    }
-
-    for (const link of extractMarkdownLinks(markdownText)) {
-        const target = link.target;
-        const assetLike = link.isImage || assetLikeExtensionPattern.test(target);
-        if (!assetLike || isIgnoredHref(target)) {
-            continue;
-        }
-
-        if (isRelativeHref(target)) {
-            issues.push(`Markdown mirror contains a context-dependent asset reference: ${markdownPath} -> ${target}`);
-            continue;
-        }
-
-        const resolved = resolvePublicPathFromHref(target, {
-            canonicalOrigin,
-            currentRelativePath: markdownPath
-        });
-        if (resolved.kind === 'ignored' || resolved.kind === 'external') {
-            continue;
-        }
-        if (resolved.kind === 'invalid') {
-            issues.push(`Markdown mirror contains an invalid asset reference: ${markdownPath} -> ${target}`);
-            continue;
-        }
-        if (!await fileExists(path.join(publicRoot, resolved.relativePath))) {
-            issues.push(`Markdown mirror points to a missing local asset: ${markdownPath} -> ${target} -> ${resolved.relativePath}`);
-        }
-    }
 }
 
 async function main() {
@@ -975,85 +759,38 @@ async function main() {
     await fs.access(publicRoot);
 
     const issues = [];
-    const sourceOutputs = await inspectSourceOutputSettings(issues);
+    const source = await inspectSourceSettings(issues);
     const robots = await inspectRobots(publicRoot, issues);
-    const markdownHeaderPolicy = await inspectMarkdownMirrorHeaderPolicy(publicRoot, issues);
+    const retiredMarkdown = await inspectRetiredMarkdownSurface(publicRoot, issues);
     const llms = await inspectLlms(publicRoot, issues);
-    const languageLlms = await inspectLanguageLlms(publicRoot, llms, issues);
-    const htmlAlternates = await inspectHtmlAlternates(publicRoot, llms.canonicalOrigin, issues);
-    const markdownPaths = await collectFiles(
-        publicRoot,
-        (_absolutePath, name) => name.toLowerCase() === 'index.md'
-    );
-    const allMarkdownMirrors = markdownPaths
-        .map((markdownPath) => toPublicRelativePath(publicRoot, markdownPath))
-        .sort();
-    const llmsMarkdownLinks = new Set([
-        ...llms.markdownLinks,
-        ...languageLlms.markdownLinks
-    ]);
-    if (llmsMarkdownLinks.size === 0) {
-        issues.push('No llms.txt file links to any Markdown mirrors.');
-    }
-    const advertisedMarkdownPaths = new Set([
-        ...llmsMarkdownLinks,
-        ...htmlAlternates.alternatesByMarkdownPath.keys()
-    ]);
-
-    for (const markdownPath of llmsMarkdownLinks) {
-        const htmlPath = markdownPathToHtmlPath(markdownPath);
-        if (!htmlPath) {
-            issues.push(`llms.txt Markdown mirror does not use the expected index.md shape: ${markdownPath}`);
-            continue;
-        }
-        const exposingHtmlPaths = htmlAlternates.alternatesByMarkdownPath.get(markdownPath) ?? [];
-        if (!exposingHtmlPaths.includes(htmlPath)) {
-            issues.push(`HTML page does not advertise its llms.txt Markdown mirror: ${htmlPath} -> ${markdownPath}`);
-        }
-    }
-
-    for (const [markdownPath, exposingHtmlPaths] of htmlAlternates.alternatesByMarkdownPath) {
-        if (!llmsMarkdownLinks.has(markdownPath)) {
-            issues.push(`HTML page advertises a Markdown mirror that is not listed in any llms.txt file: ${exposingHtmlPaths[0]} -> ${markdownPath}`);
-        }
-    }
-
-    for (const markdownPath of advertisedMarkdownPaths) {
-        await inspectMarkdownMirror(publicRoot, markdownPath, llms.canonicalOrigin, issues);
-    }
-
-    const orphanMarkdownMirrors = allMarkdownMirrors.filter((markdownPath) => !advertisedMarkdownPaths.has(markdownPath));
+    const html = await inspectHtmlPublishingContract(publicRoot, llms.canonicalOrigin, issues);
 
     console.log('Agent readiness audit');
     console.log(`Root\t${publicRoot}`);
     console.log(`Mode\t${options.check ? 'report + check' : 'report only'}`);
     console.log(`robots.txt\t${robots.hasRobots ? 'yes' : 'no'}`);
     console.log(`robots user-agent blocks\t${robots.userAgentCount}`);
-    console.log(`Markdown noindex route (_headers)\t${markdownHeaderPolicy.generatedHeadersRoute ? 'yes' : 'no'}`);
-    console.log(`Markdown noindex route (edgeone.json)\t${markdownHeaderPolicy.edgeoneRoute ? 'yes' : 'no'}`);
-    console.log(`content Markdown files\t${sourceOutputs.contentFiles}`);
-    console.log(`AGENT_MARKDOWN opt-ins\t${sourceOutputs.agentMarkdownOptIns}`);
-    console.log(`MARKDOWN-only opt-ins\t${sourceOutputs.markdownOnlyOptIns}`);
-    console.log(`share_image configured\t${sourceOutputs.shareImageConfigured}`);
-    console.log(`share_image inherited\t${sourceOutputs.shareImageInherited}`);
-    console.log(`share_image disabled\t${sourceOutputs.shareImageDisabled}`);
+    console.log(`content Markdown source files\t${source.contentFiles}`);
+    console.log(`agent-indexed content files\t${source.indexedContentFiles}`);
+    console.log(`legacy Markdown output opt-ins\t${source.legacyMarkdownOptIns}`);
+    console.log(`share_image configured\t${source.shareImageConfigured}`);
+    console.log(`share_image inherited\t${source.shareImageInherited}`);
+    console.log(`share_image disabled\t${source.shareImageDisabled}`);
     console.log(`llms.txt\t${llms.hasLlms ? 'yes' : 'no'}`);
-    console.log(`llms.txt files\t${languageLlms.fileCount}`);
-    console.log(`language llms.txt files\t${languageLlms.languageFileCount}`);
-    if (languageLlms.languageLlmsFiles.length > 0) {
-        console.log(`language llms.txt paths\t${languageLlms.languageLlmsFiles.join(', ')}`);
+    console.log(`llms.txt files\t${llms.fileCount}`);
+    console.log(`language llms.txt files\t${llms.languageFiles.length}`);
+    if (llms.languageFiles.length > 0) {
+        console.log(`language llms.txt paths\t${llms.languageFiles.join(', ')}`);
     }
     console.log(`Canonical origin\t${llms.canonicalOrigin || '<missing>'}`);
     console.log(`llms local links\t${llms.localLinkCount}`);
-    console.log(`llms Markdown links\t${llms.markdownLinks.size}`);
-    console.log(`all llms Markdown links\t${llmsMarkdownLinks.size}`);
-    console.log(`HTML files\t${htmlAlternates.htmlCount}`);
-    console.log(`Markdown mirrors\t${allMarkdownMirrors.length}`);
-    console.log(`Advertised Markdown mirrors\t${advertisedMarkdownPaths.size}`);
-    console.log(`Non-advertised Markdown mirrors\t${orphanMarkdownMirrors.length}`);
-    if (orphanMarkdownMirrors.length > 0) {
-        console.log(`Non-advertised sample\t${orphanMarkdownMirrors.slice(0, 8).join(', ')}`);
-    }
+    console.log(`llms Markdown links\t${llms.markdownLinkCount}`);
+    console.log(`HTML files\t${html.htmlCount}`);
+    console.log(`HTML Markdown alternates\t${html.markdownAlternates}`);
+    console.log(`HTML local Markdown links\t${html.localMarkdownLinks}`);
+    console.log(`generated Markdown files\t${retiredMarkdown.generatedMarkdownFiles.length}`);
+    console.log(`retired Markdown route (_headers)\t${retiredMarkdown.generatedHeadersRoute ? 'yes' : 'no'}`);
+    console.log(`retired Markdown route (edgeone.json)\t${retiredMarkdown.edgeoneRoute ? 'yes' : 'no'}`);
 
     if (issues.length > 0) {
         console.log('\nAgent readiness issues');

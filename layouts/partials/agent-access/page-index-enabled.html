@@ -1,6 +1,0 @@
-{{- $page := . -}}
-{{- $enabled := false -}}
-{{- if and $page.IsPage ($page.OutputFormats.Get "AGENT_MARKDOWN") -}}
-  {{- $enabled = true -}}
-{{- end -}}
-{{- return $enabled -}}

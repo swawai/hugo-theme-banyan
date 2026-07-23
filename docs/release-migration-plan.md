@@ -39,7 +39,7 @@ Current baseline recorded on 2026-06-11:
 - `check-public-html.mjs temp_workspace/public/2606111022-release-audit --check`
   passed against 96 HTML files.
 - `check-agent-readiness.mjs temp_workspace/public/2606111022-release-audit --check`
-  passed with 21 advertised Markdown mirrors.
+  passed.
 - `report-assets.mjs temp_workspace/public/2606111022-release-audit` reported
   304 files and 9.20 MiB of output.
 - `bun run check:browser:latest-temp` passed 10/10 browser scenarios.

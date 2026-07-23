@@ -1,13 +1,5 @@
 {{- $ctx := .ctx | default . -}}
 {{- $links := slice -}}
-{{- if partial "agent-access/page-index-enabled.html" $ctx -}}
-  {{- with $ctx.OutputFormats.Get "AGENT_MARKDOWN" -}}
-    {{- $links = $links | append (dict
-      "href" .Permalink
-      "text" (i18n "article_meta_markdown")
-    ) -}}
-  {{- end -}}
-{{- end -}}
 {{- with partial "content-source/page-url.html" $ctx -}}
   {{- $links = $links | append (dict
     "href" .

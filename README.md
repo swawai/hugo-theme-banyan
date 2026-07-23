@@ -67,28 +67,18 @@ not as a place to store theme internals.
 
 ## Agent Access
 
-Banyan can publish per-page Markdown mirrors for pages that opt in through the
-`AGENT_MARKDOWN` or `MARKDOWN` output formats. The theme's default cache policy
-adds `X-Robots-Tag: noindex` and `Content-Type: text/markdown; charset=utf-8`
-to `/*.md`, keeping Markdown mirrors fetchable for agents while leaving search
-result landing pages on canonical HTML documents.
-
 In multilingual sites where the default language lives at the root,
 `/llms.txt` is the global agent index. During that render, Banyan also publishes
 the default-language sidecar at `/<default-language>/llms.txt`, matching the
 shape Hugo uses for multilingual sitemaps.
 
-Use `AGENT_MARKDOWN` for substantive pages that should be discoverable from
-`llms.txt`: durable articles, product documentation, and site identity pages
-such as `/about/`. Leave utility pages, QR-code/contact handoff pages, taxonomy
-indexes, and fragment content on their default HTML output unless they contain
-standalone knowledge that agents should read directly.
+Language indexes link directly to canonical HTML pages. They include the
+language home, `/about/`, and regular pages from the `d` content section.
+Utility pages, taxonomy indexes, and fragment content stay outside the curated
+index without requiring per-page output flags.
 
-Article meta can expose two lightweight follow-up links:
-
-- `Markdown` appears only when the current page opts into `AGENT_MARKDOWN`.
-- `Source` appears when the language's `/fragments/site-meta` defines
-  `site_meta.content_source` and the current page has a Hugo source file.
+Article meta exposes `Source` when the language's `/fragments/site-meta`
+defines `site_meta.content_source` and the current page has a Hugo source file.
 
 Source links use the configured branch instead of the build revision. This keeps
 new pages predictable before their first public commit, while the changelog/build
