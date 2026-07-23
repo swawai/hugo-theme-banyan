@@ -4,6 +4,7 @@
 {{- $homeHref := $homePage.RelPermalink -}}
 {{- $items := slice (dict
   "text" $homeText
+  "title" $homePage.Title
   "href" $homeHref
   "current" true
 ) -}}

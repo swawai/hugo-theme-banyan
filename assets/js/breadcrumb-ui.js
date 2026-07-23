@@ -56,6 +56,9 @@ function buildMenuPanel(menuItems) {
         if (menuItem.current) {
             option.setAttribute('aria-current', 'page');
         }
+        if (menuItem.title) {
+            option.title = menuItem.title;
+        }
         option.textContent = menuItem.text;
         panel.appendChild(option);
     });
@@ -338,6 +341,9 @@ export function renderArticleMetaPath(metaLabel, items) {
         const link = document.createElement('a');
         link.href = item.href;
         link.textContent = item.text;
+        if (item.title) {
+            link.title = item.title;
+        }
         if (item.current) {
             link.setAttribute('aria-current', 'page');
         }

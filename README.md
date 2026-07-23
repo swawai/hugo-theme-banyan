@@ -188,7 +188,8 @@ Example custom tree taxonomy root bundle:
 
 ```toml
 +++
-title = "UDC"
+title = "Universal Decimal Classification"
+linkTitle = "UDC"
 
 [banyan_taxonomy]
 mode = "tree"
@@ -203,10 +204,11 @@ Notes:
 
 - Hugo's `[taxonomies]` declaration in the site root is still required to create the taxonomy itself.
 - Banyan no longer reads taxonomy labels or rendering config from theme `i18n` or `params.banyan.taxonomies.<plural>`.
-- The root bundle `title` is the single source of truth for taxonomy naming across home shortcuts, breadcrumbs, and article labels.
-- `linkTitle`, `[banyan_taxonomy].label`, and `[banyan_taxonomy].home_label` are not read for taxonomies.
+- Every taxonomy root and term bundle must provide a non-empty `title`. It is the full semantic title used by metadata, schema, and tooltips.
+- `linkTitle` is optional compact text for navigation, breadcrumbs, lists, and article taxonomy labels; it falls back to `title`.
+- `[banyan_taxonomy].label` and `[banyan_taxonomy].home_label` are removed and are not read.
 - Required `[banyan_taxonomy]` keys are: `mode`, `show_in_home`, `home_weight`, `article_weight`, `normalize`, `article_mode`.
-- You can attach taxonomy metadata and resources with `content/<plural>/_index.<lang>.md` and optional term bundles such as `content/<plural>/<term>/_index.<lang>.md`.
+- Attach taxonomy metadata and resources with `content/<plural>/_index.<lang>.md`; terms used by content require matching bundles such as `content/<plural>/<term>/_index.<lang>.md`.
 - Use `themes/banyan/exampleSite/content/intent/` as the sample bundle to copy; avoid treating `themes/banyan/content/` as a template warehouse, because theme content participates in the live build.
 - See [docs/taxonomies.md](docs/taxonomies.md) for intent guidance and the recommended term set.
 

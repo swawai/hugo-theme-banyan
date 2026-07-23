@@ -37,7 +37,8 @@ html[data-entry-breadcrumb-meta-pending="true"] .article-meta .post-taxonomy-pat
 .slot-row-breadcrumb.is-breadcrumb-menu-mode::before {
     content: "";
     position: absolute;
-    inset: -0.38rem -0.62rem;
+    inset-block: -0.38rem;
+    inset-inline: max(-0.62rem, calc(-1 * var(--page-edge-inline)));
     border-radius: 0.86rem;
     box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--focus) 20%, transparent);
     background: color-mix(in srgb, var(--focus) 2%, transparent);
@@ -50,6 +51,8 @@ html[data-entry-breadcrumb-meta-pending="true"] .article-meta .post-taxonomy-pat
 .breadcrumb-root-nav {
     display: inline-flex;
     align-items: center;
+    min-inline-size: 0;
+    max-inline-size: 100%;
 }
 
 .breadcrumb-root-list {
@@ -58,15 +61,31 @@ html[data-entry-breadcrumb-meta-pending="true"] .article-meta .post-taxonomy-pat
 
 .breadcrumb-nav {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: center;
-    white-space: nowrap;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    white-space: normal;
     margin-bottom: 0;
 }
 
 .breadcrumb-item {
     display: inline-flex;
     align-items: center;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+}
+
+.slot-row-breadcrumb .breadcrumb-item-menu {
+    position: static;
+}
+
+.slot-row-breadcrumb .breadcrumb-menu-panel {
+    inset-inline-start: 0;
+    inset-inline-end: auto;
+    inline-size: max-content;
+    min-inline-size: 0;
+    max-inline-size: 100%;
 }
 
 .breadcrumb-sep {
@@ -86,14 +105,23 @@ html[data-entry-breadcrumb-meta-pending="true"] .article-meta .post-taxonomy-pat
     position: relative;
     display: inline-flex;
     align-items: center;
+    min-inline-size: 0;
+    max-inline-size: 100%;
     line-height: 1;
+    white-space: normal;
+    overflow-wrap: anywhere;
     text-decoration: none;
 }
 
 .breadcrumb-link .crumb-text,
 .breadcrumb-menu-link .crumb-text {
     display: inline-block;
+    min-inline-size: 0;
+    max-inline-size: 100%;
     line-height: 1;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-wrap: pretty;
 }
 
 .prose a.breadcrumb-link,

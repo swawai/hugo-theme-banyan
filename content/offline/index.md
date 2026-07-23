@@ -13,8 +13,6 @@ build:
   list: "never"
 ---
 
-# Offline
-
 You are offline right now, and this page has not been cached yet.
 
 Reconnect and try again, or return to a page you opened before.

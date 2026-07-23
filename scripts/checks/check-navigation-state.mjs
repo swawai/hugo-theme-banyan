@@ -7,6 +7,7 @@ import * as esbuild from 'esbuild';
 const siteRoot = process.cwd();
 const navStateEntry = path.join(siteRoot, 'themes/banyan/assets/js/nav-state.js');
 const breadcrumbItemsEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-items.js');
+const breadcrumbPreviewEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-preview.js');
 const breadcrumbSourceEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-source.js');
 const tempRoot = path.join(siteRoot, 'temp_workspace', 'check-navigation-state');
 
@@ -124,14 +125,68 @@ globalThis.window = {
 
 const breadcrumbSource = await importBrowserModule(breadcrumbSourceEntry, 'breadcrumb-source.js');
 const breadcrumbItems = await importBrowserModule(breadcrumbItemsEntry, 'breadcrumb-items.js');
+const breadcrumbPreview = await importBrowserModule(breadcrumbPreviewEntry, 'breadcrumb-preview.js');
+
+assert.deepEqual(
+    breadcrumbPreview.buildPreviewCurrentItem(
+        {},
+        'WSL Toolkit',
+        'WSL automation management script',
+        '/zh/p/wsl-automng/?from=intent/decide'
+    ),
+    {
+        text: 'WSL Toolkit',
+        title: 'WSL automation management script',
+        href: '/zh/p/wsl-automng/?from=intent/decide',
+        current: true,
+    },
+    'entry preview should keep compact visible text and the full title as separate fields'
+);
+
+const previewMenuCurrentItem = breadcrumbPreview.buildPreviewCurrentItem(
+    {
+        currentCollectionSource: {
+            logical_path: '/intent/decide/',
+            provider: 'taxonomy',
+            sort_variant: 'tree',
+            default_sort: 'date-desc',
+        },
+        currentCollectionItems: {
+            ds: 'date-desc',
+            f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
+            lp: '/intent/decide/',
+            p: 'taxonomy',
+            rv: [
+                'wsl-automng', 'page', '/zh/p/wsl-automng/', 'WSL Toolkit', '1', 'WSL Toolkit', '20260624', '1341',
+            ],
+            sv: 'tree',
+            v: 1,
+        },
+    },
+    'WSL Toolkit',
+    'WSL automation management script',
+    '/zh/p/wsl-automng/?from=intent/decide'
+);
+
+assert.equal(
+    previewMenuCurrentItem?.menu?.find((item) => item.current === true)?.title,
+    'WSL automation management script',
+    'entry preview should attach the full title to the visible current menu option'
+);
 
 const sourcePayload = JSON.stringify([{
     logical_path: '/intent/decide/',
     provider: 'taxonomy',
     root_item: {
         href: '/zh/intent/',
-        text: '意图'
+        text: 'Intent',
+        title: 'Reader Intent'
     },
+    tail_items: [{
+        href: '/zh/intent/decide/',
+        text: 'Decide',
+        title: 'Decision Support'
+    }],
     current_collection_source: {
         logical_path: '/intent/decide/',
         provider: 'taxonomy',
@@ -140,6 +195,22 @@ const sourcePayload = JSON.stringify([{
     }
 }]);
 const sources = breadcrumbSource.parseEntryBreadcrumbSources(sourcePayload);
+
+assert.deepEqual(
+    {
+        rootText: sources[0]?.rootItem?.text,
+        rootTitle: sources[0]?.rootItem?.title,
+        termText: sources[0]?.tailItems?.[0]?.text,
+        termTitle: sources[0]?.tailItems?.[0]?.title,
+    },
+    {
+        rootText: 'Intent',
+        rootTitle: 'Reader Intent',
+        termText: 'Decide',
+        termTitle: 'Decision Support',
+    },
+    'taxonomy root and term navigation should preserve compact text separately from full semantic titles'
+);
 
 assert.deepEqual(
     breadcrumbSource.parseEntrySelection(sources, '/intent/decide/'),
@@ -188,7 +259,7 @@ globalThis.fetch = async () => ({
             p: 'taxonomy',
             rv: [
                 'xvenv', 'page', '/zh/p/xvenv/', 'Xvenv', '1', 'Xvenv', '20260626', '6402',
-                'wsl-automng', 'page', '/zh/p/wsl-automng/', 'WSL管理脚本', '1', 'WSL管理脚本', '20260624', '1341',
+                'wsl-automng', 'page', '/zh/p/wsl-automng/', 'WSL Toolkit', '1', 'WSL Toolkit', '20260624', '1341',
             ],
             sv: 'tree',
             v: 1
@@ -199,19 +270,30 @@ globalThis.fetch = async () => ({
 const selectedItem = await breadcrumbItems.buildSelectedBreadcrumbItem(
     '/__fragments/v-test/zh/',
     sources[0],
-    '/zh/p/wsl-automng/'
+    '/zh/p/wsl-automng/',
+    'WSL automation management script'
 );
 
 assert.equal(
     selectedItem?.text,
-    'WSL管理脚本',
-    'short from should resolve the selected row from the current page pathname'
+    'WSL Toolkit',
+    'short from should resolve the compact visible text from the selected row'
 );
 assert.equal(selectedItem?.current, true, 'selected row from pathname should be marked current');
 assert.equal(
-    selectedItem?.menu?.find((item) => item.text === 'WSL管理脚本')?.current,
+    selectedItem?.title,
+    'WSL automation management script',
+    'selected current item should preserve the full page title without expanding the compact collection payload'
+);
+assert.equal(
+    selectedItem?.menu?.find((item) => item.text === 'WSL Toolkit')?.current,
     true,
     'current breadcrumb menu item should be highlighted when selected by pathname'
+);
+assert.equal(
+    selectedItem?.menu?.find((item) => item.current === true)?.title,
+    'WSL automation management script',
+    'settled entry state should attach the full title to the visible current menu option'
 );
 
 console.log('Entry from checks passed.');

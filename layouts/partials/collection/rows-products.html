@@ -12,6 +12,7 @@
 {{- end -}}
 {{- range where $host.Site.RegularPages "Params.product" "ne" nil -}}
   {{- $product := partial "products/model.html" (dict "page" .) -}}
+  {{- $text := .LinkTitle | default .Title -}}
   {{- $productScope := index $product "scope" -}}
   {{- if eq $scope "first-party" -}}
     {{- if eq $productScope "third-party" -}}
@@ -27,16 +28,16 @@
     "href" .RelPermalink
     "schema_href" .RelPermalink
     "title" .Title
-    "text" .Title
+    "text" $text
     "icon" "file"
     "prefetch_kind" "post"
     "sort_group" "0"
-    "sort_name" .Title
+    "sort_name" $text
     "sort_price" (index $product "price_amount_text")
     "price_text" (index $product "price_text")
     "sort_value" (index $product "value_text")
     "value_text" (index $product "value_text")
   ) -}}
 {{- end -}}
-{{- $rows = sort $rows "title" "asc" -}}
+{{- $rows = sort $rows "sort_name" "asc" -}}
 {{- return $rows -}}

@@ -17,17 +17,9 @@
     {{- $menu = partial "breadcrumb/menu-items-from-entries.html" (dict
       "entries" $entries
       "selected_href" $selectedHref
-      "text_key" "display"
+      "text_key" "text"
       "href_key" "url"
     ) -}}
-    {{- if eq (len $menu) 0 -}}
-      {{- $menu = partial "breadcrumb/menu-items-from-entries.html" (dict
-        "entries" $entries
-        "selected_href" $selectedHref
-        "text_key" "title"
-        "href_key" "url"
-      ) -}}
-    {{- end -}}
   {{- end -}}
 {{- end -}}
 {{- return $menu -}}

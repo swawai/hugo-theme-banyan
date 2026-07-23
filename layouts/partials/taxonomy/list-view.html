@@ -30,8 +30,8 @@
     "href" $href
     "schemaHref" .url
     "title" .title
-    "text" (or .display .title)
-    "schemaName" (or .display .title)
+    "text" .text
+    "schemaName" .title
     "icon" (cond $isCat "folder" "file")
     "prefetchKind" (cond $isCat "desc" "post")
     "dateText" (cond (ne .latest "") .latest ".")
@@ -39,7 +39,7 @@
     "countUnit" $countUnit
     "dataAttrs" (dict
       "sort-group" (cond $isCat "0" "1")
-      "sort-name" (or .display .title)
+      "sort-name" .text
       "sort-date" (.latestKey | default "")
       "sort-count" (printf "%v" .cnt))) }}
 {{ end }}

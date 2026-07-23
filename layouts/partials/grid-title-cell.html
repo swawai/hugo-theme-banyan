@@ -1,7 +1,7 @@
 {{ $href := .href }}
 {{ $title := .title }}
 {{ $text := .text | default $title }}
-{{ $tooltip := .tooltip | default $text }}
+{{ $tooltip := .tooltip | default $title }}
 {{ $icon := .icon | default "file" }}
 {{ $iconText := .iconText | default "" }}
 {{ $label := .label }}

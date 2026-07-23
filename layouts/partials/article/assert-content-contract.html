@@ -1,0 +1,4 @@
+{{- $contentHTML := printf "%s" .Content -}}
+{{- if gt (len (findRE `(?i)<h1(?:\s|>)` $contentHTML 1)) 0 -}}
+  {{- errorf "page %q renders an H1 from its content; the article theme owns the sole H1 via front matter title" .RelPermalink -}}
+{{- end -}}

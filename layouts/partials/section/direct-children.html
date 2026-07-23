@@ -22,6 +22,7 @@
   {{- $sectionEntriesRaw = $sectionEntriesRaw | append (dict
     "kind" "section"
     "title" $section.Title
+    "text" ($section.LinkTitle | default $section.Title)
     "href" $section.RelPermalink
     "icon" "folder"
     "prefetchKind" "desc"
@@ -44,6 +45,7 @@
   {{- $pageEntriesRaw = $pageEntriesRaw | append (dict
     "kind" "page"
     "title" $page.Title
+    "text" ($page.LinkTitle | default $page.Title)
     "href" $page.RelPermalink
     "icon" "file"
     "prefetchKind" "post"

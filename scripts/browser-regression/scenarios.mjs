@@ -6,11 +6,14 @@ import {
     forceServiceWorkerUpdate,
     getLayoutShiftValue,
     getMainInlineStart,
+    getVisibleBreadcrumbColumnCount,
     gotoAndWait,
     markUsableVersionMenus,
     markFirstUsableVersionMenu,
+    readFirstMainLayout,
     readFragmentRoot,
     readSecurityPolicyViolations,
+    recordFirstMainLayoutScript,
     waitForBreadcrumbSettled,
     waitForServiceWorkerActive,
     waitForUpdateReady
@@ -18,10 +21,19 @@ import {
 import { relFromSite } from './paths.mjs';
 
 const WIDE_VIEWPORT = { width: 1600, height: 1100 };
+const BREADCRUMB_FIRST_FRAME_VIEWPORT = { width: 1280, height: 960 };
 const EXPECTED_HOME_TITLE = process.env.BANYAN_BROWSER_HOME_TITLE || '';
 const ARTICLE_PAGE_PATH = process.env.BANYAN_BROWSER_ARTICLE_PATH || '/about/';
 const BREADCRUMB_PRODUCTS_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_PRODUCTS_PATH || '/intent/explore/';
 const BREADCRUMB_TAGS_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_TAGS_PATH || '/intent/explore/';
+const BREADCRUMB_FIRST_FRAME_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_FIRST_FRAME_PATH
+    || '/p/loop-engineering-digital-life-origin/';
+const BREADCRUMB_FIRST_FRAME_FROM = process.env.BANYAN_BROWSER_BREADCRUMB_FIRST_FRAME_FROM
+    || '/tags/tooling/';
+const BREADCRUMB_WIDE_CANVAS_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_WIDE_CANVAS_PATH
+    || '/zh/p/wsl-guide/';
+const BREADCRUMB_WIDE_CANVAS_FROM = process.env.BANYAN_BROWSER_BREADCRUMB_WIDE_CANVAS_FROM
+    || '/tags/tooling/devtools/windows/wsl';
 const DESIGN_AUDIT_VIEWPORTS = [
     {
         id: 'mobile',
@@ -509,6 +521,184 @@ export const scenarios = [
                 fail('Wide breadcrumb path caused excessive layout shift.', { cls });
             }
             return { cls, mainX1, mainX2, delta };
+        }
+    },
+    {
+        id: 'breadcrumb-wide-first-frame-stability',
+        kind: 'single',
+        title: 'Breadcrumb Wide First-frame Stability',
+        viewport: BREADCRUMB_FIRST_FRAME_VIEWPORT,
+        async run({ page, baseUrl }) {
+            await page.addInitScript(recordFirstMainLayoutScript());
+
+            const defaultUrl = new URL(BREADCRUMB_FIRST_FRAME_PATH, `${baseUrl}/`);
+            await gotoAndWait(page, defaultUrl.href);
+            await page.waitForSelector('.slot-row-breadcrumb');
+            await waitForBreadcrumbSettled(page);
+            const defaultColumnCount = await getVisibleBreadcrumbColumnCount(page);
+
+            const transitionUrl = new URL(defaultUrl.href);
+            transitionUrl.searchParams.set('from', BREADCRUMB_FIRST_FRAME_FROM);
+            await gotoAndWait(page, transitionUrl.href);
+            await page.waitForSelector('.slot-row-breadcrumb');
+
+            const firstLayout = await readFirstMainLayout(page);
+            await waitForBreadcrumbSettled(page);
+            const finalMainInlineStart = await getMainInlineStart(page);
+            const finalColumnCount = await getVisibleBreadcrumbColumnCount(page);
+            const metaPathTitleState = await page.evaluate(() => {
+                const links = Array.from(document.querySelectorAll('.post-taxonomy-path a'));
+                return {
+                    linkCount: links.length,
+                    missingTitleCount: links.filter((link) => !link.getAttribute('title')).length
+                };
+            });
+            const delta = finalMainInlineStart === null
+                ? null
+                : Math.abs(finalMainInlineStart - firstLayout.mainInlineStart);
+            const matchesWideLayout = await page.evaluate(() => (
+                window.matchMedia('(min-width: 75rem)').matches
+            ));
+
+            if (!matchesWideLayout) {
+                fail('First-frame scenario must exercise the 75rem wide layout.', {
+                    viewport: BREADCRUMB_FIRST_FRAME_VIEWPORT
+                });
+            }
+            if (!firstLayout.previewPending || !firstLayout.runtimePending) {
+                fail('First-frame scenario did not capture a pending from-based breadcrumb.', {
+                    firstLayout,
+                    transitionUrl: transitionUrl.href
+                });
+            }
+            if (defaultColumnCount === finalColumnCount) {
+                fail('First-frame scenario requires different SSR/default and from-based breadcrumb column counts.', {
+                    defaultColumnCount,
+                    finalColumnCount,
+                    from: BREADCRUMB_FIRST_FRAME_FROM,
+                    path: BREADCRUMB_FIRST_FRAME_PATH
+                });
+            }
+            if (firstLayout.breadcrumbColumnCount !== finalColumnCount) {
+                fail('Breadcrumb skeleton did not reserve the final wide column count before main parsed.', {
+                    defaultColumnCount,
+                    finalColumnCount,
+                    firstLayout
+                });
+            }
+            if (delta === null || delta > 1) {
+                fail('Main column shifted between its first parsed layout and the settled breadcrumb.', {
+                    delta,
+                    finalMainInlineStart,
+                    firstLayout
+                });
+            }
+            if (metaPathTitleState.linkCount === 0 || metaPathTitleState.missingTitleCount > 0) {
+                fail('Runtime-rendered article path must preserve full-title tooltips.', {
+                    metaPathTitleState,
+                    transitionUrl: transitionUrl.href
+                });
+            }
+
+            return {
+                defaultColumnCount,
+                delta,
+                finalColumnCount,
+                finalMainInlineStart,
+                firstLayout,
+                metaPathTitleState,
+                from: BREADCRUMB_FIRST_FRAME_FROM,
+                path: BREADCRUMB_FIRST_FRAME_PATH
+            };
+        }
+    },
+    {
+        id: 'breadcrumb-wide-horizontal-canvas',
+        kind: 'single',
+        title: 'Breadcrumb Wide Horizontal Canvas',
+        viewport: { width: 1280, height: 960 },
+        async run({ page, baseUrl }) {
+            const url = new URL(BREADCRUMB_WIDE_CANVAS_PATH, `${baseUrl}/`);
+            url.searchParams.set('from', BREADCRUMB_WIDE_CANVAS_FROM);
+            await gotoAndWait(page, url.href);
+            await page.waitForSelector('.slot-row-breadcrumb');
+            await waitForBreadcrumbSettled(page);
+
+            const geometry = await page.evaluate(() => {
+                const breadcrumb = document.querySelector('.slot-row-breadcrumb');
+                const main = document.querySelector('.slot-main');
+                const scrollingElement = document.scrollingElement;
+                const visibleColumns = Array.from(breadcrumb.querySelectorAll('.breadcrumb-item-menu'))
+                    .filter((column) => {
+                        const rect = column.getBoundingClientRect();
+                        const style = getComputedStyle(column);
+                        return style.display !== 'none'
+                            && style.visibility !== 'hidden'
+                            && rect.width > 0
+                            && rect.height > 0;
+                    });
+                const probe = document.createElement('div');
+                probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;block-size:0;padding:0;border:0';
+                document.body.appendChild(probe);
+                const measureInline = (value) => {
+                    probe.style.inlineSize = value;
+                    return probe.getBoundingClientRect().width;
+                };
+                const expectedColumnInline = measureInline('15rem');
+                const columnInline = measureInline('var(--breadcrumb-column-inline)');
+                const mainInline = measureInline('var(--breadcrumb-main-inline)');
+                probe.remove();
+
+                return {
+                    breadcrumbClientWidth: breadcrumb.clientWidth,
+                    breadcrumbOffsetWidth: breadcrumb.offsetWidth,
+                    breadcrumbScrollWidth: breadcrumb.scrollWidth,
+                    columnInline,
+                    columnWidths: visibleColumns.map((column) => column.getBoundingClientRect().width),
+                    documentClientWidth: scrollingElement?.clientWidth || 0,
+                    documentScrollWidth: scrollingElement?.scrollWidth || 0,
+                    expectedColumnInline,
+                    mainInline,
+                    mainWidth: main.getBoundingClientRect().width,
+                    visibleColumnCount: visibleColumns.length
+                };
+            });
+
+            if (geometry.visibleColumnCount < 5) {
+                fail('Wide canvas scenario must expose at least five breadcrumb columns.', {
+                    ...geometry,
+                    from: BREADCRUMB_WIDE_CANVAS_FROM,
+                    path: BREADCRUMB_WIDE_CANVAS_PATH
+                });
+            }
+            const compressedColumns = geometry.columnWidths.filter((width) => (
+                Math.abs(width - geometry.columnInline) > 1
+            ));
+            if (
+                geometry.columnInline <= 0
+                || Math.abs(geometry.columnInline - geometry.expectedColumnInline) > 1
+                || compressedColumns.length > 0
+            ) {
+                fail('Wide breadcrumb columns must remain fixed at 15rem without compression.', {
+                    ...geometry,
+                    compressedColumns
+                });
+            }
+            if (geometry.mainInline <= 0 || geometry.mainWidth + 1 < geometry.mainInline) {
+                fail('Wide canvas main track shrank below --breadcrumb-main-inline.', geometry);
+            }
+            if (geometry.documentScrollWidth <= geometry.documentClientWidth) {
+                fail('Wide canvas overflow must reach the document scroller.', geometry);
+            }
+            if (geometry.breadcrumbScrollWidth > geometry.breadcrumbClientWidth + 1) {
+                fail('Wide breadcrumb must not create its own horizontal scroller.', geometry);
+            }
+
+            return {
+                ...geometry,
+                from: BREADCRUMB_WIDE_CANVAS_FROM,
+                path: BREADCRUMB_WIDE_CANVAS_PATH
+            };
         }
     },
     {

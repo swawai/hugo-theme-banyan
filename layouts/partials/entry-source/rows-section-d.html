@@ -11,11 +11,11 @@
     "href" .href
     "schema_href" .href
     "title" .title
-    "text" .title
+    "text" .text
     "icon" .icon
     "prefetch_kind" .prefetchKind
     "sort_group" (cond (eq .kind "section") "0" "1")
-    "sort_name" .title
+    "sort_name" .text
     "sort_date" (.dateKey | default "")
     "date_text" (.dateText | default ".")
     "sort_count" (printf "%v" (.countValue | default 0))

@@ -266,8 +266,9 @@ function findSelectedRow(rows, selectedPathname = '') {
     }) || null;
 }
 
-export async function buildSelectedBreadcrumbItem(fragmentRoot, source, selectedPathname = '') {
+export async function buildSelectedBreadcrumbItem(fragmentRoot, source, selectedPathname = '', selectedTitle = '') {
     const normalizedSelectedPathname = typeof selectedPathname === 'string' ? selectedPathname.trim() : '';
+    const normalizedSelectedTitle = typeof selectedTitle === 'string' ? selectedTitle.trim() : '';
     if (!fragmentRoot || !source?.logicalPath || !normalizedSelectedPathname) {
         return null;
     }
@@ -294,6 +295,12 @@ export async function buildSelectedBreadcrumbItem(fragmentRoot, source, selected
         selectedKey,
         selectedPathname: normalizedSelectedPathname,
     });
+    if (normalizedSelectedTitle) {
+        const selectedMenuItem = menu.find((menuItem) => menuItem.current === true);
+        if (selectedMenuItem) {
+            selectedMenuItem.title = normalizedSelectedTitle;
+        }
+    }
     const sortState = readRequestedSortState(collectionSource, decoded.sortVariant, decoded.defaultSort);
     const href = buildBreadcrumbRowHref(selectedRow, collectionSource, sortState);
     if (!href) {
@@ -307,6 +314,9 @@ export async function buildSelectedBreadcrumbItem(fragmentRoot, source, selected
         menu,
         collection_source: collectionSource,
     };
+    if (normalizedSelectedTitle) {
+        item.title = normalizedSelectedTitle;
+    }
     const kind = normalizeBreadcrumbItemKind(selectedRow.kind);
     if (kind) {
         item.kind = kind;

@@ -1,12 +1,14 @@
 {{- $slotSources := .Scratch.Get "slot_sources" | default dict -}}
 {{- $contentHTML := printf "%s" .Content -}}
 {{- $content := trim $contentHTML " \r\n\t" -}}
+{{- partial "article/assert-content-contract.html" . -}}
 <article class="article">
-  {{- if ne $content "" -}}
   <div class="prose">
+    <h1 id="{{ .Title | anchorize }}">{{ .Title }}</h1>
+    {{- if ne $content "" -}}
     {{- $contentHTML | safeHTML -}}
+    {{- end -}}
   </div>
-  {{- end -}}
 </article>
 {{- if and .IsPage (eq .Section "d") -}}{{- partial "article/schema.html" . -}}{{- end -}}
 {{- with index $slotSources "breadcrumb" -}}{{- partial "breadcrumb/schema.html" (dict "ctx" $) -}}{{- end -}}

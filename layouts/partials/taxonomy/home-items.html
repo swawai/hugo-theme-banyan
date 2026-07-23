@@ -21,11 +21,12 @@
   {{- end -}}
   {{- $page := index . "page" -}}
   {{- $spec := . -}}
-  {{- $title := partial "taxonomy/label.html" (dict "ctx" $ctx "spec" $spec "kind" "home") -}}
+  {{- $text := partial "taxonomy/label.html" (dict "ctx" $ctx "spec" $spec "kind" "home") -}}
   {{- $count := len $page.Data.Terms -}}
   {{- $entries = $entries | append (dict
     "kind" "section"
-    "title" $title
+    "title" $page.Title
+    "text" $text
     "href" $page.RelPermalink
     "icon" "folder"
     "prefetchKind" "nav"

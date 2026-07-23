@@ -1,6 +1,8 @@
 {{- $ctx := .ctx -}}
 {{- $spec := .spec | default dict -}}
 {{- $text := "" -}}
+{{- $title := "" -}}
+{{- with index $spec "title" }}{{ $title = printf "%v" . }}{{ end -}}
 {{- with index $spec "text" }}{{ $text = printf "%v" . }}{{ end -}}
 {{- if eq $text "" -}}{{- with index $spec "name" }}{{ $text = printf "%v" . }}{{ end -}}{{- end -}}
 {{- if eq $text "" -}}
@@ -15,6 +17,7 @@
 {{- if not $target -}}{{- errorf "Build failed: page %q cannot resolve breadcrumb page=%q." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) $pageRef -}}{{- end -}}
   {{- $href = $target.RelPermalink -}}
   {{- if eq $text "" -}}{{- $text = $target.LinkTitle | default $target.Title -}}{{- end -}}
+  {{- if eq $title "" -}}{{- $title = $target.Title -}}{{- end -}}
   {{- if not (isset $spec "kind") -}}{{- $spec = merge $spec (dict "kind" $target.Kind) -}}{{- end -}}
 {{- else -}}
   {{- with index $spec "href" -}}
@@ -39,7 +42,7 @@
   "href" $href
   "current" (eq $hrefKey $currentKey)
 -}}
-{{- with index $spec "title" }}{{ $item = merge $item (dict "title" (printf "%v" .)) }}{{ end -}}
+{{- if ne $title "" -}}{{- $item = merge $item (dict "title" $title) -}}{{- end -}}
 {{- with index $spec "kind" -}}
   {{- $kind := lower (trim (printf "%v" .) " ") -}}
   {{- if ne $kind "" -}}{{- $item = merge $item (dict "kind" $kind) -}}{{- end -}}

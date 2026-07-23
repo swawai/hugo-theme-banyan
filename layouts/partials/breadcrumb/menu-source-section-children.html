@@ -14,6 +14,7 @@
   {{- if $includeSelf -}}
     {{- $result = $result | append (dict
       "text" ($page.LinkTitle | default $page.Title)
+      "title" $page.Title
       "href" $page.RelPermalink
       "kind" "section"
     ) -}}
@@ -22,6 +23,7 @@
   {{- range $child := $page.Sections -}}
     {{- $children = $children | append (dict
       "text" ($child.LinkTitle | default $child.Title)
+      "title" $child.Title
       "href" $child.RelPermalink
       "kind" "section"
       "weight" $child.Weight
@@ -31,6 +33,7 @@
   {{- range $item := $sortedChildren -}}
     {{- $result = $result | append (dict
       "text" (index $item "text")
+      "title" (index $item "title")
       "href" (index $item "href")
       "kind" (index $item "kind")
     ) -}}

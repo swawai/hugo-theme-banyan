@@ -1,6 +1,6 @@
 {{- $entries := .entries | default slice -}}
 {{- $selectedHref := printf "%v" (.selected_href | default "") -}}
-{{- $textKey := printf "%v" (.text_key | default "title") -}}
+{{- $textKey := printf "%v" (.text_key | default "text") -}}
 {{- $hrefKey := printf "%v" (.href_key | default "href") -}}
 {{- $items := slice -}}
 {{- range $entry := $entries -}}
@@ -20,6 +20,10 @@
     "href" $href
     "current" (eq $href $selectedHref)
   -}}
+  {{- with index $entry "title" -}}
+    {{- $title := trim (printf "%v" .) " " -}}
+    {{- if ne $title "" -}}{{- $item = merge $item (dict "title" $title) -}}{{- end -}}
+  {{- end -}}
   {{- with index $entry "kind" -}}
     {{- $kind := lower (trim (printf "%v" .) " ") -}}
     {{- if ne $kind "" -}}{{- $item = merge $item (dict "kind" $kind) -}}{{- end -}}

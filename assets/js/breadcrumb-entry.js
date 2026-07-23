@@ -126,7 +126,8 @@ async function buildEntryState() {
     const currentItem = await buildSelectedBreadcrumbItem(
         fragmentRoot,
         selection.source,
-        currentPathname
+        currentPathname,
+        document.body?.dataset.currentPageTitle || ''
     );
     if (!currentItem) {
         return null;

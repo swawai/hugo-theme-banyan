@@ -6,6 +6,7 @@
   {{- $weight := int (default 0 (index $spec "article_weight")) -}}
   {{- $items = $items | append (dict
     "text" (partial "taxonomy/label.html" (dict "ctx" $ctx "spec" $spec))
+    "title" .Title
     "href" .RelPermalink
     "weight" $weight
   ) -}}
@@ -15,6 +16,7 @@
 {{- range $sorted -}}
   {{- $result = $result | append (dict
     "text" (index . "text")
+    "title" (index . "title")
     "href" (index . "href")
   ) -}}
 {{- end -}}

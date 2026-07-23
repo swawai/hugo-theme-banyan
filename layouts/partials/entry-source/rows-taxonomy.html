@@ -7,7 +7,7 @@
 {{- $rows := slice -}}
 {{- range $entry := partial "taxonomy/direct-children.html" (dict "ctx" $page "spec" $spec) -}}
   {{- $isCat := eq .kind "cat" -}}
-  {{- $text := or .display .title -}}
+  {{- $text := .text -}}
   {{- $countText := printf "%v" (.cnt | default ".") -}}
   {{- $countUnit := "" -}}
   {{- if not $isCat -}}

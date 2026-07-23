@@ -22,6 +22,5 @@ build:
   list: "never"
 ---
 
-# 更新记录
 
 {{< changelog-fallback >}}

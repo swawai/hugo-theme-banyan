@@ -29,8 +29,9 @@ Banyan 现在不再提供 taxonomy 命名或渲染配置的通用兜底。
 
 - taxonomy 是否存在，仍然必须先在站点根 `hugo.toml` 的 `[taxonomies]` 中声明
 - 仅创建 `content/<plural>/` 不会自动创建 taxonomy；若未声明，它只会变成普通 section
-- taxonomy 根 bundle 里的 `title` 是该 taxonomy 的唯一命名来源；首页快捷项、breadcrumb、文章页 taxonomy label 都使用同一个 title
-- taxonomy 不再读取 `linkTitle`、`[banyan_taxonomy].label`、`[banyan_taxonomy].home_label`
+- taxonomy 根 bundle 与 term bundle 都必须提供非空 `title`；它承担完整语义标题，并用于 metadata、schema 与 tooltip
+- `linkTitle` 是可选的短标签，只用于导航、breadcrumb、列表和文章页 taxonomy label；未填写时回退到 `title`
+- taxonomy 不再读取 `[banyan_taxonomy].label`、`[banyan_taxonomy].home_label`
 - taxonomy 根 bundle 必须提供 `[banyan_taxonomy]`，并显式填写 `mode`、`show_in_home`、`home_weight`、`article_weight`、`normalize`、`article_mode`
 - 因此，主题把“可复制样板”放在 `exampleSite/content/` 更稳，而不是直接把模板样板放进 `themes/banyan/content/`
 
@@ -93,7 +94,8 @@ taxonomy 根 bundle 可以这样写：
 
 ```toml
 +++
-title = "Intent"
+title = "Reader Intent"
+linkTitle = "Intent"
 
 [banyan_taxonomy]
 mode = "flat"
@@ -105,7 +107,16 @@ article_mode = "all"
 +++
 ```
 
-term bundle 则可以继续在 `content/intent/reference/_index.<lang>.md` 里写 title / body / page resources。
+term bundle 使用同一契约，例如 `content/intent/reference/_index.<lang>.md`：
+
+```toml
++++
+title = "Reference and Future Lookup"
+linkTitle = "Reference"
++++
+```
+
+其中 `title` 必填；只有在完整标题不适合紧凑界面时，才需要额外填写 `linkTitle`。
 
 ## Starter Bundles
 
@@ -166,7 +177,7 @@ article_mode = "deepest_by_root"
 +++
 ```
 
-这样 `udc` 仍然可用，而且它的命名和渲染参数都只来自自己的 root bundle。
+这样 `udc` 仍然可用，而且它的标题契约和渲染参数都只来自自己的 root bundle。
 
 ## 推荐工作流
 

@@ -1,5 +1,5 @@
 const MENU_MODE_CLASS = 'is-breadcrumb-menu-mode';
-const WIDE_COLUMNS_QUERY = '(min-width: 88rem)';
+const WIDE_COLUMNS_QUERY = '(min-width: 75rem)';
 let activeModeRow = null;
 let wideColumnsMediaQuery = null;
 let dropdown = null;

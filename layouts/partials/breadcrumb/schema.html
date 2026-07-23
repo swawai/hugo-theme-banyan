@@ -11,7 +11,7 @@
     {{- $listItems = $listItems | append (dict
       "@type" "ListItem"
       "position" (add $index 1)
-      "name" (index $item "text")
+      "name" (index $item "title" | default (index $item "text"))
       "item" $href
     ) -}}
   {{- end -}}

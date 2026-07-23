@@ -9,6 +9,7 @@
 {{- $sortedPages := sort $pagesToShow "Date" "desc" -}}
 {{- $rows := slice -}}
 {{- range $sortedPages -}}
+  {{- $text := .LinkTitle | default .Title -}}
   {{- $bytes := len .RawContent -}}
   {{- $kb := div (add $bytes 1023) 1024 -}}
   {{- $parent := .Parent -}}
@@ -36,11 +37,11 @@
     "href" .RelPermalink
     "schema_href" .RelPermalink
     "title" .Title
-    "text" .Title
+    "text" $text
     "icon" "file"
     "prefetch_kind" "post"
     "sort_group" "0"
-    "sort_name" .Title
+    "sort_name" $text
     "sort_date" (.Date.Format "20060102150405")
     "date_text" (.Date.Format "2006-01-02")
     "sort_size" (printf "%v" $bytes)

@@ -16,6 +16,7 @@
       "href" $href
       "schemaHref" .href
       "title" .title
+      "text" .text
       "icon" .icon
       "prefetchKind" .prefetchKind
       "dateText" .dateText
@@ -24,7 +25,7 @@
       "schemaName" .title
       "dataAttrs" (dict
         "sort-group" (cond (eq .kind "section") "0" "1")
-        "sort-name" .title
+        "sort-name" .text
         "sort-date" .dateKey
         "sort-count" (printf "%v" .countValue))) }}
   {{ end }}

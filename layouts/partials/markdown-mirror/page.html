@@ -1,4 +1,5 @@
 {{- $description := trim (printf "%v" (.Params.description | default "")) " \r\n\t" -}}
+{{- partial "article/assert-content-contract.html" . -}}
 {{- $published := .PublishDate -}}
 {{- if le $published.Unix 0 -}}{{- $published = .Date -}}{{- end -}}
 {{- $updated := .Lastmod -}}

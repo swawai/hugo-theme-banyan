@@ -130,7 +130,7 @@ try {
         return;
     }
 
-    if (!(window.matchMedia && window.matchMedia("(min-width: 88rem)").matches)) {
+    if (!(window.matchMedia && window.matchMedia("(min-width: 75rem)").matches)) {
         return;
     }
 
@@ -159,9 +159,9 @@ try {
         if (entrySource) {
             placeholderCount = countTrailItems(entrySource, hideRootDuplicates);
 
-            var currentPageTitle = body.dataset.currentPageTitle || document.title || "";
+            var currentPageText = body.dataset.currentPageText || document.title || "";
             var currentPageHref = window.location.pathname + window.location.search + window.location.hash;
-            if (currentPageTitle && currentPageHref) {
+            if (currentPageText && currentPageHref) {
                 placeholderCount += 1;
             }
         }

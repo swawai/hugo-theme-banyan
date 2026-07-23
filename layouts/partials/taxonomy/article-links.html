@@ -9,13 +9,15 @@
   {{ end }}
 
   {{ $label := partial "taxonomy/label.html" (dict "ctx" $page "spec" $spec) }}
+  {{ $taxonomyPage := index $spec "page" }}
+  {{ $labelTitle := $taxonomyPage.Title }}
   {{ $articleMode := printf "%v" (index $spec "article_mode") }}
   {{ if eq $articleMode "none" }}
     {{ continue }}
   {{ end }}
 
-<nav class="post-taxonomy post-taxonomy-{{ $plural }}" aria-label="{{ $label }}">
-  <span class="label">{{ $label }}</span>
+<nav class="post-taxonomy post-taxonomy-{{ $plural }}" aria-label="{{ $labelTitle }}">
+  <span class="label" title="{{ $labelTitle }}">{{ $label }}</span>
   {{ if and (eq (index $spec "mode") "tree") (eq $articleMode "deepest_by_root") }}
     {{ $separator := printf "%v" (index $spec "separator" | default "/") }}
     {{ $deepestByRoot := dict }}
@@ -36,12 +38,17 @@
     {{ range $root := $rootOrder }}
       {{ $term := index $deepestByRoot $root }}
       {{ $display := partial "taxonomy/value-label.html" (dict "ctx" $page "spec" $spec "value" $term) }}
-{{ partial "link.html" (dict "ctx" $page "href" (partial "taxonomy/url.html" (dict "ctx" $page "spec" $spec "value" $term)) "rel" (index $spec "term_rel") "text" $display "linkSlot" "nav") }}
+      {{ $fullTitle := $display }}
+      {{ $termPage := partial "taxonomy/term-page-get.html" (dict "ctx" $page "spec" $spec "plural" $plural "value" $term) }}
+      {{ with $termPage }}
+        {{ $fullTitle = .Title }}
+      {{ end }}
+{{ partial "link.html" (dict "ctx" $page "href" (partial "taxonomy/url.html" (dict "ctx" $page "spec" $spec "value" $term)) "rel" (index $spec "term_rel") "text" $display "title" $fullTitle "linkSlot" "nav") }}
     {{ end }}
   {{ else }}
     {{ with $page.GetTerms $plural }}
       {{ range . }}
-{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "rel" (index $spec "term_rel") "text" (.LinkTitle | default .Title) "linkSlot" "nav") }}
+{{ partial "link.html" (dict "ctx" $page "href" .RelPermalink "rel" (index $spec "term_rel") "text" (.LinkTitle | default .Title) "title" .Title "linkSlot" "nav") }}
       {{ end }}
     {{ end }}
   {{ end }}

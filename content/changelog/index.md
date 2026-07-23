@@ -22,6 +22,5 @@ build:
   list: "never"
 ---
 
-# Changelog
 
 {{< changelog-fallback >}}

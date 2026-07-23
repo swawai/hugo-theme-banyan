@@ -4,6 +4,7 @@
   {{- $menu := partial "breadcrumb/page-item-menu.html" (dict "node" .) -}}
   {{- $items = $items | append (dict
     "text" (.LinkTitle | default .Title)
+    "title" .Title
     "href" .RelPermalink
     "current" false
     "menu" $menu
@@ -11,7 +12,8 @@
 {{- end -}}
 {{- $currentMenu := partial "breadcrumb/page-item-menu.html" (dict "node" $ctx) -}}
 {{- $items = $items | append (dict
-  "text" ($ctx.Title | default $ctx.LinkTitle)
+  "text" ($ctx.LinkTitle | default $ctx.Title)
+  "title" $ctx.Title
   "href" $ctx.RelPermalink
   "current" true
   "menu" $currentMenu

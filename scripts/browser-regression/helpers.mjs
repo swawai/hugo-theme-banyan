@@ -45,6 +45,44 @@ export function recordLayoutShiftObserverScript() {
     };
 }
 
+export function recordFirstMainLayoutScript() {
+    return () => {
+        window.__banyanFirstMainLayout = null;
+
+        let observer = null;
+        const capture = () => {
+            if (window.__banyanFirstMainLayout !== null) return true;
+
+            const main = document.querySelector('.slot-main');
+            if (!(main instanceof HTMLElement)) return false;
+
+            const root = document.documentElement;
+            const visibleBreadcrumbColumns = Array.from(
+                document.querySelectorAll('.slot-row-breadcrumb .breadcrumb-item-menu')
+            ).filter((node) => {
+                if (!(node instanceof HTMLElement)) return false;
+                const style = window.getComputedStyle(node);
+                return style.display !== 'none'
+                    && style.visibility !== 'hidden'
+                    && node.getClientRects().length > 0;
+            });
+
+            window.__banyanFirstMainLayout = {
+                breadcrumbColumnCount: visibleBreadcrumbColumns.length,
+                mainInlineStart: main.getBoundingClientRect().x,
+                previewPending: root.getAttribute('data-entry-breadcrumb-preview-pending') === 'true',
+                runtimePending: root.getAttribute('data-entry-breadcrumb-runtime-pending') === 'true'
+            };
+            observer?.disconnect();
+            return true;
+        };
+
+        observer = new MutationObserver(capture);
+        observer.observe(document, { childList: true, subtree: true });
+        capture();
+    };
+}
+
 export function recordSecurityPolicyViolationScript() {
     return () => {
         window.__banyanSecurityPolicyViolations = [];
@@ -87,6 +125,27 @@ export async function getLayoutShiftValue(page) {
 export async function getMainInlineStart(page) {
     const box = await page.locator('.slot-main').boundingBox();
     return box ? box.x : null;
+}
+
+export async function getVisibleBreadcrumbColumnCount(page) {
+    return page.evaluate(() => Array.from(
+        document.querySelectorAll('.slot-row-breadcrumb .breadcrumb-item-menu')
+    ).filter((node) => {
+        if (!(node instanceof HTMLElement)) return false;
+        const style = window.getComputedStyle(node);
+        return style.display !== 'none'
+            && style.visibility !== 'hidden'
+            && node.getClientRects().length > 0;
+    }).length);
+}
+
+export async function readFirstMainLayout(page, timeoutMs = 8000) {
+    await page.waitForFunction(() => {
+        const layout = window.__banyanFirstMainLayout;
+        return layout !== null && Number.isFinite(layout?.mainInlineStart);
+    }, { timeout: timeoutMs });
+
+    return page.evaluate(() => ({ ...window.__banyanFirstMainLayout }));
 }
 
 export async function readFragmentRoot(page) {

@@ -4,7 +4,7 @@
 {{- $pagePath := $page.File.Path | default (printf "content/%s/_index.*" $plural) -}}
 {{- $pageTitle := trim (printf "%v" ($page.Title | default "")) " \r\n\t" -}}
 {{- if eq $pageTitle "" -}}
-  {{- errorf "Build failed: %s must provide a non-empty title as the single naming source for taxonomy %q." $pagePath $plural -}}
+  {{- errorf "Build failed: %s must provide a non-empty title as the full semantic title for taxonomy %q. linkTitle is optional compact navigation text." $pagePath $plural -}}
 {{- end -}}
 {{- if not (isset $page.Params "banyan_taxonomy") -}}
   {{- errorf "Build failed: %s is missing [banyan_taxonomy]. Rendering config for taxonomy %q may only be defined in content/%s/_index.<lang>.md." $pagePath $plural $plural -}}
@@ -13,7 +13,7 @@
 {{- $forbiddenKeys := slice "label" "home_label" -}}
 {{- range $key := $forbiddenKeys -}}
   {{- if isset $taxonomyMeta $key -}}
-    {{- errorf "Build failed: %s uses removed key [banyan_taxonomy].%s. All display naming for taxonomy %q must now come from the title of the same bundle." $pagePath $key $plural -}}
+    {{- errorf "Build failed: %s uses removed key [banyan_taxonomy].%s. Use the bundle title for the full semantic name of taxonomy %q and optional linkTitle for compact navigation text." $pagePath $key $plural -}}
   {{- end -}}
 {{- end -}}
 {{- $requiredKeys := slice "mode" "show_in_home" "home_weight" "article_weight" "normalize" "article_mode" -}}

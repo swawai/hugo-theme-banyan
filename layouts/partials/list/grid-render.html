@@ -53,7 +53,7 @@
 
 {{- $entries := slice -}}
 {{- range $items -}}
-  {{- $name := or .schemaName .text .title -}}
+  {{- $name := or .schemaName .title -}}
   {{- $entries = $entries | append (dict "url" (.schemaHref | default .href) "name" $name) -}}
 {{- end -}}
 {{ partial "schema-itemlist.html" (dict "entries" $entries) }}
