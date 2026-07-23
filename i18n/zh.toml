@@ -62,6 +62,8 @@ other = "更新于"
 
 [article_meta_resources]
 other = "链接"
+[article_meta_dates]
+other = "时间"
 [article_meta_markdown]
 other = "Markdown"
 [article_meta_source]

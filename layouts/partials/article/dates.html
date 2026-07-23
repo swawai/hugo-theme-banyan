@@ -1,5 +1,6 @@
 {{ if .Date }}
-<div class="article-dates">
+<div class="article-dates" aria-label="{{ i18n "article_meta_dates" }}">
+  <span class="label">{{ i18n "article_meta_dates" }}</span>
   <time datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
     {{ i18n "label_published" | default "Published" }} {{ .Date.Format "2006-01-02" }}
   </time>

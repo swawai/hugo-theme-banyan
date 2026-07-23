@@ -181,9 +181,8 @@
     <link rel="canonical" href="{{ .Permalink }}">
     {{/* 首屏阻塞性状态初始化：同步主题以防闪烁，并恢复 MPA 跨页导航进度条。 */}}
     {{- printf "<script>%s</script>" (index $themeBootInline "content") | safeHTML -}}
-    {{/* 若当前页面启用了 breadcrumb 能力，且 URL 带 from=，先进入 entry breadcrumb 预览/补全阶段：
-         1) 预览阶段先屏蔽默认 breadcrumb，避免闪出错误路径；
-         2) 运行时补全阶段继续隐藏 meta path，待异步修正完成后再显示。 */}}
+    {{/* URL 带 from= 时先隐藏默认 breadcrumb，待运行时恢复来源路径；
+         article meta 始终保留 Hugo 的静态输出。 */}}
     {{- if $hasBreadcrumbCapability }}
     {{- printf "<script>%s</script>" (index $breadcrumbPendingInline "content") | safeHTML -}}
     {{- end }}

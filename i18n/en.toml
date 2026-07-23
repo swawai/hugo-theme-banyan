@@ -62,6 +62,8 @@ other = "Updated"
 
 [article_meta_resources]
 other = "Links"
+[article_meta_dates]
+other = "Time"
 [article_meta_markdown]
 other = "Markdown"
 [article_meta_source]

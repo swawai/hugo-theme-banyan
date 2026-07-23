@@ -11,7 +11,6 @@ import {
     parseEntrySelection,
 } from './breadcrumb-source.js';
 import {
-    renderArticleMetaPath,
     renderRootSelection,
     renderTopBreadcrumb,
 } from './breadcrumb-ui.js';
@@ -24,12 +23,10 @@ import { getRuntimeFragmentRoot } from './runtime-manifest.js';
 
 const ENTRY_BREADCRUMB_PREVIEW_PENDING_ATTR = 'data-entry-breadcrumb-preview-pending';
 const ENTRY_BREADCRUMB_RUNTIME_PENDING_ATTR = 'data-entry-breadcrumb-runtime-pending';
-const ENTRY_BREADCRUMB_META_PENDING_ATTR = 'data-entry-breadcrumb-meta-pending';
 
 function clearEntryBreadcrumbPending() {
     document.documentElement?.removeAttribute(ENTRY_BREADCRUMB_PREVIEW_PENDING_ATTR);
     document.documentElement?.removeAttribute(ENTRY_BREADCRUMB_RUNTIME_PENDING_ATTR);
-    document.documentElement?.removeAttribute(ENTRY_BREADCRUMB_META_PENDING_ATTR);
 }
 
 async function buildPrefixLevelItem(fragmentRoot, source, level) {
@@ -145,8 +142,6 @@ async function buildEntryState() {
         rootMenuItems: selection.source.rootMenuItems,
         rootMenuLabel: selection.source.rootMenuLabel,
         breadcrumbItems,
-        metaLabel: selection.source.rootItem.text,
-        metaItems: breadcrumbItems,
     };
 }
 
@@ -159,7 +154,6 @@ export async function initEntryBreadcrumb() {
 
         renderRootSelection(state.rootItem, state.rootMenuItems, state.rootMenuLabel);
         renderTopBreadcrumb(state.breadcrumbItems);
-        renderArticleMetaPath(state.metaLabel, state.metaItems || []);
         initBreadcrumbMenus();
     } finally {
         clearEntryBreadcrumbPending();

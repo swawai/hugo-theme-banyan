@@ -113,7 +113,6 @@ export async function waitForBreadcrumbSettled(page, timeoutMs = 8000) {
         const root = document.documentElement;
         return !root.hasAttribute('data-entry-breadcrumb-preview-pending')
             && !root.hasAttribute('data-entry-breadcrumb-runtime-pending')
-            && !root.hasAttribute('data-entry-breadcrumb-meta-pending')
             && !root.hasAttribute('data-breadcrumb-sort-pending');
     }, { timeout: timeoutMs });
 }

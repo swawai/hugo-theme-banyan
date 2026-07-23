@@ -23,11 +23,6 @@ html[data-entry-breadcrumb-preview-pending="true"] .page-rail-context {
     pointer-events: none;
 }
 
-html[data-entry-breadcrumb-meta-pending="true"] .article-meta .post-taxonomy-path {
-    visibility: hidden;
-    pointer-events: none;
-}
-
 .slot-row-breadcrumb.is-breadcrumb-menu-mode {
     background: transparent;
     box-shadow: none;

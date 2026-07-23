@@ -530,12 +530,20 @@ export const scenarios = [
         viewport: BREADCRUMB_FIRST_FRAME_VIEWPORT,
         async run({ page, baseUrl }) {
             await page.addInitScript(recordFirstMainLayoutScript());
+            const readDirectoryMeta = () => page.evaluate(() => {
+                const node = document.querySelector('.post-taxonomy-path');
+                return node ? {
+                    ariaLabel: node.getAttribute('aria-label'),
+                    html: node.innerHTML
+                } : null;
+            });
 
             const defaultUrl = new URL(BREADCRUMB_FIRST_FRAME_PATH, `${baseUrl}/`);
             await gotoAndWait(page, defaultUrl.href);
             await page.waitForSelector('.slot-row-breadcrumb');
             await waitForBreadcrumbSettled(page);
             const defaultColumnCount = await getVisibleBreadcrumbColumnCount(page);
+            const defaultDirectoryMeta = await readDirectoryMeta();
 
             const transitionUrl = new URL(defaultUrl.href);
             transitionUrl.searchParams.set('from', BREADCRUMB_FIRST_FRAME_FROM);
@@ -546,13 +554,7 @@ export const scenarios = [
             await waitForBreadcrumbSettled(page);
             const finalMainInlineStart = await getMainInlineStart(page);
             const finalColumnCount = await getVisibleBreadcrumbColumnCount(page);
-            const metaPathTitleState = await page.evaluate(() => {
-                const links = Array.from(document.querySelectorAll('.post-taxonomy-path a'));
-                return {
-                    linkCount: links.length,
-                    missingTitleCount: links.filter((link) => !link.getAttribute('title')).length
-                };
-            });
+            const finalDirectoryMeta = await readDirectoryMeta();
             const delta = finalMainInlineStart === null
                 ? null
                 : Math.abs(finalMainInlineStart - firstLayout.mainInlineStart);
@@ -593,9 +595,13 @@ export const scenarios = [
                     firstLayout
                 });
             }
-            if (metaPathTitleState.linkCount === 0 || metaPathTitleState.missingTitleCount > 0) {
-                fail('Runtime-rendered article path must preserve full-title tooltips.', {
-                    metaPathTitleState,
+            if (
+                defaultDirectoryMeta === null
+                || JSON.stringify(defaultDirectoryMeta) !== JSON.stringify(finalDirectoryMeta)
+            ) {
+                fail('Entry lineage must not rewrite static article directory metadata.', {
+                    defaultDirectoryMeta,
+                    finalDirectoryMeta,
                     transitionUrl: transitionUrl.href
                 });
             }
@@ -606,7 +612,7 @@ export const scenarios = [
                 finalColumnCount,
                 finalMainInlineStart,
                 firstLayout,
-                metaPathTitleState,
+                directoryMeta: finalDirectoryMeta,
                 from: BREADCRUMB_FIRST_FRAME_FROM,
                 path: BREADCRUMB_FIRST_FRAME_PATH
             };
