@@ -64,6 +64,8 @@ other = "更新于"
 other = "链接"
 [article_meta_dates]
 other = "时间"
+[article_meta_directory]
+other = "目录"
 
 
 [no_trans_msg]

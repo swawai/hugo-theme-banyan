@@ -64,6 +64,8 @@ other = "Updated"
 other = "Links"
 [article_meta_dates]
 other = "Time"
+[article_meta_directory]
+other = "Directory"
 
 
 [no_trans_msg]

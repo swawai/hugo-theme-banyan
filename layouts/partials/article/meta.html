@@ -5,7 +5,13 @@
   {{- $breadcrumbModel := partial "breadcrumb/model.html" (dict "ctx" $ctx "slot" "breadcrumb") -}}
   {{- $breadcrumbItems = index $breadcrumbModel "items" | default slice -}}
 {{- end -}}
-{{- $hasPath := gt (len $breadcrumbItems) 1 -}}
+{{- $directoryItems := slice -}}
+{{- range $breadcrumbItems -}}
+  {{- if ne (index . "current") true -}}
+    {{- $directoryItems = $directoryItems | append . -}}
+  {{- end -}}
+{{- end -}}
+{{- $hasPath := gt (len $directoryItems) 0 -}}
 {{- $taxonomySpecs := partial "taxonomy/enabled.html" (dict "ctx" $ctx) -}}
 {{- $hasTaxonomy := false -}}
 {{- range sort $taxonomySpecs "article_weight" "asc" -}}
@@ -23,11 +29,9 @@
 {{- if or $hasPath $hasTaxonomy $hasDates $externalLinks -}}
 <div class="article-meta">
   {{- if $hasPath -}}
-    {{- $leadItem := index $breadcrumbItems 0 -}}
-    {{- $tailItems := after 1 $breadcrumbItems -}}
-  <nav class="post-taxonomy post-taxonomy-path" aria-label="{{ index $leadItem "text" | default "Path" }}">
-    <span class="label">{{ index $leadItem "text" | default "Path" }}</span>
-    {{- range $index, $item := $tailItems -}}
+  <nav class="post-taxonomy post-taxonomy-path" aria-label="{{ i18n "article_meta_directory" }}">
+    <span class="label">{{ i18n "article_meta_directory" }}</span>
+    {{- range $index, $item := $directoryItems -}}
       {{- if gt $index 0 -}}<span class="sep" aria-hidden="true">/</span>{{- end -}}
       {{- partial "link.html" (dict
         "ctx" $ctx
