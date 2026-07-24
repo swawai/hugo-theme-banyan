@@ -1,4 +1,10 @@
 import { normalizePathname } from './nav-state.js';
+import {
+    buildCollectionPageHref,
+    buildCollectionSortToggleHref,
+    getCollectionSortState,
+    normalizeBreadcrumbCollectionSource,
+} from './breadcrumb-items.js';
 
 const BREADCRUMB_PREFETCH_SLOT = 'crumb';
 
@@ -38,31 +44,155 @@ function applyBreadcrumbPrefetchSlot(element) {
     }
 }
 
-function buildMenuPanel(menuItems) {
+function buildCollectionItemContent(item) {
+    const fragment = document.createDocumentFragment();
+    const kind = normalizeBreadcrumbItemKind(item);
+    const iconName = typeof item?.icon === 'string' && item.icon.trim() !== ''
+        ? item.icon.trim().toLowerCase()
+        : (kind === 'page' ? 'file' : 'folder');
+    const icon = document.createElement('span');
+    icon.className = 'collection-item-icon';
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.classList.add('icon', `icon-${iconName}`, 'collection-item-icon-svg');
+    svg.setAttribute('width', '1em');
+    svg.setAttribute('height', '1em');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+    use.setAttribute('href', `#icon-${iconName}`);
+    svg.appendChild(use);
+    icon.appendChild(svg);
+
+    const title = document.createElement('span');
+    title.className = 'collection-item-title';
+    title.textContent = item?.text || '';
+    fragment.append(icon, title);
+    return fragment;
+}
+
+function readCollectionSortCopy() {
+    const rawCopy = document.body?.dataset.collectionSortCopy || '';
+    if (!rawCopy) {
+        return { fields: {}, actions: {} };
+    }
+
+    try {
+        const copy = JSON.parse(rawCopy);
+        return {
+            fields: copy?.fields && typeof copy.fields === 'object' ? copy.fields : {},
+            actions: copy?.actions && typeof copy.actions === 'object' ? copy.actions : {},
+        };
+    } catch (error) {
+        return { fields: {}, actions: {} };
+    }
+}
+
+function buildCollectionColumnHeader(source, { lineageLogicalPath = '' } = {}) {
+    const collectionSource = normalizeBreadcrumbCollectionSource(source);
+    const state = getCollectionSortState(collectionSource);
+    if (!state || !collectionSource?.label || !collectionSource?.href) {
+        return null;
+    }
+
+    const copy = readCollectionSortCopy();
+    const header = document.createElement('span');
+    header.className = 'cell-title header collection-column-header collection-list-header';
+
+    const label = document.createElement('a');
+    label.className = 'collection-column-label';
+    label.href = buildCollectionPageHref(
+        collectionSource.href,
+        collectionSource.logicalPath,
+        state.sortVariant,
+        state.defaultSort
+    );
+    label.title = collectionSource.label;
+    label.textContent = collectionSource.label;
+    applyBreadcrumbPrefetchSlot(label);
+
+    const separator = document.createElement('span');
+    separator.className = 'collection-column-separator';
+    separator.setAttribute('aria-hidden', 'true');
+    separator.textContent = '·';
+
+    const toggle = document.createElement('a');
+    toggle.className = 'collection-column-sort';
+    toggle.href = buildCollectionSortToggleHref(
+        collectionSource,
+        window.location.href,
+        lineageLogicalPath
+    );
+    toggle.dataset.collectionSortToggle = 'true';
+    applyBreadcrumbPrefetchSlot(toggle);
+    const actionLabel = copy.actions[state.nextToken] || state.nextToken;
+    toggle.title = actionLabel;
+    toggle.setAttribute('aria-label', actionLabel);
+
+    const sortLabel = document.createElement('span');
+    sortLabel.className = 'collection-sort-label';
+    sortLabel.textContent = copy.fields[state.field] || state.field;
+    const indicator = document.createElement('span');
+    indicator.className = 'collection-sort-indicator';
+    indicator.setAttribute('aria-hidden', 'true');
+    indicator.textContent = state.order === 'asc' ? '↑' : '↓';
+    toggle.append(sortLabel, indicator);
+    header.append(label, separator, toggle);
+    return header;
+}
+
+function buildMenuCell(menuItem) {
+    const cell = document.createElement('span');
+    cell.className = 'cell-title';
+    const option = document.createElement('a');
+    option.href = menuItem.href;
+    option.className = menuItem.current
+        ? 'ui-dropdown-option breadcrumb-menu-option collection-item-link is-current'
+        : 'ui-dropdown-option breadcrumb-menu-option collection-item-link';
+    applyBreadcrumbPrefetchSlot(option);
+    applyBreadcrumbKind(option, menuItem);
+    if (menuItem.current) {
+        option.setAttribute('aria-current', 'page');
+    }
+    option.title = menuItem.title || menuItem.text || '';
+    option.appendChild(buildCollectionItemContent(menuItem));
+    cell.appendChild(option);
+    return cell;
+}
+
+function buildCollectionColumnGrid(menuItems, collectionSource, options = {}) {
+    const grid = document.createElement('span');
+    grid.className = 'grid-list grid-list--single collection-list collection-list--column';
+    const header = buildCollectionColumnHeader(collectionSource, options);
+    if (header) {
+        grid.classList.add('grid-list--headed');
+        grid.appendChild(header);
+    }
+    menuItems.forEach((menuItem) => {
+        grid.appendChild(buildMenuCell(menuItem));
+    });
+    return grid;
+}
+
+export function renderBreadcrumbMenuPanel(
+    panel,
+    menuItems,
+    collectionSource = null,
+    options = {}
+) {
+    if (!(panel instanceof Element) || !Array.isArray(menuItems)) {
+        return;
+    }
+
+    panel.replaceChildren(buildCollectionColumnGrid(menuItems, collectionSource, options));
+}
+
+function buildMenuPanel(menuItems, collectionSource) {
     const panel = document.createElement('span');
     panel.className = 'ui-dropdown-panel breadcrumb-menu-panel';
     panel.hidden = true;
     panel.dataset.uiDropdownPanel = 'true';
     panel.dataset.breadcrumbMenuPanel = 'true';
-
-    menuItems.forEach((menuItem) => {
-        const option = document.createElement('a');
-        option.href = menuItem.href;
-        option.className = menuItem.current
-            ? 'ui-dropdown-option breadcrumb-menu-option is-current'
-            : 'ui-dropdown-option breadcrumb-menu-option';
-        applyBreadcrumbPrefetchSlot(option);
-        applyBreadcrumbKind(option, menuItem);
-        if (menuItem.current) {
-            option.setAttribute('aria-current', 'page');
-        }
-        if (menuItem.title) {
-            option.title = menuItem.title;
-        }
-        option.textContent = menuItem.text;
-        panel.appendChild(option);
-    });
-
+    renderBreadcrumbMenuPanel(panel, menuItems, collectionSource);
     return panel;
 }
 
@@ -99,10 +229,11 @@ function buildTopBreadcrumbItem(item, index) {
     const collectionSource = item && typeof item === 'object'
         ? (item.collection_source || item.collectionSource)
         : null;
-    const collectionHref = item && typeof item === 'object'
-        ? (typeof (item.collection_href || item.collectionHref) === 'string'
-            ? (item.collection_href || item.collectionHref).trim()
-            : '')
+    const collectionHrefRaw = item && typeof item === 'object'
+        ? (item.collection_href || item.collectionHref || collectionSource?.href || '')
+        : '';
+    const collectionHref = typeof collectionHrefRaw === 'string'
+        ? collectionHrefRaw.trim()
         : '';
 
     itemSpan.className = menuItems.length > 0
@@ -113,9 +244,6 @@ function buildTopBreadcrumbItem(item, index) {
         itemSpan.dataset.breadcrumbMenu = 'true';
         if (collectionHref) {
             itemSpan.dataset.breadcrumbCollectionHref = collectionHref;
-        }
-        if (collectionSource && typeof collectionSource === 'object') {
-            itemSpan.dataset.breadcrumbCollectionSource = JSON.stringify(collectionSource);
         }
     }
     if (item.redundant_with_root_menu === true) {
@@ -137,7 +265,7 @@ function buildTopBreadcrumbItem(item, index) {
     link.appendChild(createCrumbText(item.text, { withCaret: item.current || menuItems.length > 0 }));
     itemSpan.appendChild(link);
     if (menuItems.length > 0) {
-        itemSpan.appendChild(buildMenuPanel(menuItems));
+        itemSpan.appendChild(buildMenuPanel(menuItems, collectionSource));
     }
 
     return itemSpan;

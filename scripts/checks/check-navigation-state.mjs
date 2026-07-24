@@ -119,13 +119,174 @@ console.log('Navigation state checks passed.');
 globalThis.window = {
     location: {
         origin: 'https://example.test',
+        href: 'https://example.test/zh/p/example/?from=all',
+        pathname: '/zh/p/example/',
         search: '',
+        hash: '',
     },
 };
+
+window.location.search = '?from=d/wsl';
+assert.deepEqual(
+    navState.buildLineageSortsTokensForPath('/d/wsl/', '/d/', 'date-asc'),
+    ['date-asc', ''],
+    'ancestor sort updates should target their own full-lineage slot'
+);
+assert.deepEqual(
+    navState.buildLineageSortsTokensForPath('/d/wsl/', '/d/wsl/', 'date-asc'),
+    ['', 'date-asc'],
+    'active sort updates should target the deepest full-lineage slot'
+);
 
 const breadcrumbSource = await importBrowserModule(breadcrumbSourceEntry, 'breadcrumb-source.js');
 const breadcrumbItems = await importBrowserModule(breadcrumbItemsEntry, 'breadcrumb-items.js');
 const breadcrumbPreview = await importBrowserModule(breadcrumbPreviewEntry, 'breadcrumb-preview.js');
+
+window.location.href = 'https://example.test/zh/p/example/?from=all';
+window.location.pathname = '/zh/p/example/';
+window.location.search = '?from=all';
+
+const allCollectionSource = {
+    logical_path: '/all/',
+    provider: 'all',
+    sort_variant: 'all',
+    default_sort: 'date-desc',
+    label: 'All',
+    href: '/zh/all/',
+};
+
+assert.deepEqual(
+    breadcrumbItems.getCollectionSortState(allCollectionSource),
+    {
+        collectionSource: {
+            logicalPath: '/all/',
+            provider: 'all',
+            sortVariant: 'all',
+            defaultSort: 'date-desc',
+            label: 'All',
+            href: '/zh/all/',
+        },
+        sortVariant: 'all',
+        sortToken: 'date-desc',
+        field: 'date',
+        order: 'desc',
+        nextToken: 'date-asc',
+        defaultSort: 'date-desc',
+        sortsTokens: ['date-desc'],
+        defaultSortsTokens: ['date-desc'],
+    },
+    'column header should expose the active field and direction without adding a field picker'
+);
+
+assert.equal(
+    breadcrumbItems.buildCollectionSortToggleHref(allCollectionSource),
+    '/zh/p/example/?from=all&sorts=date-asc',
+    'column header should toggle only its lineage sort direction'
+);
+
+window.location.href = 'https://example.test/zh/p/example/?from=all&sort=name-desc&sorts=name-desc';
+window.location.search = '?from=all&sort=name-desc&sorts=name-desc';
+assert.equal(
+    breadcrumbItems.buildCollectionSortToggleHref(allCollectionSource),
+    '/zh/p/example/?from=all&sort=name-desc&sorts=name-asc',
+    'column header should preserve the independent main sort while toggling its lineage slot'
+);
+
+window.location.href = 'https://example.test/zh/p/example/?from=d/wsl&sorts=name-asc,date-desc';
+window.location.search = '?from=d/wsl&sorts=name-asc,date-desc';
+assert.equal(
+    breadcrumbItems.buildCollectionSortToggleHref({
+        logical_path: '/d/wsl/',
+        provider: 'section-d',
+        sort_variant: 'section',
+        default_sort: 'date-desc',
+        label: 'WSL',
+        href: '/zh/d/wsl/',
+    }),
+    '/zh/p/example/?from=d/wsl&sorts=name-asc,date-asc',
+    'nested column toggles should preserve ancestor sort state and replace only the current slot'
+);
+
+const directoryCollectionSource = {
+    logical_path: '/d/',
+    provider: 'section-d',
+    sort_variant: 'section',
+    default_sort: 'date-desc',
+    label: 'Directory',
+    href: '/zh/d/',
+};
+const wslCollectionSource = {
+    logical_path: '/d/wsl/',
+    provider: 'section-d',
+    sort_variant: 'section',
+    default_sort: 'date-desc',
+    label: 'WSL',
+    href: '/zh/d/wsl/',
+};
+
+window.location.href = 'https://example.test/zh/p/example/?from=d/wsl';
+window.location.search = '?from=d/wsl';
+assert.equal(
+    breadcrumbItems.buildCollectionSortToggleHref(directoryCollectionSource),
+    '/zh/p/example/?from=d/wsl&sorts=date-asc,_',
+    'ancestor column toggles should preserve the full lineage and update only the ancestor slot'
+);
+assert.equal(
+    breadcrumbItems.buildCollectionSortToggleHref(wslCollectionSource),
+    '/zh/p/example/?from=d/wsl&sorts=_,date-asc',
+    'active column toggles should update only the deepest lineage slot'
+);
+
+window.location.href = 'https://example.test/zh/p/example/?from=d/wsl&sort=date-asc&sorts=_,date-asc';
+window.location.search = '?from=d/wsl&sort=date-asc&sorts=_,date-asc';
+assert.equal(
+    breadcrumbItems.getCollectionSortState(directoryCollectionSource)?.sortToken,
+    'date-desc',
+    'the active sort alias must not leak into an ancestor column'
+);
+assert.equal(
+    breadcrumbItems.getCollectionSortState(wslCollectionSource)?.sortToken,
+    'date-asc',
+    'the deepest column should read its own lineage slot'
+);
+
+window.location.href = 'https://example.test/zh/d/wsl/?from=d&sort=name-asc';
+window.location.pathname = '/zh/d/wsl/';
+window.location.search = '?from=d&sort=name-asc';
+assert.equal(
+    breadcrumbItems.getCollectionSortState(directoryCollectionSource)?.sortToken,
+    'date-desc',
+    'a main-grid sort must not leak into a breadcrumb column without a lineage override'
+);
+assert.equal(
+    breadcrumbItems.buildCollectionSortToggleHref(directoryCollectionSource),
+    '/zh/d/wsl/?from=d&sort=name-asc&sorts=date-asc',
+    'breadcrumb sorting should preserve the main-grid sort while updating only its lineage slot'
+);
+
+window.location.href = 'https://example.test/zh/d/wsl/?from=d&sort=name-asc&sorts=date-asc';
+window.location.search = '?from=d&sort=name-asc&sorts=date-asc';
+assert.equal(
+    breadcrumbItems.buildCollectionSortToggleHref(directoryCollectionSource),
+    '/zh/d/wsl/?from=d&sort=name-asc',
+    'returning a breadcrumb column to its default should remove sorts without changing sort'
+);
+
+window.location.href = 'https://example.test/zh/tags/tooling/devtools/windows/wsl/';
+window.location.pathname = '/zh/tags/tooling/devtools/windows/wsl/';
+window.location.search = '';
+assert.equal(
+    breadcrumbItems.buildCollectionSortToggleHref(
+        directoryCollectionSource,
+        window.location.href,
+        '/d/wsl/'
+    ),
+    '/zh/tags/tooling/devtools/windows/wsl/?from=d/wsl&sorts=date-asc,_',
+    'a visible-lineage override should preserve every column slot when no from state exists yet'
+);
+
+window.location.href = 'https://example.test/zh/p/example/?from=intent/decide';
+window.location.search = '?from=intent/decide';
 
 assert.deepEqual(
     breadcrumbPreview.buildPreviewCurrentItem(
@@ -191,8 +352,25 @@ const sourcePayload = JSON.stringify([{
         logical_path: '/intent/decide/',
         provider: 'taxonomy',
         sort_variant: 'tree',
-        default_sort: 'date-desc'
-    }
+        default_sort: 'date-desc',
+        label: 'Decide',
+        href: '/zh/intent/decide/'
+    },
+    levels: [{
+        item: {
+            href: '/zh/intent/decide/',
+            text: 'Decide',
+            title: 'Decision Support'
+        },
+        collection_source: {
+            logical_path: '/intent/',
+            provider: 'taxonomy',
+            sort_variant: 'tree',
+            default_sort: 'date-desc',
+            label: 'Intent',
+            href: '/zh/intent/'
+        }
+    }]
 }]);
 const sources = breadcrumbSource.parseEntryBreadcrumbSources(sourcePayload);
 
@@ -224,6 +402,43 @@ assert.equal(
     breadcrumbSource.parseEntrySelection(sources, '/intent/decide/wsl-automng/'),
     null,
     'from values with an entry key tail should not be treated as valid navigation state'
+);
+
+const collectionSourceIndex = breadcrumbSource.parseCollectionSourceIndex(sourcePayload);
+assert.deepEqual(
+    breadcrumbSource.pickCollectionSourceByHref(
+        collectionSourceIndex,
+        'https://example.test/zh/intent/?sort=date-asc#menu'
+    ),
+    {
+        logicalPath: '/intent/',
+        provider: 'taxonomy',
+        sortVariant: 'tree',
+        defaultSort: 'date-desc',
+        label: 'Intent',
+        href: '/zh/intent/',
+    },
+    'collection href lookup should resolve ancestor metadata from the current page source registry'
+);
+assert.deepEqual(
+    breadcrumbSource.pickCollectionSourceByHref(
+        collectionSourceIndex,
+        '/zh/intent/decide'
+    ),
+    {
+        logicalPath: '/intent/decide/',
+        provider: 'taxonomy',
+        sortVariant: 'tree',
+        defaultSort: 'date-desc',
+        label: 'Decide',
+        href: '/zh/intent/decide/',
+    },
+    'collection href lookup should normalize trailing slashes and resolve the current collection'
+);
+assert.equal(
+    breadcrumbSource.pickCollectionSourceByHref(collectionSourceIndex, '/zh/unknown/'),
+    null,
+    'collection href lookup must not infer metadata for sources absent from the current page registry'
 );
 
 assert.equal(

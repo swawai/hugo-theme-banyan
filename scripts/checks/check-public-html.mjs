@@ -510,6 +510,9 @@ async function inspectHtmlFile(rootDir, absolutePath) {
     const relativePath = path.relative(rootDir, absolutePath).split(path.sep).join('/');
     const encodedBreadcrumbSources = extractAttribute(text, 'data-entry-breadcrumb-sources');
     const inlineStyleAttrCount = (text.match(/\sstyle\s*=/gi) ?? []).length;
+    const repeatedBreadcrumbCollectionSourceCount = (
+        text.match(/\sdata-breadcrumb-collection-source\s*=/gi) ?? []
+    ).length;
 
     let breadcrumbPayloadBytes = 0;
     let breadcrumbSourceCount = 0;
@@ -553,6 +556,7 @@ async function inspectHtmlFile(rootDir, absolutePath) {
         hasMainBundle: hasMainBundle(text),
         hasPrefetchRuntimeBundle: hasPrefetchRuntimeBundle(text),
         inlineStyleAttrCount,
+        repeatedBreadcrumbCollectionSourceCount,
         breadcrumbPayloadBytes,
         breadcrumbSourceCount,
         breadcrumbSourcePaths,
@@ -710,6 +714,11 @@ function buildIntegrityIssues(rows) {
         }
         if (row.inlineStyleAttrCount > 0) {
             issues.push(`Inline style attributes violate production style-src on ${row.relativePath}: ${row.inlineStyleAttrCount}`);
+        }
+        if (row.repeatedBreadcrumbCollectionSourceCount > 0) {
+            issues.push(
+                `Breadcrumb collection source JSON must come from the page registry, not repeated DOM attributes: ${row.relativePath} count=${row.repeatedBreadcrumbCollectionSourceCount}`
+            );
         }
         for (const issue of row.breadcrumbPrefetchIssues || []) {
             issues.push(

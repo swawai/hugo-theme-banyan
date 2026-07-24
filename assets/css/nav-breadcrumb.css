@@ -1,13 +1,3 @@
-.slot-row-breadcrumb,
-.breadcrumb-root-list {
-    --breadcrumb-row-option-padding-block: 0.1rem;
-    --breadcrumb-row-option-padding-inline: 0.24rem;
-    --breadcrumb-row-option-radius: 0.22rem;
-    --breadcrumb-row-option-hover-bg: color-mix(in srgb, var(--focus) 8%, transparent);
-    --breadcrumb-row-option-current-bg: color-mix(in srgb, var(--focus) 14%, transparent);
-    --breadcrumb-row-option-current-ring: color-mix(in srgb, var(--focus) 18%, transparent);
-}
-
 .slot-row-breadcrumb {
     display: flex;
     flex-wrap: wrap;
@@ -81,6 +71,10 @@ html[data-entry-breadcrumb-preview-pending="true"] .page-rail-context {
     inline-size: max-content;
     min-inline-size: 0;
     max-inline-size: 100%;
+}
+
+.slot-row-breadcrumb .breadcrumb-menu-panel > .grid-list--single {
+    display: contents;
 }
 
 .breadcrumb-sep {

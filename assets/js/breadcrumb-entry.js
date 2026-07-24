@@ -67,7 +67,7 @@ async function buildPrefixLevelItem(fragmentRoot, source, level) {
     const collectionSource = normalizeCollectionSource(level?.collectionSource) || null;
     if (collectionSource) {
         result.collection_source = collectionSource;
-        result.collection_href = baseItem.href;
+        result.collection_href = collectionSource.href || baseItem.href;
         const menu = await buildBreadcrumbMenuItems(fragmentRoot, collectionSource, {
             selectedPathname: targetPathname,
         });

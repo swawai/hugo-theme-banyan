@@ -8,6 +8,7 @@
 {{ $coreBaseMedium := resources.Get "css/core-base.medium.css" }}
 {{ $coreBaseWide := resources.Get "css/core-base.wide.css" }}
 {{ $coreMotion := resources.Get "css/core-motion.css" }}
+{{ $collectionList := resources.Get "css/collection-list.css" }}
 {{ $gridAll := resources.Get "css/grid-all.css" }}
 {{ $gridList := resources.Get "css/grid-list.css" }}
 {{ $gridProducts := resources.Get "css/grid-products.css" }}
@@ -34,14 +35,15 @@
 {{ $pageBundleParts = $pageBundleParts | append $coreMotion }}
 {{ $pageBundle := $pageBundleParts | resources.Concat "css/bundle-page.css" }}
 {{ $pageBundle = partial "css-process.html" (dict "resource" $pageBundle "fingerprint" true) }}
-{{ $pageCrumbBundleParts := $pageBundleParts | append $navBreadcrumb }}
+{{ $pageCrumbBundleParts := $pageBundleParts | append $collectionList }}
+{{ $pageCrumbBundleParts = $pageCrumbBundleParts | append $navBreadcrumb }}
 {{ $pageCrumbBundleParts = $pageCrumbBundleParts | append $navBreadcrumbMedium }}
 {{ $pageCrumbBundleParts = $pageCrumbBundleParts | append $navBreadcrumbWide }}
+{{ $pageCrumbBundleParts = $pageCrumbBundleParts | append $gridList }}
 {{ $pageCrumbBundle := $pageCrumbBundleParts | resources.Concat "css/bundle-page-crumb.css" }}
 {{ $pageCrumbBundle = partial "css-process.html" (dict "resource" $pageCrumbBundle "fingerprint" true) }}
-{{ $listBundleParts := $pageCrumbBundleParts | append $gridList }}
-{{ $listBundle := $listBundleParts | resources.Concat "css/bundle-list.css" }}
-{{ $listBundle = partial "css-process.html" (dict "resource" $listBundle "fingerprint" true) }}
+{{ $listBundleParts := $pageCrumbBundleParts }}
+{{ $listBundle := $pageCrumbBundle }}
 {{ $productsBundleParts := $listBundleParts | append $gridProducts }}
 {{ $productsBundle := $productsBundleParts | resources.Concat "css/bundle-products.css" }}
 {{ $productsBundle = partial "css-process.html" (dict "resource" $productsBundle "fingerprint" true) }}

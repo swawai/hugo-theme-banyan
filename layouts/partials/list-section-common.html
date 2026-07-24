@@ -4,7 +4,7 @@
 {{ $sourceLogicalPath := partial "section/d-logical-path.html" (dict "ctx" $ctx) }}
 {{ $entryLineageParam := partialCached "navigation-state-param-name.html" (dict "semantic" "entry_lineage") "navigation-state-param:entry_lineage" }}
 
-<div class="grid-list" data-sortable="true" data-sort-variant="section" data-sort-columns="3" data-sort-default="date-desc">
+<div class="grid-list collection-list collection-list--grid" data-sortable="true" data-sort-variant="section" data-sort-columns="3" data-sort-default="date-desc">
   {{ $items := slice }}
   {{ range $entries }}
     {{ $href := .href }}

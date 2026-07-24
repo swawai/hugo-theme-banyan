@@ -3,7 +3,10 @@ import {
     parseSortToken,
     readCurrentSortToken,
 } from './sort-shared.js';
-import { normalizeFromPath, readSortTokenForPath } from './nav-state.js';
+import {
+    normalizeFromPath,
+    readSortTokenForPath,
+} from './nav-state.js';
 
 export const ITEMS_PAYLOAD_PROVIDERS = new Set(['all', 'products', 'section-d', 'taxonomy']);
 
@@ -113,9 +116,12 @@ export function readRequestedSortToken(sortVariant, logicalPath = '', defaultSor
     }
 
     const fallbackToken = defaultSort || SORT_VARIANTS[sortVariant]?.defaultToken || '';
-    return logicalPath
-        ? readSortTokenForPath(logicalPath, readCurrentSortToken(sortVariant, fallbackToken))
-        : readCurrentSortToken(sortVariant, fallbackToken);
+    if (!logicalPath) {
+        return readCurrentSortToken(sortVariant, fallbackToken);
+    }
+
+    const normalizedLogicalPath = normalizeFromPath(logicalPath);
+    return readSortTokenForPath(normalizedLogicalPath, fallbackToken);
 }
 
 export function sortItemsRows(rows, sortVariant, logicalPath = '', defaultSort = '') {

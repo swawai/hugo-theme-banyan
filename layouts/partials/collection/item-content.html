@@ -1,0 +1,11 @@
+{{- $text := .text | default "" -}}
+{{- $icon := .icon | default "file" -}}
+{{- $iconText := .iconText | default "" -}}
+<span class="collection-item-icon{{ if $iconText }} collection-item-icon--text{{ end }}">
+  {{- if $iconText -}}
+    {{- $iconText -}}
+  {{- else -}}
+    {{- partial "icon" (dict "name" $icon "class" "collection-item-icon-svg") -}}
+  {{- end -}}
+</span>
+<span class="collection-item-title">{{ $text }}</span>

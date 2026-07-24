@@ -83,6 +83,12 @@
     "levels" $levels
     "current_collection_items" (index $source "current_collection_items")
   -}}
+  {{- $currentCollectionSource := partial "entry-source/browser-collection-source.html" (dict
+    "source" (index $source "current_collection_source" | default dict)
+  ) -}}
+  {{- if gt (len $currentCollectionSource) 0 -}}
+    {{- $browserSource = merge $browserSource (dict "current_collection_source" $currentCollectionSource) -}}
+  {{- end -}}
   {{- $browserSources = $browserSources | append $browserSource -}}
 {{- end -}}
 

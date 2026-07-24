@@ -3,8 +3,7 @@
 @media (min-width: 75rem) {
     :root {
         --breadcrumb-column-inline: var(--navigation-column-inline);
-        --breadcrumb-columns-gap-inline: 0.68rem;
-        --breadcrumb-main-gap-inline: 0.9rem;
+        --breadcrumb-gap-inline: calc(var(--page-shell-gap-inline) + var(--page-rail-padding-inline-end));
         --breadcrumb-main-inline: calc(var(--page-shell-medium-inline, 78rem) - var(--page-rail-inline) - var(--page-shell-gap-inline));
     }
 
@@ -24,7 +23,7 @@
     .page-shell.page-shell--has-breadcrumb-tail .page-stage {
         display: grid;
         grid-template-columns: max-content minmax(var(--breadcrumb-main-inline), 1fr);
-        column-gap: var(--breadcrumb-main-gap-inline);
+        column-gap: var(--breadcrumb-gap-inline);
         align-items: start;
         overflow: visible;
     }
@@ -35,19 +34,17 @@
         display: grid;
         grid-auto-flow: column;
         grid-auto-columns: var(--breadcrumb-column-inline);
-        column-gap: var(--breadcrumb-columns-gap-inline);
+        column-gap: var(--breadcrumb-gap-inline);
         align-items: start;
         align-self: start;
         min-width: max-content;
         margin-bottom: 0;
-        padding-inline-end: 0.08rem;
         position: sticky;
         top: var(--page-edge-block-start);
         z-index: 1;
         max-block-size: calc(100vh - var(--page-edge-block-start) - 1rem);
         overflow-y: auto;
         overscroll-behavior-y: contain;
-        scrollbar-gutter: stable;
     }
 
     .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb.is-breadcrumb-menu-mode {
@@ -63,7 +60,6 @@
         grid-column: 2;
         grid-row: 1;
         min-width: 0;
-        padding-inline-start: 0.04rem;
     }
 
     .page-shell.page-shell--has-breadcrumb-tail .slot-main > .article:not(:has(.grid-list)) {
@@ -131,12 +127,12 @@
         box-sizing: border-box;
         inline-size: 100%;
         max-inline-size: 100%;
-        padding: var(--breadcrumb-row-option-padding-block) var(--breadcrumb-row-option-padding-inline);
+        padding: var(--collection-item-padding-block) var(--collection-item-padding-inline);
         margin-inline: 0;
         line-height: 1.18;
         color: var(--link);
         text-decoration: underline;
-        border-radius: var(--breadcrumb-row-option-radius);
+        border-radius: var(--collection-item-radius);
         overflow-wrap: anywhere;
     }
 
@@ -144,14 +140,14 @@
     html[data-entry-breadcrumb-runtime-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-item:not(.breadcrumb-item-menu) > .breadcrumb-link:focus-visible {
         opacity: 1;
         color: var(--focus-text);
-        background: var(--breadcrumb-row-option-hover-bg);
+        background: var(--collection-item-hover-bg);
     }
 
     html[data-entry-breadcrumb-runtime-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-item:not(.breadcrumb-item-menu) > .breadcrumb-link.is-current,
     html[data-entry-breadcrumb-runtime-pending="true"] .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-item:not(.breadcrumb-item-menu) > .breadcrumb-link.is-current:visited {
         color: var(--focus-text);
-        background: var(--breadcrumb-row-option-current-bg);
-        box-shadow: inset 0 0 0 1px var(--breadcrumb-row-option-current-ring);
+        background: var(--collection-item-current-bg);
+        box-shadow: inset 0 0 0 1px var(--collection-item-current-ring);
         text-decoration-thickness: 1.5px;
         text-underline-offset: 0.08em;
     }
@@ -212,7 +208,7 @@
         display: flex !important;
         flex-direction: column;
         align-items: stretch;
-        gap: 0.28rem;
+        gap: 0;
         min-width: 0;
         min-inline-size: 0;
         inline-size: 100%;
@@ -226,55 +222,19 @@
         white-space: normal;
     }
 
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-panel > .grid-list--single {
+        display: grid;
+    }
+
     .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-panel[hidden] {
         display: flex !important;
     }
 
-    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-option,
-    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-option:visited {
-        display: inline-flex;
-        align-items: center;
-        box-sizing: border-box;
-        width: 100%;
-        inline-size: 100%;
-        max-width: 100%;
-        max-inline-size: 100%;
-        min-inline-size: 0;
-        padding: var(--breadcrumb-row-option-padding-block) var(--breadcrumb-row-option-padding-inline);
-        margin-inline: 0;
-        line-height: 1.18;
-        font-weight: 400;
-        color: var(--link);
-        text-decoration: underline;
-        border-radius: var(--breadcrumb-row-option-radius);
-        white-space: normal;
-        overflow-wrap: anywhere;
-        text-wrap: pretty;
-    }
-
-    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-option.is-current,
-    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-option.is-current:visited {
-        color: var(--focus-text);
-        background: var(--breadcrumb-row-option-current-bg);
-        box-shadow: inset 0 0 0 1px var(--breadcrumb-row-option-current-ring);
-        text-decoration-thickness: 1.5px;
-        text-underline-offset: 0.08em;
-    }
-
-    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-option[data-breadcrumb-kind]:not([data-breadcrumb-kind="page"])::after {
-        content: "/";
-    }
-
-    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-option:hover,
-    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-option:focus-visible {
-        opacity: 1;
-        color: var(--focus-text);
-        background: var(--breadcrumb-row-option-hover-bg);
-    }
-
-    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-option.is-current:hover,
-    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-option.is-current:focus-visible {
-        background: var(--breadcrumb-row-option-current-bg);
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-panel .collection-item-link,
+    .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-menu-panel .collection-item-title {
+        white-space: nowrap;
+        overflow-wrap: normal;
+        text-wrap: nowrap;
     }
 
     .page-shell.page-shell--has-breadcrumb-tail .slot-row-breadcrumb .breadcrumb-item-menu.is-open > .breadcrumb-menu-link {

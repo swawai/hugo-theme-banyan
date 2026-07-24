@@ -58,7 +58,8 @@
 ?sort=name-asc
 ```
 
-它服务当前页 grid/header controls，也会同步投影到同上下文导航链接上。
+它只服务当前页主 grid/header controls，也会同步投影到从该主列表离开的导航链接上。
+breadcrumb 分栏不读取或改写 `sort`。
 
 ### `sorts`
 
@@ -80,6 +81,7 @@
 - `sorts` 按路径层级位置对齐
 - 它不是全站排序
 - 它只对当前 `from` lineage 有意义
+- breadcrumb 分栏排序只改写自己对应的 slot；不会联动主列表 `sort`
 - 当路径上的排序都等于对应 collection 的默认排序时，URL 应省略
   `sorts`；只有出现非默认排序时才写入完整 lineage，必要时用 `_`
   保持层级占位。

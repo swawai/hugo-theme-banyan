@@ -190,6 +190,22 @@ export function buildCurrentPageSortsTokens(logicalPath, currentToken = '') {
     return next;
 }
 
+export function buildLineageSortsTokensForPath(lineageLogicalPath, targetLogicalPath, targetToken = '') {
+    const lineageSegments = normalizeFromPath(lineageLogicalPath).split('/').filter(Boolean);
+    const targetSegments = normalizeFromPath(targetLogicalPath).split('/').filter(Boolean);
+    const targetBelongsToLineage = targetSegments.length > 0
+        && targetSegments.length <= lineageSegments.length
+        && targetSegments.every((segment, index) => segment === lineageSegments[index]);
+
+    if (!targetBelongsToLineage) {
+        return buildCurrentPageSortsTokens(targetLogicalPath, targetToken);
+    }
+
+    const slots = readEffectiveSortsTokens(lineageLogicalPath);
+    slots[targetSegments.length - 1] = normalizeSortSlot(targetToken);
+    return slots;
+}
+
 export function buildDescendantSortsTokens(logicalPath, currentToken = '') {
     const normalizedCurrent = normalizeSortSlot(currentToken);
     const currentSlots = buildCurrentPageSortsTokens(logicalPath, normalizedCurrent);

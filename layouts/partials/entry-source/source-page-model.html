@@ -24,27 +24,41 @@
 {{- $rootMenuLabel := trim (printf "%v" (index $canonicalModel "root_menu_label" | default "Breadcrumb root")) " " -}}
 {{- $tailItems := index $canonicalModel "tail_items" | default slice -}}
 {{- $canonicalLevels := index $canonicalModel "levels" | default slice -}}
+{{- $collectionLabelsByHref := dict $rootHref $rootText -}}
 {{- $levels := slice -}}
 {{- range $level := $canonicalLevels -}}
   {{- $item := index $level "item" | default dict -}}
+  {{- $collectionHref := trim (printf "%v" (index $level "collection_href" | default "")) " " -}}
+  {{- $collectionLabel := trim (printf "%v" (index $collectionLabelsByHref $collectionHref | default "")) " " -}}
   {{- $collectionLogicalPath := partial "entry-source/logical-path-from-href.html" (dict
     "ctx" $page
     "provider" $provider
-    "href" (index $level "collection_href")
+    "href" $collectionHref
   ) -}}
   {{- $collectionSource := partial "entry-source/collection-source.html" (dict
     "provider" $provider
     "logical_path" $collectionLogicalPath
+    "label" $collectionLabel
+    "href" $collectionHref
   ) -}}
   {{- $levelModel := dict "item" $item -}}
   {{- if gt (len $collectionSource) 0 -}}
     {{- $levelModel = merge $levelModel (dict "collection_source" $collectionSource) -}}
   {{- end -}}
   {{- $levels = $levels | append $levelModel -}}
+  {{- $itemHref := trim (printf "%v" (index $item "href" | default "")) " " -}}
+  {{- $itemText := trim (printf "%v" (index $item "text" | default "")) " " -}}
+  {{- if and $itemHref $itemText -}}
+    {{- $collectionLabelsByHref = merge $collectionLabelsByHref (dict $itemHref $itemText) -}}
+  {{- end -}}
 {{- end -}}
+{{- $currentCollectionHref := $page.RelPermalink -}}
+{{- $currentCollectionLabel := trim (printf "%v" (index $collectionLabelsByHref $currentCollectionHref | default ($page.LinkTitle | default $page.Title))) " " -}}
 {{- $currentCollectionSource := partial "entry-source/collection-source.html" (dict
   "provider" $provider
   "logical_path" $logicalPath
+  "label" $currentCollectionLabel
+  "href" $currentCollectionHref
 ) -}}
 {{- $currentCollectionItems := dict -}}
 {{- $entryHrefs := slice -}}

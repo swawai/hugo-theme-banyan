@@ -12,6 +12,6 @@
   {{ $ctx.Content }}
 </div>
 {{ end }}
-<div class="grid-list" data-sortable="true" data-sort-variant="tree" data-sort-columns="3" data-sort-default="date-desc">
+<div class="grid-list collection-list collection-list--grid" data-sortable="true" data-sort-variant="tree" data-sort-columns="3" data-sort-default="date-desc">
   {{ partial "taxonomy/list-view.html" (dict "ctx" $ctx "spec" $spec "kind" $kind "items" $items) }}
 </div>

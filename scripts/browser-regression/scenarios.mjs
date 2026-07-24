@@ -37,6 +37,123 @@ const BREADCRUMB_WIDE_CANVAS_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_WIDE_C
     || '/zh/p/wsl-guide/';
 const BREADCRUMB_WIDE_CANVAS_FROM = process.env.BANYAN_BROWSER_BREADCRUMB_WIDE_CANVAS_FROM
     || '/tags/tooling/devtools/windows/wsl';
+const BREADCRUMB_COLUMN_SORT_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_COLUMN_SORT_PATH
+    || '/zh/p/swaw-kit-git/';
+const BREADCRUMB_MULTI_COLUMN_SORT_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_MULTI_COLUMN_SORT_PATH
+    || '/zh/p/swaw-kit-wsl-release/';
+const BREADCRUMB_COLLECTION_SORT_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_COLLECTION_SORT_PATH
+    || '/zh/d/wsl/';
+
+async function startBreadcrumbContinuityProbe(page, columnIndex = 0) {
+    await page.evaluate((targetColumnIndex) => {
+        const state = {
+            blankObserved: false,
+            minimumVisibleRows: Number.POSITIVE_INFINITY,
+            running: true,
+        };
+        window.__banyanBreadcrumbContinuity = state;
+
+        const sample = () => {
+            if (!state.running) {
+                return;
+            }
+
+            const columns = Array.from(document.querySelectorAll(
+                '.slot-row-breadcrumb .grid-list--single'
+            )).filter((column) => column.querySelector('.collection-column-header'));
+            const column = columns[targetColumnIndex];
+            const rail = document.querySelector('.slot-row-breadcrumb');
+            const railStyle = rail ? getComputedStyle(rail) : null;
+            const visibleRows = column
+                ? Array.from(column.querySelectorAll('.collection-item-link'))
+                    .filter((row) => {
+                        const rect = row.getBoundingClientRect();
+                        const style = getComputedStyle(row);
+                        return rect.width > 0
+                            && rect.height > 0
+                            && style.display !== 'none'
+                            && style.visibility !== 'hidden'
+                            && Number(style.opacity || 1) > 0;
+                    }).length
+                : 0;
+
+            state.minimumVisibleRows = Math.min(state.minimumVisibleRows, visibleRows);
+            if (
+                !column
+                || visibleRows === 0
+                || !railStyle
+                || railStyle.display === 'none'
+                || railStyle.visibility === 'hidden'
+                || Number(railStyle.opacity || 1) === 0
+            ) {
+                state.blankObserved = true;
+            }
+            requestAnimationFrame(sample);
+        };
+
+        requestAnimationFrame(sample);
+    }, columnIndex);
+}
+
+async function finishBreadcrumbContinuityProbe(page) {
+    return page.evaluate(async () => {
+        await new Promise((resolve) => requestAnimationFrame(() => (
+            requestAnimationFrame(resolve)
+        )));
+        const state = window.__banyanBreadcrumbContinuity;
+        if (!state) {
+            return {
+                blankObserved: true,
+                minimumVisibleRows: 0,
+            };
+        }
+        state.running = false;
+        return {
+            blankObserved: state.blankObserved,
+            minimumVisibleRows: Number.isFinite(state.minimumVisibleRows)
+                ? state.minimumVisibleRows
+                : 0,
+        };
+    });
+}
+
+async function runBreadcrumbSortInPlace(page, {
+    action,
+    columnIndex = 0,
+}) {
+    const documentMarker = await page.evaluate(() => {
+        window.__banyanSortDocumentMarker = `${Date.now()}-${Math.random()}`;
+        return window.__banyanSortDocumentMarker;
+    });
+    let navigationRequestCount = 0;
+    const onRequest = (request) => {
+        if (request.isNavigationRequest() && request.frame() === page.mainFrame()) {
+            navigationRequestCount += 1;
+        }
+    };
+
+    page.on('request', onRequest);
+    await startBreadcrumbContinuityProbe(page, columnIndex);
+
+    let continuity;
+    try {
+        await action();
+        await waitForBreadcrumbSettled(page);
+    } finally {
+        continuity = await finishBreadcrumbContinuityProbe(page);
+        page.off('request', onRequest);
+    }
+
+    const markerAfter = await page.evaluate(() => (
+        window.__banyanSortDocumentMarker || ''
+    ));
+    return {
+        continuity,
+        documentMarker,
+        markerAfter,
+        navigationRequestCount,
+    };
+}
 
 function recordFirstBreadcrumbMenuOrderScript(targetCollectionHref) {
     window.__banyanFirstBreadcrumbMenuOrder = null;
@@ -662,6 +779,466 @@ export const scenarios = [
         }
     },
     {
+        id: 'breadcrumb-column-sort-toggle',
+        kind: 'single',
+        title: 'Breadcrumb Column Sort Toggle',
+        viewport: { width: 1280, height: 960 },
+        async run({ page, baseUrl }) {
+            const url = new URL(BREADCRUMB_COLUMN_SORT_PATH, `${baseUrl}/`);
+            url.searchParams.set('from', 'all');
+            await gotoAndWait(page, url.href);
+            await page.waitForSelector('.slot-breadcrumb .collection-column-header');
+            await waitForBreadcrumbSettled(page);
+
+            const readState = () => page.evaluate(() => {
+                const panel = document.querySelector('.slot-breadcrumb .collection-list--column');
+                const header = panel?.querySelector('.collection-column-header');
+                const toggle = header?.querySelector('[data-collection-sort-toggle="true"]');
+                const rows = Array.from(panel?.querySelectorAll('.collection-item-link') || []);
+                const rowTitles = rows
+                    .map((row) => row.querySelector('.collection-item-title')?.textContent?.trim() || '')
+                    .filter(Boolean);
+                return {
+                    field: header?.querySelector('.collection-sort-label')?.textContent?.trim() || '',
+                    indicator: header?.querySelector('.collection-sort-indicator')?.textContent?.trim() || '',
+                    iconCount: panel?.querySelectorAll('.collection-item-icon-svg').length || 0,
+                    embeddedSourceCount: document.querySelectorAll(
+                        '[data-breadcrumb-collection-source]'
+                    ).length,
+                    firstTitle: rowTitles[0] || '',
+                    href: toggle?.getAttribute('href') || '',
+                    invalidPrefetchCount: Array.from(panel?.querySelectorAll('a') || [])
+                        .filter((link) => link.dataset.prefetchSlot !== 'crumb')
+                        .length,
+                    label: header?.querySelector('.collection-column-label')?.textContent?.trim() || '',
+                    rowCount: rows.length,
+                    toggleFocused: document.activeElement === toggle,
+                    wrappedRowCount: rows.filter((row) => row.getBoundingClientRect().height > 24).length,
+                };
+            });
+
+            const before = await readState();
+            if (!before.label || !before.field || before.indicator !== '↓') {
+                fail('Column header must expose collection context and the active descending sort.', before);
+            }
+            if (before.iconCount !== before.rowCount || before.rowCount === 0) {
+                fail('Column rows must share the collection-list icon anatomy.', before);
+            }
+            if (before.embeddedSourceCount > 0) {
+                fail('Column source metadata must be resolved from the page registry instead of repeated per DOM.', before);
+            }
+            if (before.wrappedRowCount > 0) {
+                fail('Wide column rows must remain single-line and scan-friendly.', before);
+            }
+            if (before.invalidPrefetchCount > 0) {
+                fail('Column header and rows must keep breadcrumb prefetch ownership.', before);
+            }
+
+            const toggle = page.locator('.slot-breadcrumb [data-collection-sort-toggle="true"]');
+            if (await toggle.count() !== 1) {
+                fail('Column view must expose exactly one direction toggle for its active field.', before);
+            }
+            const inPlace = await runBreadcrumbSortInPlace(page, {
+                action: async () => {
+                    await toggle.click();
+                    await page.waitForFunction((firstTitle) => {
+                        const currentUrl = new URL(window.location.href);
+                        const panel = document.querySelector(
+                            '.slot-breadcrumb .collection-list--column'
+                        );
+                        const nextFirstTitle = panel
+                            ?.querySelector('.collection-item-title')
+                            ?.textContent
+                            ?.trim() || '';
+                        return currentUrl.searchParams.get('sorts') === 'date-asc'
+                            && nextFirstTitle
+                            && nextFirstTitle !== firstTitle;
+                    }, before.firstTitle);
+                },
+            });
+            const {
+                continuity,
+                documentMarker,
+                markerAfter,
+                navigationRequestCount,
+            } = inPlace;
+            const after = await readState();
+            const currentUrl = new URL(page.url());
+
+            if (after.field !== before.field || after.indicator !== '↑') {
+                fail('Column toggle must keep the active field and change only its direction.', {
+                    after,
+                    before,
+                    url: currentUrl.href
+                });
+            }
+            if (
+                currentUrl.searchParams.get('from') !== 'all'
+                || currentUrl.searchParams.has('sort')
+                || currentUrl.searchParams.get('sorts') !== 'date-asc'
+            ) {
+                fail('Column toggle URL did not preserve lineage and write the next sort direction.', {
+                    after,
+                    before,
+                    url: currentUrl.href
+                });
+            }
+            if (!after.firstTitle || after.firstTitle === before.firstTitle) {
+                fail('Column rows did not reflect the toggled sort direction.', { after, before });
+            }
+            if (!after.toggleFocused) {
+                fail('Column sorting must restore focus to the replacement toggle.', {
+                    after,
+                    before,
+                });
+            }
+            if (
+                navigationRequestCount !== 0
+                || markerAfter !== documentMarker
+                || continuity.blankObserved
+                || continuity.minimumVisibleRows < 1
+            ) {
+                fail('Column sorting must update in place without navigation or a blank frame.', {
+                    continuity,
+                    documentMarker,
+                    markerAfter,
+                    navigationRequestCount,
+                });
+            }
+
+            return {
+                after,
+                before,
+                continuity,
+                navigationRequestCount,
+                url: currentUrl.href,
+            };
+        }
+    },
+    {
+        id: 'breadcrumb-multi-column-sort-isolation',
+        kind: 'single',
+        title: 'Breadcrumb Multi-column Sort Isolation',
+        viewport: { width: 1280, height: 960 },
+        async run({ page, baseUrl }) {
+            const initialUrl = new URL(BREADCRUMB_MULTI_COLUMN_SORT_PATH, `${baseUrl}/`);
+            initialUrl.searchParams.set('from', 'd/wsl');
+
+            const readColumns = () => page.evaluate(() => (
+                Array.from(document.querySelectorAll('.slot-row-breadcrumb .grid-list--single'))
+                    .filter((column) => column.querySelector('.collection-column-header'))
+                    .map((column) => ({
+                        indicator: column.querySelector('.collection-sort-indicator')?.textContent?.trim() || '',
+                        label: column.querySelector('.collection-column-label')?.textContent?.trim() || '',
+                        rows: Array.from(column.querySelectorAll('.collection-item-title'))
+                            .map((item) => item.textContent?.trim() || '')
+                            .filter(Boolean),
+                        toggleHref: column.querySelector('[data-collection-sort-toggle="true"]')
+                            ?.getAttribute('href') || '',
+                    }))
+            ));
+            const openInitialState = async () => {
+                await gotoAndWait(page, initialUrl.href);
+                await page.waitForSelector('.slot-row-breadcrumb .collection-column-header');
+                await waitForBreadcrumbSettled(page);
+                const columns = await readColumns();
+                if (columns.length !== 2 || columns.some((column) => column.indicator !== '↓')) {
+                    fail('Multi-column sort scenario requires two independently descending columns.', {
+                        columns,
+                        url: page.url()
+                    });
+                }
+                return columns;
+            };
+
+            const initialBeforeChild = await openInitialState();
+            const childToggle = page.locator(
+                '.slot-row-breadcrumb [data-collection-sort-toggle="true"]'
+            ).nth(1);
+            const childInPlace = await runBreadcrumbSortInPlace(page, {
+                action: async () => {
+                    await childToggle.click();
+                    await page.waitForFunction((beforeRows) => {
+                        const columns = Array.from(document.querySelectorAll(
+                            '.slot-row-breadcrumb .grid-list--single'
+                        )).filter((column) => (
+                            column.querySelector('.collection-column-header')
+                        ));
+                        const rows = Array.from(
+                            columns[1]?.querySelectorAll('.collection-item-title') || []
+                        ).map((item) => item.textContent?.trim() || '').filter(Boolean);
+                        return new URL(window.location.href).searchParams.get('sorts')
+                                === '_,date-asc'
+                            && JSON.stringify(rows) !== JSON.stringify(beforeRows);
+                    }, initialBeforeChild[1]?.rows || []);
+                },
+                columnIndex: 1,
+            });
+            const {
+                continuity: childContinuity,
+                documentMarker: childDocumentMarker,
+                markerAfter: childMarkerAfter,
+                navigationRequestCount: childNavigationRequestCount,
+            } = childInPlace;
+            const afterChild = await readColumns();
+            const childUrl = new URL(page.url());
+
+            if (
+                childUrl.searchParams.get('from') !== 'd/wsl'
+                || childUrl.searchParams.has('sort')
+                || childUrl.searchParams.get('sorts') !== '_,date-asc'
+            ) {
+                fail('Deepest column toggle must preserve lineage and update only its slot.', {
+                    afterChild,
+                    url: childUrl.href
+                });
+            }
+            if (
+                childNavigationRequestCount !== 0
+                || childMarkerAfter !== childDocumentMarker
+                || childContinuity.blankObserved
+                || childContinuity.minimumVisibleRows < 1
+            ) {
+                fail('Deepest column sorting must stay visible in the same document.', {
+                    childContinuity,
+                    childDocumentMarker,
+                    childMarkerAfter,
+                    childNavigationRequestCount,
+                });
+            }
+            if (
+                afterChild[0]?.indicator !== '↓'
+                || afterChild[1]?.indicator !== '↑'
+                || JSON.stringify(afterChild[0]?.rows) !== JSON.stringify(initialBeforeChild[0]?.rows)
+                || JSON.stringify(afterChild[1]?.rows) === JSON.stringify(initialBeforeChild[1]?.rows)
+            ) {
+                fail('Deepest column sorting leaked into its ancestor column.', {
+                    after: afterChild,
+                    before: initialBeforeChild,
+                    url: childUrl.href
+                });
+            }
+
+            const initialBeforeAncestor = await openInitialState();
+            const ancestorToggle = page.locator(
+                '.slot-row-breadcrumb [data-collection-sort-toggle="true"]'
+            ).first();
+            const ancestorInPlace = await runBreadcrumbSortInPlace(page, {
+                action: async () => {
+                    await ancestorToggle.click();
+                    await page.waitForFunction((beforeRows) => {
+                        const columns = Array.from(document.querySelectorAll(
+                            '.slot-row-breadcrumb .grid-list--single'
+                        )).filter((column) => (
+                            column.querySelector('.collection-column-header')
+                        ));
+                        const rows = Array.from(
+                            columns[0]?.querySelectorAll('.collection-item-title') || []
+                        ).map((item) => item.textContent?.trim() || '').filter(Boolean);
+                        return new URL(window.location.href).searchParams.get('sorts')
+                                === 'date-asc,_'
+                            && JSON.stringify(rows) !== JSON.stringify(beforeRows);
+                    }, initialBeforeAncestor[0]?.rows || []);
+                },
+            });
+            const {
+                continuity: ancestorContinuity,
+                documentMarker: ancestorDocumentMarker,
+                markerAfter: ancestorMarkerAfter,
+                navigationRequestCount: ancestorNavigationRequestCount,
+            } = ancestorInPlace;
+            const afterAncestor = await readColumns();
+            const ancestorUrl = new URL(page.url());
+
+            if (
+                ancestorUrl.searchParams.get('from') !== 'd/wsl'
+                || ancestorUrl.searchParams.has('sort')
+                || ancestorUrl.searchParams.get('sorts') !== 'date-asc,_'
+            ) {
+                fail('Ancestor column toggle must preserve the full lineage and update only its slot.', {
+                    afterAncestor,
+                    url: ancestorUrl.href
+                });
+            }
+            if (
+                afterAncestor[0]?.indicator !== '↑'
+                || afterAncestor[1]?.indicator !== '↓'
+                || JSON.stringify(afterAncestor[0]?.rows) === JSON.stringify(initialBeforeAncestor[0]?.rows)
+                || JSON.stringify(afterAncestor[1]?.rows) !== JSON.stringify(initialBeforeAncestor[1]?.rows)
+            ) {
+                fail('Ancestor column sorting failed or leaked into the deepest column.', {
+                    after: afterAncestor,
+                    before: initialBeforeAncestor,
+                    url: ancestorUrl.href
+                });
+            }
+            if (
+                ancestorNavigationRequestCount !== 0
+                || ancestorMarkerAfter !== ancestorDocumentMarker
+                || ancestorContinuity.blankObserved
+                || ancestorContinuity.minimumVisibleRows < 1
+            ) {
+                fail('Ancestor column sorting must stay visible in the same document.', {
+                    ancestorContinuity,
+                    ancestorDocumentMarker,
+                    ancestorMarkerAfter,
+                    ancestorNavigationRequestCount,
+                });
+            }
+
+            return {
+                afterAncestor,
+                afterChild,
+                ancestorContinuity,
+                ancestorNavigationRequestCount,
+                ancestorUrl: ancestorUrl.href,
+                childContinuity,
+                childNavigationRequestCount,
+                childUrl: childUrl.href
+            };
+        }
+    },
+    {
+        id: 'breadcrumb-collection-sort-isolation',
+        kind: 'single',
+        title: 'Breadcrumb and Collection Sort Isolation',
+        viewport: { width: 1280, height: 960 },
+        async run({ page, baseUrl }) {
+            const url = new URL(BREADCRUMB_COLLECTION_SORT_PATH, `${baseUrl}/`);
+            url.searchParams.set('from', 'd');
+            url.searchParams.set('sort', 'date-asc');
+            url.searchParams.set('sorts', 'date-asc');
+            await gotoAndWait(page, url.href);
+            await page.waitForSelector(
+                '.slot-row-breadcrumb [data-collection-sort-toggle="true"]'
+            );
+            await waitForBreadcrumbSettled(page);
+
+            const readState = () => page.evaluate(() => {
+                const column = Array.from(document.querySelectorAll(
+                    '.slot-row-breadcrumb .grid-list--single'
+                )).find((candidate) => candidate.querySelector('.collection-column-header'));
+                const mainGrid = document.querySelector(
+                    '.slot-main [data-sortable="true"][data-sort-variant]'
+                );
+                return {
+                    columnRows: Array.from(
+                        column?.querySelectorAll('.collection-item-title') || []
+                    ).map((item) => item.textContent?.trim() || '').filter(Boolean),
+                    mainHrefs: Array.from(
+                        mainGrid?.querySelectorAll('.cell-title:not(.header) .collection-item-link')
+                            || []
+                    ).map((item) => item.getAttribute('href') || '').filter(Boolean),
+                    mainRows: Array.from(
+                        mainGrid?.querySelectorAll('.cell-title:not(.header) .collection-item-title')
+                            || []
+                    ).map((item) => item.textContent?.trim() || '').filter(Boolean),
+                };
+            });
+
+            const before = await readState();
+            if (before.columnRows.length < 2 || before.mainRows.length < 2) {
+                fail('Collection isolation scenario requires sortable column and main rows.', {
+                    before,
+                    url: page.url(),
+                });
+            }
+            if (
+                before.mainHrefs.length === 0
+                || new URL(before.mainHrefs[0], url).searchParams.get('sorts')
+                    !== 'date-asc,date-asc'
+            ) {
+                fail('Main entry links must retain both ancestor and active collection sorts.', {
+                    before,
+                    url: page.url(),
+                });
+            }
+
+            const inPlace = await runBreadcrumbSortInPlace(page, {
+                action: async () => {
+                    await page.locator(
+                        '.slot-row-breadcrumb [data-collection-sort-toggle="true"]'
+                    ).first().click();
+                    await page.waitForFunction((beforeRows) => {
+                        const currentUrl = new URL(window.location.href);
+                        const column = Array.from(document.querySelectorAll(
+                            '.slot-row-breadcrumb .grid-list--single'
+                        )).find((candidate) => (
+                            candidate.querySelector('.collection-column-header')
+                        ));
+                        const rows = Array.from(
+                            column?.querySelectorAll('.collection-item-title') || []
+                        ).map((item) => item.textContent?.trim() || '').filter(Boolean);
+                        return currentUrl.searchParams.get('sort') === 'date-asc'
+                            && !currentUrl.searchParams.has('sorts')
+                            && JSON.stringify(rows) !== JSON.stringify(beforeRows);
+                    }, before.columnRows);
+                },
+            });
+            const {
+                continuity,
+                documentMarker,
+                markerAfter,
+                navigationRequestCount,
+            } = inPlace;
+
+            const after = await readState();
+            const currentUrl = new URL(page.url());
+
+            if (
+                currentUrl.searchParams.get('from') !== 'd'
+                || currentUrl.searchParams.get('sort') !== 'date-asc'
+                || currentUrl.searchParams.has('sorts')
+            ) {
+                fail('Breadcrumb toggle must preserve the collection sort and reset only sorts.', {
+                    after,
+                    before,
+                    url: currentUrl.href,
+                });
+            }
+            if (
+                JSON.stringify(after.mainRows) !== JSON.stringify(before.mainRows)
+                || JSON.stringify(after.columnRows) === JSON.stringify(before.columnRows)
+            ) {
+                fail('Breadcrumb sorting changed the main grid or failed to change its own column.', {
+                    after,
+                    before,
+                });
+            }
+            if (
+                after.mainHrefs.length === 0
+                || new URL(after.mainHrefs[0], currentUrl).searchParams.get('sorts')
+                    !== '_,date-asc'
+            ) {
+                fail('Main entry links must reflect the updated ancestor slot without losing active sort.', {
+                    after,
+                    before,
+                });
+            }
+            if (
+                navigationRequestCount !== 0
+                || markerAfter !== documentMarker
+                || continuity.blankObserved
+                || continuity.minimumVisibleRows < 1
+            ) {
+                fail('Collection-page breadcrumb sorting must remain visible in the same document.', {
+                    continuity,
+                    documentMarker,
+                    markerAfter,
+                    navigationRequestCount,
+                });
+            }
+
+            return {
+                after,
+                before,
+                continuity,
+                navigationRequestCount,
+                url: currentUrl.href,
+            };
+        }
+    },
+    {
         id: 'breadcrumb-wide-horizontal-canvas',
         kind: 'single',
         title: 'Breadcrumb Wide Horizontal Canvas',
@@ -695,20 +1272,35 @@ export const scenarios = [
                 };
                 const expectedColumnInline = measureInline('15rem');
                 const columnInline = measureInline('var(--breadcrumb-column-inline)');
+                const gapInline = measureInline('var(--breadcrumb-gap-inline)');
                 const mainInline = measureInline('var(--breadcrumb-main-inline)');
+                const railCurrent = document.querySelector('.page-rail-context .is-current');
+                const railRect = railCurrent?.getBoundingClientRect();
+                const columnRects = visibleColumns.map((column) => column.getBoundingClientRect());
+                const breadcrumbGaps = columnRects.slice(1).map((rect, index) => (
+                    rect.left - columnRects[index].right
+                ));
                 probe.remove();
 
                 return {
                     breadcrumbClientWidth: breadcrumb.clientWidth,
                     breadcrumbOffsetWidth: breadcrumb.offsetWidth,
                     breadcrumbScrollWidth: breadcrumb.scrollWidth,
+                    breadcrumbGaps,
+                    breadcrumbToMainGap: columnRects.length > 0
+                        ? main.getBoundingClientRect().left - columnRects[columnRects.length - 1].right
+                        : 0,
                     columnInline,
-                    columnWidths: visibleColumns.map((column) => column.getBoundingClientRect().width),
+                    columnWidths: columnRects.map((rect) => rect.width),
                     documentClientWidth: scrollingElement?.clientWidth || 0,
                     documentScrollWidth: scrollingElement?.scrollWidth || 0,
                     expectedColumnInline,
+                    gapInline,
                     mainInline,
                     mainWidth: main.getBoundingClientRect().width,
+                    railToBreadcrumbGap: railRect && columnRects.length > 0
+                        ? columnRects[0].left - railRect.right
+                        : 0,
                     visibleColumnCount: visibleColumns.length
                 };
             });
@@ -731,6 +1323,17 @@ export const scenarios = [
                 fail('Wide breadcrumb columns must remain fixed at 15rem without compression.', {
                     ...geometry,
                     compressedColumns
+                });
+            }
+            const unequalGaps = [
+                geometry.railToBreadcrumbGap,
+                ...geometry.breadcrumbGaps,
+                geometry.breadcrumbToMainGap
+            ].filter((gap) => Math.abs(gap - geometry.gapInline) > 0.1);
+            if (geometry.gapInline <= 0 || unequalGaps.length > 0) {
+                fail('Wide rail, breadcrumb columns, and main content must share one visual gap.', {
+                    ...geometry,
+                    unequalGaps
                 });
             }
             if (geometry.mainInline <= 0 || geometry.mainWidth + 1 < geometry.mainInline) {
@@ -760,9 +1363,9 @@ export const scenarios = [
             for (const target of GRID_LIST_COLUMN_CASES) {
                 await page.setViewportSize(target.viewport);
                 await gotoAndWait(page, `${baseUrl}${target.path}`);
-                await page.waitForSelector('.grid-list > .cell-title');
+                await page.waitForSelector('.slot-main .grid-list > .cell-title');
                 const geometry = await page.evaluate(() => {
-                    const grid = document.querySelector('.grid-list');
+                    const grid = document.querySelector('.slot-main .grid-list');
                     const nameCell = grid?.querySelector(':scope > .cell-title');
                     if (!(grid instanceof HTMLElement) || !(nameCell instanceof HTMLElement)) return null;
 
@@ -796,6 +1399,143 @@ export const scenarios = [
                 results.push({ ...target, ...geometry, expectedInline });
             }
             return { cases: results };
+        }
+    },
+    {
+        id: 'collection-list-visual-alignment-contract',
+        kind: 'single',
+        title: 'Collection List Visual Alignment Contract',
+        viewport: WIDE_VIEWPORT,
+        async run({ page, baseUrl }) {
+            await gotoAndWait(page, `${baseUrl}/zh/all/`);
+            await page.waitForSelector('.collection-list--grid .collection-item-link');
+            await page.locator('.collection-list--grid .collection-item-link').first().hover();
+            const grid = await page.evaluate(() => {
+                const list = document.querySelector('.collection-list--grid');
+                const header = list?.querySelector('.collection-list-header');
+                const headerText = header?.querySelector('a');
+                const link = list?.querySelector('.collection-item-link');
+                const icon = link?.querySelector('.collection-item-icon');
+                if (!(list instanceof HTMLElement)
+                    || !(header instanceof HTMLElement)
+                    || !(headerText instanceof HTMLElement)
+                    || !(link instanceof HTMLElement)
+                    || !(icon instanceof HTMLElement)) return null;
+
+                const headerRange = document.createRange();
+                headerRange.selectNodeContents(headerText);
+                const headerTextRect = headerRange.getBoundingClientRect();
+                const linkStyle = getComputedStyle(link);
+                const stateStyle = getComputedStyle(link, '::before');
+                const separatorStyle = getComputedStyle(list, '::after');
+                const headerTrackSize = Number.parseFloat(getComputedStyle(list).gridTemplateRows);
+                return {
+                    headerTrackSize,
+                    headerTextBlockStart: headerTextRect.top,
+                    iconInlineStart: icon.getBoundingClientRect().left,
+                    linkBackground: linkStyle.backgroundColor,
+                    linkBlockSize: link.getBoundingClientRect().height,
+                    linkBlockStart: link.getBoundingClientRect().top,
+                    linkInlineStart: link.getBoundingClientRect().left,
+                    linkPaddingInlineStart: Number.parseFloat(linkStyle.paddingInlineStart),
+                    listBlockStart: list.getBoundingClientRect().top,
+                    separatorBlockStart: list.getBoundingClientRect().top
+                        + Number.parseFloat(separatorStyle.top),
+                    stateBackground: stateStyle.backgroundColor,
+                    stateRadius: stateStyle.borderRadius
+                };
+            });
+
+            const articleUrl = new URL(BREADCRUMB_COLUMN_SORT_PATH, `${baseUrl}/`);
+            articleUrl.searchParams.set('from', 'all');
+            await gotoAndWait(page, articleUrl.href);
+            await page.waitForSelector('.slot-breadcrumb .collection-list--column');
+            await waitForBreadcrumbSettled(page);
+            await page.locator(
+                '.slot-breadcrumb .collection-list--column .collection-item-link:not(.is-current)'
+            ).first().hover();
+            const column = await page.evaluate(() => {
+                const list = document.querySelector('.slot-breadcrumb .collection-list--column');
+                const header = list?.querySelector('.collection-column-header');
+                const headerText = header?.querySelector('.collection-column-label');
+                const link = list?.querySelector('.collection-item-link');
+                const icon = link?.querySelector('.collection-item-icon');
+                const hovered = list?.querySelector('.collection-item-link:hover');
+                const current = list?.querySelector('.collection-item-link.is-current');
+                if (!(list instanceof HTMLElement)
+                    || !(header instanceof HTMLElement)
+                    || !(headerText instanceof HTMLElement)
+                    || !(link instanceof HTMLElement)
+                    || !(icon instanceof HTMLElement)
+                    || !(hovered instanceof HTMLElement)
+                    || !(current instanceof HTMLElement)) return null;
+
+                const headerRange = document.createRange();
+                headerRange.selectNodeContents(headerText);
+                const headerTextRect = headerRange.getBoundingClientRect();
+                const linkStyle = getComputedStyle(link);
+                const hoveredStyle = getComputedStyle(hovered);
+                const hoverStateStyle = getComputedStyle(hovered, '::before');
+                const currentStyle = getComputedStyle(current);
+                const currentStateStyle = getComputedStyle(current, '::before');
+                const separatorStyle = getComputedStyle(list, '::after');
+                const directCells = Array.from(list.children);
+                const headerTrackSize = Number.parseFloat(getComputedStyle(list).gridTemplateRows);
+                return {
+                    directCellCount: directCells.length,
+                    directCellsValid: directCells.every((cell) => cell.classList.contains('cell-title')),
+                    headerTrackSize,
+                    currentLinkBackground: currentStyle.backgroundColor,
+                    currentStateBackground: currentStateStyle.backgroundColor,
+                    currentStateShadow: currentStateStyle.boxShadow,
+                    headerTextBlockStart: headerTextRect.top,
+                    hoverLinkBackground: hoveredStyle.backgroundColor,
+                    hoverStateBackground: hoverStateStyle.backgroundColor,
+                    hoverStateRadius: hoverStateStyle.borderRadius,
+                    iconInlineStart: icon.getBoundingClientRect().left,
+                    linkBlockSize: link.getBoundingClientRect().height,
+                    linkBlockStart: link.getBoundingClientRect().top,
+                    linkInlineStart: link.getBoundingClientRect().left,
+                    linkPaddingInlineStart: Number.parseFloat(linkStyle.paddingInlineStart),
+                    listBlockStart: list.getBoundingClientRect().top,
+                    separatorBlockStart: list.getBoundingClientRect().top
+                        + Number.parseFloat(separatorStyle.top),
+                    singleGridContract: list.matches(
+                        '.grid-list.grid-list--single.grid-list--headed.collection-list--column'
+                    )
+                };
+            });
+
+            const transparent = 'rgba(0, 0, 0, 0)';
+            const invalid = !grid
+                || !column
+                || Math.abs(grid.listBlockStart - column.listBlockStart) > 1
+                || Math.abs(grid.headerTextBlockStart - column.headerTextBlockStart) > 0.1
+                || Math.abs(grid.headerTrackSize - column.headerTrackSize) > 0.1
+                || Math.abs(grid.iconInlineStart - column.iconInlineStart) > 1
+                || Math.abs(grid.linkInlineStart - column.linkInlineStart) > 1
+                || Math.abs(grid.linkBlockStart - column.linkBlockStart) > 0.1
+                || Math.abs(grid.linkBlockSize - column.linkBlockSize) > 0.1
+                || Math.abs(grid.separatorBlockStart - column.separatorBlockStart) > 0.1
+                || !column.singleGridContract
+                || !column.directCellsValid
+                || column.directCellCount < 2
+                || grid.linkBlockStart <= grid.separatorBlockStart + 1
+                || grid.linkPaddingInlineStart > 0.1
+                || column.linkPaddingInlineStart > 0.1
+                || grid.linkBackground !== transparent
+                || column.hoverLinkBackground !== transparent
+                || column.currentLinkBackground !== transparent
+                || grid.stateBackground === transparent
+                || grid.stateBackground !== column.hoverStateBackground
+                || grid.stateRadius !== column.hoverStateRadius
+                || column.currentStateBackground === transparent
+                || column.currentStateShadow === 'none';
+            if (invalid) {
+                fail('Collection list visual alignment contract failed.', { grid, column });
+            }
+
+            return { grid, column };
         }
     },
     {

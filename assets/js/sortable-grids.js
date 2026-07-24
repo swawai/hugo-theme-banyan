@@ -1,7 +1,6 @@
 import {
     SORT_VARIANTS,
     applySortTokenToUrl,
-    getNormalizedSortToken,
     parseSortToken,
     readCurrentSortToken,
     toggleSortOrder
@@ -10,19 +9,19 @@ import {
     applySortsTokensToUrl,
     buildDefaultSortsTokens,
     buildCurrentPageSortsTokens,
-    buildDescendantSortsTokens,
     getLogicalPathDepth,
-    normalizeCollectionLogicalPathFromUrl as normalizeLogicalPathFromUrl,
     normalizeFromPath,
-    normalizePathname,
-    readSortTokenForPath,
+    readCurrentFromPath,
+    readEffectiveSortsTokens,
 } from './nav-state.js';
-import { buildBreadcrumbMenuItems } from './breadcrumb-items.js';
+import {
+    BREADCRUMB_SORT_CHANGE_EVENT,
+    refreshBreadcrumbCollectionColumns,
+} from './breadcrumb-column-sort.js';
 import {
     ENTRY_LINEAGE_FIELD,
     hasFieldValue,
 } from './navigation-state.contract.js';
-import { getRuntimeFragmentRoot } from './runtime-manifest.js';
 
 const BREADCRUMB_SORT_PENDING_ATTR = 'data-breadcrumb-sort-pending';
 
@@ -43,12 +42,14 @@ function normalizePageCollectionSource(source) {
     const defaultSort = typeof (source.default_sort || source.defaultSort) === 'string'
         ? (source.default_sort || source.defaultSort).trim().toLowerCase()
         : '';
+    const label = typeof source.label === 'string' ? source.label.trim() : '';
+    const href = typeof source.href === 'string' ? source.href.trim() : '';
 
     if (!logicalPath || !provider || !sortVariant) {
         return null;
     }
 
-    return { logicalPath, provider, sortVariant, defaultSort };
+    return { logicalPath, provider, sortVariant, defaultSort, label, href };
 }
 
 function readPageCollectionSource() {
@@ -64,37 +65,15 @@ function readPageCollectionSource() {
     }
 }
 
-function normalizeCollectionLogicalPathFromUrl(url, pageCollectionSource) {
-    if (!(url instanceof URL) || !pageCollectionSource?.provider) {
-        return '';
-    }
-
-    return normalizeLogicalPathFromUrl(url, document.body?.dataset.siteRoot || '/');
-}
-
-function buildSortHref(token, defaultToken, pageCollectionSource) {
+function buildSortHref(token, defaultToken) {
     const url = new URL(window.location.href);
     applySortTokenToUrl(url, token, defaultToken);
-    if (pageCollectionSource?.logicalPath) {
-        applySortsTokensToUrl(
-            url,
-            buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, token),
-            buildDefaultSortsTokens(pageCollectionSource.logicalPath, defaultToken)
-        );
-    }
     return `${url.pathname}${url.search}${url.hash}`;
 }
 
-function writeSortToken(token, defaultToken, pageCollectionSource) {
+function writeSortToken(token, defaultToken) {
     const url = new URL(window.location.href);
     applySortTokenToUrl(url, token, defaultToken);
-    if (pageCollectionSource?.logicalPath) {
-        applySortsTokensToUrl(
-            url,
-            buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, token),
-            buildDefaultSortsTokens(pageCollectionSource.logicalPath, defaultToken)
-        );
-    }
     window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
@@ -108,134 +87,15 @@ function buildRelativeHref(url) {
         : url.toString();
 }
 
-function readBreadcrumbCollectionSource(wrapper, pageCollectionSource) {
-    if (!(wrapper instanceof HTMLElement) || !pageCollectionSource?.provider) {
-        return null;
-    }
-
-    const rawSource = wrapper.dataset.breadcrumbCollectionSource || '';
-    if (rawSource) {
-        try {
-            return normalizePageCollectionSource(JSON.parse(rawSource));
-        } catch (error) {
-            return null;
-        }
-    }
-
-    const collectionHref = wrapper.dataset.breadcrumbCollectionHref || '';
-    if (!collectionHref) {
-        return null;
-    }
-
-    try {
-        const logicalPath = normalizeLogicalPathFromUrl(new URL(collectionHref, window.location.origin), document.body?.dataset.siteRoot || '/');
-        if (!logicalPath) {
-            return null;
-        }
-
-        return {
-            logicalPath,
-            provider: pageCollectionSource.provider,
-            sortVariant: pageCollectionSource.sortVariant,
-            defaultSort: pageCollectionSource.defaultSort,
-        };
-    } catch (error) {
-        return null;
-    }
-}
-
-let breadcrumbTrailMenuRenderId = 0;
-
-function normalizeBreadcrumbItemKind(item) {
-    return item && typeof item.kind === 'string' ? item.kind.trim().toLowerCase() : '';
-}
-
-async function updateBreadcrumbTrailMenus(pageCollectionSource) {
-    const fragmentRoot = await getRuntimeFragmentRoot();
-    if (!fragmentRoot || !pageCollectionSource?.provider) {
-        return;
-    }
-
-    const wrappers = Array.from(document.querySelectorAll('.slot-breadcrumb [data-breadcrumb-menu]'));
-    if (wrappers.length === 0) {
-        return;
-    }
-
-    const renderId = ++breadcrumbTrailMenuRenderId;
-
-    await Promise.all(wrappers.map(async (wrapper) => {
-        const collectionSource = readBreadcrumbCollectionSource(wrapper, pageCollectionSource);
-        if (!collectionSource?.logicalPath) {
-            return;
-        }
-
-        const link = wrapper.querySelector('a.breadcrumb-menu-link[href]');
-        const panel = wrapper.querySelector('[data-breadcrumb-menu-panel]');
-        if (!(link instanceof HTMLAnchorElement) || !(panel instanceof HTMLElement)) {
-            return;
-        }
-
-        const selectedPathname = normalizePathname(new URL(link.href, window.location.origin).pathname);
-        const menuItems = await buildBreadcrumbMenuItems(fragmentRoot, collectionSource, { selectedPathname });
-        if (renderId !== breadcrumbTrailMenuRenderId) {
-            return;
-        }
-
-        if (menuItems.length === 0) {
-            return;
-        }
-
-        if (selectedPathname) {
-            const coversCurrentPage = menuItems.some((menuItem) => {
-                try {
-                    return normalizePathname(new URL(menuItem.href, window.location.origin).pathname) === selectedPathname;
-                } catch (error) {
-                    return false;
-                }
-            });
-
-            if (!coversCurrentPage) {
-                return;
-            }
-        }
-
-        const fragment = document.createDocumentFragment();
-
-        menuItems.forEach((menuItem) => {
-            const option = document.createElement('a');
-            option.href = menuItem.href;
-            option.className = 'ui-dropdown-option breadcrumb-menu-option';
-            option.dataset.prefetchSlot = 'crumb';
-            const kind = normalizeBreadcrumbItemKind(menuItem);
-            if (kind) {
-                option.dataset.breadcrumbKind = kind;
-            }
-            option.textContent = menuItem.text;
-            if (menuItem.current) {
-                option.classList.add('is-current');
-                option.setAttribute('aria-current', 'page');
-            }
-
-            fragment.appendChild(option);
-        });
-
-        if (renderId !== breadcrumbTrailMenuRenderId) {
-            return;
-        }
-
-        panel.replaceChildren(fragment);
-    }));
-}
-
 function updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSource) {
     const variant = SORT_VARIANTS[variantName];
     if (!variant) return;
 
     const currentSorts = pageCollectionSource?.logicalPath
-        ? buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, currentToken)
+        ? buildProjectedCollectionSortsTokens(pageCollectionSource.logicalPath, currentToken)
         : [];
     const descendantSorts = pageCollectionSource?.logicalPath
-        ? buildDescendantSortsTokens(pageCollectionSource.logicalPath, currentToken)
+        ? [...currentSorts, currentToken]
         : [];
     const currentDefaultSorts = pageCollectionSource?.logicalPath
         ? buildDefaultSortsTokens(pageCollectionSource.logicalPath, variant.defaultToken)
@@ -244,7 +104,7 @@ function updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSou
         ? buildDefaultSortsTokens(pageCollectionSource.logicalPath, variant.defaultToken, 1)
         : [];
 
-    grid.querySelectorAll('.cell-title .title-link[href]').forEach((link) => {
+    grid.querySelectorAll('.cell-title .collection-item-link[href]').forEach((link) => {
         const rawHref = link.getAttribute('href') || '';
         if (!rawHref) return;
 
@@ -272,52 +132,27 @@ function updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSou
     });
 }
 
-function updateBreadcrumbTrailLinks(variantName, currentToken, pageCollectionSource) {
-    const variant = SORT_VARIANTS[variantName];
-    if (!variant) return;
+function isLogicalPathPrefix(prefixPath, logicalPath) {
+    const prefixSegments = normalizeFromPath(prefixPath).split('/').filter(Boolean);
+    const logicalSegments = normalizeFromPath(logicalPath).split('/').filter(Boolean);
+    return prefixSegments.length > 0
+        && prefixSegments.length < logicalSegments.length
+        && prefixSegments.every((segment, index) => segment === logicalSegments[index]);
+}
 
-    const currentSorts = pageCollectionSource?.logicalPath
-        ? buildCurrentPageSortsTokens(pageCollectionSource.logicalPath, currentToken)
-        : [];
-    const currentDepth = pageCollectionSource?.logicalPath
-        ? getLogicalPathDepth(pageCollectionSource.logicalPath)
-        : 0;
-    const defaultSorts = pageCollectionSource?.logicalPath
-        ? buildDefaultSortsTokens(pageCollectionSource.logicalPath, variant.defaultToken)
-        : [];
+function buildProjectedCollectionSortsTokens(logicalPath, currentToken) {
+    const fromPath = readCurrentFromPath();
+    if (!isLogicalPathPrefix(fromPath, logicalPath)) {
+        return buildCurrentPageSortsTokens(logicalPath, currentToken);
+    }
 
-    document.querySelectorAll('.slot-breadcrumb a[href]').forEach((link) => {
-        const rawHref = link.getAttribute('href') || '';
-        if (!rawHref) return;
-
-        let url;
-        try {
-            url = new URL(rawHref, window.location.origin);
-        } catch (error) {
-            return;
-        }
-
-        if (url.origin !== window.location.origin) {
-            return;
-        }
-
-        let targetToken = currentToken;
-        let targetSorts = currentSorts;
-        let targetDefaultSorts = defaultSorts;
-        if (pageCollectionSource?.logicalPath) {
-            const targetLogicalPath = normalizeCollectionLogicalPathFromUrl(url, pageCollectionSource);
-            const targetDepth = getLogicalPathDepth(targetLogicalPath);
-            if (targetDepth > 0 && targetDepth <= currentDepth) {
-                targetSorts = currentSorts.slice(0, targetDepth);
-                targetToken = targetSorts[targetSorts.length - 1] || '';
-                targetDefaultSorts = buildDefaultSortsTokens(targetLogicalPath, variant.defaultToken);
-            }
-            applySortsTokensToUrl(url, targetSorts, targetDefaultSorts);
-        }
-
-        applySortTokenToUrl(url, targetToken, variant.defaultToken);
-        link.href = buildRelativeHref(url);
-    });
+    const fromDepth = getLogicalPathDepth(fromPath);
+    const logicalDepth = getLogicalPathDepth(logicalPath);
+    return [
+        ...readEffectiveSortsTokens(fromPath),
+        ...Array(Math.max(0, logicalDepth - fromDepth - 1)).fill(''),
+        currentToken,
+    ];
 }
 
 function readRowValue(rowHead, fieldConfig) {
@@ -389,12 +224,12 @@ function updateSortControls(grid, variantName, currentToken, pageCollectionSourc
         const active = field === current.field;
         const nextOrder = active ? toggleSortOrder(current.order) : defaultOrder;
         const nextToken = `${field}-${nextOrder}`;
-        const indicator = control.querySelector('.sort-indicator');
+        const indicator = control.querySelector('.collection-sort-indicator');
         const titleAsc = control.dataset.sortTitleAsc || '';
         const titleDesc = control.dataset.sortTitleDesc || '';
         const actionLabel = nextOrder === 'asc' ? titleAsc : titleDesc;
 
-        control.href = buildSortHref(nextToken, variant.defaultToken, pageCollectionSource);
+        control.href = buildSortHref(nextToken, variant.defaultToken);
         control.dataset.sortActive = active ? 'true' : 'false';
         if (actionLabel) {
             control.title = actionLabel;
@@ -407,7 +242,7 @@ function updateSortControls(grid, variantName, currentToken, pageCollectionSourc
     });
 }
 
-async function applySortableGrid(grid) {
+function applySortableGrid(grid) {
     const variantName = (grid.dataset.sortVariant || '').toLowerCase();
     const variant = SORT_VARIANTS[variantName];
     const columnCount = Number(grid.dataset.sortColumns || 0);
@@ -415,13 +250,7 @@ async function applySortableGrid(grid) {
 
     const pageCollectionSource = readPageCollectionSource();
     const queryToken = readCurrentSortToken(variantName, variant.defaultToken);
-    const currentToken = pageCollectionSource?.logicalPath
-        ? getNormalizedSortToken(
-            readSortTokenForPath(pageCollectionSource.logicalPath, queryToken),
-            variantName,
-            variant.defaultToken
-        )
-        : queryToken;
+    const currentToken = queryToken;
     const current = parseSortToken(currentToken);
     const fieldConfig = variant.fields[current.field];
     if (!fieldConfig) return;
@@ -430,8 +259,6 @@ async function applySortableGrid(grid) {
     if (!rows.length) {
         updateSortControls(grid, variantName, currentToken, pageCollectionSource);
         updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSource);
-        updateBreadcrumbTrailLinks(variantName, currentToken, pageCollectionSource);
-        await updateBreadcrumbTrailMenus(pageCollectionSource);
         return;
     }
 
@@ -461,8 +288,6 @@ async function applySortableGrid(grid) {
 
     updateSortControls(grid, variantName, currentToken, pageCollectionSource);
     updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSource);
-    updateBreadcrumbTrailLinks(variantName, currentToken, pageCollectionSource);
-    await updateBreadcrumbTrailMenus(pageCollectionSource);
 }
 
 async function applySortableGrids() {
@@ -472,8 +297,24 @@ async function applySortableGrids() {
         return;
     }
 
-    await Promise.all(grids.map((grid) => applySortableGrid(grid)));
+    grids.forEach((grid) => applySortableGrid(grid));
+    await refreshBreadcrumbCollectionColumns();
     clearBreadcrumbSortPending();
+}
+
+function refreshSortableGridNavigation() {
+    document.querySelectorAll('[data-sortable="true"][data-sort-variant]').forEach((grid) => {
+        const variantName = (grid.dataset.sortVariant || '').toLowerCase();
+        const variant = SORT_VARIANTS[variantName];
+        if (!variant) {
+            return;
+        }
+
+        const currentToken = readCurrentSortToken(variantName, variant.defaultToken);
+        const pageCollectionSource = readPageCollectionSource();
+        updateSortControls(grid, variantName, currentToken, pageCollectionSource);
+        updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSource);
+    });
 }
 
 async function initSortableGrids() {
@@ -488,17 +329,10 @@ async function initSortableGrids() {
 
         const variantName = (grid.dataset.sortVariant || '').toLowerCase();
         const variant = SORT_VARIANTS[variantName];
-        const pageCollectionSource = readPageCollectionSource();
         const field = (control.dataset.sortField || '').toLowerCase();
         const defaultOrder = (control.dataset.sortDefaultOrder || 'asc').toLowerCase();
         const queryToken = readCurrentSortToken(variantName, variant?.defaultToken || '');
-        const currentToken = pageCollectionSource?.logicalPath
-            ? getNormalizedSortToken(
-                readSortTokenForPath(pageCollectionSource.logicalPath, queryToken),
-                variantName,
-                variant?.defaultToken || ''
-            )
-            : queryToken;
+        const currentToken = queryToken;
         const current = parseSortToken(currentToken);
         const nextOrder = current.field === field ? toggleSortOrder(current.order) : defaultOrder;
         const nextToken = `${field}-${nextOrder}`;
@@ -506,11 +340,12 @@ async function initSortableGrids() {
         if (!variant || !variant.fields[field]) return;
 
         event.preventDefault();
-        writeSortToken(nextToken, variant.defaultToken, pageCollectionSource);
+        writeSortToken(nextToken, variant.defaultToken);
         void applySortableGrids();
     });
 }
 
+document.addEventListener(BREADCRUMB_SORT_CHANGE_EVENT, refreshSortableGridNavigation);
 document.addEventListener('DOMContentLoaded', () => {
     void initSortableGrids();
 });

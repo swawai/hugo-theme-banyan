@@ -10,7 +10,7 @@
 {{ $entrySourcePath := printf "%v" (index $entrySource "logical_path") }}
 {{ $entryLineageParam := partialCached "navigation-state-param-name.html" (dict "semantic" "entry_lineage") "navigation-state-param:entry_lineage" }}
 
-<div class="grid-list grid-products" data-sortable="true" data-sort-variant="products" data-sort-columns="3" data-sort-default="name-asc">
+<div class="grid-list grid-products collection-list collection-list--grid" data-sortable="true" data-sort-variant="products" data-sort-columns="3" data-sort-default="name-asc">
   {{ partial "grid-sort-cell.html" (dict
     "class" "cell-title"
     "ctx" $host

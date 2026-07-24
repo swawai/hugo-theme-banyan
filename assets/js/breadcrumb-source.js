@@ -1,5 +1,5 @@
 import { normalizeBreadcrumbCollectionSource } from './breadcrumb-items.js';
-import { normalizeFromPath } from './nav-state.js';
+import { normalizeFromPath, normalizePathname } from './nav-state.js';
 
 function normalizeItemsPayload(payload) {
     if (!payload || typeof payload !== 'object') {
@@ -163,4 +163,69 @@ export function pickSourceByLogicalPath(sources, logicalPath) {
     }
 
     return null;
+}
+
+function normalizeCollectionHref(href) {
+    const rawHref = typeof href === 'string' ? href.trim() : '';
+    if (!rawHref) {
+        return '';
+    }
+
+    try {
+        return normalizePathname(new URL(rawHref, window.location.origin).pathname);
+    } catch (error) {
+        return '';
+    }
+}
+
+function addCollectionSourceToIndex(index, source) {
+    const collectionSource = normalizeBreadcrumbCollectionSource(source);
+    const hrefKey = normalizeCollectionHref(collectionSource?.href || '');
+    if (hrefKey) {
+        index.set(hrefKey, collectionSource);
+    }
+}
+
+export function buildCollectionSourceIndex(sources, extraSources = []) {
+    const index = new Map();
+
+    (Array.isArray(sources) ? sources : []).forEach((source) => {
+        addCollectionSourceToIndex(
+            index,
+            source?.current_collection_source || source?.currentCollectionSource
+        );
+        (Array.isArray(source?.levels) ? source.levels : []).forEach((level) => {
+            addCollectionSourceToIndex(
+                index,
+                level?.collection_source || level?.collectionSource
+            );
+        });
+    });
+
+    (Array.isArray(extraSources) ? extraSources : []).forEach((source) => {
+        addCollectionSourceToIndex(index, source);
+    });
+
+    return index;
+}
+
+export function parseCollectionSourceIndex(rawValue, extraSources = []) {
+    try {
+        const sources = JSON.parse(rawValue);
+        return buildCollectionSourceIndex(
+            Array.isArray(sources) ? sources : [],
+            extraSources
+        );
+    } catch (error) {
+        return buildCollectionSourceIndex([], extraSources);
+    }
+}
+
+export function pickCollectionSourceByHref(index, href) {
+    if (!(index instanceof Map)) {
+        return null;
+    }
+
+    const hrefKey = normalizeCollectionHref(href);
+    return hrefKey ? index.get(hrefKey) || null : null;
 }

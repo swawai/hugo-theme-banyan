@@ -14,7 +14,7 @@
 {{ $entryLineageParam := partialCached "navigation-state-param-name.html" (dict "semantic" "entry_lineage") "navigation-state-param:entry_lineage" }}
 {{ $rows := partial "collection/rows-all.html" (dict "ctx" $ctx) }}
 
-<div class="grid-list grid-all" data-sortable="true" data-sort-variant="all" data-sort-columns="4" data-sort-default="date-desc">
+<div class="grid-list grid-all collection-list collection-list--grid" data-sortable="true" data-sort-variant="all" data-sort-columns="4" data-sort-default="date-desc">
   {{ partial "grid-sort-cell.html" (dict
     "class" "cell-title"
     "ctx" $ctx

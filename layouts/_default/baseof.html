@@ -104,9 +104,26 @@
 {{- .Scratch.Set "needs_ui_dropdown_runtime" (or $hasBreadcrumbCapability $hasUtilitiesCapability) -}}
 {{- $pageCollectionSource := dict -}}
 {{- $entryBreadcrumbSources := slice -}}
+{{- $entryCollectionSourcesByHref := dict -}}
 {{- if $hasBreadcrumbCapability -}}
     {{- $pageCollectionSource = partial "entry-source/model-current.html" (dict "page" .) -}}
     {{- $entryBreadcrumbSourceModels := partialCached "entry-source/models.html" (dict "ctx" .) .Site.Language.Lang -}}
+    {{- range $sourceModel := $entryBreadcrumbSourceModels -}}
+        {{- $currentCollectionSource := index $sourceModel "current_collection_source" | default dict -}}
+        {{- with index $currentCollectionSource "href" -}}
+            {{- $entryCollectionSourcesByHref = merge $entryCollectionSourcesByHref (dict (printf "%v" .) $currentCollectionSource) -}}
+        {{- end -}}
+        {{- range $level := index $sourceModel "levels" | default slice -}}
+            {{- $levelCollectionSource := index $level "collection_source" | default dict -}}
+            {{- with index $levelCollectionSource "href" -}}
+                {{- $entryCollectionSourcesByHref = merge $entryCollectionSourcesByHref (dict (printf "%v" .) $levelCollectionSource) -}}
+            {{- end -}}
+        {{- end -}}
+    {{- end -}}
+    {{- .Scratch.Set "entry_collection_sources_by_href" $entryCollectionSourcesByHref -}}
+    {{- .Store.SetInMap "used_icons" "file" true -}}
+    {{- .Store.SetInMap "used_icons" "folder" true -}}
+    {{- .Store.SetInMap "used_icons" "product" true -}}
     {{- $entryBreadcrumbSources = partial "entry-source/browser-sources.html" (dict
         "page" .
         "source_models" $entryBreadcrumbSourceModels
@@ -325,7 +342,7 @@
     <link rel="manifest" href="{{ $manifest.RelPermalink }}" fetchpriority="low">
     {{- end }}
 </head>
-<body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-site-root="{{ .Site.Home.RelPermalink }}"{{- if $hasBreadcrumbCapability }} data-entry-breadcrumb-sources="{{ $entryBreadcrumbSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}" data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}" data-current-page-href="{{ .RelPermalink }}"{{- end }}>
+<body data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-site-root="{{ .Site.Home.RelPermalink }}"{{- if $hasBreadcrumbCapability }} data-entry-breadcrumb-sources="{{ $entryBreadcrumbSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}" data-collection-sort-copy="{{ partial "collection/sort-copy.html" . | jsonify }}" data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}" data-current-page-href="{{ .RelPermalink }}"{{- end }}>
     {{- if and .IsPage (not .Params.slug) -}}
 {{- errorf "Build failed: page %q (title: %q) is missing the slug field." .File.Path .Title -}}
     {{- end -}}

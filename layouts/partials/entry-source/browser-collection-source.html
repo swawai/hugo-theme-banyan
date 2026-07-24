@@ -1,11 +1,27 @@
 {{- $source := .source | default . | default dict -}}
 {{- $provider := trim (printf "%v" (index $source "provider" | default "")) " \r\n\t" -}}
 {{- $logicalPath := trim (printf "%v" (index $source "logical_path" | default "")) " \r\n\t" -}}
+{{- $sortVariant := trim (printf "%v" (index $source "sort_variant" | default "")) " \r\n\t" -}}
+{{- $defaultSort := trim (printf "%v" (index $source "default_sort" | default "")) " \r\n\t" -}}
+{{- $label := trim (printf "%v" (index $source "label" | default "")) " \r\n\t" -}}
+{{- $href := trim (printf "%v" (index $source "href" | default "")) " \r\n\t" -}}
 {{- $result := dict -}}
 {{- if ne $provider "" -}}
   {{- $result = merge $result (dict "provider" $provider) -}}
 {{- end -}}
 {{- if ne $logicalPath "" -}}
   {{- $result = merge $result (dict "logical_path" $logicalPath) -}}
+{{- end -}}
+{{- if ne $sortVariant "" -}}
+  {{- $result = merge $result (dict "sort_variant" $sortVariant) -}}
+{{- end -}}
+{{- if ne $defaultSort "" -}}
+  {{- $result = merge $result (dict "default_sort" $defaultSort) -}}
+{{- end -}}
+{{- if ne $label "" -}}
+  {{- $result = merge $result (dict "label" $label) -}}
+{{- end -}}
+{{- if ne $href "" -}}
+  {{- $result = merge $result (dict "href" $href) -}}
 {{- end -}}
 {{- return $result -}}

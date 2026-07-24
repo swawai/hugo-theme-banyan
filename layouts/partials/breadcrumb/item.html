@@ -7,6 +7,11 @@
 {{- $linkDataAttrs := .dataAttrs | default dict -}}
 {{- $itemCollectionHref := trim (printf "%v" (index $item "collection_href" | default "")) " " -}}
 {{- $itemCollectionSource := index $item "collection_source" | default dict -}}
+{{- if and (eq (len $itemCollectionSource) 0) $itemCollectionHref -}}
+  {{- with index ($ctx.Scratch.Get "entry_collection_sources_by_href" | default dict) $itemCollectionHref -}}
+    {{- $itemCollectionSource = . -}}
+  {{- end -}}
+{{- end -}}
 {{- $hasMenu := gt (len $itemMenu) 0 -}}
 {{- $showCaret := or $itemIsCurrent $hasMenu -}}
 {{- $linkText := index $item "text" -}}
@@ -42,6 +47,12 @@
       "linkSlot" "crumb"
     ) -}}
   {{- $panelParts := slice -}}
+  {{- if gt (len $itemCollectionSource) 0 -}}
+    {{- $panelParts = $panelParts | append (partial "collection/column-header.html" (dict
+      "ctx" $ctx
+      "source" $itemCollectionSource
+    )) -}}
+  {{- end -}}
   {{- range $menuItem := $itemMenu -}}
     {{- $menuItemIsCurrent := eq (index $menuItem "highlighted") true -}}
     {{- if and (not $hasHighlightedMenu) $hasCurrentMenu (eq (index $menuItem "current") true) -}}
@@ -50,20 +61,22 @@
     {{- if and (not $hasHighlightedMenu) (not $hasCurrentMenu) $hasSelectedMenu (eq (index $menuItem "selected") true) -}}
       {{- $menuItemIsCurrent = true -}}
     {{- end -}}
-    {{- $menuItemClass := "ui-dropdown-option breadcrumb-menu-option" -}}
-    {{- if $menuItemIsCurrent -}}{{- $menuItemClass = printf "%s is-current" $menuItemClass -}}{{- end -}}
     {{- $menuItemDataAttrs := dict -}}
     {{- with index $menuItem "kind" -}}
       {{- $menuItemKind := lower (trim (printf "%v" .) " ") -}}
       {{- if ne $menuItemKind "" -}}{{- $menuItemDataAttrs = merge $menuItemDataAttrs (dict "breadcrumb-kind" $menuItemKind) -}}{{- end -}}
     {{- end -}}
-    {{- $panelParts = $panelParts | append (partial "link.html" (dict
+    {{- $menuItemKind := lower (trim (printf "%v" (index $menuItem "kind" | default "")) " ") -}}
+    {{- $menuItemIcon := index $menuItem "icon" | default (cond (eq $menuItemKind "page") "file" "folder") -}}
+    {{- $panelParts = $panelParts | append (partial "grid-title-cell.html" (dict
           "ctx" $ctx
           "href" (index $menuItem "href")
           "text" (index $menuItem "text")
-          "class" $menuItemClass
+          "icon" $menuItemIcon
+          "linkClass" "ui-dropdown-option breadcrumb-menu-option"
           "title" (index $menuItem "title")
-          "dataAttrs" $menuItemDataAttrs
+          "linkDataAttrs" $menuItemDataAttrs
+          "isCurrent" $menuItemIsCurrent
           "ariaCurrent" (cond $menuItemIsCurrent "page" "")
           "linkSlot" "crumb"
         )) -}}
@@ -72,19 +85,21 @@
   {{- with $itemCollectionHref -}}
     {{- $menuDataAttrs = merge $menuDataAttrs (dict "breadcrumb-collection-href" .) -}}
   {{- end -}}
-  {{- if gt (len $itemCollectionSource) 0 -}}
-    {{- $menuDataAttrs = merge $menuDataAttrs (dict "breadcrumb-collection-source" ($itemCollectionSource | jsonify)) -}}
-  {{- end -}}
   {{- if eq (index $item "redundant_with_root_menu") true -}}
     {{- $menuDataAttrs = merge $menuDataAttrs (dict "breadcrumb-redundant-root" "true") -}}
   {{- end -}}
+  {{- $columnGridClass := "grid-list grid-list--single collection-list collection-list--column" -}}
+  {{- if gt (len $itemCollectionSource) 0 -}}
+    {{- $columnGridClass = printf "%s grid-list--headed" $columnGridClass -}}
+  {{- end -}}
+  {{- $panelHTML := printf "<span class=%q>%s</span>" $columnGridClass (delimit $panelParts "") -}}
   {{- partial "ui/dropdown.html" (dict
     "rootClass" (printf "%s breadcrumb-item-menu" $wrapperClass)
     "rootDataAttrs" $menuDataAttrs
     "triggerHTML" $triggerHTML
     "panelClass" "breadcrumb-menu-panel"
     "panelDataAttrs" (dict "breadcrumb-menu-panel" "true")
-    "panelHTML" (delimit $panelParts "")
+    "panelHTML" $panelHTML
   ) -}}
 {{- else -}}
   <span class="{{ $wrapperClass }}"{{ if eq (index $item "redundant_with_root_menu") true }} data-breadcrumb-redundant-root="true"{{ end }}>

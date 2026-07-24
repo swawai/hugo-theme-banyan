@@ -46,7 +46,7 @@ function buildPreviewLevelItems(source) {
 
             if (level.collectionItems && level.collectionSource) {
                 item.collection_source = level.collectionSource;
-                item.collection_href = item.href;
+                item.collection_href = level.collectionSource.href || item.href;
 
                 let selectedPathname = '';
                 try {
@@ -96,7 +96,7 @@ export function buildPreviewCurrentItem(source, currentText, currentTitle, curre
                     current: true,
                     menu,
                     collection_source: currentCollectionSource,
-                    collection_href: currentHref,
+                    collection_href: currentCollectionSource.href || currentHref,
                 };
             }
         }

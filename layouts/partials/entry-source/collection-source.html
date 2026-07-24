@@ -1,5 +1,7 @@
 {{- $provider := lower (trim (printf "%v" (.provider | default "")) " \r\n\t") -}}
 {{- $logicalPath := trim (printf "%v" (.logical_path | default "")) " \r\n\t" -}}
+{{- $label := trim (printf "%v" (.label | default "")) " \r\n\t" -}}
+{{- $href := trim (printf "%v" (.href | default "")) " \r\n\t" -}}
 {{- if and (ne $logicalPath "") (not (hasPrefix $logicalPath "/")) -}}
   {{- $logicalPath = printf "/%s" $logicalPath -}}
 {{- end -}}
@@ -27,6 +29,12 @@
 {{- end -}}
 {{- if ne $provider "" -}}
   {{- $result = merge $result (dict "provider" $provider) -}}
+{{- end -}}
+{{- if ne $label "" -}}
+  {{- $result = merge $result (dict "label" $label) -}}
+{{- end -}}
+{{- if ne $href "" -}}
+  {{- $result = merge $result (dict "href" $href) -}}
 {{- end -}}
 {{- if ne $sortVariant "" -}}
   {{- $result = merge $result (dict "sort_variant" $sortVariant "default_sort" $defaultSort) -}}
