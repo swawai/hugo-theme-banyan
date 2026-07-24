@@ -64,8 +64,6 @@ other = "更新於"
 other = "連結"
 [article_meta_dates]
 other = "時間"
-[article_meta_source]
-other = "原始檔"
 
 
 [no_trans_msg]

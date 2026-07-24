@@ -8,6 +8,11 @@ draft: true
 slug: "{{ .File.ContentBaseName }}"
 description: ""
 
+# 其他平台发布的文章链接；GitHub 源文件链接由主题自动生成。
+# published_links:
+# - label: 公众号
+#   url: https://example.com/article
+
 # 别名，用于向后兼容，例如更换 slug 时保留旧链接不会 404
 # aliases:
 # - /old-url-path/

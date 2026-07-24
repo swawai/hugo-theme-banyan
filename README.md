@@ -77,7 +77,7 @@ language home, `/about/`, and regular pages from the `d` content section.
 Utility pages, taxonomy indexes, and fragment content stay outside the curated
 index without requiring per-page output flags.
 
-Article meta exposes `Source` when the language's `/fragments/site-meta`
+Article meta exposes `GitHub` when the language's `/fragments/site-meta`
 defines `site_meta.content_source` and the current page has a Hugo source file.
 
 Source links use the configured branch instead of the build revision. This keeps
@@ -91,6 +91,23 @@ site_meta:
     branch: "main"
     content_root: "content"
 ```
+
+Copies published on platforms whose URLs cannot be derived are declared on the
+corresponding page. GitHub renders first, followed by these entries in front
+matter order:
+
+```yaml
+published_links:
+  - label: WeChat
+    url: https://example.com/wechat-article
+  - label: Xiaohongshu
+    url: https://example.com/xiaohongshu-note
+  - label: X
+    url: https://example.com/x-post
+```
+
+Each entry requires a label and an absolute `https://` URL. Translations own
+their lists independently because their platform publications may differ.
 
 ## Layout Slots
 

@@ -8,6 +8,11 @@ draft: true
 slug: "{{ .File.ContentBaseName }}"
 description: ""
 
+# Optional links to copies published on other platforms. GitHub is automatic.
+# published_links:
+# - label: WeChat
+#   url: https://example.com/article
+
 #intent:
 #- explore
 #tags: []

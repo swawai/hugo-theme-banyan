@@ -1,0 +1,50 @@
+{{- $ctx := .ctx | default . -}}
+{{- $links := slice -}}
+{{- $pageID := $ctx.RelPermalink -}}
+{{- with $ctx.File -}}{{- $pageID = .Path -}}{{- end -}}
+{{- with partial "content-source/page-url.html" $ctx -}}
+  {{- $links = $links | append (dict
+    "href" .
+    "text" "GitHub"
+    "target" "_blank"
+    "rel" "noopener noreferrer"
+  ) -}}
+{{- end -}}
+{{- $publishedLinks := $ctx.Params.published_links | default slice -}}
+{{- if not (reflect.IsSlice $publishedLinks) -}}
+  {{- errorf "Build failed: page %q must define published_links as a list." $pageID -}}
+{{- end -}}
+{{- range $index, $publishedLink := $publishedLinks -}}
+  {{- if not (reflect.IsMap $publishedLink) -}}
+    {{- errorf "Build failed: published_links[%d] on page %q must be a map/object." $index $pageID -}}
+  {{- end -}}
+  {{- $text := trim (printf "%v" (index $publishedLink "label" | default "")) " \r\n\t" -}}
+  {{- $href := trim (printf "%v" (index $publishedLink "url" | default "")) " \r\n\t" -}}
+  {{- if eq $text "" -}}
+    {{- errorf "Build failed: published_links[%d] on page %q requires label." $index $pageID -}}
+  {{- end -}}
+  {{- if not (hasPrefix $href "https://") -}}
+    {{- errorf "Build failed: published_links[%d] on page %q requires an absolute https:// URL." $index $pageID -}}
+  {{- end -}}
+  {{- $links = $links | append (dict
+    "href" $href
+    "text" $text
+    "target" "_blank"
+    "rel" "noopener noreferrer"
+  ) -}}
+{{- end -}}
+{{- if gt (len $links) 0 -}}
+<nav class="post-taxonomy post-taxonomy-resources" aria-label="{{ i18n "article_meta_resources" }}">
+  <span class="label">{{ i18n "article_meta_resources" }}</span>
+  {{- range $index, $link := $links -}}
+    {{- if gt $index 0 -}}<span class="sep" aria-hidden="true">·</span>{{- end -}}
+    {{- partial "link.html" (dict
+      "ctx" $ctx
+      "href" (index $link "href")
+      "text" (index $link "text")
+      "target" (index $link "target")
+      "rel" (index $link "rel")
+    ) -}}
+  {{- end -}}
+</nav>
+{{- end -}}
