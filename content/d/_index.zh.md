@@ -1,6 +1,6 @@
 ﻿---
-title: 信号
-linkTitle: 信号
+title: 文库
+linkTitle: 目录
 nav_primary: signals
 layout: "article-list"
 banyan_article_section_list: true

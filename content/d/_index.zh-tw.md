@@ -1,6 +1,6 @@
 ﻿---
-title: 信號
-linkTitle: 信號
+title: 文庫
+linkTitle: 目錄
 nav_primary: signals
 layout: "article-list"
 banyan_article_section_list: true

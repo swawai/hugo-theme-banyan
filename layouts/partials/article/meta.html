@@ -33,10 +33,14 @@
     <span class="label">{{ i18n "article_meta_directory" }}</span>
     {{- range $index, $item := $directoryItems -}}
       {{- if gt $index 0 -}}<span class="sep" aria-hidden="true">/</span>{{- end -}}
+      {{- $itemText := index $item "text" -}}
+      {{- if eq $index 0 -}}
+        {{- $itemText = index $item "title" | default $itemText -}}
+      {{- end -}}
       {{- partial "link.html" (dict
         "ctx" $ctx
         "href" (index $item "href")
-        "text" (index $item "text")
+        "text" $itemText
         "title" (index $item "title")
         "ariaCurrent" (cond (eq (index $item "current") true) "page" "")
         "linkSlot" "nav"

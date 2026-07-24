@@ -1,6 +1,6 @@
 ﻿---
-title: Signals
-linkTitle: Signals
+title: Library
+linkTitle: Directory
 nav_primary: signals
 layout: "article-list"
 banyan_article_section_list: true
