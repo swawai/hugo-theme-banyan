@@ -10,8 +10,8 @@ breadcrumb:
   menu_label: 切換根頁面
   menu_active_href_source: signals-family
   menu:
-    - page: /d
     - page: /all
+    - page: /d
   menu_sources:
     - source: taxonomy-roots
 ---
