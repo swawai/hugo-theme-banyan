@@ -29,6 +29,7 @@ const BREADCRUMB_TAGS_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_TAGS_PATH
     || '/zh/tags/tooling/devtools/';
 const BREADCRUMB_TAGS_COLLECTION_HREF = process.env.BANYAN_BROWSER_BREADCRUMB_TAGS_COLLECTION_HREF
     || '/zh/tags/tooling/';
+const RUNTIME_JSON_FETCH_PROBE_KEY = 'banyan:browser-regression:runtime-json-fetches';
 const BREADCRUMB_FIRST_FRAME_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_FIRST_FRAME_PATH
     || '/p/loop-engineering-digital-life-origin/';
 const BREADCRUMB_FIRST_FRAME_FROM = process.env.BANYAN_BROWSER_BREADCRUMB_FIRST_FRAME_FROM
@@ -342,6 +343,76 @@ async function waitForVersionDropdownText(page, text) {
         const panel = document.querySelector('[data-site-version-menu].is-open [data-nav-utility-panel]');
         return Boolean(panel?.textContent?.includes(expected));
     }, text);
+}
+
+async function readLanguageMenuState(page) {
+    return page.evaluate(() => {
+        const root = document.querySelector('[data-nav-utility-kind="language"]');
+        const trigger = root?.querySelector('[data-nav-utility-trigger]');
+        const panel = root?.querySelector('[data-nav-utility-panel]');
+        const options = root
+            ? Array.from(root.querySelectorAll('[data-nav-utility-option]'))
+            : [];
+
+        return {
+            initialized: root?.dataset.navPrimaryInit === 'true',
+            disabled: trigger instanceof HTMLButtonElement ? trigger.disabled : null,
+            languageSuggestionMessage: root?.dataset.languageSuggestionMessage || '',
+            noTranslationMessage: root?.dataset.noTranslationMessage || '',
+            open: root?.classList.contains('is-open') || false,
+            panelHidden: panel instanceof HTMLElement ? panel.hidden : null,
+            options: options.map((option) => ({
+                current: option.getAttribute('aria-current') || '',
+                hasTranslation: option.dataset.hasTrans !== 'false',
+                href: option instanceof HTMLAnchorElement ? option.getAttribute('href') || '' : '',
+                tagName: option.tagName,
+                text: option.textContent?.trim() || '',
+                value: option.dataset.value || ''
+            }))
+        };
+    });
+}
+
+async function installRuntimeJsonFetchProbe(page) {
+    await page.addInitScript((storageKey) => {
+        const readRecordedFetches = () => {
+            try {
+                const value = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
+                return Array.isArray(value) ? value : [];
+            } catch (error) {
+                return [];
+            }
+        };
+        const nativeFetch = window.fetch;
+        window.__banyanRuntimeJsonFetches = readRecordedFetches();
+        window.fetch = function instrumentedFetch(input, init) {
+            try {
+                const rawUrl = typeof input === 'string'
+                    ? input
+                    : input instanceof URL
+                        ? input.href
+                        : input?.url || '';
+                const url = new URL(rawUrl, window.location.href);
+                if (url.pathname.startsWith('/runtime/') && url.pathname.endsWith('.json')) {
+                    window.__banyanRuntimeJsonFetches.push(url.pathname);
+                    sessionStorage.setItem(storageKey, JSON.stringify(window.__banyanRuntimeJsonFetches));
+                }
+            } catch (error) { }
+
+            return nativeFetch.call(this, input, init);
+        };
+    }, RUNTIME_JSON_FETCH_PROBE_KEY);
+}
+
+async function readRuntimeJsonFetchProbe(page) {
+    return page.evaluate(() => [...(window.__banyanRuntimeJsonFetches || [])]);
+}
+
+async function resetRuntimeJsonFetchProbe(page) {
+    await page.evaluate((storageKey) => {
+        window.__banyanRuntimeJsonFetches = [];
+        sessionStorage.setItem(storageKey, '[]');
+    }, RUNTIME_JSON_FETCH_PROBE_KEY);
 }
 
 async function settleDesignAuditPage(page) {
@@ -1841,6 +1912,148 @@ export const scenarios = [
         }
     },
     {
+        id: 'language-menu-runtime-independent',
+        kind: 'single',
+        title: 'Language Menu Without Runtime JSON',
+        dialogPolicy: 'accept',
+        viewport: { width: 1440, height: 960 },
+        async run({ page, baseUrl, dialogs }) {
+            await installRuntimeJsonFetchProbe(page);
+
+            const blockedRuntimeRequests = [];
+            await page.route('**/runtime/*.json', async (route) => {
+                blockedRuntimeRequests.push(new URL(route.request().url()).pathname);
+                await route.abort('failed');
+            });
+
+            await gotoAndWait(page, `${baseUrl}/`);
+            await page.waitForSelector('[data-nav-utility-kind="language"][data-nav-primary-init="true"]');
+
+            const initialState = await readLanguageMenuState(page);
+            if (blockedRuntimeRequests.length === 0) {
+                fail('Language runtime-independence scenario did not block any runtime JSON request.');
+            }
+            const initialRuntimeFetches = await readRuntimeJsonFetchProbe(page);
+            if (initialRuntimeFetches.length !== 0) {
+                fail('Language navigation eagerly fetched runtime JSON during initialization.', {
+                    initialRuntimeFetches
+                });
+            }
+            if (
+                initialState.disabled !== false
+                || initialState.options.length === 0
+                || initialState.options.some((option) => option.tagName !== 'A' || !option.href || !option.value)
+            ) {
+                fail('Language menu was not usable from its server-rendered links while runtime JSON was unavailable.', {
+                    blockedRuntimeRequests,
+                    initialState
+                });
+            }
+
+            await page.locator('[data-nav-utility-kind="language"] [data-nav-utility-trigger]').click();
+            await page.waitForSelector(
+                '[data-nav-utility-kind="language"].is-open [data-nav-utility-panel]:not([hidden])'
+            );
+
+            const openState = await readLanguageMenuState(page);
+            if (!openState.open || openState.panelHidden !== false) {
+                fail('Language menu did not open while runtime JSON was unavailable.', {
+                    blockedRuntimeRequests,
+                    initialState,
+                    openState
+                });
+            }
+
+            const targetOption = openState.options.find((option) => option.value === 'zh');
+            if (!targetOption?.href) {
+                fail('Language runtime-independence scenario could not find the expected Chinese link.', {
+                    openState
+                });
+            }
+
+            await page.locator(
+                '[data-nav-utility-kind="language"] [data-nav-utility-option][data-value="zh"]'
+            ).click();
+            await page.waitForURL((url) => url.pathname === new URL(targetOption.href, baseUrl).pathname);
+
+            const switchedState = await readLanguageMenuState(page);
+            if (
+                !switchedState.options.some(
+                    (option) => option.value === 'zh' && option.current === 'page'
+                )
+            ) {
+                fail('Language menu did not navigate to and mark the selected language.', {
+                    switchedState,
+                    targetOption
+                });
+            }
+
+            const switchedRuntimeFetches = await readRuntimeJsonFetchProbe(page);
+            if (switchedRuntimeFetches.length !== 0) {
+                fail('Direct language navigation fetched runtime JSON.', {
+                    switchedRuntimeFetches
+                });
+            }
+
+            await resetRuntimeJsonFetchProbe(page);
+            await gotoAndWait(page, `${baseUrl}/prefetchdebug/`);
+            await page.waitForSelector('[data-nav-utility-kind="language"][data-nav-primary-init="true"]');
+
+            const missingTranslationState = await readLanguageMenuState(page);
+            const missingTarget = missingTranslationState.options.find((option) => option.value === 'zh');
+            const missingPageRuntimeFetches = await readRuntimeJsonFetchProbe(page);
+            if (
+                !missingTranslationState.noTranslationMessage
+                || !missingTranslationState.languageSuggestionMessage
+                || !missingTarget?.href
+                || missingTarget.hasTranslation
+                || missingPageRuntimeFetches.length !== 0
+            ) {
+                fail('Missing-translation page did not expose its complete static language contract.', {
+                    missingTarget,
+                    missingTranslationState,
+                    missingPageRuntimeFetches
+                });
+            }
+
+            await resetRuntimeJsonFetchProbe(page);
+            const dialogCountBeforeMissingSelection = dialogs.length;
+            await page.locator('[data-nav-utility-kind="language"] [data-nav-utility-trigger]').click();
+            await page.locator(
+                '[data-nav-utility-kind="language"] [data-nav-utility-option][data-value="zh"]'
+            ).click();
+            await page.waitForURL((url) => url.pathname === new URL(missingTarget.href, baseUrl).pathname);
+
+            const missingRuntimeFetches = await readRuntimeJsonFetchProbe(page);
+            const missingDialogs = dialogs.slice(dialogCountBeforeMissingSelection);
+            const acceptedPrompt = missingDialogs[0]?.message || '';
+            if (
+                missingDialogs.length !== 1
+                || !acceptedPrompt.includes(missingTarget.text)
+                || missingRuntimeFetches.length !== 0
+            ) {
+                fail('Missing-translation navigation depended on runtime JSON or lost its localized prompt.', {
+                    acceptedPrompt,
+                    missingDialogs,
+                    missingRuntimeFetches,
+                    missingTarget
+                });
+            }
+
+            return {
+                blockedRuntimeRequests: [...new Set(blockedRuntimeRequests)],
+                initialState,
+                initialRuntimeFetches,
+                missingDialogs,
+                missingTranslationState,
+                missingRuntimeFetches,
+                openState,
+                switchedRuntimeFetches,
+                switchedState
+            };
+        }
+    },
+    {
         id: 'sw-home-register',
         kind: 'single',
         title: 'SW Register Smoke (Home)',
@@ -1860,6 +2073,63 @@ export const scenarios = [
                 fail('Home page did not get an active service worker registration.', state);
             }
             return state;
+        }
+    },
+    {
+        id: 'sw-update-language-menu-static',
+        kind: 'upgrade',
+        title: 'SW Upgrade Static Language Menu',
+        viewport: { width: 1440, height: 960 },
+        async run({ page, baseUrl, server, upgradePair }) {
+            ensureTwoBuilds(upgradePair);
+            server.setRoot(upgradePair.fromDir);
+            await gotoAndWait(page, `${baseUrl}/`);
+            await waitForServiceWorkerActive(page);
+
+            const beforeUpdate = await readLanguageMenuState(page);
+            if (
+                beforeUpdate.disabled !== false
+                || beforeUpdate.options.length === 0
+                || beforeUpdate.options.some((option) => option.tagName !== 'A' || !option.href)
+            ) {
+                fail('Pre-upgrade page did not expose a usable server-rendered language menu.', {
+                    beforeUpdate
+                });
+            }
+
+            server.setRoot(upgradePair.toDir);
+            await forceServiceWorkerUpdate(page);
+            await waitForUpdateReady(page);
+
+            const afterUpdateReady = await readLanguageMenuState(page);
+            if (
+                afterUpdateReady.disabled !== false
+                || afterUpdateReady.options.length !== beforeUpdate.options.length
+            ) {
+                fail('Language menu stopped being usable while a new service worker waited for activation.', {
+                    afterUpdateReady,
+                    beforeUpdate
+                });
+            }
+
+            await page.locator('[data-nav-utility-kind="language"] [data-nav-utility-trigger]').click();
+            await page.waitForSelector(
+                '[data-nav-utility-kind="language"].is-open [data-nav-utility-panel]:not([hidden])'
+            );
+            const openState = await readLanguageMenuState(page);
+            if (!openState.open || openState.panelHidden !== false) {
+                fail('Language menu did not open while a new service worker waited for activation.', {
+                    afterUpdateReady,
+                    beforeUpdate,
+                    openState
+                });
+            }
+
+            return {
+                afterUpdateReady,
+                beforeUpdate,
+                openState
+            };
         }
     },
     {

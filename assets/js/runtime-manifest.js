@@ -40,10 +40,6 @@ export function getRuntimeManifest() {
     ));
 }
 
-export function getRuntimeLangListUrl(manifest) {
-    return typeof manifest?.langList === 'string' && manifest.langList ? manifest.langList : '';
-}
-
 export function getRuntimeI18nUrl(manifest, lang) {
     const normalized = typeof lang === 'string' ? lang.toLowerCase() : '';
     const i18nMap = manifest && typeof manifest.i18n === 'object' ? manifest.i18n : null;

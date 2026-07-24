@@ -1,5 +1,4 @@
-import { fetchRuntimeJson, getRuntimeI18nUrl, getRuntimeLangListUrl, getRuntimeManifest } from '../../runtime-manifest.js';
-import { bindMenuOption, markCurrentOption, replaceMenuOptions } from './menu-runtime.js';
+import { bindMenuOption, getMenuOptions, markCurrentOption } from './menu-runtime.js';
 import {
     LANG_SUGGEST_HANDLED_KEY,
     PREFERRED_LANG_KEY,
@@ -12,23 +11,6 @@ function normalizeLang(code) {
     code = (code || '').toLowerCase();
     if (code === 'zh-hk' || code === 'zh-mo') return 'zh-tw';
     return code;
-}
-
-function normalizePath(path) {
-    if (!path) return '/';
-    return path.startsWith('/') ? path : `/${path}`;
-}
-
-function normalizeHomeUrl(url, code) {
-    let home = url || `/${code}/`;
-    try {
-        home = new URL(home, window.location.origin).pathname || '/';
-    } catch (e) {
-        home = normalizePath(home);
-    }
-    home = normalizePath(home);
-    if (home !== '/' && !home.endsWith('/')) home += '/';
-    return home;
 }
 
 function detectBrowserLang(supportedLangs) {
@@ -54,7 +36,11 @@ function formatMessage(template, replacements) {
         .replace(/\{(\w+)\}/g, (match, key) => (key in replacements ? replacements[key] : match));
 }
 
-export async function initLanguageMenu(langMenu) {
+function normalizeMessage(template, fallback) {
+    return (template || fallback).replace(/\\n/g, '\n');
+}
+
+export function initLanguageMenu(langMenu) {
     if (!(langMenu instanceof Element) || langMenu.dataset.navPrimaryInit === 'true') {
         return;
     }
@@ -62,98 +48,38 @@ export async function initLanguageMenu(langMenu) {
     langMenu.dataset.navPrimaryInit = 'true';
 
     const curLang = (langMenu.dataset.curLang || document.documentElement.lang || '').toLowerCase();
-    const transLangs = (langMenu.dataset.transLangs || '')
-        .split(',')
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean);
-    const i18nCache = {};
-
-    async function getI18nMessages(lang) {
-        if (!i18nCache[lang]) {
-            try {
-                const manifest = await getRuntimeManifest();
-                const url = getRuntimeI18nUrl(manifest, lang);
-                if (!url) {
-                    i18nCache[lang] = {};
-                    return i18nCache[lang];
-                }
-                const data = await fetchRuntimeJson(url);
-                i18nCache[lang] = data && typeof data === 'object' && !Array.isArray(data) ? data : {};
-            } catch (e) { }
-        }
-        return i18nCache[lang] || {};
-    }
-
-    async function getI18nMessage(lang, key, fallback) {
-        const messages = await getI18nMessages(lang);
-        return messages[key] || fallback;
-    }
-
-    const manifest = await getRuntimeManifest();
-    const langListUrl = getRuntimeLangListUrl(manifest);
-    if (!langListUrl) return;
-
-    const listData = await fetchRuntimeJson(langListUrl);
-    const list = Array.isArray(listData) ? listData : [];
-    if (!Array.isArray(list) || !list.length) return;
-
+    const noTranslationMessage = normalizeMessage(
+        langMenu.dataset.noTranslationMessage,
+        'This page is not available in [{lang}].\nRedirect to the homepage?'
+    );
+    const languageSuggestionMessage = normalizeMessage(
+        langMenu.dataset.languageSuggestionMessage,
+        'We recommend the [{target}] version of this page.\nContinue?'
+    );
     const supportedLangs = [];
-    const langHomes = {};
     const langNames = {};
-    const optionDefs = [];
-    list.forEach((item) => {
-        const code = (item.code || '').toLowerCase();
-        const name = item.name || code;
-        if (!code) return;
-        const homeUrl = normalizeHomeUrl(item.url, code);
+    const langOptions = {};
+
+    getMenuOptions(langMenu).forEach((option) => {
+        const code = (option.dataset.value || '').toLowerCase();
+        if (!code || !(option instanceof HTMLAnchorElement) || !option.href) return;
         supportedLangs.push(code);
-        langHomes[code] = homeUrl;
-        langNames[code] = name;
-        optionDefs.push({
-            value: code,
-            label: name,
-            hasTrans: transLangs.includes(code)
-        });
+        langNames[code] = option.textContent?.trim() || code;
+        langOptions[code] = option;
     });
 
-    if (!optionDefs.length) return;
+    if (!supportedLangs.length) return;
 
-    const defaultLang = supportedLangs.find((code) => langHomes[code] === '/') || supportedLangs[0] || 'en';
-    const getHomeUrl = (lang) => langHomes[lang] || (lang === defaultLang ? '/' : `/${lang}/`);
-    const toRelativePath = (pathname) => {
-        const path = normalizePath(pathname);
-        const currentHome = getHomeUrl(curLang);
-        if (currentHome !== '/') {
-            const currentRoot = currentHome.slice(0, -1);
-            if (path === currentRoot || path === currentHome) return '/';
-            if (path.startsWith(currentHome)) {
-                const rest = path.slice(currentHome.length);
-                return rest ? `/${rest}` : '/';
-            }
-        }
-        return path;
-    };
-    const buildTargetUrl = (lang, relativePath) => {
-        const home = getHomeUrl(lang);
-        if (!relativePath || relativePath === '/') return home;
-        const rest = relativePath.replace(/^\/+/, '');
-        return home === '/' ? `/${rest}` : `${home}${rest}`;
-    };
-
-    async function suggestBrowserLanguage() {
+    function suggestBrowserLanguage() {
         if (readStorage(PREFERRED_LANG_KEY) || readStorage(LANG_SUGGEST_HANDLED_KEY)) return;
 
         const targetLang = detectBrowserLang(supportedLangs);
         if (!targetLang || targetLang === curLang) return;
-        if (!transLangs.includes(targetLang)) return;
+        const targetOption = langOptions[targetLang];
+        if (!targetOption || targetOption.dataset.hasTrans === 'false') return;
 
         const targetName = langNames[targetLang] || targetLang;
-        const template = await getI18nMessage(
-            targetLang,
-            'lang_suggest_msg',
-            'We recommend the [{target}] version of this page.\nContinue?'
-        );
-        const message = formatMessage(template, {
+        const message = formatMessage(languageSuggestionMessage, {
             target: targetName
         });
 
@@ -163,27 +89,25 @@ export async function initLanguageMenu(langMenu) {
             if (!shouldSwitch) return;
 
             writeStorage(PREFERRED_LANG_KEY, targetLang);
-            const curUrl = new URL(window.location.href);
-            const relativePath = toRelativePath(curUrl.pathname);
-            curUrl.pathname = buildTargetUrl(targetLang, relativePath);
-            window.location.href = curUrl.href;
+            window.location.href = targetOption.href;
         }, 800);
     }
 
-    replaceMenuOptions(langMenu, optionDefs, async (targetLang, option) => {
+    getMenuOptions(langMenu).forEach((option) => bindMenuOption(option, (targetLang) => {
         try {
             targetLang = (targetLang || '').toLowerCase();
             if (!targetLang) return true;
 
             const hasTrans = option.dataset.hasTrans !== 'false';
-            const targetHome = getHomeUrl(targetLang);
+            const targetUrl = option instanceof HTMLAnchorElement && option.href
+                ? option.href
+                : langOptions[targetLang]?.href;
+            if (!targetUrl) return true;
+
             if (!hasTrans) {
-                const tpl = await getI18nMessage(
-                    targetLang,
-                    'no_trans_msg',
-                    'This page is not available in [{lang}].\nRedirect to the homepage?'
-                );
-                const msg = formatMessage(tpl, { lang: option.textContent?.trim() || targetLang });
+                const msg = formatMessage(noTranslationMessage, {
+                    lang: option.textContent?.trim() || targetLang
+                });
                 if (!window.confirm(msg)) {
                     markCurrentOption(langMenu, curLang);
                     return true;
@@ -193,7 +117,7 @@ export async function initLanguageMenu(langMenu) {
                 if (supportedLangs.includes(code)) {
                     writeStorage(PREFERRED_LANG_KEY, code);
                 }
-                window.location.href = targetHome;
+                window.location.href = targetUrl;
                 return true;
             }
 
@@ -202,18 +126,15 @@ export async function initLanguageMenu(langMenu) {
                 writeStorage(PREFERRED_LANG_KEY, code);
             }
 
-            const curUrl = new URL(window.location.href);
-            const relativePath = toRelativePath(curUrl.pathname);
-            curUrl.pathname = buildTargetUrl(targetLang, relativePath);
-            window.location.href = curUrl.href;
+            window.location.href = targetUrl;
             return true;
         } catch (e) {
-            const fallback = targetLang || curLang || 'en';
-            window.location.href = normalizeHomeUrl(langHomes[fallback], fallback);
+            const fallbackOption = langOptions[targetLang] || langOptions[curLang];
+            if (fallbackOption?.href) window.location.href = fallbackOption.href;
             return true;
         }
-    });
+    }));
 
     markCurrentOption(langMenu, curLang);
-    void suggestBrowserLanguage();
+    suggestBrowserLanguage();
 }

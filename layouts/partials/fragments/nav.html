@@ -212,24 +212,44 @@
 
     {{ if $showLanguage }}
     {{ $cur := $ctx.Language.Lang }}
-    {{ $transLangs := slice $cur }}
-    {{ range $ctx.AllTranslations }}{{ $transLangs = $transLangs | append .Language.Lang }}{{ end }}
-    {{ $transLangs = $transLangs | uniq }}
+    {{ $translationHrefs := dict $cur $ctx.RelPermalink }}
+    {{ range $translation := $ctx.AllTranslations }}
+        {{ $translationHrefs = merge $translationHrefs (dict $translation.Language.Lang $translation.RelPermalink) }}
+    {{ end }}
     {{ $labelLanguageEsc := $labelLanguage | htmlEscape }}
     {{ $languageTriggerHTML := printf "<button type=\"button\" class=\"ui-dropdown-trigger site-nav-utility-trigger\" aria-label=\"%s\" aria-haspopup=\"true\" aria-expanded=\"false\" data-ui-dropdown-trigger=\"true\" data-nav-utility-trigger=\"true\"><span class=\"sr-only\">%s</span>%s<span class=\"ui-dropdown-caret site-nav-utility-caret\" aria-hidden=\"true\">▾</span></button>" $labelLanguageEsc $labelLanguageEsc (partial "icon" (dict "name" "language")) }}
+    {{ $languageOptionParts := slice }}
+    {{ $hasMissingTranslation := false }}
+    {{ range $languageSite := sort $ctx.Sites "Language.Weight" }}
+        {{ $code := $languageSite.Language.Lang }}
+        {{ $name := $languageSite.Language.LanguageName | default $code }}
+        {{ $hasTranslation := isset $translationHrefs $code }}
+        {{ if not $hasTranslation }}{{ $hasMissingTranslation = true }}{{ end }}
+        {{ $href := $languageSite.Home.RelPermalink }}
+        {{ if $hasTranslation }}{{ $href = index $translationHrefs $code }}{{ end }}
+        {{ $isCurrent := eq $code $cur }}
+        {{ $optionClass := cond $isCurrent "ui-dropdown-option site-nav-utility-option is-current" "ui-dropdown-option site-nav-utility-option" }}
+        {{ $currentAttr := cond $isCurrent " aria-current=\"page\"" "" }}
+        {{ $missingAttr := cond $hasTranslation "" " data-has-trans=\"false\"" }}
+        {{ $languageOptionParts = $languageOptionParts | append (printf "<a class=\"%s\" href=\"%s\" data-nav-utility-option=\"true\" data-value=\"%s\"%s%s>%s</a>" $optionClass ($href | htmlEscape) ($code | htmlEscape) $currentAttr $missingAttr ($name | htmlEscape)) }}
+    {{ end }}
+    {{ $languageRootDataAttrs := dict
+        "nav-utility-menu" "true"
+        "nav-utility-kind" "language"
+        "nav-utility-label" $labelLanguage
+        "cur-lang" $cur
+        "language-suggestion-message" ((i18n "lang_suggest_msg" | default "We recommend the [{target}] version of this page.\nContinue?") | htmlEscape)
+    }}
+    {{ if $hasMissingTranslation }}
+        {{ $languageRootDataAttrs = merge $languageRootDataAttrs (dict "no-translation-message" ((i18n "no_trans_msg" | default "This page is not available in [{lang}].\nRedirect to the homepage?") | htmlEscape)) }}
+    {{ end }}
     {{ partial "ui/dropdown.html" (dict
         "rootClass" "site-nav-utility-menu"
-        "rootDataAttrs" (dict
-            "nav-utility-menu" "true"
-            "nav-utility-kind" "language"
-            "nav-utility-label" $labelLanguage
-            "cur-lang" $cur
-            "trans-langs" (delimit $transLangs ",")
-        )
+        "rootDataAttrs" $languageRootDataAttrs
         "triggerHTML" $languageTriggerHTML
         "panelClass" "site-nav-utility-panel"
         "panelDataAttrs" (dict "nav-utility-panel" "true")
-        "panelHTML" ""
+        "panelHTML" (delimit $languageOptionParts "")
     ) }}
     {{ end }}
 

@@ -56,7 +56,14 @@ export function markCurrentOption(menuRoot, selectedValue = '') {
     getMenuOptions(menuRoot).forEach((option) => {
         const isCurrent = option.dataset.value === selectedValue;
         option.classList.toggle('is-current', isCurrent);
-        option.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
+        if (option instanceof HTMLAnchorElement) {
+            option.removeAttribute('aria-pressed');
+            if (isCurrent) option.setAttribute('aria-current', 'page');
+            else option.removeAttribute('aria-current');
+        } else {
+            option.setAttribute('aria-pressed', isCurrent ? 'true' : 'false');
+            option.removeAttribute('aria-current');
+        }
         if (isCurrent) {
             selectedLabel = option.textContent?.trim() || '';
         }
@@ -66,14 +73,26 @@ export function markCurrentOption(menuRoot, selectedValue = '') {
 }
 
 export function bindMenuOption(option, onSelect) {
-    if (!(option instanceof HTMLButtonElement) || option.dataset.navUtilityBound === 'true') {
+    if (
+        (!(option instanceof HTMLButtonElement) && !(option instanceof HTMLAnchorElement))
+        || option.dataset.navUtilityBound === 'true'
+    ) {
         return;
     }
 
     option.dataset.navUtilityBound = 'true';
-    option.addEventListener('click', async () => {
-        if (option.disabled) {
+    option.addEventListener('click', async (event) => {
+        if (option instanceof HTMLButtonElement && option.disabled) {
             return;
+        }
+        if (
+            option instanceof HTMLAnchorElement
+            && (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+        ) {
+            return;
+        }
+        if (option instanceof HTMLAnchorElement) {
+            event.preventDefault();
         }
 
         const menuRoot = getMenuRoot(option);
@@ -83,31 +102,6 @@ export function bindMenuOption(option, onSelect) {
             dropdown?.close({ restoreFocus: true });
         }
     });
-}
-
-export function replaceMenuOptions(menuRoot, optionDefs, onSelect) {
-    const panel = getMenuPanel(menuRoot);
-    if (!(panel instanceof Element)) {
-        return;
-    }
-
-    panel.replaceChildren();
-    optionDefs.forEach((definition) => {
-        const option = document.createElement('button');
-        option.type = 'button';
-        option.className = 'ui-dropdown-option site-nav-utility-option';
-        option.dataset.navUtilityOption = 'true';
-        option.dataset.value = definition.value;
-        option.textContent = definition.label;
-        option.disabled = definition.disabled === true;
-        if (definition.hasTrans === false) {
-            option.dataset.hasTrans = 'false';
-        }
-        bindMenuOption(option, onSelect);
-        panel.appendChild(option);
-    });
-
-    setMenuDisabled(menuRoot, panel.childElementCount === 0);
 }
 
 function closeOpenMenu({ restoreFocus = false } = {}) {

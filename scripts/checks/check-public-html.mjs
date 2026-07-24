@@ -618,6 +618,9 @@ async function inspectBuildVersionContract(rootDir, rows) {
             if (!buildVersion) {
                 issues.push('runtime asset manifest is missing buildVersion.');
             }
+            if (Object.prototype.hasOwnProperty.call(manifest, 'langList')) {
+                issues.push('runtime asset manifest must not expose langList; language navigation is rendered into HTML.');
+            }
         } catch (error) {
             issues.push(`Unable to parse runtime asset manifest: ${error instanceof Error ? error.message : String(error)}`);
         }

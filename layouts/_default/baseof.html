@@ -174,13 +174,10 @@
         {{- $i18nResource := resources.FromString (printf "runtime/i18n.%s.json" $langCode) $i18nBody | fingerprint -}}
         {{- $runtimeI18n = merge $runtimeI18n (dict $langCode $i18nResource.RelPermalink) -}}
     {{- end -}}
-    {{- $langListBody := partial "runtime/lang-list-body.json" . -}}
-    {{- $langListResource := resources.FromString "runtime/lang-list.json" $langListBody | fingerprint -}}
     {{- $assetManifestBody := dict
         "buildTime" $buildTimeDisplay
         "buildTimeISO" $buildTimeISO
         "buildVersion" $buildVersion
-        "langList" $langListResource.RelPermalink
         "i18n" $runtimeI18n
         "i18nFallbacks" $runtimeI18nFallbacks
       | jsonify -}}
