@@ -25,7 +25,10 @@ const BREADCRUMB_FIRST_FRAME_VIEWPORT = { width: 1280, height: 960 };
 const EXPECTED_HOME_TITLE = process.env.BANYAN_BROWSER_HOME_TITLE || '';
 const ARTICLE_PAGE_PATH = process.env.BANYAN_BROWSER_ARTICLE_PATH || '/about/';
 const BREADCRUMB_PRODUCTS_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_PRODUCTS_PATH || '/intent/explore/';
-const BREADCRUMB_TAGS_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_TAGS_PATH || '/intent/explore/';
+const BREADCRUMB_TAGS_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_TAGS_PATH
+    || '/zh/tags/tooling/devtools/';
+const BREADCRUMB_TAGS_COLLECTION_HREF = process.env.BANYAN_BROWSER_BREADCRUMB_TAGS_COLLECTION_HREF
+    || '/zh/tags/tooling/';
 const BREADCRUMB_FIRST_FRAME_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_FIRST_FRAME_PATH
     || '/p/loop-engineering-digital-life-origin/';
 const BREADCRUMB_FIRST_FRAME_FROM = process.env.BANYAN_BROWSER_BREADCRUMB_FIRST_FRAME_FROM
@@ -34,6 +37,37 @@ const BREADCRUMB_WIDE_CANVAS_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_WIDE_C
     || '/zh/p/wsl-guide/';
 const BREADCRUMB_WIDE_CANVAS_FROM = process.env.BANYAN_BROWSER_BREADCRUMB_WIDE_CANVAS_FROM
     || '/tags/tooling/devtools/windows/wsl';
+
+function recordFirstBreadcrumbMenuOrderScript(targetCollectionHref) {
+    window.__banyanFirstBreadcrumbMenuOrder = null;
+
+    const readOrder = () => {
+        const targetPath = new URL(targetCollectionHref, window.location.origin).pathname;
+        const target = Array.from(document.querySelectorAll(
+            '.slot-row-breadcrumb [data-breadcrumb-collection-href]'
+        )).find((wrapper) => (
+            new URL(wrapper.dataset.breadcrumbCollectionHref, window.location.origin).pathname
+                === targetPath
+        ));
+
+        return target instanceof HTMLElement
+            ? Array.from(target.querySelectorAll('a.breadcrumb-menu-option'))
+                .map((option) => (option.textContent || '').trim())
+                .filter(Boolean)
+            : [];
+    };
+
+    window.__banyanReadBreadcrumbMenuOrder = readOrder;
+    const observer = new MutationObserver(() => {
+        const order = readOrder();
+        if (window.__banyanFirstBreadcrumbMenuOrder === null && order.length > 0) {
+            window.__banyanFirstBreadcrumbMenuOrder = order;
+            observer.disconnect();
+        }
+    });
+    observer.observe(document, { childList: true, subtree: true });
+}
+
 const GRID_LIST_COLUMN_CASES = [
     { id: 'section-wide', path: '/zh/d/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
     { id: 'all-wide', path: '/zh/all/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
@@ -800,9 +834,34 @@ export const scenarios = [
         title: 'Breadcrumb Wide Stability (Tags)',
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
+            await page.addInitScript(
+                recordFirstBreadcrumbMenuOrderScript,
+                BREADCRUMB_TAGS_COLLECTION_HREF
+            );
+
             await gotoAndWait(page, `${baseUrl}${BREADCRUMB_TAGS_PATH}`);
             await page.waitForSelector('.slot-row-breadcrumb');
             await waitForBreadcrumbSettled(page);
+            const menuOrders = await page.evaluate(() => ({
+                firstOrder: window.__banyanFirstBreadcrumbMenuOrder,
+                finalOrder: window.__banyanReadBreadcrumbMenuOrder?.() || []
+            }));
+            if (!Array.isArray(menuOrders.firstOrder)
+                || menuOrders.firstOrder.length === 0
+                || menuOrders.finalOrder.length === 0) {
+                fail('Tags breadcrumb scenario did not capture both menu orders.', {
+                    path: BREADCRUMB_TAGS_PATH,
+                    targetCollectionHref: BREADCRUMB_TAGS_COLLECTION_HREF,
+                    ...menuOrders
+                });
+            }
+            if (JSON.stringify(menuOrders.firstOrder) !== JSON.stringify(menuOrders.finalOrder)) {
+                fail('Tags breadcrumb menu reordered after the client runtime settled.', {
+                    path: BREADCRUMB_TAGS_PATH,
+                    targetCollectionHref: BREADCRUMB_TAGS_COLLECTION_HREF,
+                    ...menuOrders
+                });
+            }
             const mainX1 = await getMainInlineStart(page);
             await page.waitForTimeout(800);
             const mainX2 = await getMainInlineStart(page);
@@ -814,7 +873,7 @@ export const scenarios = [
             if (cls > 0.1) {
                 fail('Tags-based breadcrumb path caused excessive layout shift.', { cls });
             }
-            return { cls, mainX1, mainX2, delta };
+            return { cls, mainX1, mainX2, delta, menuOrders };
         }
     },
     {

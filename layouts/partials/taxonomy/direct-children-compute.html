@@ -7,4 +7,16 @@
 {{- else -}}
   {{- $result = partial "taxonomy/items-flat.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) -}}
 {{- end -}}
-{{- return $result -}}
+
+{{- /* Keep the server-side default projection aligned with tree/date-desc:
+      pages before categories, newest first inside each group.
+      Lists, breadcrumb menus, and fragment payloads all consume this model. */ -}}
+{{- $ordered := slice -}}
+{{- range sort (where $result "kind" "==" "page") "latestKey" "desc" -}}
+  {{- $ordered = $ordered | append . -}}
+{{- end -}}
+{{- range sort (where $result "kind" "==" "cat") "latestKey" "desc" -}}
+  {{- $ordered = $ordered | append . -}}
+{{- end -}}
+
+{{- return $ordered -}}

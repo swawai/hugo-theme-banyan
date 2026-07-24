@@ -2,18 +2,10 @@
 {{ $items := .items }}
 {{ $spec := .spec | default dict }}
 {{ $ownerLogicalPath := partial "taxonomy/logical-path.html" (dict "ctx" $ctx "spec" $spec) }}
-{{ $sortField := "latestKey" }}
-{{ $sortOrder := "desc" }}
 {{ $entryLineageParam := partialCached "navigation-state-param-name.html" (dict "semantic" "entry_lineage") "navigation-state-param:entry_lineage" }}
 
-{{ $cats := sort (where $items "kind" "==" "cat") $sortField $sortOrder }}
-{{ $pages := sort (where $items "kind" "==" "page") $sortField $sortOrder }}
-{{ $ordered := slice }}
-{{ range $pages }}{{ $ordered = $ordered | append . }}{{ end }}
-{{ range $cats }}{{ $ordered = $ordered | append . }}{{ end }}
-
 {{ $renderItems := slice }}
-{{ range $ordered }}
+{{ range $items }}
   {{ $isCat := eq .kind "cat" }}
   {{ $href := .url }}
   {{ if and (not $isCat) $ownerLogicalPath }}
