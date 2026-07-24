@@ -1,6 +1,7 @@
 import {
     SORT_VARIANTS,
     applySortTokenToUrl,
+    compareSortRecords,
     parseSortToken,
     readCurrentSortToken,
     toggleSortOrder
@@ -157,40 +158,26 @@ function buildProjectedCollectionSortsTokens(logicalPath, currentToken) {
 
 function readRowValue(rowHead, fieldConfig) {
     if (!rowHead || !fieldConfig) return '';
-    const raw = rowHead.dataset?.[fieldConfig.dataKey] ?? '';
-    if (fieldConfig.type === 'number') {
-        const numeric = Number(raw);
-        return Number.isFinite(numeric) ? numeric : 0;
-    }
-
-    return String(raw);
+    return rowHead.dataset?.[fieldConfig.dataKey] ?? '';
 }
 
-function readOriginalRowIndex(row) {
-    const raw = row?.head?.dataset?.sortOriginalIndex ?? '';
-    const numeric = Number(raw);
-    return Number.isFinite(numeric) ? numeric : row.index;
+function readRowGroup(row) {
+    return row?.head?.dataset?.sortGroup ?? 0;
 }
 
-function compareRowValues(left, right, fieldConfig, order) {
-    const leftValue = readRowValue(left.head, fieldConfig);
-    const rightValue = readRowValue(right.head, fieldConfig);
-    let result = 0;
-
-    if (fieldConfig.type === 'number') {
-        result = leftValue - rightValue;
-    } else {
-        result = String(leftValue).localeCompare(String(rightValue), undefined, {
-            numeric: true,
-            sensitivity: 'base'
-        });
+function readRowStableKey(row) {
+    const href = row?.head
+        ?.querySelector('.collection-item-link[href]')
+        ?.getAttribute('href') || '';
+    if (!href) {
+        return row?.index ?? '';
     }
 
-    if (result !== 0) return order === 'asc' ? result : -result;
-
-    // Keep ties in the original SSR order so default descending sorts do not
-    // reshuffle same-value rows on page load.
-    return readOriginalRowIndex(left) - readOriginalRowIndex(right);
+    try {
+        return new URL(href, window.location.href).pathname;
+    } catch (error) {
+        return href.split(/[?#]/, 1)[0];
+    }
 }
 
 function isGridCell(node) {
@@ -204,9 +191,6 @@ function collectSortableRows(grid, columnCount) {
     for (let index = 0, offset = 0; offset + columnCount <= rowCells.length; index += 1, offset += columnCount) {
         const cells = rowCells.slice(offset, offset + columnCount);
         const head = cells[0];
-        if (head?.dataset && head.dataset.sortOriginalIndex === undefined) {
-            head.dataset.sortOriginalIndex = String(index);
-        }
         rows.push({ index, head, cells });
     }
 
@@ -252,8 +236,7 @@ function applySortableGrid(grid) {
     const queryToken = readCurrentSortToken(variantName, variant.defaultToken);
     const currentToken = queryToken;
     const current = parseSortToken(currentToken);
-    const fieldConfig = variant.fields[current.field];
-    if (!fieldConfig) return;
+    if (!variant.fields[current.field]) return;
 
     const { rows, rowCells } = collectSortableRows(grid, columnCount);
     if (!rows.length) {
@@ -263,15 +246,14 @@ function applySortableGrid(grid) {
     }
 
     const sortedRows = rows.slice().sort((left, right) => {
-        if (variant.grouped) {
-            const leftGroup = Number(left.head?.dataset?.sortGroup || 0);
-            const rightGroup = Number(right.head?.dataset?.sortGroup || 0);
-            if (leftGroup !== rightGroup) {
-                return current.order === 'asc' ? leftGroup - rightGroup : rightGroup - leftGroup;
-            }
-        }
-
-        return compareRowValues(left, right, fieldConfig, current.order);
+        return compareSortRecords(left, right, {
+            variant,
+            field: current.field,
+            order: current.order,
+            readValue: (row, fieldConfig) => readRowValue(row.head, fieldConfig),
+            readGroup: readRowGroup,
+            readStableKey: readRowStableKey,
+        });
     });
 
     const nextCells = [];

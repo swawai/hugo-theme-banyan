@@ -131,7 +131,8 @@
 
 @media (min-width: 75rem) {
     .collection-list--column .collection-column-header {
-        display: block;
+        display: flex;
+        align-items: baseline;
         height: 1.55em;
         min-width: 0;
         margin-bottom: 0.14rem;

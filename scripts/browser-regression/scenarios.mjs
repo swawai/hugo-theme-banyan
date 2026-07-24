@@ -43,6 +43,8 @@ const BREADCRUMB_MULTI_COLUMN_SORT_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_
     || '/zh/p/swaw-kit-wsl-release/';
 const BREADCRUMB_COLLECTION_SORT_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_COLLECTION_SORT_PATH
     || '/zh/d/wsl/';
+const COMPOSITE_SORT_PATH = process.env.BANYAN_BROWSER_COMPOSITE_SORT_PATH
+    || '/zh/intent/explore/';
 
 async function startBreadcrumbContinuityProbe(page, columnIndex = 0) {
     await page.evaluate((targetColumnIndex) => {
@@ -155,18 +157,22 @@ async function runBreadcrumbSortInPlace(page, {
     };
 }
 
-function recordFirstBreadcrumbMenuOrderScript(targetCollectionHref) {
+function recordFirstBreadcrumbMenuStateScript(targetCollectionHref) {
     window.__banyanFirstBreadcrumbMenuOrder = null;
+    window.__banyanFirstBreadcrumbHeaderSpacing = null;
 
-    const readOrder = () => {
+    const findTarget = () => {
         const targetPath = new URL(targetCollectionHref, window.location.origin).pathname;
-        const target = Array.from(document.querySelectorAll(
+        return Array.from(document.querySelectorAll(
             '.slot-row-breadcrumb [data-breadcrumb-collection-href]'
         )).find((wrapper) => (
             new URL(wrapper.dataset.breadcrumbCollectionHref, window.location.origin).pathname
                 === targetPath
         ));
+    };
 
+    const readOrder = () => {
+        const target = findTarget();
         return target instanceof HTMLElement
             ? Array.from(target.querySelectorAll('a.breadcrumb-menu-option'))
                 .map((option) => (option.textContent || '').trim())
@@ -174,11 +180,49 @@ function recordFirstBreadcrumbMenuOrderScript(targetCollectionHref) {
             : [];
     };
 
+    const readHeaderSpacing = () => {
+        const target = findTarget();
+        const header = target?.querySelector('.collection-column-header');
+        const label = header?.querySelector('.collection-column-label');
+        const separator = header?.querySelector('.collection-column-separator');
+        const sort = header?.querySelector('.collection-column-sort');
+        if (!(header instanceof HTMLElement)
+            || !(label instanceof HTMLElement)
+            || !(separator instanceof HTMLElement)
+            || !(sort instanceof HTMLElement)
+            || getComputedStyle(header).display === 'none') {
+            return null;
+        }
+
+        const labelRect = label.getBoundingClientRect();
+        const separatorRect = separator.getBoundingClientRect();
+        const sortRect = sort.getBoundingClientRect();
+        if (labelRect.width === 0 || separatorRect.width === 0 || sortRect.width === 0) {
+            return null;
+        }
+
+        const round = (value) => Number(value.toFixed(3));
+        return {
+            labelToSeparator: round(separatorRect.left - labelRect.right),
+            separatorToSort: round(sortRect.left - separatorRect.right)
+        };
+    };
+
     window.__banyanReadBreadcrumbMenuOrder = readOrder;
+    window.__banyanReadBreadcrumbHeaderSpacing = readHeaderSpacing;
     const observer = new MutationObserver(() => {
         const order = readOrder();
         if (window.__banyanFirstBreadcrumbMenuOrder === null && order.length > 0) {
             window.__banyanFirstBreadcrumbMenuOrder = order;
+        }
+
+        const headerSpacing = readHeaderSpacing();
+        if (window.__banyanFirstBreadcrumbHeaderSpacing === null && headerSpacing !== null) {
+            window.__banyanFirstBreadcrumbHeaderSpacing = headerSpacing;
+        }
+
+        if (window.__banyanFirstBreadcrumbMenuOrder !== null
+            && window.__banyanFirstBreadcrumbHeaderSpacing !== null) {
             observer.disconnect();
         }
     });
@@ -681,6 +725,150 @@ export const scenarios = [
                 fail('Wide breadcrumb path caused excessive layout shift.', { cls });
             }
             return { cls, mainX1, mainX2, delta };
+        }
+    },
+    {
+        id: 'collection-composite-sort-direction',
+        kind: 'single',
+        title: 'Collection Composite Sort Direction',
+        viewport: { width: 1280, height: 960 },
+        async run({ page, baseUrl }) {
+            const url = new URL(COMPOSITE_SORT_PATH, `${baseUrl}/`);
+            await gotoAndWait(page, url.href);
+            const gridSelector = '.slot-main [data-sortable="true"][data-sort-variant="tree"]';
+            const dateToggleSelector = `${gridSelector} [data-sort-control="true"][data-sort-field="date"]`;
+            await page.waitForSelector(dateToggleSelector);
+
+            const readState = () => page.evaluate((selector) => {
+                const grid = document.querySelector(selector);
+                const rows = Array.from(
+                    grid?.querySelectorAll('.cell-title:not(.header)') || []
+                ).map((head) => ({
+                    dateKey: head.getAttribute('data-sort-date') || '',
+                    dateText: head.nextElementSibling?.textContent?.trim() || '',
+                    title: head.querySelector('.collection-item-title')?.textContent?.trim() || '',
+                }));
+                return {
+                    rows,
+                    search: window.location.search,
+                };
+            }, gridSelector);
+
+            const before = await readState();
+            if (before.rows.length < 3 || before.rows.some((row) => !row.title)) {
+                fail('Composite sorting scenario requires at least three named taxonomy rows.', {
+                    before,
+                    path: COMPOSITE_SORT_PATH,
+                });
+            }
+            if (before.rows.some((row) => row.dateKey && !/^\d{14}$/.test(row.dateKey))) {
+                fail('Taxonomy machine date keys must preserve second-level precision.', {
+                    before,
+                    path: COMPOSITE_SORT_PATH,
+                });
+            }
+
+            const displayDateGroups = new Map();
+            before.rows.forEach((row) => {
+                if (!displayDateGroups.has(row.dateText)) {
+                    displayDateGroups.set(row.dateText, new Set());
+                }
+                displayDateGroups.get(row.dateText).add(row.dateKey);
+            });
+            const hasDisplayTieWithPreciseKeys = Array.from(displayDateGroups.values())
+                .some((keys) => keys.size > 1);
+            if (!hasDisplayTieWithPreciseKeys) {
+                fail('Composite sorting scenario requires equal display dates with distinct machine keys.', {
+                    before,
+                    path: COMPOSITE_SORT_PATH,
+                });
+            }
+
+            const documentMarker = await page.evaluate(() => {
+                window.__banyanCompositeSortMarker = `${Date.now()}-${Math.random()}`;
+                return window.__banyanCompositeSortMarker;
+            });
+            let navigationRequestCount = 0;
+            const onRequest = (request) => {
+                if (request.isNavigationRequest() && request.frame() === page.mainFrame()) {
+                    navigationRequestCount += 1;
+                }
+            };
+            page.on('request', onRequest);
+
+            try {
+                await page.locator(dateToggleSelector).click();
+                await page.waitForFunction(({ selector, beforeTitles }) => {
+                    const titles = Array.from(
+                        document.querySelector(selector)
+                            ?.querySelectorAll('.cell-title:not(.header)') || []
+                    ).map((head) => (
+                        head.querySelector('.collection-item-title')?.textContent?.trim() || ''
+                    ));
+                    return new URL(window.location.href).searchParams.get('sort') === 'date-asc'
+                        && JSON.stringify(titles) !== JSON.stringify(beforeTitles);
+                }, {
+                    selector: gridSelector,
+                    beforeTitles: before.rows.map((row) => row.title),
+                });
+
+                const ascending = await readState();
+                const expectedAscendingTitles = before.rows
+                    .map((row) => row.title)
+                    .reverse();
+                if (
+                    JSON.stringify(ascending.rows.map((row) => row.title))
+                    !== JSON.stringify(expectedAscendingTitles)
+                ) {
+                    fail('Ascending sort must reverse the complete descending tuple.', {
+                        ascending,
+                        before,
+                    });
+                }
+
+                await page.locator(dateToggleSelector).click();
+                await page.waitForFunction(({ selector, expectedTitles }) => {
+                    const titles = Array.from(
+                        document.querySelector(selector)
+                            ?.querySelectorAll('.cell-title:not(.header)') || []
+                    ).map((head) => (
+                        head.querySelector('.collection-item-title')?.textContent?.trim() || ''
+                    ));
+                    return !new URL(window.location.href).searchParams.has('sort')
+                        && JSON.stringify(titles) === JSON.stringify(expectedTitles);
+                }, {
+                    selector: gridSelector,
+                    expectedTitles: before.rows.map((row) => row.title),
+                });
+            } finally {
+                page.off('request', onRequest);
+            }
+
+            const after = await readState();
+            const markerAfter = await page.evaluate(() => (
+                window.__banyanCompositeSortMarker || ''
+            ));
+            if (
+                navigationRequestCount !== 0
+                || markerAfter !== documentMarker
+                || after.search !== before.search
+                || JSON.stringify(after.rows) !== JSON.stringify(before.rows)
+            ) {
+                fail('Composite sorting must be reversible in the current document.', {
+                    after,
+                    before,
+                    documentMarker,
+                    markerAfter,
+                    navigationRequestCount,
+                });
+            }
+
+            return {
+                after,
+                before,
+                navigationRequestCount,
+                path: COMPOSITE_SORT_PATH,
+            };
         }
     },
     {
@@ -1575,31 +1763,60 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
             await page.addInitScript(
-                recordFirstBreadcrumbMenuOrderScript,
+                recordFirstBreadcrumbMenuStateScript,
                 BREADCRUMB_TAGS_COLLECTION_HREF
             );
 
             await gotoAndWait(page, `${baseUrl}${BREADCRUMB_TAGS_PATH}`);
             await page.waitForSelector('.slot-row-breadcrumb');
             await waitForBreadcrumbSettled(page);
-            const menuOrders = await page.evaluate(() => ({
+            const firstAndFinalState = await page.evaluate(() => ({
                 firstOrder: window.__banyanFirstBreadcrumbMenuOrder,
-                finalOrder: window.__banyanReadBreadcrumbMenuOrder?.() || []
+                finalOrder: window.__banyanReadBreadcrumbMenuOrder?.() || [],
+                firstHeaderSpacing: window.__banyanFirstBreadcrumbHeaderSpacing,
+                finalHeaderSpacing: window.__banyanReadBreadcrumbHeaderSpacing?.() || null
             }));
-            if (!Array.isArray(menuOrders.firstOrder)
-                || menuOrders.firstOrder.length === 0
-                || menuOrders.finalOrder.length === 0) {
-                fail('Tags breadcrumb scenario did not capture both menu orders.', {
+            if (!Array.isArray(firstAndFinalState.firstOrder)
+                || firstAndFinalState.firstOrder.length === 0
+                || firstAndFinalState.finalOrder.length === 0) {
+                fail('Tags breadcrumb scenario did not capture both menu states.', {
                     path: BREADCRUMB_TAGS_PATH,
                     targetCollectionHref: BREADCRUMB_TAGS_COLLECTION_HREF,
-                    ...menuOrders
+                    ...firstAndFinalState
                 });
             }
-            if (JSON.stringify(menuOrders.firstOrder) !== JSON.stringify(menuOrders.finalOrder)) {
+            if (JSON.stringify(firstAndFinalState.firstOrder)
+                !== JSON.stringify(firstAndFinalState.finalOrder)) {
                 fail('Tags breadcrumb menu reordered after the client runtime settled.', {
                     path: BREADCRUMB_TAGS_PATH,
                     targetCollectionHref: BREADCRUMB_TAGS_COLLECTION_HREF,
-                    ...menuOrders
+                    ...firstAndFinalState
+                });
+            }
+            if (!firstAndFinalState.firstHeaderSpacing
+                || !firstAndFinalState.finalHeaderSpacing) {
+                fail('Tags breadcrumb scenario did not capture both header spacing states.', {
+                    path: BREADCRUMB_TAGS_PATH,
+                    targetCollectionHref: BREADCRUMB_TAGS_COLLECTION_HREF,
+                    ...firstAndFinalState
+                });
+            }
+            const spacingDelta = {
+                labelToSeparator: Math.abs(
+                    firstAndFinalState.firstHeaderSpacing.labelToSeparator
+                    - firstAndFinalState.finalHeaderSpacing.labelToSeparator
+                ),
+                separatorToSort: Math.abs(
+                    firstAndFinalState.firstHeaderSpacing.separatorToSort
+                    - firstAndFinalState.finalHeaderSpacing.separatorToSort
+                )
+            };
+            if (spacingDelta.labelToSeparator > 0.1 || spacingDelta.separatorToSort > 0.1) {
+                fail('Tags breadcrumb header spacing changed after the client runtime settled.', {
+                    path: BREADCRUMB_TAGS_PATH,
+                    targetCollectionHref: BREADCRUMB_TAGS_COLLECTION_HREF,
+                    spacingDelta,
+                    ...firstAndFinalState
                 });
             }
             const mainX1 = await getMainInlineStart(page);
@@ -1613,7 +1830,14 @@ export const scenarios = [
             if (cls > 0.1) {
                 fail('Tags-based breadcrumb path caused excessive layout shift.', { cls });
             }
-            return { cls, mainX1, mainX2, delta, menuOrders };
+            return {
+                cls,
+                mainX1,
+                mainX2,
+                delta,
+                spacingDelta,
+                firstAndFinalState
+            };
         }
     },
     {

@@ -16,7 +16,7 @@
   {{- $d := $latest.Lastmod -}}
   {{- if eq ($d.Format "2006") "0001" -}}{{- $d = $latest.Date -}}{{- end -}}
   {{- $latestStr = $d.Format "2006-01-02" -}}
-  {{- $latestKey = $d.Format "20060102" -}}
+  {{- $latestKey = $d.Format "20060102150405" -}}
 {{- end -}}
 {{- $result := dict "uniq" $uniq "cnt" $cnt "latest" $latestStr "latestKey" $latestKey -}}
 {{- return $result -}}

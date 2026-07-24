@@ -7,6 +7,7 @@ export const SORT_VARIANTS = {
     section: {
         defaultToken: 'date-desc',
         grouped: true,
+        tieBreakField: 'name',
         fields: {
             name: { dataKey: 'sortName', type: 'string', defaultOrder: 'asc' },
             date: { dataKey: 'sortDate', type: 'number', defaultOrder: 'desc' },
@@ -16,6 +17,7 @@ export const SORT_VARIANTS = {
     all: {
         defaultToken: 'date-desc',
         grouped: false,
+        tieBreakField: 'name',
         fields: {
             name: { dataKey: 'sortName', type: 'string', defaultOrder: 'asc' },
             date: { dataKey: 'sortDate', type: 'number', defaultOrder: 'desc' },
@@ -26,6 +28,7 @@ export const SORT_VARIANTS = {
     tree: {
         defaultToken: 'date-desc',
         grouped: true,
+        tieBreakField: 'name',
         fields: {
             name: { dataKey: 'sortName', type: 'string', defaultOrder: 'asc' },
             date: { dataKey: 'sortDate', type: 'number', defaultOrder: 'desc' },
@@ -35,6 +38,7 @@ export const SORT_VARIANTS = {
     products: {
         defaultToken: 'name-asc',
         grouped: false,
+        tieBreakField: 'name',
         fields: {
             name: { dataKey: 'sortName', type: 'string', defaultOrder: 'asc' },
             price: { dataKey: 'sortPrice', type: 'number', defaultOrder: 'desc' },
@@ -42,6 +46,78 @@ export const SORT_VARIANTS = {
         }
     }
 };
+
+function toFiniteNumber(value) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : 0;
+}
+
+function compareSortValues(left, right, fieldConfig) {
+    if (fieldConfig?.type === 'number') {
+        return toFiniteNumber(left) - toFiniteNumber(right);
+    }
+
+    return String(left ?? '').localeCompare(String(right ?? ''), undefined, {
+        numeric: true,
+        sensitivity: 'base'
+    });
+}
+
+function compareStableKeys(left, right) {
+    return String(left ?? '').localeCompare(String(right ?? ''), undefined, {
+        numeric: true,
+        sensitivity: 'variant'
+    });
+}
+
+export function compareSortRecords(
+    left,
+    right,
+    {
+        variant,
+        field,
+        order,
+        readValue,
+        readGroup = () => 0,
+        readStableKey = () => '',
+    }
+) {
+    if (!variant?.fields?.[field] || typeof readValue !== 'function') {
+        return 0;
+    }
+
+    let result = 0;
+    if (variant.grouped) {
+        result = toFiniteNumber(readGroup(left)) - toFiniteNumber(readGroup(right));
+    }
+
+    const fields = [field];
+    if (
+        variant.tieBreakField
+        && variant.tieBreakField !== field
+        && variant.fields[variant.tieBreakField]
+    ) {
+        fields.push(variant.tieBreakField);
+    }
+
+    for (const sortField of fields) {
+        if (result !== 0) {
+            break;
+        }
+        const fieldConfig = variant.fields[sortField];
+        result = compareSortValues(
+            readValue(left, fieldConfig),
+            readValue(right, fieldConfig),
+            fieldConfig
+        );
+    }
+
+    if (result === 0) {
+        result = compareStableKeys(readStableKey(left), readStableKey(right));
+    }
+
+    return order === 'desc' ? -result : result;
+}
 
 export function parseSortToken(token) {
     const value = typeof token === 'string' ? token.trim().toLowerCase() : '';

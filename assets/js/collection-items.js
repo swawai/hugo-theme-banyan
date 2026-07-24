@@ -1,5 +1,6 @@
 import {
     SORT_VARIANTS,
+    compareSortRecords,
     parseSortToken,
     readCurrentSortToken,
 } from './sort-shared.js';
@@ -80,34 +81,15 @@ function readItemsRowValue(row, fieldConfig) {
         return '';
     }
 
-    const raw = row[toRowSortKey(fieldConfig.dataKey)] ?? '';
-    if (fieldConfig.type === 'number') {
-        const numeric = Number(raw);
-        return Number.isFinite(numeric) ? numeric : 0;
-    }
-
-    return String(raw);
+    return row[toRowSortKey(fieldConfig.dataKey)] ?? '';
 }
 
-function compareItemsRows(left, right, fieldConfig, order) {
-    const leftValue = readItemsRowValue(left, fieldConfig);
-    const rightValue = readItemsRowValue(right, fieldConfig);
-    let result = 0;
+function readItemsRowGroup(row) {
+    return row?.sort_group ?? 0;
+}
 
-    if (fieldConfig.type === 'number') {
-        result = leftValue - rightValue;
-    } else {
-        result = String(leftValue).localeCompare(String(rightValue), undefined, {
-            numeric: true,
-            sensitivity: 'base'
-        });
-    }
-
-    if (result !== 0) {
-        return order === 'asc' ? result : -result;
-    }
-
-    return (left?._originalIndex ?? 0) - (right?._originalIndex ?? 0);
+function readItemsRowStableKey(row) {
+    return row?.href || row?.key || (row?._originalIndex ?? '');
 }
 
 export function readRequestedSortToken(sortVariant, logicalPath = '', defaultSort = '') {
@@ -137,8 +119,7 @@ export function sortItemsRows(rows, sortVariant, logicalPath = '', defaultSort =
     const defaultToken = defaultSort || variant.defaultToken;
     const token = readRequestedSortToken(sortVariant, logicalPath, defaultToken);
     const current = parseSortToken(token);
-    const fieldConfig = variant.fields[current.field];
-    if (!fieldConfig) {
+    if (!variant.fields[current.field]) {
         return {
             rows: Array.isArray(rows) ? rows.slice() : [],
             token,
@@ -147,15 +128,14 @@ export function sortItemsRows(rows, sortVariant, logicalPath = '', defaultSort =
     }
 
     const sortedRows = (Array.isArray(rows) ? rows.slice() : []).sort((left, right) => {
-        if (variant.grouped) {
-            const leftGroup = Number(left?.sort_group || 0);
-            const rightGroup = Number(right?.sort_group || 0);
-            if (leftGroup !== rightGroup) {
-                return current.order === 'asc' ? leftGroup - rightGroup : rightGroup - leftGroup;
-            }
-        }
-
-        return compareItemsRows(left, right, fieldConfig, current.order);
+        return compareSortRecords(left, right, {
+            variant,
+            field: current.field,
+            order: current.order,
+            readValue: readItemsRowValue,
+            readGroup: readItemsRowGroup,
+            readStableKey: readItemsRowStableKey,
+        });
     });
 
     return { rows: sortedRows, token, defaultToken };

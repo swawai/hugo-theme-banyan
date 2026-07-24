@@ -24,7 +24,7 @@
           "title" $page.Title
           "text" ($page.LinkTitle | default $page.Title)
           "latest" ($d.Format $dateFmt)
-          "latestKey" ($d.Format "20060102")
+          "latestKey" ($d.Format "20060102150405")
           "cnt" $bytes
           "bytes" $bytes
           "url" $page.RelPermalink
@@ -92,7 +92,7 @@
           "text" ($page.LinkTitle | default $page.Title)
           "entry_key" (partial "taxonomy/page-entry-key.html" (dict "ctx" $page))
           "latest" ($d.Format $dateFmt)
-          "latestKey" ($d.Format "20060102")
+          "latestKey" ($d.Format "20060102150405")
           "cnt" $bytes
           "bytes" $bytes
           "url" $page.RelPermalink

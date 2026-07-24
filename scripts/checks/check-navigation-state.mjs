@@ -9,6 +9,7 @@ const navStateEntry = path.join(siteRoot, 'themes/banyan/assets/js/nav-state.js'
 const breadcrumbItemsEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-items.js');
 const breadcrumbPreviewEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-preview.js');
 const breadcrumbSourceEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-source.js');
+const collectionItemsEntry = path.join(siteRoot, 'themes/banyan/assets/js/collection-items.js');
 const tempRoot = path.join(siteRoot, 'temp_workspace', 'check-navigation-state');
 
 const navigationStateStub = `
@@ -141,6 +142,77 @@ assert.deepEqual(
 const breadcrumbSource = await importBrowserModule(breadcrumbSourceEntry, 'breadcrumb-source.js');
 const breadcrumbItems = await importBrowserModule(breadcrumbItemsEntry, 'breadcrumb-items.js');
 const breadcrumbPreview = await importBrowserModule(breadcrumbPreviewEntry, 'breadcrumb-preview.js');
+const collectionItems = await importBrowserModule(collectionItemsEntry, 'collection-items.js');
+
+const compositeRows = [
+    {
+        key: 'beta',
+        href: '/zh/p/beta/',
+        sort_group: '0',
+        sort_name: 'Beta',
+        sort_size: '2',
+    },
+    {
+        key: 'alpha',
+        href: '/zh/p/alpha/',
+        sort_group: '0',
+        sort_name: 'Alpha',
+        sort_size: '2',
+    },
+    {
+        key: 'gamma',
+        href: '/zh/p/gamma/',
+        sort_group: '0',
+        sort_name: 'Gamma',
+        sort_size: '10',
+    },
+];
+
+function readCompositeOrder(token, rows = compositeRows) {
+    window.location.search = `?sort=${token}`;
+    window.location.href = `https://example.test/zh/all/${window.location.search}`;
+    return collectionItems.sortItemsRows(rows, 'all').rows.map((row) => row.key);
+}
+
+const compositeAsc = readCompositeOrder('size-asc');
+const compositeDesc = readCompositeOrder('size-desc');
+assert.deepEqual(
+    compositeAsc,
+    ['alpha', 'beta', 'gamma'],
+    'numeric primary ties should use the name field as the next ascending tuple component'
+);
+assert.deepEqual(
+    compositeDesc,
+    compositeAsc.slice().reverse(),
+    'descending sort should reverse the complete primary/name tuple'
+);
+
+const stableKeyRows = [
+    {
+        key: 'second',
+        href: '/zh/p/second/',
+        sort_group: '0',
+        sort_name: 'Same',
+        sort_size: '2',
+    },
+    {
+        key: 'first',
+        href: '/zh/p/first/',
+        sort_group: '0',
+        sort_name: 'Same',
+        sort_size: '2',
+    },
+];
+assert.deepEqual(
+    readCompositeOrder('size-asc', stableKeyRows),
+    ['first', 'second'],
+    'stable hrefs should make otherwise equal rows deterministic'
+);
+assert.deepEqual(
+    readCompositeOrder('size-desc', stableKeyRows),
+    ['second', 'first'],
+    'stable hrefs should reverse with the rest of the descending tuple'
+);
 
 window.location.href = 'https://example.test/zh/p/example/?from=all';
 window.location.pathname = '/zh/p/example/';
