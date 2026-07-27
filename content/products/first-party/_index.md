@@ -1,7 +1,8 @@
 ---
 title: Products
 linkTitle: First-party
-description: Products built and produced in-house, including both paid and free offerings.
+browser_title: "First-party Products: Free and Paid"
+description: "Explore products built and maintained in-house, including both free and paid offerings."
 weight: 10
 nav_primary: products
 layout: "article-list"

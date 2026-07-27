@@ -1,7 +1,8 @@
 ---
 title: 產品
 linkTitle: 自建
-description: 自建生產的產品都會彙整在這裡，包含付費與免費，不含第三方產品。
+browser_title: "自建產品：免費與付費"
+description: "瀏覽自主開發和維護的產品，包括免費與付費項目。"
 weight: 10
 nav_primary: products
 layout: "article-list"

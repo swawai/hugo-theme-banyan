@@ -140,6 +140,24 @@ async function collectFilesByExtension(rootDir, extension, currentDir = rootDir)
     return files;
 }
 
+async function inspectSitemaps(rootDir) {
+    const xmlPaths = await collectFilesByExtension(rootDir, '.xml');
+    const sitemapPaths = xmlPaths.filter((absolutePath) => path.basename(absolutePath).toLowerCase() === 'sitemap.xml');
+    const locs = new Set();
+
+    for (const sitemapPath of sitemapPaths) {
+        const text = await fs.readFile(sitemapPath, 'utf8');
+        for (const match of text.matchAll(/<loc>\s*([\s\S]*?)\s*<\/loc>/gi)) {
+            const loc = decodeHtmlAttribute(match[1].trim());
+            if (loc) {
+                locs.add(loc);
+            }
+        }
+    }
+
+    return { sitemapCount: sitemapPaths.length, locs };
+}
+
 function formatBytes(bytes) {
     if (bytes < 1024) {
         return `${bytes} B`;
@@ -270,6 +288,61 @@ function hasCanonical(text) {
     return /<link\b[^>]*\brel=(?:"canonical"|'canonical'|canonical(?:\s|>|\/))/i.test(text);
 }
 
+function extractCanonicalHref(text) {
+    for (const tag of extractStartTags(text, 'link')) {
+        const relTokens = extractTagAttribute(tag, 'rel').toLowerCase().split(/\s+/).filter(Boolean);
+        if (relTokens.includes('canonical')) {
+            return extractTagAttribute(tag, 'href');
+        }
+    }
+    return '';
+}
+
+function extractMetaContent(text, name) {
+    const normalizedName = name.toLowerCase();
+    for (const tag of extractStartTags(text, 'meta')) {
+        if (extractTagAttribute(tag, 'name').toLowerCase() === normalizedName) {
+            return extractTagAttribute(tag, 'content');
+        }
+    }
+    return '';
+}
+
+function extractElementText(text, tagName) {
+    const escapedTagName = tagName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = text.match(new RegExp(`<${escapedTagName}\\b[^>]*>([\\s\\S]*?)<\\/${escapedTagName}>`, 'i'));
+    if (!match) {
+        return '';
+    }
+    return decodeHtmlAttribute(match[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim());
+}
+
+function inspectJsonLd(text) {
+    const errors = [];
+    let blockCount = 0;
+    const scriptPattern = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
+
+    for (const match of text.matchAll(scriptPattern)) {
+        const startTag = `<script${match[1]}>`;
+        if (extractTagAttribute(startTag, 'type').toLowerCase() !== 'application/ld+json') {
+            continue;
+        }
+        blockCount += 1;
+        const payload = match[2].trim();
+        if (!payload) {
+            errors.push(`block ${blockCount} is empty`);
+            continue;
+        }
+        try {
+            JSON.parse(payload);
+        } catch (error) {
+            errors.push(`block ${blockCount}: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+
+    return { jsonLdBlockCount: blockCount, jsonLdErrors: errors };
+}
+
 function hasMainBundle(text) {
     return /\/js\/main(?:\.min)?\.[^"' >]+/i.test(text);
 }
@@ -280,6 +353,44 @@ function hasPrefetchRuntimeBundle(text) {
 
 function isRedirectPage(text) {
     return /<meta\b[^>]*\bhttp-equiv=(?:"refresh"|'refresh'|refresh(?:\s|>|\/))/i.test(text);
+}
+
+function buildDuplicateSeoGroups(rows, field) {
+    const groups = new Map();
+
+    for (const row of rows) {
+        if (row.isRedirect || row.isNoindex) {
+            continue;
+        }
+        const value = `${row[field] ?? ''}`.trim();
+        if (!value) {
+            continue;
+        }
+        const key = `${row.htmlLang}\u0000${value}`;
+        const group = groups.get(key) || {
+            lang: row.htmlLang || '<missing>',
+            value,
+            paths: [],
+        };
+        group.paths.push(row.relativePath);
+        groups.set(key, group);
+    }
+
+    return [...groups.values()]
+        .filter((group) => group.paths.length > 1)
+        .sort((left, right) => right.paths.length - left.paths.length || left.lang.localeCompare(right.lang));
+}
+
+function printDuplicateSeoGroups(title, groups, limit = 8) {
+    if (groups.length === 0) {
+        return;
+    }
+    console.log(`\n${title} (top ${Math.min(limit, groups.length)})`);
+    for (const group of groups.slice(0, limit)) {
+        const value = group.value.length > 100 ? `${group.value.slice(0, 97)}...` : group.value;
+        console.log(`${group.lang}\tcount=${group.paths.length}\t${value}`);
+        console.log(`  pages=${group.paths.join(', ')}`);
+    }
 }
 
 function summarizeRows(rows, limit, selector) {
@@ -508,11 +619,14 @@ async function inspectHtmlFile(rootDir, absolutePath) {
     const buffer = await fs.readFile(absolutePath);
     const text = buffer.toString('utf8');
     const relativePath = path.relative(rootDir, absolutePath).split(path.sep).join('/');
+    const htmlTag = extractStartTags(text, 'html')[0] || '';
     const encodedBreadcrumbSources = extractAttribute(text, 'data-entry-breadcrumb-sources');
     const inlineStyleAttrCount = (text.match(/\sstyle\s*=/gi) ?? []).length;
     const repeatedBreadcrumbCollectionSourceCount = (
         text.match(/\sdata-breadcrumb-collection-source\s*=/gi) ?? []
     ).length;
+    const robotsDirective = extractMetaContent(text, 'robots').toLowerCase();
+    const jsonLd = inspectJsonLd(text);
 
     let breadcrumbPayloadBytes = 0;
     let breadcrumbSourceCount = 0;
@@ -552,7 +666,13 @@ async function inspectHtmlFile(rootDir, absolutePath) {
         rawBytes: buffer.length,
         gzipBytes: gzipSync(buffer, { level: 9 }).length,
         isRedirect: isRedirectPage(text),
+        isNoindex: robotsDirective.split(/[\s,]+/).includes('noindex'),
+        htmlLang: extractTagAttribute(htmlTag, 'lang'),
+        browserTitle: extractElementText(text, 'title'),
+        metaDescription: extractMetaContent(text, 'description'),
+        h1Count: extractStartTags(text, 'h1').length,
         hasCanonical: hasCanonical(text),
+        canonicalHref: extractCanonicalHref(text),
         hasMainBundle: hasMainBundle(text),
         hasPrefetchRuntimeBundle: hasPrefetchRuntimeBundle(text),
         inlineStyleAttrCount,
@@ -563,6 +683,7 @@ async function inspectHtmlFile(rootDir, absolutePath) {
         breadcrumbParseError,
         ...breadcrumbPrefetchContract,
         ...prefetchStats,
+        ...jsonLd,
         externalScriptRefs: extractExternalScriptSrcs(text),
     };
 }
@@ -745,6 +866,39 @@ function buildIntegrityIssues(rows) {
     return issues;
 }
 
+function buildSeoIntegrityIssues(rows, sitemapLocs) {
+    const issues = [];
+
+    for (const row of rows) {
+        if (row.isRedirect) {
+            continue;
+        }
+        if (!row.htmlLang) {
+            issues.push(`Missing html lang attribute: ${row.relativePath}`);
+        }
+        if (!row.browserTitle) {
+            issues.push(`Missing browser title: ${row.relativePath}`);
+        }
+        if (!row.metaDescription) {
+            issues.push(`Missing meta description: ${row.relativePath}`);
+        }
+        if (/(^|\/)404\.html$/i.test(row.relativePath) && !row.isNoindex) {
+            issues.push(`404 page must render noindex: ${row.relativePath}`);
+        }
+        for (const error of row.jsonLdErrors) {
+            issues.push(`Invalid JSON-LD on ${row.relativePath}: ${error}`);
+        }
+        if (!row.isNoindex && row.h1Count > 1) {
+            issues.push(`Indexable page must not render multiple H1 elements: ${row.relativePath} count=${row.h1Count}`);
+        }
+        if (row.isNoindex && row.canonicalHref && sitemapLocs.has(row.canonicalHref)) {
+            issues.push(`Noindex page must not appear as a sitemap loc: ${row.relativePath} canonical=${row.canonicalHref}`);
+        }
+    }
+
+    return issues;
+}
+
 function buildGuardrailIssues(rowsByPath) {
     const issues = [];
 
@@ -794,6 +948,7 @@ async function main() {
         throw new Error(`No HTML files found under: ${publicRoot}`);
     }
     const jsPaths = await collectFilesByExtension(publicRoot, '.js');
+    const sitemapContract = await inspectSitemaps(publicRoot);
 
     const rows = [];
     for (const htmlPath of htmlPaths) {
@@ -868,6 +1023,14 @@ async function main() {
     const prefetchPageLocalUrlTotal = rows.reduce((sum, row) => sum + row.prefetchUniqueUrlCount, 0);
     const prefetchGlobalUniqueUrls = new Set(rows.flatMap((row) => row.prefetchUniqueUrls));
     const redirectCount = rows.filter((row) => row.isRedirect).length;
+    const indexableRows = rows.filter((row) => !row.isRedirect && !row.isNoindex);
+    const noindexRows = rows.filter((row) => !row.isRedirect && row.isNoindex);
+    const indexableWithoutH1Count = indexableRows.filter((row) => row.h1Count === 0).length;
+    const indexableMultipleH1Count = indexableRows.filter((row) => row.h1Count > 1).length;
+    const jsonLdBlockTotal = rows.reduce((sum, row) => sum + row.jsonLdBlockCount, 0);
+    const jsonLdErrorTotal = rows.reduce((sum, row) => sum + row.jsonLdErrors.length, 0);
+    const duplicateBrowserTitles = buildDuplicateSeoGroups(rows, 'browserTitle');
+    const duplicateMetaDescriptions = buildDuplicateSeoGroups(rows, 'metaDescription');
     const jsRawTotal = jsAssets.reduce((sum, asset) => sum + asset.rawBytes, 0);
     const jsGzipTotal = jsAssets.reduce((sum, asset) => sum + asset.gzipBytes, 0);
     const referencedJsAssets = jsAssets.filter((asset) => asset.pageReferenceCount > 0);
@@ -884,6 +1047,16 @@ async function main() {
     console.log(`Asset manifests\t${buildVersionContract.manifestCount}`);
     console.log(`Fragment version dirs\t${buildVersionContract.fragmentVersionDirs.join(', ') || '<none>'}`);
     console.log(`Redirect pages\t${redirectCount}`);
+    console.log(`Indexable pages\t${indexableRows.length}`);
+    console.log(`Noindex pages\t${noindexRows.length}`);
+    console.log(`Indexable pages without H1\t${indexableWithoutH1Count}`);
+    console.log(`Indexable pages with multiple H1s\t${indexableMultipleH1Count}`);
+    console.log(`JSON-LD blocks\t${jsonLdBlockTotal}`);
+    console.log(`JSON-LD parse errors\t${jsonLdErrorTotal}`);
+    console.log(`Sitemap files\t${sitemapContract.sitemapCount}`);
+    console.log(`Sitemap loc URLs\t${sitemapContract.locs.size}`);
+    console.log(`Duplicate browser title groups\t${duplicateBrowserTitles.length}`);
+    console.log(`Duplicate meta description groups\t${duplicateMetaDescriptions.length}`);
     console.log(`Raw total\t${rawTotal}\t${formatBytes(rawTotal)}`);
     console.log(`Gzip total\t${gzipTotal}\t${formatBytes(gzipTotal)}`);
     console.log(`Breadcrumb payload total\t${breadcrumbTotal}\t${formatBytes(breadcrumbTotal)}`);
@@ -957,6 +1130,8 @@ async function main() {
             multiVariantFamilies.slice(0, options.top)
         );
     }
+    printDuplicateSeoGroups('Duplicate browser titles within one language', duplicateBrowserTitles);
+    printDuplicateSeoGroups('Duplicate meta descriptions within one language', duplicateMetaDescriptions);
 
     printSentinelRows(
         productionGuardrails.map((guardrail) => rowsByPath.get(guardrail.relativePath))
@@ -964,6 +1139,10 @@ async function main() {
 
     const integrityIssues = [
         ...buildIntegrityIssues(rows),
+        ...buildSeoIntegrityIssues(rows, sitemapContract.locs),
+        ...duplicateMetaDescriptions.map((group) => (
+            `Duplicate meta description within ${group.lang}: ${group.paths.join(', ')}`
+        )),
         ...buildVersionContract.issues,
     ];
     const guardrailIssues = options.check ? buildGuardrailIssues(rowsByPath) : [];

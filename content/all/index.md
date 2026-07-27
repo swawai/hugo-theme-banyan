@@ -1,6 +1,8 @@
 ﻿---
 title: All
 linkTitle: ALL
+browser_title: "All Articles and Technical Guides"
+description: "Browse every published article and technical guide in one place."
 slug: "all"
 nav_primary: signals
 layout: article-list

@@ -3,6 +3,7 @@
 {{ end }}
 
 {{ define "head-extra" }}
+<meta name="robots" content="noindex, follow">
 {{ partial "article/styles.html" (dict "ctx" .) }}
 {{ $notFoundCssPath := "css/not-found.css" }}
 {{ $notFoundCss := resources.Get $notFoundCssPath }}

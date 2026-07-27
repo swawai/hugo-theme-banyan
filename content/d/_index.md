@@ -1,6 +1,8 @@
 ﻿---
 title: Library
 linkTitle: Directory
+browser_title: "Technical Library and Practical Guides"
+description: "Browse published articles and practical guides by topic and section."
 nav_primary: signals
 layout: "article-list"
 banyan_article_section_list: true

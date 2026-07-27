@@ -1,6 +1,8 @@
 ﻿---
 title: 所有文章
 linkTitle: 全部
+browser_title: "全部文章與技術指南"
+description: "集中瀏覽全部已發布文章與技術指南。"
 slug: "all"
 nav_primary: signals
 layout: article-list

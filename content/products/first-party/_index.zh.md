@@ -1,7 +1,8 @@
 ---
 title: 产品
 linkTitle: 自建
-description: 自建生产的产品会汇总在这里，包含付费与免费，不含第三方产品。
+browser_title: "自建产品：免费与付费"
+description: "浏览自主开发和维护的产品，包括免费与付费项目。"
 weight: 10
 nav_primary: products
 layout: "article-list"

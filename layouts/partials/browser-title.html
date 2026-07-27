@@ -1,6 +1,6 @@
 {{- $ctx := . -}}
 {{- if reflect.IsMap . }}{{ with index . "ctx" }}{{ $ctx = . }}{{ end }}{{ end -}}
-{{- $pageTitle := trim (printf "%v" ($ctx.Title | default "")) " \r\n\t" -}}
+{{- $pageTitle := trim (printf "%v" ($ctx.Params.browser_title | default $ctx.Title | default "")) " \r\n\t" -}}
 {{- $siteTitle := trim (printf "%v" ($ctx.Site.Title | default "")) " \r\n\t" -}}
 {{- $browserTitle := $siteTitle -}}
 {{- if $ctx.IsHome -}}
