@@ -5,12 +5,6 @@ import { parse as parseYaml } from 'yaml';
 const siteRoot = process.cwd();
 const defaultPublicDir = 'public';
 const legacyMarkdownOutputs = new Set(['AGENT_MARKDOWN', 'MARKDOWN']);
-const expectedRobotsAgentHints = [
-    'ChatGPT-User',
-    'OAI-SearchBot',
-    'GPTBot',
-    'Google-Extended'
-];
 
 function printHelp() {
     console.log(`Usage:
@@ -265,6 +259,26 @@ function hasOwn(object, key) {
     return Object.prototype.hasOwnProperty.call(object, key);
 }
 
+function inspectTranslationPlaceholderSetting(record, issues) {
+    const data = record.frontMatterData;
+    if (!hasOwn(data, 'translation_placeholder')) {
+        return false;
+    }
+    if (typeof data.translation_placeholder !== 'boolean') {
+        issues.push(`Content page translation_placeholder must be a boolean: ${record.relativePath}`);
+        return false;
+    }
+    if (!data.translation_placeholder) {
+        return false;
+    }
+
+    const listPolicy = `${data.build?.list ?? ''}`.trim().toLowerCase();
+    if (listPolicy !== 'never') {
+        issues.push(`Translation placeholder must set build.list to never: ${record.relativePath}`);
+    }
+    return true;
+}
+
 function isExternalShareImage(value) {
     return /^https?:\/\//i.test(value);
 }
@@ -404,7 +418,8 @@ async function inspectSourceSettings(issues) {
             legacyMarkdownOptIns: 0,
             shareImageConfigured: 0,
             shareImageDisabled: 0,
-            shareImageInherited: 0
+            shareImageInherited: 0,
+            translationPlaceholderFiles: 0
         };
     }
 
@@ -432,8 +447,12 @@ async function inspectSourceSettings(issues) {
     let shareImageConfigured = 0;
     let shareImageDisabled = 0;
     let shareImageInherited = 0;
+    let translationPlaceholderFiles = 0;
 
     for (const record of records) {
+        if (inspectTranslationPlaceholderSetting(record, issues)) {
+            translationPlaceholderFiles += 1;
+        }
         const legacyOutputs = outputNames(record.frontMatterData)
             .filter((name) => legacyMarkdownOutputs.has(name));
         if (legacyOutputs.length > 0) {
@@ -468,7 +487,8 @@ async function inspectSourceSettings(issues) {
         legacyMarkdownOptIns,
         shareImageConfigured,
         shareImageDisabled,
-        shareImageInherited
+        shareImageInherited,
+        translationPlaceholderFiles
     };
 }
 
@@ -480,15 +500,11 @@ async function inspectRobots(publicRoot, issues) {
     }
 
     const userAgentCount = (robotsText.match(/^User-agent:/gim) ?? []).length;
-    const missingAgentHints = expectedRobotsAgentHints.filter((agent) => !robotsText.includes(agent));
     if (!/^Sitemap:\s*\S+/im.test(robotsText)) {
         issues.push('robots.txt is missing a Sitemap directive.');
     }
     if (!/^User-agent:\s*\*/im.test(robotsText)) {
         issues.push('robots.txt is missing the wildcard User-agent block.');
-    }
-    if (missingAgentHints.length > 0) {
-        issues.push(`robots.txt is missing expected AI crawler policy hints: ${missingAgentHints.join(', ')}.`);
     }
 
     return { hasRobots: true, userAgentCount };
@@ -772,6 +788,7 @@ async function main() {
     console.log(`robots user-agent blocks\t${robots.userAgentCount}`);
     console.log(`content Markdown source files\t${source.contentFiles}`);
     console.log(`agent-indexed content files\t${source.indexedContentFiles}`);
+    console.log(`translation placeholder files\t${source.translationPlaceholderFiles}`);
     console.log(`legacy Markdown output opt-ins\t${source.legacyMarkdownOptIns}`);
     console.log(`share_image configured\t${source.shareImageConfigured}`);
     console.log(`share_image inherited\t${source.shareImageInherited}`);

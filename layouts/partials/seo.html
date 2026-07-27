@@ -17,7 +17,7 @@
 {{- $xDefault := $pageUrl -}}
 {{- if ne .Language.Lang $defaultLang -}}
   {{- range .AllTranslations -}}
-    {{- if eq .Language.Lang $defaultLang -}}
+    {{- if and (eq .Language.Lang $defaultLang) (not .Params.translation_placeholder) -}}
       {{- $xDefault = .Permalink -}}
     {{- end -}}
   {{- end -}}
@@ -30,13 +30,15 @@
 {{- with $ogLocale }}
 <meta property="og:locale" content="{{ . }}">
 {{- end }}
+{{- if not .Params.translation_placeholder -}}
 {{- range .AllTranslations -}}
-  {{- if ne .Language.Lang $.Language.Lang -}}
+  {{- if and (ne .Language.Lang $.Language.Lang) (not .Params.translation_placeholder) -}}
     {{- $altOgLocale := partial "seo-locale.html" . -}}
     {{- if and $altOgLocale (ne $altOgLocale $ogLocale) }}
 <meta property="og:locale:alternate" content="{{ $altOgLocale }}">
     {{- end -}}
   {{- end -}}
+{{- end -}}
 {{- end -}}
 {{- $shareImage := partial "share-image/resolve.html" . -}}
 {{- $img := index $shareImage "url" -}}
@@ -46,14 +48,26 @@
 <meta name="twitter:description" content="{{ $desc }}">
 {{ with $img }}<meta name="twitter:image" content="{{ . }}">{{ end }}
 
+{{- if not .Params.translation_placeholder -}}
 <link rel="alternate" hreflang="{{ .Language.Lang }}" href="{{ $pageUrl }}">
 {{- range .AllTranslations -}}
-  {{- if ne .Language.Lang $.Language.Lang -}}
+  {{- if and (ne .Language.Lang $.Language.Lang) (not .Params.translation_placeholder) -}}
   <link rel="alternate" hreflang="{{ .Language.Lang }}" href="{{ .Permalink }}">
   {{- end -}}
 {{- end -}}
 <link rel="alternate" hreflang="x-default" href="{{ $xDefault }}">
+{{- end -}}
 
 {{ with .OutputFormats.Get "RSS" }}
 <link rel="alternate" type="application/rss+xml" title="{{ site.Title }}" href="{{ .RelPermalink }}">
 {{ end }}
+
+{{- if and .IsHome (eq $pageUrl (absURL "")) -}}
+{{- $websiteSchema := dict
+  "@context" "https://schema.org"
+  "@type" "WebSite"
+  "name" .Title
+  "url" $pageUrl
+-}}
+<script type="application/ld+json">{{ $websiteSchema | jsonify | safeJS }}</script>
+{{- end -}}

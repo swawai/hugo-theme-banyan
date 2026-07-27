@@ -8,6 +8,8 @@
 {{- if le $modified.Unix 0 -}}
   {{- $modified = $published -}}
 {{- end -}}
+{{- $shareImage := partial "share-image/resolve.html" . -}}
+{{- $imageURL := index $shareImage "url" | default "" -}}
 {{- $payload := dict
   "@context" "https://schema.org"
   "@type" "BlogPosting"
@@ -17,6 +19,9 @@
   "inLanguage" .Language.Lang
   "mainEntityOfPage" .Permalink
 -}}
+{{- with $imageURL -}}
+  {{- $payload = merge $payload (dict "image" .) -}}
+{{- end -}}
 {{- if gt $published.Unix 0 -}}
   {{- $payload = merge $payload (dict "datePublished" ($published.Format "2006-01-02T15:04:05Z07:00")) -}}
 {{- end -}}

@@ -193,6 +193,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="wap-font-scale" content="no">
     <link rel="canonical" href="{{ .Permalink }}">
+    {{- $robotsDirective := .Params.robots | default "" -}}
+    {{- if .Params.translation_placeholder -}}
+      {{- $robotsDirective = "noindex, follow" -}}
+    {{- end -}}
+    {{- with $robotsDirective }}
+    <meta name="robots" content="{{ . }}">
+    {{- end }}
     {{/* 首屏阻塞性状态初始化：同步主题以防闪烁，并恢复 MPA 跨页导航进度条。 */}}
     {{- printf "<script>%s</script>" (index $themeBootInline "content") | safeHTML -}}
     {{/* URL 带 from= 时先隐藏默认 breadcrumb，待运行时恢复来源路径；

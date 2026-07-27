@@ -7,6 +7,7 @@ nav_primary: home
 url: "prefetchdebug"
 type: "page"
 layout: "prefetch-debug-page"
+robots: "noindex, follow"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

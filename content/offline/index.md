@@ -6,6 +6,7 @@ slug: "offline"
 nav_primary: home
 type: "page"
 layout: "offline-page"
+robots: "noindex, follow"
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

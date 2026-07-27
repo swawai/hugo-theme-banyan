@@ -49,19 +49,13 @@ isPlainText = true
 notAlternative = true
 
 [params.agent_access]
+# Banyan defaults to open discovery and model access. Publishers who need a
+# different consent policy should override these values in their site config.
+# The wildcard policy already covers current and future crawlers; keep the
+# explicit lists empty so a site can add exceptions without conflicting groups.
 default_policy = "allow"
-allow_user_agents = [
-  "OAI-SearchBot",
-  "ChatGPT-User",
-  "Claude-SearchBot",
-  "Claude-User",
-  "PerplexityBot"
-]
-disallow_user_agents = [
-  "GPTBot",
-  "ClaudeBot",
-  "Google-Extended"
-]
+allow_user_agents = []
+disallow_user_agents = []
 
 [params.web_app_manifest]
 # link  = emit <link rel="manifest"> in <head> for the most predictable PWA path
