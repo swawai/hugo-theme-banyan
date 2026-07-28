@@ -1,7 +1,34 @@
 {{ printf "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>" | safeHTML }}
+{{- $pages := slice -}}
+{{- $seen := dict -}}
+{{- range .Data.Pages -}}
+  {{- $pageKey := .Permalink -}}
+  {{- if not (index $seen $pageKey) -}}
+    {{- $pages = $pages | append . -}}
+    {{- $seen = merge $seen (dict $pageKey true) -}}
+  {{- end -}}
+{{- end -}}
+{{- range (.Site.Params.sitemap.include_pages | default slice) -}}
+  {{- $logicalPath := trim (printf "%v" .) " \r\n\t" -}}
+  {{- with $.Site.GetPage $logicalPath -}}
+    {{- if not .IsPage -}}
+      {{- errorf "Sitemap include path %q must resolve to a regular page for language %q." $logicalPath $.Site.Language.Lang -}}
+    {{- end -}}
+    {{- if .Params.translation_placeholder -}}
+      {{- errorf "Sitemap include path %q resolves to a translation placeholder for language %q." $logicalPath $.Site.Language.Lang -}}
+    {{- end -}}
+    {{- $pageKey := .Permalink -}}
+    {{- if not (index $seen $pageKey) -}}
+      {{- $pages = $pages | append . -}}
+      {{- $seen = merge $seen (dict $pageKey true) -}}
+    {{- end -}}
+  {{- else -}}
+    {{- errorf "Sitemap include path %q does not resolve for language %q." $logicalPath $.Site.Language.Lang -}}
+  {{- end -}}
+{{- end -}}
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
-  {{ range .Data.Pages }}
+  {{ range sort $pages "Permalink" }}
   <url>
     <loc>{{ .Permalink }}</loc>{{ if not .Lastmod.IsZero }}
     <lastmod>{{ safeHTML ( .Lastmod.Format "2006-01-02T15:04:05-07:00" ) }}</lastmod>{{ end }}{{ with .Sitemap.ChangeFreq }}

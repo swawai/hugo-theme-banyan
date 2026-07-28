@@ -57,6 +57,11 @@ default_policy = "allow"
 allow_user_agents = []
 disallow_user_agents = []
 
+[params.sitemap]
+# Pages excluded from list collections may still be explicitly included in
+# each language sitemap by their logical content path.
+include_pages = []
+
 [params.web_app_manifest]
 # link  = emit <link rel="manifest"> in <head> for the most predictable PWA path
 # defer = emit the manifest late in <head>, after render-critical styles/scripts
@@ -138,4 +143,4 @@ offline_notice_path = "offline/"
 fallbacks = { "zh-hk" = "zh-tw", "zh-mo" = "zh-tw" }
 
 [frontmatter]
-lastmod = ["lastmod", ":git", ":fileModTime", ":default"]
+lastmod = ["lastmod", ":git", ":default"]

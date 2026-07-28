@@ -894,6 +894,9 @@ function buildSeoIntegrityIssues(rows, sitemapLocs) {
         if (row.isNoindex && row.canonicalHref && sitemapLocs.has(row.canonicalHref)) {
             issues.push(`Noindex page must not appear as a sitemap loc: ${row.relativePath} canonical=${row.canonicalHref}`);
         }
+        if (!row.isNoindex && row.canonicalHref && !sitemapLocs.has(row.canonicalHref)) {
+            issues.push(`Indexable page must appear as a sitemap loc: ${row.relativePath} canonical=${row.canonicalHref}`);
+        }
     }
 
     return issues;

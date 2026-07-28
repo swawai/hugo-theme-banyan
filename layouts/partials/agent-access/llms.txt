@@ -95,7 +95,7 @@ Sitemap: {{ absURL "sitemap.xml" }}
       {{- $entryPage = . -}}
     {{- end -}}
   {{- end -}}
-  {{- if and (eq $entryPage.Language.Lang $currentSite.Language.Lang) (eq $entryPage.Section "d") -}}
+  {{- if and (eq $entryPage.Language.Lang $currentSite.Language.Lang) (eq $entryPage.Section "d") (not $entryPage.Params.translation_placeholder) -}}
     {{- $entryKey := $entryPage.Permalink -}}
     {{- if not (index $seenContentPages $entryKey) -}}
       {{- $contentPages = $contentPages | append $entryPage -}}
