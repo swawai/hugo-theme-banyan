@@ -2,12 +2,8 @@
 {{ $entries := slice }}
 
 {{ $siteLatest := "" }}
-{{ with first 1 ($ctx.Site.RegularPages.ByLastmod.Reverse) }}
-  {{ $siteLatest = (index . 0).Lastmod }}
-{{ else }}
-  {{ with first 1 ($ctx.Site.RegularPages.ByDate.Reverse) }}
-    {{ $siteLatest = (index . 0).Date }}
-  {{ end }}
+{{ with first 1 ($ctx.Site.RegularPages.ByDate.Reverse) }}
+  {{ $siteLatest = (index . 0).Date }}
 {{ end }}
 
 {{ $siteDateKey := "00010101000000" }}
@@ -34,14 +30,9 @@
   {{ $directoryHref = .RelPermalink }}
   {{ $directoryCount = len .RegularPagesRecursive }}
   {{ if gt $directoryCount 0 }}
-    {{ with first 1 (.RegularPagesRecursive.ByLastmod.Reverse) }}
-      {{ $directoryDateKey = (index . 0).Lastmod.Format "20060102150405" }}
-      {{ $directoryDateText = (index . 0).Lastmod.Format "2006-01-02" }}
-    {{ else }}
-      {{ with first 1 (.RegularPagesRecursive.ByDate.Reverse) }}
-        {{ $directoryDateKey = (index . 0).Date.Format "20060102150405" }}
-        {{ $directoryDateText = (index . 0).Date.Format "2006-01-02" }}
-      {{ end }}
+    {{ with first 1 (.RegularPagesRecursive.ByDate.Reverse) }}
+      {{ $directoryDateKey = (index . 0).Date.Format "20060102150405" }}
+      {{ $directoryDateText = (index . 0).Date.Format "2006-01-02" }}
     {{ end }}
   {{ end }}
 {{ end }}

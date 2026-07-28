@@ -12,9 +12,8 @@
 {{- $latestStr := "" -}}
 {{- $latestKey := "" -}}
 {{- if gt $cnt 0 -}}
-  {{- $latest := index (sort $uniq "Lastmod" "desc") 0 -}}
-  {{- $d := $latest.Lastmod -}}
-  {{- if eq ($d.Format "2006") "0001" -}}{{- $d = $latest.Date -}}{{- end -}}
+  {{- $latest := index (sort $uniq "Date" "desc") 0 -}}
+  {{- $d := $latest.Date -}}
   {{- $latestStr = $d.Format "2006-01-02" -}}
   {{- $latestKey = $d.Format "20060102150405" -}}
 {{- end -}}

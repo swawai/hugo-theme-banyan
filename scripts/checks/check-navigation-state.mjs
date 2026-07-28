@@ -214,6 +214,40 @@ assert.deepEqual(
     'stable hrefs should reverse with the rest of the descending tuple'
 );
 
+const preciseDateRows = [
+    {
+        key: 'same-day-later',
+        href: '/zh/p/same-day-later/',
+        sort_group: '0',
+        sort_name: 'Same day later',
+        sort_date: '20260726134731',
+    },
+    {
+        key: 'next-day',
+        href: '/zh/p/next-day/',
+        sort_group: '0',
+        sort_name: 'Next day',
+        sort_date: '20260727000000',
+    },
+    {
+        key: 'same-day-earlier',
+        href: '/zh/p/same-day-earlier/',
+        sort_group: '0',
+        sort_name: 'Same day earlier',
+        sort_date: '20260726120000',
+    },
+];
+assert.deepEqual(
+    readCompositeOrder('date-asc', preciseDateRows),
+    ['same-day-earlier', 'same-day-later', 'next-day'],
+    '14-digit publication date keys should preserve second-level ordering within one display date'
+);
+assert.deepEqual(
+    readCompositeOrder('date-desc', preciseDateRows),
+    ['next-day', 'same-day-later', 'same-day-earlier'],
+    'descending publication date sorting should reverse the complete precise-date tuple'
+);
+
 window.location.href = 'https://example.test/zh/p/example/?from=all';
 window.location.pathname = '/zh/p/example/';
 window.location.search = '?from=all';

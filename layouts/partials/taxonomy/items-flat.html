@@ -18,8 +18,7 @@
 {{- else if eq $kind "term" -}}
   {{- range $page := $ctx.Pages -}}
     {{- $bytes := len $page.RawContent -}}
-    {{- $d := $page.Lastmod -}}
-    {{- if eq ($d.Format "2006") "0001" -}}{{- $d = $page.Date -}}{{- end -}}
+    {{- $d := $page.Date -}}
     {{- $items = $items | append (dict
         "kind" "page"
         "title" $page.Title

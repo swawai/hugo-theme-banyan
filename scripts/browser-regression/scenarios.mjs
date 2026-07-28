@@ -839,22 +839,6 @@ export const scenarios = [
                 });
             }
 
-            const displayDateGroups = new Map();
-            before.rows.forEach((row) => {
-                if (!displayDateGroups.has(row.dateText)) {
-                    displayDateGroups.set(row.dateText, new Set());
-                }
-                displayDateGroups.get(row.dateText).add(row.dateKey);
-            });
-            const hasDisplayTieWithPreciseKeys = Array.from(displayDateGroups.values())
-                .some((keys) => keys.size > 1);
-            if (!hasDisplayTieWithPreciseKeys) {
-                fail('Composite sorting scenario requires equal display dates with distinct machine keys.', {
-                    before,
-                    path: COMPOSITE_SORT_PATH,
-                });
-            }
-
             const documentMarker = await page.evaluate(() => {
                 window.__banyanCompositeSortMarker = `${Date.now()}-${Math.random()}`;
                 return window.__banyanCompositeSortMarker;

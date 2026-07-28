@@ -1,12 +1,8 @@
 {{- $ctx := .ctx | default . -}}
 {{- $entries := slice -}}
 {{- $siteLatest := "" -}}
-{{- with first 1 ($ctx.Site.RegularPages.ByLastmod.Reverse) -}}
-  {{- $siteLatest = (index . 0).Lastmod -}}
-{{- else -}}
-  {{- with first 1 ($ctx.Site.RegularPages.ByDate.Reverse) -}}
-    {{- $siteLatest = (index . 0).Date -}}
-  {{- end -}}
+{{- with first 1 ($ctx.Site.RegularPages.ByDate.Reverse) -}}
+  {{- $siteLatest = (index . 0).Date -}}
 {{- end -}}
 {{- $siteDateKey := "00010101000000" -}}
 {{- $siteDateText := "--" -}}
