@@ -9,6 +9,8 @@ const defaultTop = 8;
 
 // These guardrails intentionally target minified production output.
 // Run the script without --check when you only want an exploratory report.
+// Collection payloads grow with published rows, so constrain their fixed and
+// per-item costs separately instead of recalibrating one total after each post.
 const productionGuardrails = [
     {
         label: 'home',
@@ -23,7 +25,8 @@ const productionGuardrails = [
         relativePath: 'all/index.html',
         maxRawBytes: 42_000,
         maxGzipBytes: 12_000,
-        maxBreadcrumbPayloadBytes: 2_500,
+        breadcrumbPayloadBaseBytes: 1_000,
+        breadcrumbPayloadPerItemBytes: 220,
         maxBreadcrumbSourceCount: 1
     },
     {
@@ -31,7 +34,8 @@ const productionGuardrails = [
         relativePath: 'products/first-party/index.html',
         maxRawBytes: 42_000,
         maxGzipBytes: 12_000,
-        maxBreadcrumbPayloadBytes: 2_500,
+        breadcrumbPayloadBaseBytes: 1_300,
+        breadcrumbPayloadPerItemBytes: 220,
         maxBreadcrumbSourceCount: 1
     }
 ];
@@ -343,6 +347,26 @@ function inspectJsonLd(text) {
     return { jsonLdBlockCount: blockCount, jsonLdErrors: errors };
 }
 
+function countCompactBreadcrumbItems(value) {
+    if (Array.isArray(value)) {
+        return value.reduce((total, entry) => total + countCompactBreadcrumbItems(entry), 0);
+    }
+    if (!value || typeof value !== 'object') {
+        return 0;
+    }
+
+    const fields = value.f;
+    const rowVector = value.rv;
+    if (Array.isArray(fields) && fields.length > 0 && Array.isArray(rowVector)) {
+        return rowVector.length % fields.length === 0
+            ? rowVector.length / fields.length
+            : 0;
+    }
+
+    return Object.values(value)
+        .reduce((total, entry) => total + countCompactBreadcrumbItems(entry), 0);
+}
+
 function hasMainBundle(text) {
     return /\/js\/main(?:\.min)?\.[^"' >]+/i.test(text);
 }
@@ -630,6 +654,7 @@ async function inspectHtmlFile(rootDir, absolutePath) {
 
     let breadcrumbPayloadBytes = 0;
     let breadcrumbSourceCount = 0;
+    let breadcrumbItemCount = 0;
     let breadcrumbSourcePaths = [];
     let breadcrumbParseError = '';
     const prefetchPayloadScript = extractInlineScriptTextById(text, 'site-prefetch-data');
@@ -645,6 +670,7 @@ async function inspectHtmlFile(rootDir, absolutePath) {
                 breadcrumbParseError = 'data-entry-breadcrumb-sources is not a JSON array';
             } else {
                 breadcrumbSourceCount = parsed.length;
+                breadcrumbItemCount = countCompactBreadcrumbItems(parsed);
                 breadcrumbSourcePaths = parsed
                     .map((entry) => {
                         if (!entry || typeof entry !== 'object') {
@@ -679,6 +705,7 @@ async function inspectHtmlFile(rootDir, absolutePath) {
         repeatedBreadcrumbCollectionSourceCount,
         breadcrumbPayloadBytes,
         breadcrumbSourceCount,
+        breadcrumbItemCount,
         breadcrumbSourcePaths,
         breadcrumbParseError,
         ...breadcrumbPrefetchContract,
@@ -921,9 +948,13 @@ function buildGuardrailIssues(rowsByPath) {
                 `${guardrail.label} gzip HTML exceeded budget: ${formatByteMetric(row.gzipBytes)} > ${formatByteMetric(guardrail.maxGzipBytes)} (${guardrail.relativePath})`
             );
         }
-        if (row.breadcrumbPayloadBytes > guardrail.maxBreadcrumbPayloadBytes) {
+        const maxBreadcrumbPayloadBytes = Number.isFinite(guardrail.maxBreadcrumbPayloadBytes)
+            ? guardrail.maxBreadcrumbPayloadBytes
+            : guardrail.breadcrumbPayloadBaseBytes
+                + row.breadcrumbItemCount * guardrail.breadcrumbPayloadPerItemBytes;
+        if (row.breadcrumbPayloadBytes > maxBreadcrumbPayloadBytes) {
             issues.push(
-                `${guardrail.label} breadcrumb payload exceeded budget: ${formatByteMetric(row.breadcrumbPayloadBytes)} > ${formatByteMetric(guardrail.maxBreadcrumbPayloadBytes)} (${guardrail.relativePath})`
+                `${guardrail.label} breadcrumb payload exceeded budget: ${formatByteMetric(row.breadcrumbPayloadBytes)} > ${formatByteMetric(maxBreadcrumbPayloadBytes)} (${guardrail.relativePath}, items=${row.breadcrumbItemCount})`
             );
         }
         if (row.breadcrumbSourceCount > guardrail.maxBreadcrumbSourceCount) {
