@@ -1,5 +1,6 @@
 {{- $edgeone := .edgeone | default dict -}}
 {{- $routes := .routes | default slice -}}
+{{- $redirects := index $edgeone "redirects" | default slice -}}
 {{- $headers := slice -}}
 
 {{- range $route := $routes -}}
@@ -22,6 +23,7 @@
     "buildCommand" (printf "%v" (index $edgeone "buildCommand" | default ""))
     "outputDirectory" (printf "%v" (index $edgeone "outputDirectory" | default ""))
     "nodeVersion" (printf "%v" (index $edgeone "nodeVersion" | default ""))
+    "redirects" $redirects
     "headers" $headers
 -}}
 {{- return $config -}}
