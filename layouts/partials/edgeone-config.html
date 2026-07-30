@@ -1,7 +1,16 @@
 {{- $edgeone := .edgeone | default dict -}}
 {{- $routes := .routes | default slice -}}
-{{- $redirects := index $edgeone "redirects" | default slice -}}
+{{- $redirectRules := .redirects | default slice -}}
+{{- $redirects := slice -}}
 {{- $headers := slice -}}
+
+{{- range $rule := $redirectRules -}}
+    {{- $redirects = $redirects | append (dict
+        "source" (index $rule "source")
+        "destination" (index $rule "destination")
+        "statusCode" (index $rule "status")
+    ) -}}
+{{- end -}}
 
 {{- range $route := $routes -}}
     {{- $path := printf "%v" (index $route "path" | default "") -}}

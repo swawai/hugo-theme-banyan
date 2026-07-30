@@ -1,0 +1,16 @@
+{{- $redirects := .redirects | default slice -}}
+{{- $lines := slice -}}
+
+{{- $lines = $lines | append "# GENERATED FILE: do not edit public/_redirects by hand; update data/redirects.toml instead." -}}
+{{- $lines = $lines | append "" -}}
+
+{{- range $rule := $redirects -}}
+    {{- $lines = $lines | append (printf "%s %s %d"
+        (index $rule "source")
+        (index $rule "destination")
+        (index $rule "status")
+    ) -}}
+{{- end -}}
+
+{{- $body := printf "%s\n" (delimit $lines "\n") -}}
+{{- return $body -}}

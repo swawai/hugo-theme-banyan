@@ -42,6 +42,17 @@ mkdir -p data
 # create data/cache-policy.toml only when your site needs route overrides
 ```
 
+Keep site-owned URL migrations separate from cache policy in
+`data/redirects.toml`. Provider-specific renderers consume these neutral rules
+and generate EdgeOne `edgeone.json` entries and Cloudflare Pages `_redirects`:
+
+```toml
+[[rules]]
+source = "/old-path/"
+destination = "/new-path/"
+status = 301
+```
+
 ## Example Site
 
 `themes/banyan/exampleSite` is a minimal consumer site used to verify that the
@@ -226,7 +237,11 @@ MIT
 
 
 
-public/_headers / public/edgeone.json 由主题默认缓存策略和站点 data/cache-policy.toml（若存在）共同驱动，腾讯Edgeone 可能需要拷贝public/edgeone.json 到你项目根目录
+`public/_headers` / `public/edgeone.json` 由主题默认缓存策略和站点
+`data/cache-policy.toml`（若存在）共同驱动；站点 `data/redirects.toml`
+会同时生成 Cloudflare Pages 的 `public/_redirects` 和 EdgeOne 的
+`redirects` 配置。腾讯 EdgeOne 可能需要将 `public/edgeone.json` 同步到
+项目根目录。
 
 
 

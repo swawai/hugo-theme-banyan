@@ -1,0 +1,21 @@
+{{- $rules := .rules | default slice -}}
+{{- $normalized := slice -}}
+
+{{- range $rule := $rules -}}
+    {{- $source := printf "%v" (index $rule "source" | default "") -}}
+    {{- $destination := printf "%v" (index $rule "destination" | default "") -}}
+    {{- $status := int (index $rule "status" | default 0) -}}
+    {{- if or (eq $source "") (eq $destination "") (eq $status 0) -}}
+        {{- errorf "Build failed: data/redirects.toml rules require non-empty source, destination, and status values." -}}
+    {{- end -}}
+    {{- if not (in (slice 301 302) $status) -}}
+        {{- errorf "Build failed: data/redirects.toml only supports status 301 or 302 while EdgeOne and Cloudflare Pages outputs are enabled; got %d." $status -}}
+    {{- end -}}
+    {{- $normalized = $normalized | append (dict
+        "source" $source
+        "destination" $destination
+        "status" $status
+    ) -}}
+{{- end -}}
+
+{{- return $normalized -}}
