@@ -1,11 +1,11 @@
 ---
-title: Products
-linkTitle: First-party
-browser_title: "First-party Products: Free and Paid"
-description: "Explore products built and maintained in-house, including both free and paid offerings."
-weight: 10
+title: Origin - First-party
+description: Products built in-house, both free and paid.
+weight: 30
 nav_primary: products
-layout: "article-list"
+layout: article-list
+outputs:
+  - HTML
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

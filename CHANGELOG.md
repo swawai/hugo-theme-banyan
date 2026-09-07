@@ -10,6 +10,8 @@ and migration decisions.
 
 ### Added
 
+- Added multilingual product-all and category roots with four sibling price
+  and origin views, plus browser coverage for product entry lineage and history.
 - Added a multilingual site-information section and a `section-index` layout
   that lists direct children by weight using the shared collection rows.
 - Added a release migration plan for separating theme-owned files, site-owned
@@ -22,6 +24,11 @@ and migration decisions.
 
 ### Changed
 
+- Separated product price classification from origin so free and paid filters
+  include both first-party and third-party products. Removed the old nested
+  product navigation tree and its special root-matching strategy.
+- Kept static section-index ancestor menus in page-weight order when restoring
+  entry breadcrumbs, without assigning them the descendant collection type.
 - Aligned section index headings and column widths with the shared collection
   styles, keeping site-information lists compact on desktop and narrow screens.
 - Moved default about and changelog bundles under `content/site/`, preserving

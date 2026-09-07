@@ -1,11 +1,11 @@
 ---
-title: 產品
-linkTitle: 自建
-browser_title: "自建產品：免費與付費"
-description: "瀏覽自主開發和維護的產品，包括免費與付費項目。"
-weight: 10
+title: 来源－第三方
+description: 第三方开发和维护的产品，包含免费与付费产品。
+weight: 40
 nav_primary: products
-layout: "article-list"
+layout: article-list
+outputs:
+  - HTML
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

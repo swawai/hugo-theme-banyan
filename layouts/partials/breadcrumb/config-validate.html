@@ -32,11 +32,10 @@
 
 {{- $menuActiveHrefSource := lower (trim (printf "%v" (index $config "menu_active_href_source" | default "")) " ") -}}
 {{- $allowedMenuActiveHrefSources := dict
-  "products-family" true
   "signals-family" true
 -}}
 {{- if and (ne $menuActiveHrefSource "") (not (index $allowedMenuActiveHrefSources $menuActiveHrefSource)) -}}
-  {{- errorf "Build failed: breadcrumb fragment %q uses unsupported breadcrumb.menu_active_href_source=%q. Supported values: products-family, signals-family." $sourcePath $menuActiveHrefSource -}}
+  {{- errorf "Build failed: breadcrumb fragment %q uses unsupported breadcrumb.menu_active_href_source=%q. Supported value: signals-family." $sourcePath $menuActiveHrefSource -}}
 {{- end -}}
 
 {{- with index $config "lead" -}}

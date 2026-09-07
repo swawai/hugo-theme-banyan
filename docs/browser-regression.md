@@ -35,6 +35,8 @@
 - `bun run check:browser:trace`
 - `bun run check:browser:install`
 
+产品入口专项场景 `products-category-entry-lineage` 验证四个分类的目录顺序，以及从全部／分类列表进入真实产品后的根选中、分类兄弟项、排序、刷新与前进后退。它从当前站点发现一个真实产品，不依赖固定产品 slug；至少需要一篇带 `product` 数据的产品正文。
+
 
 ## 设计原则
 
@@ -334,7 +336,7 @@ bun run check:security:headers
 它当前覆盖：
 
 - `/all/`
-- `/p/xvenv/?from=products/first-party&sorts=_,name-asc`
+- `/p/xvenv/?from=product-categories/first-party&sorts=_,name-asc`
 - `/prefetchdebug`
 
 把它单独拆成一个入口，而不是塞进默认 `check:browser:security`，是刻意的：

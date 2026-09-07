@@ -1,7 +1,7 @@
 ---
-title: Products - All
-description: All products, across prices and origins.
-weight: 60
+title: Origin - Third-party
+description: Third-party products, both free and paid.
+weight: 40
 nav_primary: products
 layout: article-list
 outputs:

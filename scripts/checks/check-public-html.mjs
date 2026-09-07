@@ -31,7 +31,7 @@ const productionGuardrails = [
     },
     {
         label: 'products',
-        relativePath: 'products/first-party/index.html',
+        relativePath: 'products/index.html',
         maxRawBytes: 42_000,
         maxGzipBytes: 12_000,
         breadcrumbPayloadBaseBytes: 1_300,

@@ -25,15 +25,12 @@ Products：
 ```yaml
 breadcrumb:
   variant: lead-menu
-  auto_tail: current
+  auto_tail: full
   menu_mode: current-root
   menu_label: 产品分类
-  menu_active_href_source: products-family
   menu:
-    - page: /products/first-party
-    - page: /products/first-party/paid
-    - page: /products/first-party/free
-    - page: /products/third-party
+    - page: /product-categories
+    - page: /products
 ```
 
 Signals：
@@ -136,11 +133,10 @@ root menu 的语义标签。
 
 ### `menu_active_href_source`
 
-root current 的来源策略。
+root current 的可选来源策略。产品入口直接按真实根路径匹配，无须额外策略。
 
 当前支持：
 
-- `products-family`
 - `signals-family`
 
 这不是一个随便填字符串的扩展口。  

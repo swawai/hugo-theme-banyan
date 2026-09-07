@@ -34,20 +34,14 @@
 {{- if eq $valueText "" -}}
   {{- errorf "Build failed: page %q is missing product.value." $pageRef -}}
 {{- end -}}
-{{- $isFree := gt (len (findRE `^0(?:\.0+)?$` $amountText)) 0 -}}
-{{- $scope := "paid" -}}
-{{- if eq $origin "third-party" -}}
-  {{- $scope = "third-party" -}}
-{{- else if $isFree -}}
-  {{- $scope = "free" -}}
-{{- end -}}
+{{- $isFree := gt (len (findRE `^0+(?:\.0+)?$` $amountText)) 0 -}}
 {{- $priceText := printf "%s%s" $currency $amountText -}}
 {{- if $isFree -}}
   {{- $priceText = i18n "products_free" -}}
 {{- end -}}
 {{- return (dict
   "origin" $origin
-  "scope" $scope
+  "price_kind" (cond $isFree "free" "paid")
   "price_amount_text" $amountText
   "price_currency" $currency
   "price_text" $priceText

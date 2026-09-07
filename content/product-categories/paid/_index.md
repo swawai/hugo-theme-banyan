@@ -1,10 +1,11 @@
 ---
-title: 第三方
-linkTitle: 第三方
-description: 第三方产品列表。
-weight: 30
+title: Price - Paid
+description: Products with a nonzero price, from any origin.
+weight: 20
 nav_primary: products
-layout: "article-list"
+layout: article-list
+outputs:
+  - HTML
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

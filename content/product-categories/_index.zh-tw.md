@@ -1,17 +1,14 @@
 ---
-title: Third-party
-linkTitle: Third-party
-description: Third-party products list.
-weight: 30
+title: 產品－分類
+description: 按價格或來源瀏覽產品。
+weight: 50
 nav_primary: products
-layout: "article-list"
+layout: section-index
+outputs:
+  - HTML
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities
   breadcrumb_root: /fragments/breadcrumb-model-products
   breadcrumb: true
-banyan_entry_source:
-  provider: products
 ---
-
-{{< products-list >}}

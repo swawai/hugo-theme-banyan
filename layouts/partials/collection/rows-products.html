@@ -7,19 +7,17 @@
 {{- end -}}
 {{- $rows := slice -}}
 {{- $scope := partial "products/source-scope.html" (dict "page" $host) -}}
-{{- if not (in (slice "first-party" "paid" "free" "third-party") $scope) -}}
-  {{- errorf "Build failed: products source page %q has unsupported scope=%q." ($host.File.Path | default (printf "%s %s" $host.Kind $host.RelPermalink)) $scope -}}
-{{- end -}}
 {{- range where $host.Site.RegularPages "Params.product" "ne" nil -}}
   {{- $product := partial "products/model.html" (dict "page" .) -}}
   {{- $text := .LinkTitle | default .Title -}}
-  {{- $productScope := index $product "scope" -}}
-  {{- if eq $scope "first-party" -}}
-    {{- if eq $productScope "third-party" -}}
+  {{- if in (slice "first-party" "third-party") $scope -}}
+    {{- if ne $scope (index $product "origin") -}}
       {{- continue -}}
     {{- end -}}
-  {{- else if ne $scope $productScope -}}
-    {{- continue -}}
+  {{- else if in (slice "free" "paid") $scope -}}
+    {{- if ne $scope (index $product "price_kind") -}}
+      {{- continue -}}
+    {{- end -}}
   {{- end -}}
 
   {{- $rows = $rows | append (dict

@@ -1,10 +1,11 @@
 ---
-title: Paid
-linkTitle: Paid
-description: Paid products list.
+title: 价格－免费
+description: 价格为零的产品，包含自建与第三方产品。
 weight: 10
 nav_primary: products
-layout: "article-list"
+layout: article-list
+outputs:
+  - HTML
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

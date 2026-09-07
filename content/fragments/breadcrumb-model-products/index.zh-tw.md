@@ -5,13 +5,10 @@ build:
   render: never
 breadcrumb:
   variant: lead-menu
-  auto_tail: current
+  auto_tail: full
   menu_mode: current-root
-  menu_label: 產品分類
-  menu_active_href_source: products-family
+  menu_label: 產品檢視
   menu:
-    - page: /products/first-party
-    - page: /products/first-party/paid
-    - page: /products/first-party/free
-    - page: /products/third-party
+    - page: /product-categories
+    - page: /products
 ---

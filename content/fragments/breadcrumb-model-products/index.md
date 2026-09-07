@@ -1,17 +1,14 @@
 ---
-title: Products Breadcrumb Model
+title: Products breadcrumb model
 build:
   list: never
   render: never
 breadcrumb:
   variant: lead-menu
-  auto_tail: current
+  auto_tail: full
   menu_mode: current-root
-  menu_label: Product categories
-  menu_active_href_source: products-family
+  menu_label: Product views
   menu:
-    - page: /products/first-party
-    - page: /products/first-party/paid
-    - page: /products/first-party/free
-    - page: /products/third-party
+    - page: /product-categories
+    - page: /products
 ---

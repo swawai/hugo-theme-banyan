@@ -8,7 +8,16 @@
     {{- end -}}
   {{- end -}}
   {{- if $owner -}}
-    {{- $entries := partial "section/direct-children.html" (dict "ctx" $owner) -}}
+    {{- $entries := slice -}}
+    {{- if eq $owner.Layout "section-index" -}}
+      {{- range $owner.Pages.ByWeight -}}
+        {{- $entries = $entries | append (dict
+          "href" .RelPermalink "text" .LinkTitle "title" .Title "kind" .Kind
+        ) -}}
+      {{- end -}}
+    {{- else -}}
+      {{- $entries = partial "section/direct-children.html" (dict "ctx" $owner) -}}
+    {{- end -}}
     {{- $menu = partial "breadcrumb/menu-items-from-entries.html" (dict
       "entries" $entries
       "selected_href" $node.RelPermalink

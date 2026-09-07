@@ -85,11 +85,11 @@ assert.equal(
 assert.equal(
     applySorts(
         navState,
-        'https://example.test/zh/p/example/?from=products/first-party',
+        'https://example.test/zh/p/example/?from=product-categories/first-party',
         ['', 'name-asc'],
         ['date-desc', 'name-asc']
     ),
-    '/zh/p/example/?from=products/first-party',
+    '/zh/p/example/?from=product-categories/first-party',
     'placeholder/default lineage sorts should be omitted when every layer is default'
 );
 

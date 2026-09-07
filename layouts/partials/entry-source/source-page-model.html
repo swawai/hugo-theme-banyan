@@ -35,12 +35,27 @@
     "provider" $provider
     "href" $collectionHref
   ) -}}
-  {{- $collectionSource := partial "entry-source/collection-source.html" (dict
-    "provider" $provider
-    "logical_path" $collectionLogicalPath
-    "label" $collectionLabel
-    "href" $collectionHref
-  ) -}}
+  {{- /* An ancestor owns its collection type. Static section indexes retain their page menu. */ -}}
+  {{- $collectionProvider := $provider -}}
+  {{- range $ancestor := $page.Ancestors -}}
+    {{- if eq $ancestor.RelPermalink $collectionHref -}}
+      {{- $collectionProvider = $ancestor.Params.banyan_entry_source.provider | default "" -}}
+      {{- if and (eq $ancestor.Kind "section") (eq $ancestor.Section "d") -}}
+        {{- $collectionProvider = "section-d" -}}
+      {{- else if in (slice "taxonomy" "term") $ancestor.Kind -}}
+        {{- $collectionProvider = "taxonomy" -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $collectionSource := dict -}}
+  {{- if ne $collectionProvider "" -}}
+    {{- $collectionSource = partial "entry-source/collection-source.html" (dict
+      "provider" $collectionProvider
+      "logical_path" $collectionLogicalPath
+      "label" $collectionLabel
+      "href" $collectionHref
+    ) -}}
+  {{- end -}}
   {{- $levelModel := dict "item" $item -}}
   {{- if gt (len $collectionSource) 0 -}}
     {{- $levelModel = merge $levelModel (dict "collection_source" $collectionSource) -}}

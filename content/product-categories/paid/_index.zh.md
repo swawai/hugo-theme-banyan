@@ -1,11 +1,11 @@
 ---
-title: 产品
-linkTitle: 自建
-browser_title: "自建产品：免费与付费"
-description: "浏览自主开发和维护的产品，包括免费与付费项目。"
-weight: 10
+title: 价格－付费
+description: 价格大于零的产品，包含自建与第三方产品。
+weight: 20
 nav_primary: products
-layout: "article-list"
+layout: article-list
+outputs:
+  - HTML
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

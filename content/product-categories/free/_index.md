@@ -1,10 +1,11 @@
 ---
-title: 付费
-linkTitle: 付费
-description: 付费产品列表。
+title: Price - Free
+description: Products with a price of zero, from any origin.
 weight: 10
 nav_primary: products
-layout: "article-list"
+layout: article-list
+outputs:
+  - HTML
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities

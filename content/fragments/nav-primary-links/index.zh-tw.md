@@ -10,7 +10,7 @@ nav:
   my:
     show: false
   items:
-    - page: /products/first-party
+    - page: /products
       key: products
       text: 產品
     - page: /all

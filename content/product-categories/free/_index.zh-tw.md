@@ -1,10 +1,11 @@
 ---
-title: 免费
-linkTitle: 免费
-description: 免费产品列表。
-weight: 20
+title: 價格－免費
+description: 價格為零的產品，包含自建與第三方產品。
+weight: 10
 nav_primary: products
-layout: "article-list"
+layout: article-list
+outputs:
+  - HTML
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities
