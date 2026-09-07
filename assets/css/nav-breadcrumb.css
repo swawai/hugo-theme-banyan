@@ -1,144 +1,51 @@
+/* One column layout at every viewport width; the document owns horizontal scrolling. */
+html[data-entry-breadcrumb-preview-pending="true"] .slot-row-breadcrumb,
+html[data-breadcrumb-sort-pending="true"] .slot-row-breadcrumb {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.page-shell--has-breadcrumb-tail .page-stage {
+    display: grid;
+    grid-template-columns: max-content var(--breadcrumb-main-inline);
+    column-gap: var(--breadcrumb-gap-inline);
+    align-items: start;
+}
+
 .slot-row-breadcrumb {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    margin-bottom: 18px;
-    position: relative;
-    z-index: 0;
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: var(--breadcrumb-column-inline);
+    column-gap: var(--breadcrumb-gap-inline);
+    align-items: start;
+    position: sticky;
+    top: var(--page-edge-block-start);
+    max-block-size: calc(100vh - var(--page-edge-block-start) - 1rem);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
 }
 
-html[data-entry-breadcrumb-preview-pending="true"] .slot-row-breadcrumb {
-    visibility: hidden;
-    pointer-events: none;
-}
-
-.slot-row-breadcrumb.is-breadcrumb-menu-mode {
-    background: transparent;
-    box-shadow: none;
-    z-index: 2;
-}
-
-.slot-row-breadcrumb.is-breadcrumb-menu-mode::before {
-    content: "";
-    position: absolute;
-    inset-block: -0.38rem;
-    inset-inline: max(-0.62rem, calc(-1 * var(--page-edge-inline)));
-    border-radius: 0.86rem;
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--focus) 20%, transparent);
-    background: color-mix(in srgb, var(--focus) 2%, transparent);
-    pointer-events: none;
-    z-index: -1;
-}
-
-.slot-breadcrumb {
-    display: inline-flex;
-    align-items: center;
-    min-inline-size: 0;
-    max-inline-size: 100%;
-}
-
+.slot-breadcrumb,
 .breadcrumb-nav {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    min-inline-size: 0;
-    max-inline-size: 100%;
-    white-space: normal;
-    margin-bottom: 0;
-}
-
-.breadcrumb-item {
-    display: inline-flex;
-    align-items: center;
-    min-inline-size: 0;
-    max-inline-size: 100%;
-}
-
-.slot-row-breadcrumb .breadcrumb-item-menu {
-    position: static;
-}
-
-.slot-row-breadcrumb .breadcrumb-menu-panel {
-    inset-inline-start: 0;
-    inset-inline-end: auto;
-    inline-size: max-content;
-    min-inline-size: 0;
-    max-inline-size: 100%;
-}
-
-.slot-row-breadcrumb .breadcrumb-menu-panel > .grid-list--single {
     display: contents;
 }
 
-.breadcrumb-sep {
-    display: inline-flex;
-    margin: 0 0.08rem;
-    color: var(--link-visited);
-    line-height: 1;
-}
-
-.slot-breadcrumb-row-sep {
-    align-self: center;
-}
-
-.breadcrumb-link,
-.breadcrumb-link:visited,
-.breadcrumb-link:hover {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
+.breadcrumb-column {
+    display: grid;
+    align-content: start;
     min-inline-size: 0;
-    max-inline-size: 100%;
-    line-height: 1;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    text-decoration: none;
+    inline-size: var(--breadcrumb-column-inline);
 }
 
-.breadcrumb-link .crumb-text,
-.breadcrumb-menu-link .crumb-text {
-    display: inline-block;
-    min-inline-size: 0;
-    max-inline-size: 100%;
-    line-height: 1;
-    white-space: normal;
-    overflow-wrap: anywhere;
-    text-wrap: pretty;
+.page-shell--has-breadcrumb-tail .slot-main {
+    grid-column: 2;
+    grid-row: 1;
 }
 
-.prose a.breadcrumb-link,
-.prose a.breadcrumb-link:visited,
-.prose a.breadcrumb-link:hover,
-.prose a.breadcrumb-menu-link,
-.prose a.breadcrumb-menu-link:visited,
-.prose a.breadcrumb-menu-link:hover,
-.prose a.breadcrumb-menu-option,
-.prose a.breadcrumb-menu-option:visited,
-.prose a.breadcrumb-menu-option:hover {
-    border-bottom: none;
-}
-
-.breadcrumb-link::after,
-.breadcrumb-menu-link::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-bottom: 0.5px solid;
-}
-
-.breadcrumb-link:hover,
-.breadcrumb-menu-link:hover,
-.breadcrumb-item-menu.is-open > .breadcrumb-menu-link {
-    opacity: 0.8;
-}
-
-.breadcrumb-menu-caret {
-    display: none;
-}
-
-[data-breadcrumb-mode-toggle="true"] .breadcrumb-menu-caret,
-.slot-row-breadcrumb.is-breadcrumb-menu-mode [data-breadcrumb-menu-link="true"] .breadcrumb-menu-caret {
-    display: inline-block;
+.page-shell--has-breadcrumb-tail .slot-meta {
+    grid-column: 2;
+    grid-row: 2;
+    padding-block-start: 0.9rem;
 }

@@ -2,18 +2,8 @@
 {{- $visibleItems := .items | default slice -}}
 {{- if gt (len $visibleItems) 0 -}}
 <nav class="breadcrumb-nav" aria-label="Breadcrumb">
-  {{- range $index, $item := $visibleItems -}}
-    {{- if gt $index 0 -}}<span class="breadcrumb-sep" aria-hidden="true">﹥</span>{{- end -}}
-    {{- $itemIsCurrent := eq (index $item "current") true -}}
-    {{- $itemClass := "breadcrumb-link" -}}
-    {{- if eq $index 0 -}}{{- $itemClass = printf "%s breadcrumb-link-lead" $itemClass -}}{{- end -}}
-    {{- if $itemIsCurrent -}}{{- $itemClass = printf "%s is-current" $itemClass -}}{{- end -}}
-    {{ partial "breadcrumb/item.html" (dict
-      "ctx" $ctx
-      "item" $item
-      "wrapperClass" "breadcrumb-item"
-      "linkClass" $itemClass
-    ) }}
+  {{- range $item := $visibleItems -}}
+    {{ partial "breadcrumb/item.html" (dict "ctx" $ctx "item" $item) }}
   {{- end -}}
 </nav>
 {{- end -}}

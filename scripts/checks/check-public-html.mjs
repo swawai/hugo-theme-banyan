@@ -15,7 +15,8 @@ const productionGuardrails = [
     {
         label: 'home',
         relativePath: 'index.html',
-        maxRawBytes: 20_000,
+        // The canvas adds about 1 KB of inline positioning before first paint.
+        maxRawBytes: 21_000,
         maxGzipBytes: 7_000,
         maxBreadcrumbPayloadBytes: 16,
         maxBreadcrumbSourceCount: 0
@@ -221,11 +222,7 @@ function extractStartTags(text, tagName) {
     return [...text.matchAll(new RegExp(`<${escapedTagName}\\b[^>]*>`, 'gi'))].map((match) => match[0]);
 }
 
-const breadcrumbPrefetchAnchorClasses = new Set([
-    'breadcrumb-link',
-    'breadcrumb-root-link',
-    'breadcrumb-menu-option'
-]);
+const breadcrumbPrefetchAnchorClasses = new Set(['breadcrumb-column-link']);
 
 function hasBreadcrumbPrefetchAnchorClass(className) {
     return className

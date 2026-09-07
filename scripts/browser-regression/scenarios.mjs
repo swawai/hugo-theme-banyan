@@ -17,6 +17,7 @@ import {
 import { relFromSite } from './paths.mjs';
 import { systemPageScenarios } from './system-pages.mjs';
 import { siteUpdateNavigationScenarios } from './site-update-navigation.mjs';
+import { canvasScenarios } from './canvas.mjs';
 
 const WIDE_VIEWPORT = { width: 1600, height: 1100 };
 const BREADCRUMB_FIRST_FRAME_VIEWPORT = { width: 1280, height: 960 };
@@ -173,7 +174,7 @@ function recordFirstBreadcrumbMenuStateScript(targetCollectionHref) {
     const readOrder = () => {
         const target = findTarget();
         return target instanceof HTMLElement
-            ? Array.from(target.querySelectorAll('a.breadcrumb-menu-option'))
+            ? Array.from(target.querySelectorAll('a.breadcrumb-column-link'))
                 .map((option) => (option.textContent || '').trim())
                 .filter(Boolean)
             : [];
@@ -234,7 +235,7 @@ const GRID_LIST_COLUMN_CASES = [
     { id: 'intent-wide', path: '/zh/intent/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
     { id: 'tags-wide', path: '/zh/tags/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
     { id: 'section-medium', path: '/zh/d/', viewport: { width: 1024, height: 960 } },
-    { id: 'section-mobile', path: '/zh/d/', viewport: { width: 390, height: 844 }, containDocument: true },
+    { id: 'section-mobile', path: '/zh/d/', viewport: { width: 390, height: 844 }, horizontalCanvas: true },
     { id: 'products-wide', path: '/zh/products/', viewport: WIDE_VIEWPORT, product: true }
 ];
 const DESIGN_AUDIT_VIEWPORTS = [
@@ -643,13 +644,12 @@ async function readBreadcrumbPrefetchSlotContract(page) {
             text: (anchor.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 80)
         });
 
-        const breadcrumbAnchors = Array.from(document.querySelectorAll([
-            'a.breadcrumb-link[href]',
-            'a.breadcrumb-menu-option[href]'
-        ].join(',')));
+        const breadcrumbAnchors = Array.from(document.querySelectorAll(
+            '.slot-breadcrumb a.breadcrumb-column-link[href]'
+        ));
         const slotRowAnchors = Array.from(document.querySelectorAll('.slot-row-breadcrumb a[href]'));
         const slotRowBreadcrumbMenuOptions = Array.from(document.querySelectorAll(
-            '.slot-row-breadcrumb a.breadcrumb-menu-option[href]'
+            '.slot-row-breadcrumb a.breadcrumb-column-link[href]'
         ));
 
         const breadcrumbInvalidAnchors = breadcrumbAnchors
@@ -677,6 +677,7 @@ async function readBreadcrumbPrefetchSlotContract(page) {
 }
 
 export const scenarios = [
+    ...canvasScenarios,
     ...systemPageScenarios,
     ...siteUpdateNavigationScenarios,
     {
@@ -1137,15 +1138,6 @@ export const scenarios = [
             const delta = finalMainInlineStart === null
                 ? null
                 : Math.abs(finalMainInlineStart - firstLayout.mainInlineStart);
-            const matchesWideLayout = await page.evaluate(() => (
-                window.matchMedia('(min-width: 75rem)').matches
-            ));
-
-            if (!matchesWideLayout) {
-                fail('First-frame scenario must exercise the 75rem wide layout.', {
-                    viewport: BREADCRUMB_FIRST_FRAME_VIEWPORT
-                });
-            }
             if (!firstLayout.previewPending || !firstLayout.runtimePending) {
                 fail('First-frame scenario did not capture a pending from-based breadcrumb.', {
                     firstLayout,
@@ -1673,7 +1665,7 @@ export const scenarios = [
                 const breadcrumb = document.querySelector('.slot-row-breadcrumb');
                 const main = document.querySelector('.slot-main');
                 const scrollingElement = document.scrollingElement;
-                const visibleColumns = Array.from(breadcrumb.querySelectorAll('.breadcrumb-item-menu'))
+                const visibleColumns = Array.from(breadcrumb.querySelectorAll('.breadcrumb-column'))
                     .filter((column) => {
                         const rect = column.getBoundingClientRect();
                         const style = getComputedStyle(column);
@@ -1811,7 +1803,7 @@ export const scenarios = [
                     || expectedInline <= 0
                     || Math.abs(geometry.nameInline - expectedInline) > 1
                     || (target.compareBreadcrumb && Math.abs(geometry.breadcrumbInline - expectedInline) > 1)
-                    || (target.containDocument && geometry.documentScrollInline > geometry.documentClientInline + 1);
+                    || (target.horizontalCanvas && geometry.documentScrollInline <= geometry.documentClientInline);
                 if (invalid) {
                     fail('Grid list name column contract failed.', { ...target, ...geometry, expectedInline });
                 }

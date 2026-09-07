@@ -41,8 +41,10 @@ function normalizeLinkItem(item) {
     if (typeof item.highlighted === 'boolean') {
         normalized.highlighted = item.highlighted;
     }
-    if (typeof item.menu_button_label === 'string' && item.menu_button_label.trim() !== '') {
-        normalized.menu_button_label = item.menu_button_label.trim();
+    for (const field of ['kind', 'icon', 'collection_href', 'collection_label']) {
+        if (typeof item[field] === 'string' && item[field].trim() !== '') {
+            normalized[field] = item[field].trim();
+        }
     }
     if (Array.isArray(item.menu)) {
         const menuItems = item.menu.map(normalizeLinkItem).filter(Boolean);

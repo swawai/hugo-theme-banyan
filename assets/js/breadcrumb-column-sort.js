@@ -7,7 +7,7 @@ import {
     parseCollectionSourceIndex,
     pickCollectionSourceByHref,
 } from './breadcrumb-source.js';
-import { renderBreadcrumbMenuPanel } from './breadcrumb-ui.js';
+import { renderBreadcrumbColumn } from './breadcrumb-ui.js';
 import {
     getLogicalPathDepth,
     normalizePathname,
@@ -63,7 +63,7 @@ function readVisibleLineageLogicalPath(sourceIndex = readCollectionSourceIndex()
         return currentFromPath;
     }
 
-    return Array.from(document.querySelectorAll('.slot-breadcrumb [data-breadcrumb-menu]'))
+    return Array.from(document.querySelectorAll('.slot-breadcrumb [data-collection-column]'))
         .map((wrapper) => readWrapperCollectionSource(wrapper, sourceIndex)?.logicalPath || '')
         .reduce((deepest, logicalPath) => (
             getLogicalPathDepth(logicalPath) > getLogicalPathDepth(deepest)
@@ -90,7 +90,7 @@ export async function refreshBreadcrumbCollectionColumns() {
     }
 
     const wrappers = Array.from(document.querySelectorAll(
-        '.slot-breadcrumb [data-breadcrumb-menu]'
+        '.slot-breadcrumb [data-collection-column]'
     ));
     if (wrappers.length === 0) {
         return;
@@ -106,9 +106,8 @@ export async function refreshBreadcrumbCollectionColumns() {
             return;
         }
 
-        const link = wrapper.querySelector('a.breadcrumb-menu-link[href]');
-        const panel = wrapper.querySelector('[data-breadcrumb-menu-panel]');
-        if (!(link instanceof HTMLAnchorElement) || !(panel instanceof HTMLElement)) {
+        const link = wrapper.querySelector('a.breadcrumb-column-link[aria-current="page"][href]');
+        if (!(link instanceof HTMLAnchorElement)) {
             return;
         }
 
@@ -124,26 +123,12 @@ export async function refreshBreadcrumbCollectionColumns() {
             return;
         }
 
-        const selectedItem = menuItems.find((menuItem) => menuItem.current);
-        if (selectedItem?.href) {
-            link.href = selectedItem.href;
-        } else if (
-            selectedPathname
-            && !menuItems.some((menuItem) => {
-                try {
-                    return normalizePathname(
-                        new URL(menuItem.href, window.location.origin).pathname
-                    ) === selectedPathname;
-                } catch (error) {
-                    return false;
-                }
-            })
-        ) {
+        if (!menuItems.some((menuItem) => menuItem.current)) {
             return;
         }
 
-        renderBreadcrumbMenuPanel(
-            panel,
+        renderBreadcrumbColumn(
+            wrapper,
             menuItems,
             collectionSource,
             { lineageLogicalPath }
@@ -162,7 +147,7 @@ export function initBreadcrumbColumnSort() {
             return;
         }
 
-        const wrapper = toggle.closest('[data-breadcrumb-menu]');
+        const wrapper = toggle.closest('[data-collection-column]');
         const sourceIndex = readCollectionSourceIndex();
         const collectionSource = readWrapperCollectionSource(wrapper, sourceIndex);
         if (!collectionSource?.logicalPath) {

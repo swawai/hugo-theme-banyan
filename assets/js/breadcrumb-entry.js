@@ -1,5 +1,4 @@
 import { renderRootSelection } from './root-navigation.js';
-import { initBreadcrumbMenus } from './breadcrumb-menu.js';
 import {
     buildBreadcrumbMenuItems,
     buildCollectionPageHref,
@@ -54,6 +53,7 @@ async function buildPrefixLevelItem(fragmentRoot, source, level) {
     }
 
     const result = {
+        ...baseItem,
         text: baseItem.text,
         href: targetLogicalPath
             ? buildCollectionPageHref(baseItem.href, targetLogicalPath, sortVariant, defaultSort)
@@ -73,14 +73,12 @@ async function buildPrefixLevelItem(fragmentRoot, source, level) {
         });
         if (menu.length > 0) {
             result.menu = menu;
-            result.menu_button_label = baseItem.menu_button_label || baseItem.text;
         }
         return result;
     }
 
     if (Array.isArray(baseItem.menu) && baseItem.menu.length > 0) {
         result.menu = baseItem.menu;
-        result.menu_button_label = baseItem.menu_button_label || baseItem.text;
     }
 
     return result;
@@ -152,7 +150,6 @@ export async function initEntryBreadcrumb() {
 
         renderRootSelection(state.rootItem);
         renderTopBreadcrumb(state.breadcrumbItems);
-        initBreadcrumbMenus();
     } finally {
         clearEntryBreadcrumbPending();
     }

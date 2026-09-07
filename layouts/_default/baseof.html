@@ -104,7 +104,6 @@
 {{- $slotSources := partial "slots/prepare.html" (dict "ctx" .) -}}
 {{- $hasBreadcrumbCapability := eq (index $slotSources "breadcrumb") true -}}
 {{- .Scratch.Set "needs_breadcrumb_runtime" $hasBreadcrumbCapability -}}
-{{- .Scratch.Set "needs_ui_dropdown_runtime" $hasBreadcrumbCapability -}}
 {{- $pageCollectionSource := dict -}}
 {{- $entryBreadcrumbSources := slice -}}
 {{- $entryCollectionSourcesByHref := dict -}}
@@ -214,6 +213,7 @@
     {{- printf "<script>%s</script>" (index $breadcrumbPendingInline "content") | safeHTML -}}
     {{- end }}
     {{- block "styles" . -}}{{ partial "head-styles.html" (dict "ctx" .) }}{{- end -}}
+    {{- printf "<script>%s</script>" (index (index $inlineScripts "canvas_position") "content") | safeHTML -}}
     {{- block "head-extra" . -}}{{- end -}}
     {{- partial "component-assets-head.html" . -}}
     {{- with site.Params.link_prefetch -}}
@@ -282,12 +282,6 @@
     {{- if not hugo.IsServer -}}{{- $js = $js | minify -}}{{- end -}}
     {{- $js = $js | fingerprint -}}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
-    {{- if eq (.Scratch.Get "needs_ui_dropdown_runtime") true -}}
-        {{- $uiRuntime := resources.Get "js/ui-runtime.js" | js.Build (dict "params" $jsBuildParams) -}}
-        {{- if not hugo.IsServer -}}{{- $uiRuntime = $uiRuntime | minify -}}{{- end -}}
-        {{- $uiRuntime = $uiRuntime | fingerprint -}}
-    <script src="{{ $uiRuntime.RelPermalink }}" integrity="{{ $uiRuntime.Data.Integrity }}" defer></script>
-    {{- end -}}
     {{- if eq (.Scratch.Get "needs_breadcrumb_runtime") true -}}
         {{- $breadcrumbRuntime := resources.Get "js/breadcrumb-runtime.js" | js.Build (dict "params" $jsBuildParams) -}}
         {{- if not hugo.IsServer -}}{{- $breadcrumbRuntime = $breadcrumbRuntime | minify -}}{{- end -}}
@@ -384,7 +378,7 @@
             {{- /* Reserve source-dependent columns before parsing main to avoid a first-paint shift. */ -}}
             {{- printf "<script>%s</script>" (index $breadcrumbSkeletonInline "content") | safeHTML -}}
             {{- end -}}
-            <main id="main" class="slot slot-main" data-slot="main">
+            <main id="main" class="slot slot-main" data-slot="main" tabindex="-1">
                 {{- block "main" . -}}{{- end -}}
             </main>
             {{- with index $slotSources "meta" -}}

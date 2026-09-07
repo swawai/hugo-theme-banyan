@@ -126,10 +126,6 @@ try {
         return;
     }
 
-    if (!(window.matchMedia && window.matchMedia("(min-width: 75rem)").matches)) {
-        return;
-    }
-
     var body = document.body;
     if (!body) {
         return;
@@ -181,7 +177,8 @@ try {
 
     for (var itemIndex = 0; itemIndex < placeholderCount; itemIndex += 1) {
         var placeholder = document.createElement("span");
-        placeholder.className = "breadcrumb-item-menu";
+        placeholder.className = "breadcrumb-column";
+        placeholder.dataset.collectionColumn = "true";
         nav.appendChild(placeholder);
     }
 

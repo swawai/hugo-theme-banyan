@@ -7,20 +7,6 @@ import {
 
 const BREADCRUMB_PREFETCH_SLOT = 'crumb';
 
-function createCrumbText(text, { withCaret = false } = {}) {
-    const span = document.createElement('span');
-    span.className = 'crumb-text';
-    span.textContent = text;
-    if (withCaret) {
-        const caret = document.createElement('span');
-        caret.className = 'ui-dropdown-caret breadcrumb-menu-caret';
-        caret.setAttribute('aria-hidden', 'true');
-        caret.textContent = '▾';
-        span.appendChild(caret);
-    }
-    return span;
-}
-
 function normalizeBreadcrumbItemKind(item) {
     const kind = item && typeof item.kind === 'string' ? item.kind.trim().toLowerCase() : '';
     return kind || '';
@@ -88,26 +74,31 @@ function readCollectionSortCopy() {
 
 function buildCollectionColumnHeader(source, { lineageLogicalPath = '' } = {}) {
     const collectionSource = normalizeBreadcrumbCollectionSource(source);
-    const state = getCollectionSortState(collectionSource);
-    if (!state || !collectionSource?.label || !collectionSource?.href) {
+    if (!collectionSource?.label || !collectionSource?.href) {
         return null;
     }
 
-    const copy = readCollectionSortCopy();
     const header = document.createElement('span');
     header.className = 'cell-title header collection-column-header collection-list-header';
-
     const label = document.createElement('a');
     label.className = 'collection-column-label';
+    label.href = collectionSource.href;
+    label.title = collectionSource.label;
+    label.textContent = collectionSource.label;
+    applyBreadcrumbPrefetchSlot(label);
+    header.appendChild(label);
+
+    const state = getCollectionSortState(collectionSource);
+    if (!state) {
+        return header;
+    }
     label.href = buildCollectionPageHref(
         collectionSource.href,
         collectionSource.logicalPath,
         state.sortVariant,
         state.defaultSort
     );
-    label.title = collectionSource.label;
-    label.textContent = collectionSource.label;
-    applyBreadcrumbPrefetchSlot(label);
+    const copy = readCollectionSortCopy();
 
     const separator = document.createElement('span');
     separator.className = 'collection-column-separator';
@@ -135,136 +126,74 @@ function buildCollectionColumnHeader(source, { lineageLogicalPath = '' } = {}) {
     indicator.setAttribute('aria-hidden', 'true');
     indicator.textContent = state.order === 'asc' ? '↑' : '↓';
     toggle.append(sortLabel, indicator);
-    header.append(label, separator, toggle);
+    header.append(separator, toggle);
     return header;
 }
 
-function buildMenuCell(menuItem) {
+function buildCollectionCell(item, current) {
     const cell = document.createElement('span');
     cell.className = 'cell-title';
     const option = document.createElement('a');
-    option.href = menuItem.href;
-    option.className = menuItem.current
-        ? 'ui-dropdown-option breadcrumb-menu-option collection-item-link is-current'
-        : 'ui-dropdown-option breadcrumb-menu-option collection-item-link';
+    option.href = item.href;
+    option.className = current
+        ? 'breadcrumb-column-link collection-item-link is-current'
+        : 'breadcrumb-column-link collection-item-link';
     applyBreadcrumbPrefetchSlot(option);
-    applyBreadcrumbKind(option, menuItem);
-    if (menuItem.current) {
+    applyBreadcrumbKind(option, item);
+    if (current) {
         option.setAttribute('aria-current', 'page');
     }
-    option.title = menuItem.title || menuItem.text || '';
-    option.appendChild(buildCollectionItemContent(menuItem));
+    option.title = item.title || item.text || '';
+    option.appendChild(buildCollectionItemContent(item));
     cell.appendChild(option);
     return cell;
 }
 
-function buildCollectionColumnGrid(menuItems, collectionSource, options = {}) {
-    const grid = document.createElement('span');
+function buildCollectionColumnGrid(items, collectionSource, options = {}) {
+    const grid = document.createElement('div');
     grid.className = 'grid-list grid-list--single collection-list collection-list--column';
     const header = buildCollectionColumnHeader(collectionSource, options);
     if (header) {
         grid.classList.add('grid-list--headed');
         grid.appendChild(header);
     }
-    menuItems.forEach((menuItem) => {
-        grid.appendChild(buildMenuCell(menuItem));
+    const selectedField = ['highlighted', 'current', 'selected'].find(
+        (field) => items.some((item) => item[field] === true)
+    );
+    items.forEach((item) => {
+        grid.appendChild(buildCollectionCell(item, !!selectedField && item[selectedField] === true));
     });
     return grid;
 }
 
-export function renderBreadcrumbMenuPanel(
-    panel,
-    menuItems,
+export function renderBreadcrumbColumn(
+    column,
+    items,
     collectionSource = null,
     options = {}
 ) {
-    if (!(panel instanceof Element) || !Array.isArray(menuItems)) {
+    if (!(column instanceof Element) || !Array.isArray(items)) {
         return;
     }
 
-    panel.replaceChildren(buildCollectionColumnGrid(menuItems, collectionSource, options));
+    column.replaceChildren(buildCollectionColumnGrid(items, collectionSource, options));
 }
 
-function buildMenuPanel(menuItems, collectionSource) {
-    const panel = document.createElement('span');
-    panel.className = 'ui-dropdown-panel breadcrumb-menu-panel';
-    panel.hidden = true;
-    panel.dataset.uiDropdownPanel = 'true';
-    panel.dataset.breadcrumbMenuPanel = 'true';
-    renderBreadcrumbMenuPanel(panel, menuItems, collectionSource);
-    return panel;
-}
-
-function applyBreadcrumbLinkState(link, item, menuItems) {
-    if (!(link instanceof Element)) {
-        return;
-    }
-
-    if (item.current) {
-        link.dataset.breadcrumbModeToggle = 'true';
-    }
-
-    if (Array.isArray(menuItems) && menuItems.length > 0) {
-        link.classList.add('ui-dropdown-trigger', 'breadcrumb-menu-link');
-        link.dataset.uiDropdownTrigger = 'true';
-        link.dataset.breadcrumbMenuLink = 'true';
-        link.setAttribute('aria-haspopup', 'true');
-        link.setAttribute('aria-expanded', 'false');
-    }
-}
-
-function buildTopBreadcrumbItem(item, index) {
-    const isLead = index === 0;
-    const linkClasses = ['breadcrumb-link'];
-    if (isLead) {
-        linkClasses.push('breadcrumb-link-lead');
-    }
-    if (item.current) {
-        linkClasses.push('is-current');
-    }
-
+function buildBreadcrumbColumn(item) {
     const menuItems = Array.isArray(item.menu) ? item.menu.filter(Boolean) : [];
-    const itemSpan = document.createElement('span');
-    const collectionSource = item && typeof item === 'object'
-        ? (item.collection_source || item.collectionSource)
-        : null;
-    const collectionHrefRaw = item && typeof item === 'object'
-        ? (item.collection_href || item.collectionHref || collectionSource?.href || '')
-        : '';
-    const collectionHref = typeof collectionHrefRaw === 'string'
-        ? collectionHrefRaw.trim()
-        : '';
-
-    itemSpan.className = menuItems.length > 0
-        ? 'breadcrumb-item ui-dropdown breadcrumb-item-menu'
-        : 'breadcrumb-item';
-    if (menuItems.length > 0) {
-        itemSpan.dataset.uiDropdown = 'true';
-        itemSpan.dataset.breadcrumbMenu = 'true';
-        if (collectionHref) {
-            itemSpan.dataset.breadcrumbCollectionHref = collectionHref;
-        }
+    const collectionSource = item.collection_source || item.collectionSource || {
+        href: item.collection_href || '',
+        label: item.collection_label || '',
+    };
+    const collectionHref = item.collection_href || item.collectionHref || collectionSource.href || '';
+    const column = document.createElement('div');
+    column.className = 'breadcrumb-column';
+    column.dataset.collectionColumn = 'true';
+    if (collectionHref) {
+        column.dataset.breadcrumbCollectionHref = collectionHref;
     }
-
-    const link = document.createElement('a');
-    link.href = item.href;
-    link.className = linkClasses.join(' ');
-    applyBreadcrumbPrefetchSlot(link);
-    applyBreadcrumbKind(link, item);
-    if (item.current) {
-        link.setAttribute('aria-current', 'page');
-    }
-    if (item.title) {
-        link.title = item.title;
-    }
-    applyBreadcrumbLinkState(link, item, menuItems);
-    link.appendChild(createCrumbText(item.text, { withCaret: item.current || menuItems.length > 0 }));
-    itemSpan.appendChild(link);
-    if (menuItems.length > 0) {
-        itemSpan.appendChild(buildMenuPanel(menuItems, collectionSource));
-    }
-
-    return itemSpan;
+    renderBreadcrumbColumn(column, menuItems.length > 0 ? menuItems : [item], collectionSource);
+    return column;
 }
 
 export function renderTopBreadcrumb(items) {
@@ -277,17 +206,7 @@ export function renderTopBreadcrumb(items) {
     nav.className = 'breadcrumb-nav';
     nav.setAttribute('aria-label', 'Breadcrumb');
 
-    items.forEach((item, index) => {
-        if (index > 0) {
-            const sep = document.createElement('span');
-            sep.className = 'breadcrumb-sep';
-            sep.setAttribute('aria-hidden', 'true');
-            sep.textContent = '﹥';
-            nav.appendChild(sep);
-        }
-
-        nav.appendChild(buildTopBreadcrumbItem(item, index));
-    });
+    items.forEach((item) => nav.appendChild(buildBreadcrumbColumn(item)));
 
     container.replaceChildren(nav);
 }

@@ -1,116 +1,40 @@
 {{- $ctx := .ctx | default . -}}
 {{- $item := .item | default dict -}}
-{{- $itemMenu := index $item "menu" | default slice -}}
-{{- $itemIsCurrent := eq (index $item "current") true -}}
-{{- $wrapperClass := .wrapperClass | default "breadcrumb-item" -}}
-{{- $linkClass := .linkClass | default "breadcrumb-link" -}}
-{{- $linkDataAttrs := .dataAttrs | default dict -}}
-{{- $itemCollectionHref := trim (printf "%v" (index $item "collection_href" | default "")) " " -}}
-{{- $itemCollectionSource := index $item "collection_source" | default dict -}}
-{{- if and (eq (len $itemCollectionSource) 0) $itemCollectionHref -}}
-  {{- with index ($ctx.Scratch.Get "entry_collection_sources_by_href" | default dict) $itemCollectionHref -}}
-    {{- $itemCollectionSource = . -}}
-  {{- end -}}
+{{- $items := index $item "menu" | default slice -}}
+{{- if eq (len $items) 0 -}}{{- $items = slice $item -}}{{- end -}}
+{{- $collectionHref := index $item "collection_href" | default "" -}}
+{{- $collectionSource := index $item "collection_source" | default dict -}}
+{{- if and (eq (len $collectionSource) 0) $collectionHref -}}
+  {{- $collectionSource = index ($ctx.Scratch.Get "entry_collection_sources_by_href" | default dict) $collectionHref | default dict -}}
 {{- end -}}
-{{- $hasMenu := gt (len $itemMenu) 0 -}}
-{{- $showCaret := or $itemIsCurrent $hasMenu -}}
-{{- $linkText := index $item "text" -}}
-{{- $linkSafeHTML := false -}}
-{{- with index $item "kind" -}}
-  {{- $itemKind := lower (trim (printf "%v" .) " ") -}}
-  {{- if ne $itemKind "" -}}{{- $linkDataAttrs = merge $linkDataAttrs (dict "breadcrumb-kind" $itemKind) -}}{{- end -}}
+{{- if and (eq (len $collectionSource) 0) $collectionHref -}}
+  {{- $collectionSource = dict "href" $collectionHref "label" (index $item "collection_label" | default "") -}}
 {{- end -}}
-{{- if $itemIsCurrent -}}
-  {{- $linkDataAttrs = merge $linkDataAttrs (dict "breadcrumb-mode-toggle" "true") -}}
-{{- end -}}
-{{- if $showCaret -}}
-  {{- $linkText = printf "%s<span class=\"ui-dropdown-caret breadcrumb-menu-caret\" aria-hidden=\"true\">▾</span>" ($linkText | htmlEscape) -}}
-  {{- $linkSafeHTML = true -}}
-{{- end -}}
-{{- if $hasMenu -}}
-  {{- $linkDataAttrs = merge $linkDataAttrs (dict "breadcrumb-menu-link" "true" "ui-dropdown-trigger" "true") -}}
-  {{- $hasHighlightedMenu := gt (len (where $itemMenu "highlighted" true)) 0 -}}
-  {{- $hasCurrentMenu := gt (len (where $itemMenu "current" true)) 0 -}}
-  {{- $hasSelectedMenu := gt (len (where $itemMenu "selected" true)) 0 -}}
-  {{- $triggerHTML := partial "link.html" (dict
-      "ctx" $ctx
-      "href" (index $item "href")
-      "text" $linkText
-      "textClass" "crumb-text"
-      "class" (printf "%s ui-dropdown-trigger breadcrumb-menu-link" $linkClass)
-      "title" (index $item "title")
-      "dataAttrs" $linkDataAttrs
-      "ariaCurrent" (cond $itemIsCurrent "page" "")
-      "ariaHaspopup" "true"
-      "ariaExpanded" "false"
-      "safeHTML" $linkSafeHTML
-      "linkSlot" "crumb"
-    ) -}}
-  {{- $panelParts := slice -}}
-  {{- if gt (len $itemCollectionSource) 0 -}}
-    {{- $panelParts = $panelParts | append (partial "collection/column-header.html" (dict
-      "ctx" $ctx
-      "source" $itemCollectionSource
-    )) -}}
-  {{- end -}}
-  {{- range $menuItem := $itemMenu -}}
-    {{- $menuItemIsCurrent := eq (index $menuItem "highlighted") true -}}
-    {{- if and (not $hasHighlightedMenu) $hasCurrentMenu (eq (index $menuItem "current") true) -}}
-      {{- $menuItemIsCurrent = true -}}
+{{- $header := partial "collection/column-header.html" (dict "ctx" $ctx "source" $collectionSource) -}}
+{{- $hasHighlighted := gt (len (where $items "highlighted" true)) 0 -}}
+{{- $hasCurrent := gt (len (where $items "current" true)) 0 -}}
+{{- $hasSelected := gt (len (where $items "selected" true)) 0 -}}
+<div class="breadcrumb-column" data-collection-column="true"{{ with $collectionHref }} data-breadcrumb-collection-href="{{ . }}"{{ end }}>
+  <div class="grid-list grid-list--single collection-list collection-list--column{{ if $header }} grid-list--headed{{ end }}">
+    {{- $header -}}
+    {{- range $row := $items -}}
+      {{- $isCurrent := eq (index $row "highlighted") true -}}
+      {{- if and (not $hasHighlighted) $hasCurrent -}}{{- $isCurrent = eq (index $row "current") true -}}{{- end -}}
+      {{- if and (not $hasHighlighted) (not $hasCurrent) $hasSelected -}}{{- $isCurrent = eq (index $row "selected") true -}}{{- end -}}
+      {{- $kind := lower (trim (printf "%v" (index $row "kind" | default "")) " ") -}}
+      {{- $dataAttrs := dict -}}
+      {{- if $kind -}}{{- $dataAttrs = dict "breadcrumb-kind" $kind -}}{{- end -}}
+      {{ partial "grid-title-cell.html" (dict
+        "ctx" $ctx
+        "href" (index $row "href")
+        "text" (index $row "text")
+        "icon" (index $row "icon" | default (cond (eq $kind "page") "file" "folder"))
+        "title" (index $row "title")
+        "linkClass" "breadcrumb-column-link"
+        "linkDataAttrs" $dataAttrs
+        "isCurrent" $isCurrent
+        "linkSlot" "crumb"
+      ) }}
     {{- end -}}
-    {{- if and (not $hasHighlightedMenu) (not $hasCurrentMenu) $hasSelectedMenu (eq (index $menuItem "selected") true) -}}
-      {{- $menuItemIsCurrent = true -}}
-    {{- end -}}
-    {{- $menuItemDataAttrs := dict -}}
-    {{- with index $menuItem "kind" -}}
-      {{- $menuItemKind := lower (trim (printf "%v" .) " ") -}}
-      {{- if ne $menuItemKind "" -}}{{- $menuItemDataAttrs = merge $menuItemDataAttrs (dict "breadcrumb-kind" $menuItemKind) -}}{{- end -}}
-    {{- end -}}
-    {{- $menuItemKind := lower (trim (printf "%v" (index $menuItem "kind" | default "")) " ") -}}
-    {{- $menuItemIcon := index $menuItem "icon" | default (cond (eq $menuItemKind "page") "file" "folder") -}}
-    {{- $panelParts = $panelParts | append (partial "grid-title-cell.html" (dict
-          "ctx" $ctx
-          "href" (index $menuItem "href")
-          "text" (index $menuItem "text")
-          "icon" $menuItemIcon
-          "linkClass" "ui-dropdown-option breadcrumb-menu-option"
-          "title" (index $menuItem "title")
-          "linkDataAttrs" $menuItemDataAttrs
-          "isCurrent" $menuItemIsCurrent
-          "ariaCurrent" (cond $menuItemIsCurrent "page" "")
-          "linkSlot" "crumb"
-        )) -}}
-  {{- end -}}
-  {{- $menuDataAttrs := dict "breadcrumb-menu" "true" -}}
-  {{- with $itemCollectionHref -}}
-    {{- $menuDataAttrs = merge $menuDataAttrs (dict "breadcrumb-collection-href" .) -}}
-  {{- end -}}
-  {{- $columnGridClass := "grid-list grid-list--single collection-list collection-list--column" -}}
-  {{- if gt (len $itemCollectionSource) 0 -}}
-    {{- $columnGridClass = printf "%s grid-list--headed" $columnGridClass -}}
-  {{- end -}}
-  {{- $panelHTML := printf "<span class=%q>%s</span>" $columnGridClass (delimit $panelParts "") -}}
-  {{- partial "ui/dropdown.html" (dict
-    "rootClass" (printf "%s breadcrumb-item-menu" $wrapperClass)
-    "rootDataAttrs" $menuDataAttrs
-    "triggerHTML" $triggerHTML
-    "panelClass" "breadcrumb-menu-panel"
-    "panelDataAttrs" (dict "breadcrumb-menu-panel" "true")
-    "panelHTML" $panelHTML
-  ) -}}
-{{- else -}}
-  <span class="{{ $wrapperClass }}">
-    {{ partial "link.html" (dict
-      "ctx" $ctx
-      "href" (index $item "href")
-      "text" $linkText
-      "textClass" "crumb-text"
-      "class" $linkClass
-      "title" (index $item "title")
-      "dataAttrs" $linkDataAttrs
-      "ariaCurrent" (cond $itemIsCurrent "page" "")
-      "safeHTML" $linkSafeHTML
-      "linkSlot" "crumb"
-    ) }}
-  </span>
-{{- end -}}
+  </div>
+</div>

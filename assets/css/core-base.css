@@ -15,11 +15,13 @@
     --page-edge-block-start: 12px;
     --page-edge-block-end: 6rem;
     --navigation-column-inline: 15rem;
-    --page-shell-min-inline: min(88ch, 100%);
+    --page-shell-min-inline: 100%;
+    --page-rail-inline: var(--navigation-column-inline);
+    --page-shell-gap-inline: 1rem;
+    --breadcrumb-column-inline: var(--navigation-column-inline);
+    --breadcrumb-gap-inline: var(--page-shell-gap-inline);
+    --breadcrumb-main-inline: min(88ch, 100cqi);
     --page-shell-min-block: calc(100vh - var(--page-edge-block-start));
-    /* Keep a safety tail after the visible footer so mobile bounce / toolbar reflow
-       does not clamp the last block out of view on short pages. */
-    --page-footer-tail-space: clamp(12rem, 32vh, 18rem);
     /* --text-secondary:#5F5F5F;
     --bg-surface:#FAFAFA; F9F9F9 F1F1F1 #E3E3E3 #D7D7D7 #868686 1D1D1D 7727272 */
 }
@@ -66,6 +68,7 @@ body {
     box-sizing: border-box;
     min-height: var(--page-shell-min-block);
     width: var(--page-shell-min-inline);
+    container-type: inline-size;
     max-width: 100%;
     margin-inline: 0;
     padding-bottom: var(--page-edge-block-end);
@@ -80,37 +83,46 @@ body {
 }
 
 .page-shell {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: max-content;
+    inline-size: max-content;
+    min-inline-size: 100%;
+    padding-inline-end: var(--page-edge-inline);
+    align-items: start;
+}
+
+.page-shell--has-rail {
+    grid-template-columns: var(--page-rail-inline) max-content;
+    column-gap: var(--page-shell-gap-inline);
 }
 
 .page-rail {
-    display: contents;
-}
-
-.page-stage {
-    order: 1;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: var(--page-edge-block-start);
+    max-block-size: calc(100vh - var(--page-edge-block-start) - 1rem);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
 }
 
 .page-rail > .slot-footer {
-    order: 2;
     padding-block-start: 1.25rem;
-    padding-block-end: var(--page-footer-tail-space);
+}
+
+.slot-main,
+.slot-meta {
+    inline-size: var(--breadcrumb-main-inline);
+}
+
+.slot-main {
+    scroll-margin-block-start: var(--page-edge-block-start);
+    scroll-margin-inline-start: var(--page-edge-inline);
 }
 
 .slot-footer {
     display: flow-root;
 }
-
-@supports (height: 100svh) {
-    :root {
-        --page-footer-tail-space: clamp(12rem, 32svh, 18rem);
-    }
-}
-
-
-
-
 
 
 a {

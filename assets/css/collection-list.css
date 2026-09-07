@@ -111,10 +111,6 @@
     text-align: center;
 }
 
-.collection-column-header {
-    display: none;
-}
-
 .collection-list--grid .collection-list-header a {
     display: block;
     width: 100%;
@@ -140,53 +136,51 @@
     border-radius: var(--collection-item-radius);
 }
 
-@media (min-width: 75rem) {
-    .collection-list--column .collection-column-header {
-        display: flex;
-        align-items: baseline;
-        height: 1.55em;
-        min-width: 0;
-        margin-bottom: 0.14rem;
-        line-height: 1.18;
-        white-space: nowrap;
-    }
+.collection-list--column .collection-column-header {
+    display: flex;
+    align-items: baseline;
+    height: 1.55em;
+    min-width: 0;
+    margin-bottom: 0.14rem;
+    line-height: 1.18;
+    white-space: nowrap;
+}
 
-    .collection-list--column .collection-list-header a {
-        display: inline;
-        line-height: inherit;
-    }
+.collection-list--column .collection-list-header a {
+    display: inline;
+    line-height: inherit;
+}
 
-    .collection-column-separator {
-        margin-inline: 0.24rem;
-        opacity: 0.72;
-    }
+.collection-column-separator {
+    margin-inline: 0.24rem;
+    opacity: 0.72;
+}
 
-    .collection-column-label:hover,
-    .collection-column-label:focus-visible,
-    .collection-column-sort:hover,
-    .collection-column-sort:focus-visible {
-        color: var(--focus-text);
-    }
+.collection-column-label:hover,
+.collection-column-label:focus-visible,
+.collection-column-sort:hover,
+.collection-column-sort:focus-visible {
+    color: var(--focus-text);
+}
 
-    .collection-list--column .collection-item-link,
-    .collection-list--column .collection-item-link:visited {
-        box-sizing: border-box;
-        width: 100%;
-        max-width: 100%;
-        min-width: 0;
-        padding: 0;
-        margin-inline: 0;
-        line-height: inherit;
-        font-weight: 400;
-        color: var(--link);
-        border-radius: var(--collection-item-radius);
-        white-space: nowrap;
-    }
+.collection-list--column .collection-item-link,
+.collection-list--column .collection-item-link:visited {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0;
+    margin-inline: 0;
+    line-height: inherit;
+    font-weight: 400;
+    color: var(--link);
+    border-radius: var(--collection-item-radius);
+    white-space: nowrap;
+}
 
-    .collection-list--column .collection-item-title {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        overflow-wrap: normal;
-        text-wrap: nowrap;
-    }
+.collection-list--column .collection-item-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    overflow-wrap: normal;
+    text-wrap: nowrap;
 }

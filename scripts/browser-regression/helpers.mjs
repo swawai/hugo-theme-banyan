@@ -58,7 +58,7 @@ export function recordFirstMainLayoutScript() {
 
             const root = document.documentElement;
             const visibleBreadcrumbColumns = Array.from(
-                document.querySelectorAll('.slot-row-breadcrumb .breadcrumb-item-menu')
+                document.querySelectorAll('.slot-row-breadcrumb .breadcrumb-column')
             ).filter((node) => {
                 if (!(node instanceof HTMLElement)) return false;
                 const style = window.getComputedStyle(node);
@@ -69,7 +69,7 @@ export function recordFirstMainLayoutScript() {
 
             window.__banyanFirstMainLayout = {
                 breadcrumbColumnCount: visibleBreadcrumbColumns.length,
-                mainInlineStart: main.getBoundingClientRect().x,
+                mainInlineStart: main.getBoundingClientRect().x + window.scrollX,
                 previewPending: root.getAttribute('data-entry-breadcrumb-preview-pending') === 'true',
                 runtimePending: root.getAttribute('data-entry-breadcrumb-runtime-pending') === 'true'
             };
@@ -122,13 +122,12 @@ export async function getLayoutShiftValue(page) {
 }
 
 export async function getMainInlineStart(page) {
-    const box = await page.locator('.slot-main').boundingBox();
-    return box ? box.x : null;
+    return page.locator('.slot-main').evaluate(node => node.getBoundingClientRect().x + window.scrollX);
 }
 
 export async function getVisibleBreadcrumbColumnCount(page) {
     return page.evaluate(() => Array.from(
-        document.querySelectorAll('.slot-row-breadcrumb .breadcrumb-item-menu')
+        document.querySelectorAll('.slot-row-breadcrumb .breadcrumb-column')
     ).filter((node) => {
         if (!(node instanceof HTMLElement)) return false;
         const style = window.getComputedStyle(node);

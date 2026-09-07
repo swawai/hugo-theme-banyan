@@ -304,9 +304,4 @@
         inset-inline-start: 3rem;
     }
 
-    .page-shell.page-shell--has-rail .page-rail,
-    .page-shell.page-shell--has-rail > .slot-footer {
-        position: relative;
-        top: auto;
-    }
 }

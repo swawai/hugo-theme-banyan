@@ -10,14 +10,16 @@
   {{- $tailItems := slice -}}
   {{- $levels := slice -}}
   {{- $collectionHref := index $rootItem "href" | default "" -}}
+  {{- $collectionLabel := index $rootItem "text" | default "" -}}
   {{- range $item := index $base "items" | default slice -}}
     {{- if eq (index $item "href") (index $rootItem "href") -}}{{- continue -}}{{- end -}}
     {{- if ne $collectionHref "" -}}
-      {{- $item = merge $item (dict "collection_href" $collectionHref) -}}
+      {{- $item = merge $item (dict "collection_href" $collectionHref "collection_label" $collectionLabel) -}}
     {{- end -}}
     {{- $tailItems = $tailItems | append $item -}}
     {{- $levels = $levels | append (dict "item" $item "collection_href" $collectionHref) -}}
     {{- $collectionHref = index $item "href" -}}
+    {{- $collectionLabel = index $item "text" -}}
   {{- end -}}
   {{- $canonical = dict
     "strategy" $strategy
