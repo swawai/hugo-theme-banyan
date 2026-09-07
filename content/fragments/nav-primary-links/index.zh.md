@@ -16,7 +16,7 @@ nav:
     - page: /all
       key: blog
       text: 博客
-    - page: /about
+    - page: /site/about
       key: about
       text: 关于
 ---

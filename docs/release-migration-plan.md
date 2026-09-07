@@ -65,7 +65,7 @@ Extract into starter/template:
 Keep as site-owned:
 
 - `content/_index.*.md`
-- `content/about/index.*.md`
+- `content/site/about/index.*.md` (moved under `site/` on 2026-09-07)
 - `content/d/products/*`
 - `content/fragments/site-meta/*`
 - `content/fragments/nav-primary-links/*`

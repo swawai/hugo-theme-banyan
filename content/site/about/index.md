@@ -1,8 +1,10 @@
-﻿---
+---
 date: "2025-10-11T20:10:44+08:00"
 draft: false
 title: "About"
 slug: "about"
+url: about/
+weight: 10
 type: "page"
 layout: "article-page"
 slots:
@@ -10,7 +12,7 @@ slots:
   utilities: /fragments/nav-utilities
   footer: /fragments/home-footer-shortcuts
 build:
-  list: "never"
+  list: local
 ---
 
 

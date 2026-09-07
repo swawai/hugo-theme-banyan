@@ -8,7 +8,7 @@
 {{- $githubLabel := trim (printf "%v" (index $footerConfig "github_label" | default "")) " \r\n\t" -}}
 {{- $githubHref := index $footerConfig "github_href" | default "https://github.com/swawai/banyan" -}}
 {{- $wechatLabel := trim (printf "%v" (index $footerConfig "wechat_label" | default "")) " \r\n\t" -}}
-{{- $wechatPageRef := index $footerConfig "wechat_page" | default "/wechat" -}}
+{{- $wechatPageRef := index $footerConfig "wechat_page" | default "/site/wechat" -}}
 {{- $wechatHref := index $footerConfig "wechat_href" | default "" -}}
 {{- $rssLabel := trim (printf "%v" (index $footerConfig "rss_label" | default "")) " \r\n\t" -}}
 {{- $icpPrefix := index $footerConfig "icp_prefix" | default "" -}}
@@ -16,7 +16,7 @@
 {{- $brandLabel := index $footerConfig "brand_label" | default "2026 Banyan" -}}
 {{- $home := $ctx.Site.Home -}}
 {{- $aboutHref := "/" -}}
-{{- with $ctx.Site.GetPage "/about" -}}
+{{- with $ctx.Site.GetPage "/site/about" -}}
   {{- $aboutHref = .RelPermalink -}}
 {{- end -}}
 {{- if and $wechatLabel (eq $wechatHref "") -}}

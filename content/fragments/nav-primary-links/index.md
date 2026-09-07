@@ -16,7 +16,7 @@ nav:
     - page: /all
       key: blog
       text: Blog
-    - page: /about
+    - page: /site/about
       key: about
       text: About
 ---

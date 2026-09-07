@@ -10,6 +10,8 @@ and migration decisions.
 
 ### Added
 
+- Added a multilingual site-information section and a `section-index` layout
+  that lists direct children by weight using the shared collection rows.
 - Added a release migration plan for separating theme-owned files, site-owned
   overrides, and example-site resources.
 - Recorded the 2026-06-11 root-site release audit baseline, current resource
@@ -20,5 +22,7 @@ and migration decisions.
 
 ### Changed
 
+- Moved default about and changelog bundles under `content/site/`, preserving
+  their public URLs and updating navigation, footer, and agent-access lookups.
 - Made security, HTML audit, browser regression, and speculation-rules checks
   less dependent on swaw.com-specific defaults.
