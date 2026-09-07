@@ -1,6 +1,4 @@
-import { initLanguageMenu } from './language-menu.js';
-import { initNavUtilityMenus } from './menu-runtime.js';
-import { initThemeMenu } from './theme-menu.js';
+import { initNavUtilityMenus, markCurrentOption } from './menu-runtime.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const themeMenu = document.querySelector('[data-nav-utility-kind="theme"]');
@@ -10,9 +8,17 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!initNavUtilityMenus()) return;
 
     if (langMenu) {
-        initLanguageMenu(langMenu);
+        langMenu.dataset.navPrimaryInit = 'true';
+        markCurrentOption(langMenu, document.documentElement.lang);
     }
     if (themeMenu) {
-        initThemeMenu(themeMenu);
+        themeMenu.dataset.navPrimaryInit = 'true';
+        markCurrentOption(themeMenu, document.documentElement.dataset.themePreference || 'auto');
+        document.addEventListener('banyan:theme-preference', (event) => markCurrentOption(themeMenu, event.detail));
+        themeMenu.addEventListener('click', (event) => {
+            if (event.target instanceof Element && event.target.closest('[data-theme-choice]')) {
+                window.__banyanNavUtilityMenus?.closeRoot(themeMenu);
+            }
+        });
     }
 });

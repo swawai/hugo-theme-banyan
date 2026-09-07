@@ -94,3 +94,24 @@ other = "返回本語言首頁"
 
 [tryOtherLangs]
 other = "嘗試其他語言版本："
+
+[settings_return]
+other = "返回原頁面"
+
+[settings_loading]
+other = "正在讀取原頁面…"
+
+[settings_load_failed]
+other = "無法讀取原頁面，請重試或返回。"
+
+[settings_retry]
+other = "重試"
+
+[appearance_auto]
+other = "跟隨系統"
+
+[appearance_light]
+other = "淺色"
+
+[appearance_dark]
+other = "深色"

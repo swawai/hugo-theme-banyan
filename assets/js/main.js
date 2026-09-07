@@ -1,3 +1,13 @@
+import { initLanguagePreference } from './preferences/language.js';
+import { initSettingsNavigation } from './preferences/settings-navigation.js';
+import { initThemePreference } from './preferences/theme.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+    initSettingsNavigation();
+    initThemePreference();
+    initLanguagePreference();
+});
+
 // 针对微信安卓版：通过 WeixinJSBridge 强制覆盖字体大小并禁止用户修改，缓解字体缩放导致的页面跳变
 (function () {
     if (typeof WeixinJSBridge == "object" && typeof WeixinJSBridge.invoke == "function") {

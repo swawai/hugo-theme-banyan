@@ -1,18 +1,18 @@
-﻿---
+---
 draft: false
-title: "My"
-slug: "my"
+title: System - My
+slug: my
 nav_primary: my
-type: "my"
-layout: "my-page"
-robots: "noindex, follow"
+type: my
+layout: my-page
+robots: noindex, follow
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities
 build:
-  list: "never"
+  list: local
+weight: 90
 ---
-
 
 This page is reserved for future personal resources and settings features.
 

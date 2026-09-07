@@ -8,8 +8,8 @@
 
 - 新 worker 能否被发现
 - waiting -> activate -> reload 这条链是否稳定
-- 更新提示是否挂在固定 Ver 菜单上
-- 没有可用菜单时，是否正确退化到 `confirm`
+- 更新提示是否能在站点页与现有 Ver 菜单中显示
+- 没有可用更新控件时，是否正确退化到 `confirm`
 - 失败恢复是否会误伤正常用户
 
 一个重要心智：
@@ -30,6 +30,8 @@
 - `themes/banyan/assets/js/sw.enable.js.tmpl`
 - `themes/banyan/assets/js/sw-manager.enable.runtime.js`
 - `themes/banyan/assets/js/sw-manager.enable.update.js`
+- `themes/banyan/assets/js/preferences/site-update-ui.js`
+- `themes/banyan/assets/js/fragments/nav-utilities/version-menu.js`（导航展平第 4 步删除）
 - `themes/banyan/assets/js/sw-manager.disable.js`
 - `themes/banyan/assets/js/runtime-manifest.js`
 - `themes/banyan/layouts/_default/baseof.html`
@@ -44,21 +46,22 @@
   - `scope: /`
   - `updateViaCache: 'none'`
 
-### 更新提示菜单
+### 更新提示界面
 
-- 当前更新提示挂到固定 Ver 菜单上的 `data-site-version-menu`
-- 常规页面应只有一个可用更新菜单
+- 站点页使用 `data-site-update-panel` 显示版本、检查按钮和状态；共用更新引擎，不依赖下拉菜单
+- 旧固定 Ver 菜单保留 `data-site-version-menu`，在导航展平第 4 步删除
+- 常规页面应只有一个可用旧更新菜单；站点页可同时有旧菜单和新面板
 - 当前逻辑应当：
-  - fallback 检查时，优先找 `data-site-version-menu`
+  - fallback 检查时，同时识别旧版本菜单和站点页更新按钮
   - 点击 Ver 按钮时打开版本 dropdown
-  - dropdown 只保留两项：版本号、状态
+  - dropdown 提供首页、系统－站点、版本号及状态；站点页链接保留设置返回地址
   - update ready 时，状态项显示“有新版本 · 点击更新”
 
 ### 语言文案
 
-- 更新 fallback 文案来自 runtime i18n JSON；Version 菜单文案来自 `content/fragments/nav-utilities`
+- 更新确认文案来自 runtime i18n JSON；版本界面文案的事实源为 `content/site/_index*.md` 的 `site_update.labels`，由同一 partial 提供给静态界面和 runtime JSON
 - 语言 fallback 依赖 `runtime/asset-manifest.json` 内的 `i18nFallbacks`
-- `language-menu` 与 `sw-manager` 现在共用同一条 `runtime-manifest.js` 主路径
+- `sw-manager` 使用 `runtime-manifest.js`；语言偏好独立使用页面内静态译文关系，不再依赖版本菜单或 runtime JSON
 
 ### 激活失败恢复
 
@@ -193,7 +196,7 @@ bun run build:browser:temp -- sw-upgrade-after
 
 建议页面：
 
-- 临时让当前页没有可见 Ver 菜单的场景
+- 临时让当前页没有可见 Ver 菜单和站点页更新按钮的场景
 - offline 页面不属于这个场景，因为它不注入 enable manager
 
 操作：
@@ -283,12 +286,12 @@ bun run build:browser:temp -- sw-upgrade-after
   - `site_update_prompt`
   - `site_update_confirm`
   - `site_update_later`
-- Version dropdown 的字段来自 `nav-utilities.version.labels`
+- 版本界面的字段来自站点页 `site_update.labels`
 
 失败信号：
 
 - 某语言退回英文但其实有本地化资源
-- fallback confirm 字段只部分本地化，或 Version dropdown 没有读到 nav-utilities 文案
+- fallback confirm 字段只部分本地化，或版本界面没有读到站点页文案
 
 ### 9. fallback 语言链
 
@@ -335,12 +338,15 @@ bun run build:browser:temp -- sw-upgrade-after
 
 ## 建议的最小回归矩阵
 
-如果不想每次都全测，至少覆盖这 4 组：
+如果不想每次都全测，至少覆盖这 5 组：
 
 1. 首页首次访问
 2. breadcrumb 页面出现 waiting 后，点击 Ver 菜单
 3. Ver 无更新时的版本号 dropdown
 4. `zh-hk` 或 `zh-mo` 的文案 fallback
+5. 站点页移除旧控件后，离线重试、检查新版本、激活刷新及旧导航缓存清理（`sw-system-site-update`）
+
+运行升级回归时，显式设置 `BANYAN_BROWSER_UPGRADE_FROM_DIR` 和 `BANYAN_BROWSER_UPGRADE_TO_DIR`，指向两个完整构建；站点页回归需要两份都包含系统页。不要让自动选择误用临时结构探针的产物。
 
 ## 出问题时先怀疑哪一层
 

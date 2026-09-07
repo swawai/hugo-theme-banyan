@@ -108,7 +108,8 @@ async function runScenario(scenario, runtime) {
     }
 
     const context = await runtime.browser.newContext({
-        viewport: scenario.viewport || { width: 1440, height: 960 }
+        viewport: scenario.viewport || { width: 1440, height: 960 },
+        serviceWorkers: scenario.serviceWorkers || 'allow'
     });
     if (runtime.trace) {
         await context.tracing.start({

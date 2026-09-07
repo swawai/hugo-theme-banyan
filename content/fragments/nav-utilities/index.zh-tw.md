@@ -19,22 +19,6 @@ nav:
     page: /my
     key: my
   version:
-    # 這裡只是允許顯示版本/更新選單；只有 params.service_worker.mode 為
-    # "enable"，且目前頁面不是離線備援頁時，選單才會真正渲染。
     show: true
     caret: false
-    changelog_href: /changelog/
-    labels:
-      label: 站點與更新
-      text: ver
-      home: 首頁
-      check: 立即檢查
-      checking: 檢查中...
-      check_failed: 檢查失敗
-      status: 狀態
-      status_current: 已是最新
-      status_ready: 有新版本
-      status_offline: 離線
-      status_click_update: 點擊更新
-      status_click_retry: 點擊重試
 ---

@@ -1,15 +1,19 @@
 {{ define "styles" }}
-{{ partial "head-styles.html" (dict "ctx" .) }}
+{{ partial "head-styles.html" (dict "ctx" . "variant" "list") }}
 {{ end }}
-
 {{ define "head-extra" }}
-{{ partial "article/styles.html" (dict "ctx" . "with_meta" true) }}
+{{ partial "article/styles.html" (dict "ctx" .) }}
+{{ partial "system/styles.html" . }}
 {{ end }}
 
 {{ define "main" }}
-{{ partial "article/render-page.html" . }}
+<article class="article system-page" data-system-page>
+  <div class="collection-list collection-list--index">
+    <h1 class="collection-list-header">{{ .Title }}</h1>
+    <div class="prose">{{ .Content }}</div>
+  </div>
+</article>
 {{ end }}
-
 {{ define "body-extra" }}
 {{ partial "assets/script.html" (dict "path" "js/my/page.js") }}
 {{ end }}

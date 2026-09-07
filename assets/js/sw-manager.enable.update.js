@@ -1,16 +1,10 @@
-import { fetchRuntimeJson, getRuntimeBuildTime, getRuntimeBuildVersion, getRuntimeI18nUrl, getRuntimeManifest } from './runtime-manifest.js';
+import { bindUpdateUi, closeUpdateControls, confirmSiteUpdate, hasVisibleUpdateControl, renderUpdateUi } from './preferences/site-update-ui.js';
 
-const UPDATE_STATE_ATTR = 'data-site-update';
-const UPDATE_STATE_READY = 'ready';
 const SW_ACTIVATION_TIMEOUT_MS = 4000;
 const NAVIGATION_CACHE_PREFIX = 'nav-html-';
 const VERSIONED_ASSET_CACHE_PREFIX = 'asset-versioned-';
 const LEGACY_VERSIONED_ASSET_CACHE_PREFIX = 'asset-static-';
 const FINGERPRINT_ASSET_CACHE = 'asset-fingerprint';
-
-const root = document.documentElement;
-const updateCopyPromises = new Map();
-const updateCopyCache = new Map();
 
 let waitingWorker = null;
 let reloadOnControllerChange = false;
@@ -19,308 +13,81 @@ let warmedCurrentUrl = '';
 let updateFallbackPrompted = false;
 let enableModeStarted = false;
 let activeRuntime = null;
-let versionMenuStatus = 'idle';
-let versionMenuLatencyMs = null;
-let versionMenuCheckPromise = null;
+let updateStatus = 'idle';
+let updateLatencyMs = null;
+let updateCheckPromise = null;
 let activationFallbackTimer = null;
 
-function getVersionMenus() {
-    return Array.from(document.querySelectorAll('[data-site-version-menu]'));
-}
-
-function getUsableVersionMenu() {
-    return getVersionMenus().find(isUsableElement) || null;
-}
-
-function getVersionMenuRoot(target) {
-    return target instanceof Element ? target.closest('[data-site-version-menu]') : null;
-}
-
-function getVersionPanel(menuRoot) {
-    return menuRoot instanceof Element ? menuRoot.querySelector('[data-nav-utility-panel]') : null;
-}
-
-function getVersionTrigger(menuRoot) {
-    return menuRoot instanceof Element ? menuRoot.querySelector('[data-site-version-trigger]') : null;
-}
-
-function isVersionMenuOpen(menuRoot) {
-    return menuRoot instanceof Element && menuRoot.classList.contains('is-open');
-}
-
-function closeVersionMenu(menuRoot) {
-    if (!(menuRoot instanceof Element)) return;
-
-    const closeRoot = window.__banyanNavUtilityMenus?.closeRoot;
-    if (typeof closeRoot === 'function' && closeRoot(menuRoot)) return;
-
-    const panel = getVersionPanel(menuRoot);
-    const trigger = getVersionTrigger(menuRoot);
-    menuRoot.classList.remove('is-open');
-    menuRoot.removeAttribute('data-open');
-    if (panel instanceof HTMLElement) panel.hidden = true;
-    if (trigger instanceof HTMLElement) trigger.setAttribute('aria-expanded', 'false');
-}
-
-function isUsableElement(element) {
-    if (!(element instanceof HTMLElement)) return false;
-
-    const style = window.getComputedStyle(element);
-    if (style.display === 'none' || style.visibility === 'hidden') return false;
-    return element.getClientRects().length > 0;
+function renderUpdateStatus() {
+    return renderUpdateUi(updateStatus, updateLatencyMs);
 }
 
 function setUpdateReadyState(ready) {
     if (ready) {
-        versionMenuStatus = 'ready';
-        root.setAttribute(UPDATE_STATE_ATTR, UPDATE_STATE_READY);
-        void maybePromptUpdateFallback();
-        void renderVersionMenus('ready', { onlyOpen: true });
-        return;
-    }
-
-    root.removeAttribute(UPDATE_STATE_ATTR);
-    updateFallbackPrompted = false;
-    if (versionMenuStatus === 'ready') versionMenuStatus = 'idle';
-    void renderVersionMenus(versionMenuStatus, { onlyOpen: true });
-}
-
-function getFallbackUpdateCopy() {
-    return {
-        message: 'A new version is ready. Refresh now?',
-        confirm: 'Refresh',
-        later: 'Later',
-        versionCheck: 'Check now',
-        versionChecking: 'Checking...',
-        versionCheckFailed: 'Check failed',
-        versionHome: 'Home',
-        versionStatus: 'Status',
-        versionStatusCurrent: 'Up to date',
-        versionStatusReady: 'New version available',
-        versionStatusOffline: 'Offline',
-        versionStatusClickUpdate: 'click update',
-        versionStatusClickRetry: 'click retry',
-        versionChangelogHref: ''
-    };
-}
-
-function normalizeUpdateCopy(messages) {
-    const fallback = getFallbackUpdateCopy();
-    if (!messages || typeof messages !== 'object') return fallback;
-
-    return {
-        message: typeof messages.site_update_prompt === 'string' && messages.site_update_prompt ? messages.site_update_prompt : fallback.message,
-        confirm: typeof messages.site_update_confirm === 'string' && messages.site_update_confirm ? messages.site_update_confirm : fallback.confirm,
-        later: typeof messages.site_update_later === 'string' && messages.site_update_later ? messages.site_update_later : fallback.later,
-        versionCheck: typeof messages.site_version_check === 'string' && messages.site_version_check ? messages.site_version_check : fallback.versionCheck,
-        versionChecking: typeof messages.site_version_checking === 'string' && messages.site_version_checking ? messages.site_version_checking : fallback.versionChecking,
-        versionCheckFailed: typeof messages.site_version_check_failed === 'string' && messages.site_version_check_failed ? messages.site_version_check_failed : fallback.versionCheckFailed,
-        versionHome: typeof messages.site_version_home === 'string' && messages.site_version_home ? messages.site_version_home : fallback.versionHome,
-        versionStatus: typeof messages.site_version_status === 'string' && messages.site_version_status ? messages.site_version_status : fallback.versionStatus,
-        versionStatusCurrent: typeof messages.site_version_status_current === 'string' && messages.site_version_status_current ? messages.site_version_status_current : fallback.versionStatusCurrent,
-        versionStatusReady: typeof messages.site_version_status_ready === 'string' && messages.site_version_status_ready ? messages.site_version_status_ready : fallback.versionStatusReady,
-        versionStatusOffline: typeof messages.site_version_status_offline === 'string' && messages.site_version_status_offline ? messages.site_version_status_offline : fallback.versionStatusOffline,
-        versionStatusClickUpdate: typeof messages.site_version_status_click_update === 'string' && messages.site_version_status_click_update ? messages.site_version_status_click_update : fallback.versionStatusClickUpdate,
-        versionStatusClickRetry: typeof messages.site_version_status_click_retry === 'string' && messages.site_version_status_click_retry ? messages.site_version_status_click_retry : fallback.versionStatusClickRetry,
-        versionChangelogHref: typeof messages.site_version_changelog_href === 'string' ? messages.site_version_changelog_href : fallback.versionChangelogHref
-    };
-}
-
-async function hydrateUpdateCopy(lang = document.documentElement.lang || '') {
-    const langKey = typeof lang === 'string' && lang ? lang.toLowerCase() : '';
-    if (updateCopyCache.has(langKey)) return updateCopyCache.get(langKey);
-
-    if (!updateCopyPromises.has(langKey)) {
-        updateCopyPromises.set(langKey, (async () => {
-            const fallback = getFallbackUpdateCopy();
-            const manifest = await getRuntimeManifest();
-            const url = getRuntimeI18nUrl(manifest, langKey);
-            if (!url) {
-                updateCopyCache.set(langKey, fallback);
-                return fallback;
-            }
-
-            try {
-                const copy = normalizeUpdateCopy(await fetchRuntimeJson(url));
-                updateCopyCache.set(langKey, copy);
-                return copy;
-            } catch (error) {
-                updateCopyCache.set(langKey, fallback);
-                return fallback;
-            }
-        })());
-    }
-
-    return updateCopyPromises.get(langKey);
-}
-
-async function maybePromptUpdateFallback() {
-    if (updateFallbackPrompted || getUsableVersionMenu()) return;
-
-    updateFallbackPrompted = true;
-    const copy = await hydrateUpdateCopy();
-    if (window.confirm(copy.message) && activeRuntime) {
-        void applyWaitingWorker(activeRuntime);
-    }
-}
-
-function getVersionChangelogHref(copy, menuRoot) {
-    const menuHref = menuRoot instanceof HTMLElement ? menuRoot.dataset.siteVersionChangelogHref || '' : '';
-    return menuHref || copy.versionChangelogHref || '';
-}
-
-function getVersionHomeOption(copy, menuRoot) {
-    const homeHref = menuRoot instanceof HTMLElement ? menuRoot.dataset.siteVersionHomeHref || '' : '';
-    const homeLabel = menuRoot instanceof HTMLElement ? menuRoot.dataset.siteVersionHomeLabel || '' : '';
-    if (!homeHref) return null;
-
-    return createOption({
-        text: homeLabel || copy.versionHome,
-        href: homeHref,
-        action: 'home',
-        current: isCurrentHref(homeHref)
-    });
-}
-
-function getVersionStatusValue(copy, status) {
-    if (status === 'checking') return copy.versionChecking;
-    if (status === 'failed') return `${copy.versionCheckFailed} · ${copy.versionStatusClickRetry}`;
-    if (status === 'offline') return `${copy.versionStatusOffline} · ${copy.versionStatusClickRetry}`;
-    if (root.getAttribute(UPDATE_STATE_ATTR) === UPDATE_STATE_READY) return `${copy.versionStatusReady} · ${copy.versionStatusClickUpdate}`;
-
-    const latency = Number.isFinite(versionMenuLatencyMs) && versionMenuLatencyMs >= 0
-        ? ` · ${Math.round(versionMenuLatencyMs)}ms`
-        : '';
-    return `${copy.versionStatusCurrent}${latency}`;
-}
-
-function normalizePathname(href) {
-    try {
-        const url = new URL(href, window.location.href);
-        let path = url.pathname || '/';
-        if (!path.endsWith('/')) path = `${path}/`;
-        return path;
-    } catch (error) {
-        return '';
-    }
-}
-
-function isCurrentHref(href) {
-    if (!href) return false;
-    const target = normalizePathname(href);
-    const current = normalizePathname(window.location.href);
-    return Boolean(target && current && target === current);
-}
-
-function createOption({ text, href = '', action = '', disabled = false, title = '', current = false }) {
-    const option = href ? document.createElement('a') : document.createElement('button');
-    option.className = 'ui-dropdown-option site-nav-utility-option';
-    if (current) {
-        option.classList.add('is-current');
-        option.setAttribute('aria-current', 'page');
-    }
-    option.dataset.navUtilityOption = 'true';
-    option.textContent = text;
-    if (href) {
-        option.href = href;
+        updateStatus = 'ready';
+        void maybePromptUpdate();
     } else {
-        option.type = 'button';
-        option.disabled = disabled;
+        updateFallbackPrompted = false;
+        if (updateStatus === 'ready') updateStatus = 'idle';
     }
-    if (action) option.dataset.siteVersionAction = action;
-    if (title) option.title = title;
-    return option;
+    void renderUpdateStatus();
 }
 
-async function renderVersionMenu(menuRoot, status = versionMenuStatus) {
-    const panel = getVersionPanel(menuRoot);
-    if (!(panel instanceof HTMLElement)) return;
-
-    const copy = await hydrateUpdateCopy();
-    const manifest = await getRuntimeManifest();
-    const version = getRuntimeBuildVersion(manifest) || '-';
-    const versionLabel = getRuntimeBuildTime(manifest) || version;
-    const changelogHref = getVersionChangelogHref(copy, menuRoot);
-    const statusValue = getVersionStatusValue(copy, status);
-    const homeOption = getVersionHomeOption(copy, menuRoot);
-    const options = [
-        createOption({
-            text: versionLabel,
-            href: changelogHref,
-            disabled: !changelogHref,
-            title: version,
-            current: isCurrentHref(changelogHref)
-        }),
-        createOption({
-            text: `${copy.versionStatus}: ${statusValue}`,
-            action: 'check',
-            disabled: status === 'checking',
-            title: root.getAttribute(UPDATE_STATE_ATTR) === UPDATE_STATE_READY ? copy.versionStatusClickUpdate : copy.versionCheck
-        })
-    ];
-    if (homeOption) options.unshift(homeOption);
-
-    panel.replaceChildren(...options);
+async function maybePromptUpdate() {
+    if (updateFallbackPrompted || hasVisibleUpdateControl()) return;
+    updateFallbackPrompted = true;
+    if (await confirmSiteUpdate() && activeRuntime) void applyWaitingWorker(activeRuntime);
 }
 
-async function renderVersionMenus(status = versionMenuStatus, { onlyOpen = false } = {}) {
-    await Promise.all(getVersionMenus().map((menuRoot) => {
-        if (onlyOpen && !isVersionMenuOpen(menuRoot)) return Promise.resolve();
-        return renderVersionMenu(menuRoot, status);
-    }));
-}
-
-async function checkForUpdatesFromMenu(runtime, menuRoot) {
-    if (root.getAttribute(UPDATE_STATE_ATTR) === UPDATE_STATE_READY) {
-        closeVersionMenu(menuRoot);
+async function checkForUpdates(runtime) {
+    if (updateStatus === 'ready') {
         await applyWaitingWorker(runtime);
         return;
     }
 
-    if (versionMenuCheckPromise) return versionMenuCheckPromise;
+    if (updateCheckPromise) return updateCheckPromise;
 
     if (navigator.onLine === false) {
-        versionMenuLatencyMs = null;
-        versionMenuStatus = 'offline';
-        await renderVersionMenu(menuRoot, 'offline');
+        updateLatencyMs = null;
+        updateStatus = 'offline';
+        await renderUpdateStatus();
         return;
     }
 
     const checkStartedAt = performance.now();
-    versionMenuLatencyMs = null;
-    versionMenuStatus = 'checking';
-    await renderVersionMenu(menuRoot, 'checking');
-
-    versionMenuCheckPromise = (async () => {
+    updateLatencyMs = null;
+    updateStatus = 'checking';
+    updateCheckPromise = (async () => {
         try {
-            const registration = runtime.getActiveRegistration() || await runtime.getActiveWorkerRegistration();
+            await renderUpdateStatus();
+            const registration = runtime.getActiveRegistration() || await navigator.serviceWorker.getRegistration(runtime.swScope);
             if (!registration) {
-                versionMenuLatencyMs = null;
-                versionMenuStatus = 'failed';
-                await renderVersionMenu(menuRoot, 'failed');
+                updateLatencyMs = null;
+                updateStatus = 'failed';
+                await renderUpdateStatus();
                 return;
             }
 
             await registration.update();
-            versionMenuLatencyMs = Math.max(0, performance.now() - checkStartedAt);
+            updateLatencyMs = Math.max(0, performance.now() - checkStartedAt);
             if (bindWaitingWorker(runtime, registration)) {
-                versionMenuStatus = 'ready';
-                await renderVersionMenu(menuRoot, 'ready');
+                updateStatus = 'ready';
+                await renderUpdateStatus();
                 return;
             }
 
-            versionMenuStatus = 'current';
-            await renderVersionMenu(menuRoot, 'current');
+            updateStatus = 'current';
+            await renderUpdateStatus();
         } catch (error) {
-            versionMenuLatencyMs = null;
-            versionMenuStatus = navigator.onLine === false ? 'offline' : 'failed';
-            await renderVersionMenu(menuRoot, versionMenuStatus);
+            updateLatencyMs = null;
+            updateStatus = navigator.onLine === false ? 'offline' : 'failed';
+            await renderUpdateStatus();
         } finally {
-            versionMenuCheckPromise = null;
+            updateCheckPromise = null;
         }
     })();
 
-    return versionMenuCheckPromise;
+    return updateCheckPromise;
 }
 
 function clearActivationFallbackTimer() {
@@ -401,9 +168,9 @@ function watchInstallingWorker(runtime, registration) {
 
 function markBackgroundUpdateChecked(runtime, registration) {
     if (bindWaitingWorker(runtime, registration)) return;
-    versionMenuLatencyMs = null;
-    if (versionMenuStatus !== 'ready') versionMenuStatus = 'current';
-    void renderVersionMenus(versionMenuStatus, { onlyOpen: true });
+    updateLatencyMs = null;
+    if (updateStatus !== 'ready') updateStatus = 'current';
+    void renderUpdateStatus();
 }
 
 function scheduleRegistrationUpdates(runtime, registration) {
@@ -501,7 +268,7 @@ async function applyWaitingWorker(runtime) {
     }
 
     setUpdateReadyState(false);
-    closeVersionMenu(getUsableVersionMenu());
+    closeUpdateControls();
     reloadOnControllerChange = true;
     scheduleActivationFallback(runtime, activeRegistration, targetWaitingWorker);
 
@@ -547,48 +314,23 @@ async function handleEnableMode(runtime) {
     } catch (error) { }
 }
 
-function bindVersionMenuUi(runtime) {
-    document.addEventListener('click', (event) => {
-        const target = event.target instanceof Element ? event.target : null;
-        if (!target) return;
-
-        const actionTarget = target.closest('[data-site-version-action]');
-        if (actionTarget?.dataset.siteVersionAction === 'check') {
-            const menuRoot = getVersionMenuRoot(actionTarget);
-            if (!menuRoot) return;
-
-            event.preventDefault();
-            void checkForUpdatesFromMenu(runtime, menuRoot);
-            return;
-        }
-
-        const trigger = target.closest('[data-site-version-trigger]');
-        if (!trigger) return;
-
-        const menuRoot = getVersionMenuRoot(trigger);
-        if (!menuRoot || isVersionMenuOpen(menuRoot)) return;
-
-        if (root.getAttribute(UPDATE_STATE_ATTR) === UPDATE_STATE_READY) {
-            void renderVersionMenu(menuRoot, 'ready');
-            return;
-        }
-        void checkForUpdatesFromMenu(runtime, menuRoot);
-    }, true);
-}
-
 export function startEnableMode(runtime) {
-    if (!runtime?.supportsServiceWorker() || enableModeStarted) return;
-
+    if (enableModeStarted) return;
     enableModeStarted = true;
+    if (!runtime?.supportsServiceWorker()) {
+        updateStatus = 'unavailable';
+        void renderUpdateStatus();
+        return;
+    }
     activeRuntime = runtime;
-    bindVersionMenuUi(runtime);
-
+    bindUpdateUi(() => void checkForUpdates(runtime), () => {
+        if (updateStatus === 'ready') void renderUpdateStatus();
+        else void checkForUpdates(runtime);
+    });
+    void renderUpdateStatus();
     if (document.readyState === 'complete') {
         void handleEnableMode(runtime);
         return;
     }
-
-    window.addEventListener('load', () => {
-        void handleEnableMode(runtime);
-    }, { once: true });
+    window.addEventListener('load', () => void handleEnableMode(runtime), { once: true });
 }

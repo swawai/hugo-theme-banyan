@@ -1,3 +1,5 @@
+import { settingsReturnUrl } from '../preferences/settings-navigation.js';
+
 (function () {
     var backLink = document.querySelector('[data-page-action="back"]');
 
@@ -7,6 +9,12 @@
 
     backLink.addEventListener('click', function (event) {
         event.preventDefault();
+
+        const returnUrl = settingsReturnUrl();
+        if (returnUrl) {
+            window.location.href = returnUrl.href;
+            return;
+        }
 
         if (window.history.length > 1) {
             window.history.back();

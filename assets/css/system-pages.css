@@ -1,0 +1,27 @@
+.system-page button.collection-item-link {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+
+.system-page .collection-item-link[aria-disabled="true"] {
+    opacity: 0.6;
+}
+
+.system-page-section,
+.system-page-return {
+    margin-block-start: 1rem;
+}
+
+.system-page-status {
+    font-size: small;
+    color: var(--link-visited);
+    line-height: 1.55;
+}
+
+.system-page [hidden] {
+    display: none !important;
+}

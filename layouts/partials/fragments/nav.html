@@ -23,20 +23,8 @@
 {{ if isset $controls "theme" }}{{ $showTheme = index $controls "theme" }}{{ end }}
 {{ $showMy := true }}
 {{ if isset $myConfig "show" }}{{ $showMy = index $myConfig "show" }}{{ end }}
-{{ $versionLabelDefaults := dict
-    "label" "version"
-    "text" "Ver"
-    "home" "Home"
-    "checking" "Checking..."
-    "check_failed" "Check failed"
-    "status" "Status"
-    "status_current" "Up to date"
-    "status_ready" "New version available"
-    "status_offline" "Offline"
-    "status_click_update" "click update"
-    "status_click_retry" "click retry"
-}}
-{{ $versionLabels := merge $versionLabelDefaults (index $versionConfig "labels" | default dict) }}
+{{ $updateModel := partial "preferences/site-update-model.html" (dict "ctx" $ctx) }}
+{{ $versionLabels := $updateModel.labels }}
 {{ $swConfig := $ctx.Site.Params.service_worker | default dict }}
 {{ $swMode := lower (printf "%v" (index $swConfig "mode" | default "off")) }}
 {{ $isOfflinePage := eq ($ctx.Scratch.Get "is_offline_page") true }}
@@ -204,6 +192,7 @@
         "label" (cond $hasMy $myLabel "Banyan Theme GitHub")
         "ariaCurrent" (cond $myIsCurrent "page" "")
         "linkSlot" "menu"
+        "dataAttrs" (cond $hasMy (dict "settings-link" "true") (dict))
         "target" (cond $myIsInternal "" "_blank")
         "rel" (cond $myIsInternal "" "noopener noreferrer")
         "safeHTML" true
@@ -212,26 +201,25 @@
 
     {{ if $showLanguage }}
     {{ $cur := $ctx.Language.Lang }}
-    {{ $translationHrefs := dict $cur $ctx.RelPermalink }}
-    {{ range $translation := $ctx.AllTranslations }}
-        {{ $translationHrefs = merge $translationHrefs (dict $translation.Language.Lang $translation.RelPermalink) }}
-    {{ end }}
+    {{ $languageContext := partial "preferences/language-context.html" $ctx }}
     {{ $labelLanguageEsc := $labelLanguage | htmlEscape }}
     {{ $languageTriggerHTML := printf "<button type=\"button\" class=\"ui-dropdown-trigger site-nav-utility-trigger\" aria-label=\"%s\" aria-haspopup=\"true\" aria-expanded=\"false\" data-ui-dropdown-trigger=\"true\" data-nav-utility-trigger=\"true\"><span class=\"sr-only\">%s</span>%s<span class=\"ui-dropdown-caret site-nav-utility-caret\" aria-hidden=\"true\">▾</span></button>" $labelLanguageEsc $labelLanguageEsc (partial "icon" (dict "name" "language")) }}
     {{ $languageOptionParts := slice }}
     {{ $hasMissingTranslation := false }}
-    {{ range $languageSite := sort $ctx.Sites "Language.Weight" }}
-        {{ $code := $languageSite.Language.Lang }}
-        {{ $name := $languageSite.Language.LanguageName | default $code }}
-        {{ $hasTranslation := isset $translationHrefs $code }}
+    {{ range $languageContext.options }}
+        {{ $code := .code }}
+        {{ $name := .name }}
+        {{ $hasTranslation := .translated }}
         {{ if not $hasTranslation }}{{ $hasMissingTranslation = true }}{{ end }}
-        {{ $href := $languageSite.Home.RelPermalink }}
-        {{ if $hasTranslation }}{{ $href = index $translationHrefs $code }}{{ end }}
+        {{ $href := .href }}
         {{ $isCurrent := eq $code $cur }}
         {{ $optionClass := cond $isCurrent "ui-dropdown-option site-nav-utility-option is-current" "ui-dropdown-option site-nav-utility-option" }}
         {{ $currentAttr := cond $isCurrent " aria-current=\"page\"" "" }}
         {{ $missingAttr := cond $hasTranslation "" " data-has-trans=\"false\"" }}
-        {{ $languageOptionParts = $languageOptionParts | append (printf "<a class=\"%s\" href=\"%s\" data-nav-utility-option=\"true\" data-value=\"%s\"%s%s>%s</a>" $optionClass ($href | htmlEscape) ($code | htmlEscape) $currentAttr $missingAttr ($name | htmlEscape)) }}
+        {{ $languageOptionParts = $languageOptionParts | append (printf "<a class=\"%s\" href=\"%s\" data-nav-utility-option=\"true\" data-value=\"%s\" data-language-choice=\"%s\"%s%s>%s</a>" $optionClass ($href | htmlEscape) ($code | htmlEscape) ($code | htmlEscape) $currentAttr $missingAttr ($name | htmlEscape)) }}
+    {{ end }}
+    {{ with $ctx.Site.GetPage "/language" }}
+      {{ $languageOptionParts = $languageOptionParts | append (printf "<a class=\"ui-dropdown-option site-nav-utility-option\" href=\"%s\" data-settings-link>%s</a>" .RelPermalink .LinkTitle) }}
     {{ end }}
     {{ $languageRootDataAttrs := dict
         "nav-utility-menu" "true"
@@ -257,9 +245,12 @@
     {{ $labelThemeEsc := $labelTheme | htmlEscape }}
     {{ $themeTriggerHTML := printf "<button type=\"button\" class=\"ui-dropdown-trigger site-nav-utility-trigger\" aria-label=\"%s\" aria-haspopup=\"true\" aria-expanded=\"false\" data-ui-dropdown-trigger=\"true\" data-nav-utility-trigger=\"true\"><span class=\"sr-only\">%s</span>%s<span class=\"ui-dropdown-caret site-nav-utility-caret\" aria-hidden=\"true\">▾</span></button>" $labelThemeEsc $labelThemeEsc (partial "icon" (dict "name" "theme")) }}
     {{ $themeOptionParts := slice }}
-    {{ $themeOptionParts = $themeOptionParts | append (printf "<button type=\"button\" class=\"ui-dropdown-option site-nav-utility-option\" data-nav-utility-option=\"true\" data-value=\"auto\">%s</button>" ($themeAuto | htmlEscape)) }}
-    {{ $themeOptionParts = $themeOptionParts | append (printf "<button type=\"button\" class=\"ui-dropdown-option site-nav-utility-option\" data-nav-utility-option=\"true\" data-value=\"light\">%s</button>" ($themeLight | htmlEscape)) }}
-    {{ $themeOptionParts = $themeOptionParts | append (printf "<button type=\"button\" class=\"ui-dropdown-option site-nav-utility-option\" data-nav-utility-option=\"true\" data-value=\"dark\">%s</button>" ($themeDark | htmlEscape)) }}
+    {{ $themeOptionParts = $themeOptionParts | append (printf "<button type=\"button\" class=\"ui-dropdown-option site-nav-utility-option\" data-nav-utility-option=\"true\" data-value=\"auto\" data-theme-choice=\"auto\">%s</button>" ($themeAuto | htmlEscape)) }}
+    {{ $themeOptionParts = $themeOptionParts | append (printf "<button type=\"button\" class=\"ui-dropdown-option site-nav-utility-option\" data-nav-utility-option=\"true\" data-value=\"light\" data-theme-choice=\"light\">%s</button>" ($themeLight | htmlEscape)) }}
+    {{ $themeOptionParts = $themeOptionParts | append (printf "<button type=\"button\" class=\"ui-dropdown-option site-nav-utility-option\" data-nav-utility-option=\"true\" data-value=\"dark\" data-theme-choice=\"dark\">%s</button>" ($themeDark | htmlEscape)) }}
+    {{ with $ctx.Site.GetPage "/appearance" }}
+      {{ $themeOptionParts = $themeOptionParts | append (printf "<a class=\"ui-dropdown-option site-nav-utility-option\" href=\"%s\" data-settings-link>%s</a>" .RelPermalink .LinkTitle) }}
+    {{ end }}
     {{ partial "ui/dropdown.html" (dict
         "rootClass" "site-nav-utility-menu"
         "rootDataAttrs" (dict
@@ -293,7 +284,7 @@
     {{ $versionBuildLabel := partial "build-time-display.html" $ctx | default $versionBuild }}
     {{ $versionBuildEsc := $versionBuild | htmlEscape }}
     {{ $versionBuildLabelEsc := $versionBuildLabel | htmlEscape }}
-    {{ $versionChangelogHref := trim (printf "%v" (index $versionConfig "changelog_href" | default "")) " \r\n\t" }}
+    {{ $versionChangelogHref := $updateModel.changelog_href }}
     {{ if and $versionChangelogHref (hasPrefix $versionChangelogHref "/") }}{{ $versionChangelogHref = $versionChangelogHref | relLangURL }}{{ end }}
     {{ $versionIsChangelog := and (ne $versionChangelogHref "") (eq $ctx.RelPermalink $versionChangelogHref) }}
     {{ $versionIsCurrent := or $versionIsHome $versionIsChangelog }}
@@ -308,7 +299,7 @@
     {{ if $versionCaret }}{{ $versionCaretHTML = "<span class=\"ui-dropdown-caret site-nav-utility-caret\" aria-hidden=\"true\">▾</span>" }}{{ end }}
     {{ $versionTriggerCurrentAttr := cond $versionIsCurrent " aria-current=\"page\"" "" }}
     {{ $versionTriggerHTML := printf "<button type=\"button\" class=\"ui-dropdown-trigger site-nav-utility-trigger site-nav-version-trigger\" aria-label=\"%s\" title=\"%s\" aria-haspopup=\"true\" aria-expanded=\"false\"%s data-ui-dropdown-trigger=\"true\" data-nav-utility-trigger=\"true\" data-site-version-trigger=\"true\">%s%s</button>" $versionLabelEsc $versionLabelEsc $versionTriggerCurrentAttr $versionTriggerContent $versionCaretHTML }}
-    {{ $versionPanelParts := slice }}
+    {{ $versionPanelParts := slice (printf "<a class=\"ui-dropdown-option site-nav-utility-option\" href=\"%s\" data-settings-link>%s</a>" $updateModel.href $updateModel.title) }}
     {{ $versionHomeClass := cond $versionIsHome "ui-dropdown-option site-nav-utility-option is-current" "ui-dropdown-option site-nav-utility-option" }}
     {{ $versionHomeCurrentAttr := cond $versionIsHome " aria-current=\"page\"" "" }}
     {{ $versionPanelParts = $versionPanelParts | append (printf "<a class=\"%s\" href=\"%s\"%s data-nav-utility-option=\"true\" data-site-version-action=\"home\">%s</a>" $versionHomeClass ($versionHomeHref | htmlEscape) $versionHomeCurrentAttr $versionHomeEsc) }}
@@ -328,6 +319,8 @@
             "nav-utility-kind" "version"
             "nav-utility-label" $versionLabel
             "site-version-menu" "true"
+            "site-update-page-href" $updateModel.href
+            "site-update-page-label" $updateModel.title
             "site-version-home-href" $versionHomeHref
             "site-version-home-label" $versionHome
             "site-version-changelog-href" $versionChangelogHref

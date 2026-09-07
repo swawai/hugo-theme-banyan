@@ -1,0 +1,3 @@
+{{ $css := resources.Get "css/system-pages.css" }}
+{{ $css = partial "css-process.html" (dict "resource" $css "fingerprint" true) }}
+<link rel="stylesheet" href="{{ $css.RelPermalink }}">

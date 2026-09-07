@@ -45,7 +45,7 @@
     pointer-events: none;
 }
 
-.grid-list > :is(.cell-title, .cell-date, .cell-count) a {
+.grid-list > :is(.cell-title, .cell-date, .cell-count) :is(a, button) {
     pointer-events: auto;
 }
 
@@ -74,7 +74,7 @@
     text-decoration: none;
 }
 
-.grid-list a:focus-visible {
+.grid-list :is(a, button):focus-visible {
     outline-offset: -2px;
 }
 

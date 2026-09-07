@@ -19,6 +19,7 @@ import {
     waitForUpdateReady
 } from './helpers.mjs';
 import { relFromSite } from './paths.mjs';
+import { systemPageScenarios } from './system-pages.mjs';
 
 const WIDE_VIEWPORT = { width: 1600, height: 1100 };
 const BREADCRUMB_FIRST_FRAME_VIEWPORT = { width: 1280, height: 960 };
@@ -748,6 +749,7 @@ async function readBreadcrumbPrefetchSlotContract(page) {
 }
 
 export const scenarios = [
+    ...systemPageScenarios,
     {
         id: 'home-shell-smoke',
         kind: 'single',

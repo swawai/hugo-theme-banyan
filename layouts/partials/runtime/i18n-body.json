@@ -41,28 +41,9 @@
   {{- end -}}
 {{- end -}}
 
-{{- $siteVersionLabelDefaults := dict
-  "check" "Check now"
-  "checking" "Checking..."
-  "check_failed" "Check failed"
-  "status" "Status"
-  "status_current" "Up to date"
-  "status_ready" "New version available"
-  "status_offline" "Offline"
-  "status_click_update" "click update"
-  "status_click_retry" "click retry"
--}}
-{{- $siteVersionLabels := $siteVersionLabelDefaults -}}
-{{- $siteVersionChangelogHref := "" -}}
-{{- with .GetPage "/fragments/nav-utilities" -}}
-  {{- $navConfig := .Params.nav | default dict -}}
-  {{- $versionConfig := index $navConfig "version" | default dict -}}
-  {{- $siteVersionLabels = merge $siteVersionLabelDefaults (index $versionConfig "labels" | default dict) -}}
-  {{- $siteVersionChangelogHref = trim (printf "%v" (index $versionConfig "changelog_href" | default "")) " \r\n\t" -}}
-  {{- if and $siteVersionChangelogHref (hasPrefix $siteVersionChangelogHref "/") -}}
-    {{- $siteVersionChangelogHref = $siteVersionChangelogHref | relLangURL -}}
-  {{- end -}}
-{{- end -}}
+{{- $updateModel := partial "preferences/site-update-model.html" (dict "ctx" .) -}}
+{{- $siteVersionLabels := $updateModel.labels -}}
+{{- $siteVersionChangelogHref := $updateModel.changelog_href -}}
 
 {{- dict
   "site_update_prompt" $siteUpdatePrompt
@@ -71,6 +52,7 @@
   "site_version_check" (printf "%v" (index $siteVersionLabels "check"))
   "site_version_checking" (printf "%v" (index $siteVersionLabels "checking"))
   "site_version_check_failed" (printf "%v" (index $siteVersionLabels "check_failed"))
+  "site_version_unavailable" (printf "%v" (index $siteVersionLabels "unavailable"))
   "site_version_home" (printf "%v" (index $siteVersionLabels "home"))
   "site_version_status" (printf "%v" (index $siteVersionLabels "status"))
   "site_version_status_current" (printf "%v" (index $siteVersionLabels "status_current"))

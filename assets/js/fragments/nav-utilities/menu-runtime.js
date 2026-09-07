@@ -72,38 +72,6 @@ export function markCurrentOption(menuRoot, selectedValue = '') {
     setTriggerState(menuRoot, selectedLabel);
 }
 
-export function bindMenuOption(option, onSelect) {
-    if (
-        (!(option instanceof HTMLButtonElement) && !(option instanceof HTMLAnchorElement))
-        || option.dataset.navUtilityBound === 'true'
-    ) {
-        return;
-    }
-
-    option.dataset.navUtilityBound = 'true';
-    option.addEventListener('click', async (event) => {
-        if (option instanceof HTMLButtonElement && option.disabled) {
-            return;
-        }
-        if (
-            option instanceof HTMLAnchorElement
-            && (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
-        ) {
-            return;
-        }
-        if (option instanceof HTMLAnchorElement) {
-            event.preventDefault();
-        }
-
-        const menuRoot = getMenuRoot(option);
-        const value = option.dataset.value || '';
-        const shouldClose = await onSelect(value, option, menuRoot);
-        if (shouldClose !== false) {
-            dropdown?.close({ restoreFocus: true });
-        }
-    });
-}
-
 function closeOpenMenu({ restoreFocus = false } = {}) {
     dropdown?.close({ restoreFocus });
 }

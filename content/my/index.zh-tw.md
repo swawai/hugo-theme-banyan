@@ -1,18 +1,18 @@
-﻿---
+---
 draft: false
-title: "我的"
-slug: "my"
+title: 系統－我的
+slug: my
 nav_primary: my
-type: "my"
-layout: "my-page"
-robots: "noindex, follow"
+type: my
+layout: my-page
+robots: noindex, follow
 slots:
   primary_nav: /fragments/nav-primary-links
   utilities: /fragments/nav-utilities
 build:
-  list: "never"
+  list: local
+weight: 90
 ---
-
 
 這裡預留給後續的個人資源與設定功能。
 
