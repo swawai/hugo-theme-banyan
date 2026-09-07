@@ -1,5 +1,5 @@
 .grid-products {
-    grid-template-columns: 8rem minmax(4rem, max-content) minmax(10rem, max-content);
+    grid-template-columns: var(--navigation-column-inline) minmax(4rem, max-content) minmax(10rem, max-content);
 }
 
 .grid-products > :is(.cell-title, .cell-price, .cell-value) {

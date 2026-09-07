@@ -68,6 +68,120 @@ async function readCanvas(page) {
 }
 
 export const canvasScenarios = [
+    ...[false, true].map(mobile => ({
+        id: mobile ? 'canvas-mobile-append-column' : 'canvas-append-column',
+        kind: 'single',
+        serviceWorkers: 'block',
+        viewport: { width: 390, height: 900 },
+        isMobile: mobile,
+        hasTouch: mobile,
+        timeoutMs: 60000,
+        title: 'Opening a Product Appends a Column Without Moving Existing Names',
+        async run({ page, context, baseUrl, artifactDir }) {
+            const cases = [];
+            const cdp = mobile ? await context.newCDPSession(page) : null;
+            await page.addInitScript(() => {
+                const observer = new MutationObserver(() => {
+                    if (!document.getElementById('main')) return;
+                    observer.disconnect();
+                    requestAnimationFrame(() => {
+                        window.__firstCanvasX = window.visualViewport?.pageLeft ?? scrollX;
+                    });
+                });
+                observer.observe(document, { childList: true, subtree: true });
+            });
+            await page.route('**/js/*.js', async route => {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                await route.continue();
+            });
+            for (const width of mobile ? [390] : [390, 1024, 1440]) {
+                if (!mobile) await page.setViewportSize({ width, height: 900 });
+                for (const source of ['product-categories/free', 'products']) {
+                    await gotoAndWait(page, `${baseUrl}/zh/${source}/`);
+                    await waitForBreadcrumbSettled(page);
+                    assert.equal((await readCanvas(page)).canvasOffsetX, 0);
+                    if (source === 'products') {
+                        if (mobile) {
+                            const sortPoint = await page.locator('main [data-sort-field="name"]').evaluate(el => {
+                                const box = el.getBoundingClientRect();
+                                return { x: box.x - visualViewport.offsetLeft + 10, y: box.y + 5 };
+                            });
+                            await page.touchscreen.tap(sortPoint.x, sortPoint.y);
+                        } else {
+                            await page.locator('main [data-sort-field="price"]').click();
+                        }
+                        await page.waitForURL(url => url.searchParams.get('sort') === (mobile ? 'name-desc' : 'price-desc'));
+                        assert.equal(await page.evaluate(() => sessionStorage.getItem('banyan:canvas-navigation')), null,
+                            'In-place sorting does not create a pending navigation.');
+                    }
+                    const link = page.locator('main .collection-item-link[href*="/p/xvenv/"]');
+                    if (width === 390) {
+                        if (mobile) {
+                            await cdp.send('Input.dispatchTouchEvent', {
+                                type: 'touchStart', touchPoints: [{ x: 350, y: 180, id: 1 }]
+                            });
+                            const distance = source === 'products' ? 160 : 320;
+                            for (let offset = 20; offset <= distance; offset += 20) {
+                                await page.waitForTimeout(40);
+                                await cdp.send('Input.dispatchTouchEvent', {
+                                    type: 'touchMove', touchPoints: [{ x: 350 - offset, y: 180, id: 1 }]
+                                });
+                            }
+                            await page.waitForTimeout(120);
+                            await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+                        } else {
+                            await page.evaluate(x => scrollTo(x, 0), source === 'products' ? 150 : 310);
+                        }
+                    }
+                    await nextPaint(page);
+                    const before = await readCanvas(page);
+                    if (width === 390) assert.ok(before.canvasOffsetX > 0, 'Exercise a manually panned source.');
+                    const name = await link.evaluate(el => {
+                        const box = el.getBoundingClientRect();
+                        return { x: box.x - (visualViewport?.offsetLeft || 0), y: box.y, width: box.width };
+                    });
+                    assert.ok(Math.abs(name.width - before.nav.width) <= 1, 'Product names share the navigation column width.');
+                    await page.screenshot({ path: path.join(artifactDir, `${source.replaceAll('/', '-')}-${width}-before.png`) });
+                    // Use a visible point, avoiding Playwright's automatic centering of links.
+                    const point = { x: name.x + 40, y: name.y + 10 };
+                    assert.ok(point.x > 0 && point.x < width);
+                    if (mobile) await page.touchscreen.tap(point.x, point.y);
+                    else await page.mouse.click(point.x, point.y);
+                    await page.waitForURL(url => url.pathname === '/zh/p/xvenv/');
+                    await waitForBreadcrumbSettled(page);
+                    await nextPaint(page);
+                    const after = await readCanvas(page);
+                    const firstX = await page.evaluate(() => window.__firstCanvasX);
+                    assert.ok(Math.abs(firstX - before.canvasOffsetX) <= 1, 'The inherited position is already correct at first paint, before slow runtime scripts.');
+                    if (source === 'products') assert.equal(new URL(page.url()).searchParams.get('sort'), mobile ? 'name-desc' : 'price-desc');
+                    assert.ok(Math.abs(after.canvasOffsetX - before.canvasOffsetX) <= 1, 'Opening a product retains the source canvas position.');
+                    assert.equal(after.canvasOffsetY, 0, 'The new article starts at its top.');
+                    assert.ok(Math.abs(after.nav.x - before.nav.x) <= 1, 'Root entries stay in place.');
+                    before.columns.forEach((column, i) => assert.ok(Math.abs(column.x - after.columns[i].x) <= 1));
+                    const selected = await page.locator('.slot-breadcrumb .collection-item-link[aria-current="page"][href*="/p/xvenv/"]').evaluate(el => {
+                        const box = el.getBoundingClientRect();
+                        return { x: box.x - (visualViewport?.offsetLeft || 0), width: box.width };
+                    });
+                    assert.ok(Math.abs(selected.x - name.x) <= 1 && Math.abs(selected.width - name.width) <= 1,
+                        'The clicked name remains in the same position and width in the new sibling column.');
+                    assert.ok(after.mainDocumentX > before.mainDocumentX, 'The new main column extends the canvas to the right.');
+                    assert.equal(await page.evaluate(() => sessionStorage.getItem('banyan:canvas-navigation')), null, 'The one-navigation record is consumed.');
+                    await page.screenshot({ path: path.join(artifactDir, `${source.replaceAll('/', '-')}-${width}-after.png`) });
+                    await page.reload();
+                    await waitForBreadcrumbSettled(page);
+                    assert.ok(Math.abs((await readCanvas(page)).canvasOffsetX - after.canvasOffsetX) <= 1, 'Reload preserves the inherited position.');
+                    await page.goBack();
+                    await waitForBreadcrumbSettled(page);
+                    assert.ok(Math.abs((await readCanvas(page)).canvasOffsetX - before.canvasOffsetX) <= 1, 'Back preserves the original source position.');
+                    await page.goForward();
+                    await waitForBreadcrumbSettled(page);
+                    assert.ok(Math.abs((await readCanvas(page)).canvasOffsetX - after.canvasOffsetX) <= 1, 'Forward restores the product position.');
+                    cases.push({ width, source, before, after, name, selected });
+                }
+            }
+            return { cases };
+        }
+    })),
     {
         id: 'canvas-mobile-touch-navigation',
         kind: 'single',
@@ -92,8 +206,7 @@ export const canvasScenarios = [
             await waitForBreadcrumbSettled(page);
             await nextPaint(page);
             const initial = await readCanvas(page);
-            assert.ok(initial.canvasOffsetX > 0 && initial.main.x >= 0 && initial.main.x <= 16,
-                'A real mobile viewport must initially show the main content: ' + JSON.stringify(initial));
+            assert.equal(initial.canvasOffsetX, 0, 'A direct visit starts at the canvas origin without revealing main automatically.');
             assert.ok(await page.evaluate(() => navigator.maxTouchPoints > 0));
             const cdp = await context.newCDPSession(page);
             const canvasPosition = () => page.evaluate(() => ({
@@ -139,6 +252,8 @@ export const canvasScenarios = [
             assert.ok(final.main.x >= 0 && final.main.x <= 16 && final.main.right <= final.viewport + 1,
                 'Dragging left returns to the main content: ' + JSON.stringify(final));
             assert.equal(page.url(), url, 'Dragging a navigation link must not activate it.');
+            await swipe(50, 120);
+            await swipe(300, -120);
             const events = await page.evaluate(() => window.__canvasTouchStarts);
             assert.ok(events.some(event => event.trusted && event.region === 'prose'));
             assert.ok(events.some(event => event.trusted && event.region === 'root'));
@@ -148,7 +263,7 @@ export const canvasScenarios = [
             await swipe(210, 0, -120);
             await swipe(50, 180);
             const historyPosition = await canvasPosition();
-            assert.ok(historyPosition.x > 0 && historyPosition.x < initial.canvasOffsetX && historyPosition.y > 0,
+            assert.ok(historyPosition.x > 0 && historyPosition.x < final.canvasOffsetX && historyPosition.y > 0,
                 'The history fixture preserves a user-chosen position on both axes.');
             await gotoAndWait(page, `${baseUrl}/zh/appearance/`);
             await page.goBack();
@@ -186,11 +301,11 @@ export const canvasScenarios = [
                     assert.ok(state.columnLinks.every(count => count > 0), detail);
                     assert.ok(state.columns.every(column => Math.abs(column.y - state.main.y) <= 1), detail);
                     assert.ok(Math.abs(state.nav.y - state.main.y) <= 1, detail);
-                    assert.ok(state.main.x >= -1 && state.main.x < state.viewport, detail);
+                    assert.equal(state.canvasOffsetX, 0, 'Direct visits preserve the canvas origin: ' + detail);
                     assert.ok(state.main.width <= state.viewport + 1, detail);
                     if (viewport.width === 390) {
-                        assert.ok(state.scrollWidth > state.viewport && state.scrollX > 0, detail);
-                        assert.ok(state.main.x <= 16, detail);
+                        assert.ok(state.scrollWidth > state.viewport, detail);
+                        assert.ok(state.nav.x >= 0 && state.nav.right <= state.viewport, detail);
                     }
                     if (state.prose) {
                         assert.ok(state.prose.width <= state.viewport && state.prose.width >= Math.min(350, state.viewport - 32), detail);
@@ -331,8 +446,7 @@ export const canvasScenarios = [
                 assert.equal(first.breadcrumbColumnCount, final.columns.length);
                 assert.ok(Math.abs(first.mainInlineStart - final.mainDocumentX) <= 1,
                     'Source resolution must not move the main track even when runtime scripts arrive late.');
-                assert.ok(final.main.x >= -1 && final.main.right <= final.viewport + 1,
-                    'The initial reading position must remain correct after source rendering.');
+                assert.equal(final.canvasOffsetX, 0, 'Slow source rendering must not reveal main or change the canvas origin.');
                 cases.push({ viewport, first, final });
             }
             return { cases };

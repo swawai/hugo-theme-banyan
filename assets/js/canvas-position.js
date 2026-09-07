@@ -1,47 +1,59 @@
-// Only a new document chooses an initial canvas position. Reload and history
-// traversal retain the browser's own horizontal and vertical restoration.
+const navigationKey = 'banyan:canvas-navigation';
+
+// Carry only the horizontal position of one same-tab collection navigation.
+// History traversal and reload keep the browser's own restoration on both axes.
 export function initCanvasPosition() {
+    let pending;
+    try {
+        const raw = sessionStorage[navigationKey];
+        delete sessionStorage[navigationKey];
+        pending = JSON.parse(raw);
+    } catch { /* Navigation remains usable when storage is unavailable. */ }
+
+    // Window bubbling runs after the collection's sorting/link handlers.
+    window.addEventListener('click', event => {
+        if (event.defaultPrevented || event.button !== 0
+            || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+        const link = event.target.closest?.('.collection-item-link[href], .slot-breadcrumb a[href]');
+        if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
+        if (link.origin !== location.origin || link.hash || link.href === location.href) return;
+        try {
+            sessionStorage[navigationKey] = JSON.stringify({
+                source: location.href.split('#')[0],
+                target: link.href,
+                x: window.visualViewport?.pageLeft ?? scrollX
+            });
+        } catch { /* Do not block the link if storage is unavailable. */ }
+    });
+
     const navigation = performance.getEntriesByType('navigation')[0];
-    if (navigation?.type !== 'navigate' || window.location.hash) return;
+    if (navigation?.type !== 'navigate' || location.hash
+        || pending?.target !== location.href || pending.source !== document.referrer
+        || !Number.isFinite(pending.x) || pending.x <= 0) return;
 
     const lifecycle = new AbortController();
     const options = { capture: true, passive: true, signal: lifecycle.signal };
-
     function stop() {
         observer.disconnect();
         lifecycle.abort();
     }
-
-    function onInput(event) {
-        if (event.isTrusted) stop();
-    }
-
     const observer = new MutationObserver(() => {
         const main = document.getElementById('main');
         if (!main) return;
         stop();
-        const scroller = document.scrollingElement;
-        const viewport = window.visualViewport;
-        // Input, an anchor, or another native scroll decision takes priority.
-        if (!scroller || window.location.hash || scroller.scrollLeft || scroller.scrollTop
-            || viewport?.pageLeft || viewport?.pageTop) return;
+        // Early user input, an anchor or native restoration takes priority.
+        if (location.hash || (window.visualViewport?.pageLeft ?? scrollX)
+            || (window.visualViewport?.pageTop ?? scrollY)) return;
 
-        // The rail and source-column skeleton precede main, whose width is
-        // explicit. Position before the first frame that can show this column.
-        const rect = main.getBoundingClientRect();
-        const style = getComputedStyle(document.body);
-        const viewportLeft = viewport?.offsetLeft || 0;
-        const start = viewportLeft + (parseFloat(style.paddingLeft) || 0);
-        const end = viewportLeft + (viewport?.width || document.documentElement.clientWidth) - (parseFloat(style.paddingRight) || 0);
-        if (rect.right > end + 1 && rect.left > start + 1) {
-            // The browser scrolls its layout or visual viewport as appropriate,
-            // including the visual panning used by mobile browsers at 1x zoom.
-            main.scrollIntoView({ inline: 'start', block: 'nearest', behavior: 'instant' });
-        }
+        // Use the existing main track as a native scroll target at the saved x.
+        // scrollIntoView moves the visual viewport too, unlike scrollTo on mobile.
+        main.style.scrollMarginInlineStart = `${main.getBoundingClientRect().left + scrollX - pending.x}px`;
+        main.scrollIntoView({ inline: 'start', block: 'nearest', behavior: 'instant' });
+        main.style.scrollMarginInlineStart = '';
     });
-
-    ['pointerdown', 'touchstart', 'wheel', 'keydown'].forEach((name) => window.addEventListener(name, onInput, options));
+    for (const name of ['pointerdown', 'touchstart', 'wheel', 'keydown']) {
+        window.addEventListener(name, stop, options);
+    }
     window.addEventListener('pagehide', stop, options);
-    document.addEventListener('DOMContentLoaded', stop, options);
     observer.observe(document.documentElement, { childList: true, subtree: true });
 }

@@ -236,7 +236,7 @@ const GRID_LIST_COLUMN_CASES = [
     { id: 'tags-wide', path: '/zh/tags/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
     { id: 'section-medium', path: '/zh/d/', viewport: { width: 1024, height: 960 } },
     { id: 'section-mobile', path: '/zh/d/', viewport: { width: 390, height: 844 }, horizontalCanvas: true },
-    { id: 'products-wide', path: '/zh/products/', viewport: WIDE_VIEWPORT, product: true }
+    { id: 'products-wide', path: '/zh/products/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true }
 ];
 const DESIGN_AUDIT_VIEWPORTS = [
     {
@@ -1792,13 +1792,12 @@ export const scenarios = [
                         documentClientInline: document.documentElement.clientWidth,
                         documentScrollInline: document.documentElement.scrollWidth,
                         nameInline: nameCell.getBoundingClientRect().width,
-                        navigationInline: measure('var(--navigation-column-inline)'),
-                        productInline: measure('8rem')
+                        navigationInline: measure('var(--navigation-column-inline)')
                     };
                     probe.remove();
                     return result;
                 });
-                const expectedInline = target.product ? geometry?.productInline : geometry?.navigationInline;
+                const expectedInline = geometry?.navigationInline;
                 const invalid = !geometry
                     || expectedInline <= 0
                     || Math.abs(geometry.nameInline - expectedInline) > 1
