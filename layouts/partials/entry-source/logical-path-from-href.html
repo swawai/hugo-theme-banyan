@@ -1,5 +1,4 @@
 {{- $ctx := .ctx | default . -}}
-{{- $provider := lower (trim (printf "%v" (.provider | default "")) " \r\n\t") -}}
 {{- $href := trim (printf "%v" (.href | default "")) " \r\n\t" -}}
 {{- $path := "" -}}
 {{- if ne $href "" -}}

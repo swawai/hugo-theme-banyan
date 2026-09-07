@@ -1,5 +1,16 @@
-{{- $source := .source | default dict -}}
-{{- $provider := printf "%v" (index $source "provider" | default "") -}}
-{{- if in (slice "all" "products" "section-d" "taxonomy") $provider -}}
-  {{- partial (printf "entry-source/items-json-%s.html" $provider) (dict "source" $source) -}}
+{{- $source := .source -}}
+{{- $config := partial "collection/config.html" (dict "page" $source.page) -}}
+{{- $rows := partial "collection/rows.html" (dict "page" $source.page) -}}
+{{- $fields := slice "key" "kind" "href" "text" "icon" "prefetch_kind" "sort_group" "sort_name" -}}
+{{- if eq $config.view "products" -}}
+  {{- $fields = $fields | append "sort_price" "sort_value" "price_text" "value_text" -}}
+{{- else if eq $config.view "all" -}}
+  {{- $fields = $fields | append "sort_date" "sort_size" "sort_path" "date_text" "size_text" "size_unit" "path_text" "path_href" -}}
+{{- else -}}
+  {{- $fields = $fields | append "sort_date" "sort_count" "date_text" "count_text" "count_unit" -}}
 {{- end -}}
+{{- partial "entry-source/items-json-encode.html" (dict
+  "provider" "collection" "logical_path" $source.logical_path
+  "sort_variant" $config.sort_variant "default_sort" $config.default_sort
+  "fields" $fields "rows" $rows
+) -}}

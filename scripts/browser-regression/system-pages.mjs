@@ -102,7 +102,7 @@ export const systemPageScenarios = [
         title: 'Language Page Preserves Reading Context',
         dialogPolicy: 'dismiss',
         async run({ page, baseUrl, dialogs, artifactDir }) {
-            await gotoAndWait(page, `${baseUrl}/zh/p/xvenv/?from=%2Fproduct-categories%2Ffree%2F&sort=name-asc&sorts=_,name-asc#details`);
+            await gotoAndWait(page, `${baseUrl}/zh/p/xvenv/?from=%2Fproducts%2Ffree%2F&sort=name-asc&sorts=_,name-asc#details`);
             const source = new URL(page.url());
             await page.locator('[data-root-navigation] a[data-root-href="/zh/language/"]').click();
             await page.waitForSelector(`${picker}[data-language-state="ready"]`);

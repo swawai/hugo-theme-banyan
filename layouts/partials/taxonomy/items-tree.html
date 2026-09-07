@@ -19,6 +19,7 @@
       {{- $bytes := len $page.RawContent -}}
       {{- $d := $page.Date -}}
       {{- $items = $items | append (dict
+          "node" $page
           "kind" "page"
           "title" $page.Title
           "text" ($page.LinkTitle | default $page.Title)
@@ -56,6 +57,7 @@
       {{- $pagesAll := partial "taxonomy/subtree-pages.html" (dict "ctx" $ctx "spec" $spec "prefix" $full "mode" "subtree") -}}
       {{- $agg := partial "taxonomy/pages-dedup-latest.html" (dict "pages" $pagesAll) -}}
       {{- $items = $items | append (dict
+          "node" $termPage
           "kind" "cat"
           "title" $title
           "text" $text
@@ -85,6 +87,7 @@
       {{- $bytes := len $page.RawContent -}}
       {{- $d := $page.Date -}}
       {{- $items = $items | append (dict
+          "node" $page
           "kind" "page"
           "title" $page.Title
           "text" ($page.LinkTitle | default $page.Title)
@@ -114,7 +117,8 @@
     {{- $pagesAll := partial "taxonomy/subtree-pages.html" (dict "ctx" $ctx "spec" $spec "prefix" $root "mode" "subtree") -}}
     {{- $agg := partial "taxonomy/pages-dedup-latest.html" (dict "pages" $pagesAll) -}}
     {{- $items = $items | append (dict
-        "kind" "cat"
+        "node" $termPage
+          "kind" "cat"
         "title" $title
         "text" $text
         "term_key" (urlize $root)

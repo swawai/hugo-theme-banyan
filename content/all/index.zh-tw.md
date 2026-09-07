@@ -8,9 +8,6 @@ slug: "all"
 layout: article-list
 slots:
   breadcrumb: true
-banyan_entry_source:
-  provider: all
-  target_section: d
+list: all
+aggregate: /d
 ---
-
-{{< all-list section="d" >}}

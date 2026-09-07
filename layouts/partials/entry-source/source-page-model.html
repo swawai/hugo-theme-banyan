@@ -1,6 +1,5 @@
 {{- $page := .page -}}
 {{- $logicalPath := printf "%v" (.logical_path | default "") -}}
-{{- $provider := printf "%v" (.provider | default "") -}}
 {{- if not $page -}}
   {{- errorf "Build failed: entry-source/source-page-model.html requires page." -}}
 {{- end -}}
@@ -21,74 +20,29 @@
 {{- with index $rootRaw "title" }}{{ $rootItem = merge $rootItem (dict "title" (printf "%v" .)) }}{{ end -}}
 {{- $tailItems := index $canonicalModel "tail_items" | default slice -}}
 {{- $canonicalLevels := index $canonicalModel "levels" | default slice -}}
-{{- $collectionLabelsByHref := dict $rootHref $rootText -}}
 {{- $levels := slice -}}
 {{- range $level := $canonicalLevels -}}
   {{- $item := index $level "item" | default dict -}}
   {{- $collectionHref := trim (printf "%v" (index $level "collection_href" | default "")) " " -}}
-  {{- $collectionLabel := trim (printf "%v" (index $collectionLabelsByHref $collectionHref | default "")) " " -}}
-  {{- $collectionLogicalPath := partial "entry-source/logical-path-from-href.html" (dict
-    "ctx" $page
-    "provider" $provider
-    "href" $collectionHref
-  ) -}}
-  {{- /* An ancestor owns its collection type. Static section indexes retain their page menu. */ -}}
-  {{- $collectionProvider := $provider -}}
-  {{- range $ancestor := $page.Ancestors -}}
-    {{- if eq $ancestor.RelPermalink $collectionHref -}}
-      {{- $collectionProvider = $ancestor.Params.banyan_entry_source.provider | default "" -}}
-      {{- if and (eq $ancestor.Kind "section") (eq $ancestor.Section "d") -}}
-        {{- $collectionProvider = "section-d" -}}
-      {{- else if in (slice "taxonomy" "term") $ancestor.Kind -}}
-        {{- $collectionProvider = "taxonomy" -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
   {{- $collectionSource := dict -}}
-  {{- if ne $collectionProvider "" -}}
-    {{- $collectionSource = partial "entry-source/collection-source.html" (dict
-      "provider" $collectionProvider
-      "logical_path" $collectionLogicalPath
-      "label" $collectionLabel
-      "href" $collectionHref
-    ) -}}
+  {{- range $owner := $page.Site.Pages -}}
+    {{- if eq $owner.RelPermalink $collectionHref -}}
+      {{- $collectionSource = partial "entry-source/model-current.html" (dict "page" $owner) -}}
+      {{- break -}}
+    {{- end -}}
   {{- end -}}
   {{- $levelModel := dict "item" $item -}}
   {{- if gt (len $collectionSource) 0 -}}
     {{- $levelModel = merge $levelModel (dict "collection_source" $collectionSource) -}}
   {{- end -}}
   {{- $levels = $levels | append $levelModel -}}
-  {{- $itemHref := trim (printf "%v" (index $item "href" | default "")) " " -}}
-  {{- $itemText := trim (printf "%v" (index $item "text" | default "")) " " -}}
-  {{- if and $itemHref $itemText -}}
-    {{- $collectionLabelsByHref = merge $collectionLabelsByHref (dict $itemHref $itemText) -}}
-  {{- end -}}
 {{- end -}}
-{{- $currentCollectionHref := $page.RelPermalink -}}
-{{- $currentCollectionLabel := trim (printf "%v" (index $collectionLabelsByHref $currentCollectionHref | default ($page.LinkTitle | default $page.Title))) " " -}}
-{{- $currentCollectionSource := partial "entry-source/collection-source.html" (dict
-  "provider" $provider
-  "logical_path" $logicalPath
-  "label" $currentCollectionLabel
-  "href" $currentCollectionHref
-) -}}
-{{- $currentCollectionItems := dict -}}
-{{- $entryHrefs := slice -}}
-{{- if in (slice "all" "products" "section-d" "taxonomy") $provider -}}
-  {{- $currentCollectionItemsJson := partial (printf "entry-source/items-json-%s.html" $provider) (dict
-    "source" (dict
-      "page" $page
-      "provider" $provider
-      "logical_path" $logicalPath
-    )
-  ) -}}
-  {{- if ne (trim $currentCollectionItemsJson " \r\n\t") "" -}}
-    {{- $currentCollectionItems = transform.Unmarshal (dict "format" "json") $currentCollectionItemsJson -}}
-    {{- $entryHrefs = partial "entry-source/items-payload-page-hrefs.html" (dict "payload" $currentCollectionItems) | default slice -}}
-  {{- end -}}
-{{- end -}}
+{{- $currentCollectionSource := partial "entry-source/collection-source.html" (dict "page" $page) -}}
+{{- $currentCollectionItemsJson := partial "entry-source/items-json.html" (dict "source" (dict "page" $page "logical_path" $logicalPath)) -}}
+{{- $currentCollectionItems := transform.Unmarshal (dict "format" "json") $currentCollectionItemsJson -}}
+{{- $entryHrefs := partial "entry-source/items-payload-page-hrefs.html" (dict "payload" $currentCollectionItems) | default slice -}}
 {{- $result := dict
-  "provider" $provider
+  "provider" "collection"
   "page" $page
   "logical_path" $logicalPath
   "root_item" $rootItem

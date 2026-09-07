@@ -28,9 +28,9 @@
 - `schema_items`：结构化数据中的页面路径。
 
 项目自身的 `href` 与提供兄弟条目的 `collection_href` 含义不同。例如“WSL”项目指向 `/d/wsl/`，其兄弟列表来自 `/d/`。`collection_label` 取该所属页面的名称，用于没有排序 provider 的静态列头。
-`entry-source/source-page-model.html` 将这些层级映射到集合 provider 与 `_items.json`。静态分类列表保留页面权重顺序；动态集合采用自己的默认排序。
+`entry-source/source-page-model.html` 将这些层级映射到集合 provider 与 `_items.json`。所有列表页统一使用 collection 来源，排序字段由 `list` 声明决定；系统站点页仍保留静态页面列表。主列表、路径菜单与来源 JSON 共用 `collection/rows.html`。
 
-第一列只渲染一次，来源模型不携带完整根菜单，也不根据“第一列已覆盖”删除路径集合。这样产品分类的四个兄弟项仍可作为第二列出现。
+第一列只渲染一次，来源模型不携带完整根菜单，也不根据“第一列已覆盖”删除路径集合。分类根的子项可作为第二列出现，分类数量由内容决定。
 
 ## 布局与维护边界
 
@@ -43,4 +43,4 @@
 
 `canvas-position.js` 不再主动把新页面的主列移入视野。沿列表在同标签页打开页面时，只向下一文档传递来源、目标与横向视觉坐标；目标页读取后清除记录，来源与目标匹配的新访问才使用，已有列保持位置，新列向右扩展。内联入口位于头部样式之后，在解析到 `#main` 时通过临时 `scroll-margin` 和一次原生 `scrollIntoView` 还原坐标，随后清除临时样式。浏览器自行处理桌面文档滚动与手机视觉视口平移，不另建滚动容器或设备模式。主列宽度与前置骨架须提前确定；已有滚动位置、锚点或加载期间的输入优先。直接访问从画幅起点开始，历史返回、前进和刷新使用原生恢复，排序与异步重绘不重置画幅。
 
-修改路径排序协议参见 [navigation-state.md](navigation-state.md)。后续列表声明、产品分类迁移及黑白配色按 [行动计划](navigation-flattening-plan.md) 分步实施。
+修改路径排序协议参见 [navigation-state.md](navigation-state.md)。列表与产品声明见 [collection-lists.md](collection-lists.md)。后续黑白配色按 [行动计划](navigation-flattening-plan.md) 分步实施。

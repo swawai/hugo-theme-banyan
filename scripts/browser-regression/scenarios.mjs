@@ -236,7 +236,7 @@ const GRID_LIST_COLUMN_CASES = [
     { id: 'tags-wide', path: '/zh/tags/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
     { id: 'section-medium', path: '/zh/d/', viewport: { width: 1024, height: 960 } },
     { id: 'section-mobile', path: '/zh/d/', viewport: { width: 390, height: 844 }, horizontalCanvas: true },
-    { id: 'products-wide', path: '/zh/products/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true }
+    { id: 'products-wide', path: '/zh/all-products/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true }
 ];
 const DESIGN_AUDIT_VIEWPORTS = [
     {
@@ -264,7 +264,7 @@ const DESIGN_AUDIT_PAGES = [
     },
     {
         id: 'products',
-        path: '/products/',
+        path: '/all-products/',
         title: 'Products',
         waitForSelector: '.grid-list'
     },
@@ -687,7 +687,7 @@ export const scenarios = [
         serviceWorkers: 'block',
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
-            const rootPaths = ['d', 'intent', 'tags', 'all', 'product-categories', 'products',
+            const rootPaths = ['d', 'intent', 'tags', 'all', 'products', 'all-products',
                 'language', 'appearance', 'my', 'site'];
             await gotoAndWait(page, `${baseUrl}/zh/all/`);
             const staticRoots = await page.evaluate(async (paths) => {
@@ -753,7 +753,7 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         timeoutMs: 60000,
         async run({ page, baseUrl }) {
-            const expectedRoots = ['d', 'intent', 'tags', 'all', 'product-categories', 'products',
+            const expectedRoots = ['d', 'intent', 'tags', 'all', 'products', 'all-products',
                 'language', 'appearance', 'my', 'site'].map((root) => `/zh/${root}/`);
             const assertSelection = async (expected) => {
                 await waitForBreadcrumbSettled(page);
@@ -773,6 +773,8 @@ export const scenarios = [
             const directCases = [
                 ['/zh/p/xvenv/', '/zh/d/'],
                 ['/zh/p/xvenv/?from=products/not-a-source', '/zh/d/'],
+                ['/zh/p/xvenv/?from=product-categories/free', '/zh/d/'],
+                ['/zh/p/xvenv/?from=products', '/zh/d/'],
                 ['/zh/about/', '/zh/site/'],
                 ['/zh/changelog/', '/zh/site/'],
                 ['/zh/wechat/', '/zh/site/'],
@@ -817,11 +819,13 @@ export const scenarios = [
                 await route.continue();
             });
             const firstPaintCases = [
-                ['/zh/p/xvenv/?from=product-categories/free', '/zh/product-categories/'],
-                ['/zh/p/xvenv/?from=%2Fproduct-categories%2Ffree%2F', '/zh/product-categories/'],
+                ['/zh/p/xvenv/?from=products/free', '/zh/products/'],
+                ['/zh/p/xvenv/?from=product-categories/free', '/zh/d/'],
+                ['/zh/p/xvenv/?from=products', '/zh/d/'],
+                ['/zh/p/xvenv/?from=%2Fproducts%2Ffree%2F', '/zh/products/'],
                 ['/zh/p/xvenv/', '/zh/d/'],
                 ['/zh/p/xvenv/?from=products/not-a-source', '/zh/d/'],
-                ['/zh/language/?return=' + encodeURIComponent('/zh/p/xvenv/?from=product-categories/free'), '/zh/language/']
+                ['/zh/language/?return=' + encodeURIComponent('/zh/p/xvenv/?from=products/free'), '/zh/language/']
             ];
             const firstPaintStates = [];
             for (const [target, expectedRoot] of firstPaintCases) {
@@ -878,19 +882,18 @@ export const scenarios = [
         title: 'Products Category and All Entry Lineage',
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
-            const categoriesPath = '/product-categories/';
+            const categoriesPath = '/products/';
             await gotoAndWait(page, `${baseUrl}${categoriesPath}`);
             const categoryHrefs = await page.locator('.slot-main .collection-item-link').evaluateAll(
                 (links) => links.map((link) => new URL(link.href).pathname)
             );
-            const expectedCategories = ['free', 'paid', 'first-party', 'third-party']
-                .map((category) => `${categoriesPath}${category}/`);
-            if (JSON.stringify(categoryHrefs) !== JSON.stringify(expectedCategories)) {
-                fail('Product categories must be four siblings in page-weight order.', { categoryHrefs });
+            if (categoryHrefs.length === 0 || new Set(categoryHrefs).size !== categoryHrefs.length
+                || categoryHrefs.some((href) => !href.startsWith(categoriesPath))) {
+                fail('Product category rows must be distinct native terms below their root.', { categoryHrefs });
             }
 
             // Discover an existing product so the regression does not depend on a product slug.
-            await gotoAndWait(page, `${baseUrl}/products/`);
+            await gotoAndWait(page, `${baseUrl}/all-products/`);
             const productLink = page.locator('.slot-main .grid-products .collection-item-link').first();
             const productHref = await productLink.getAttribute('href');
             if (!productHref) fail('Product lineage verification requires one real product.');
@@ -900,12 +903,12 @@ export const scenarios = [
                 const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
                 return JSON.parse(doc.body.dataset.entryBreadcrumbSources || '[]');
             }, productPath);
-            const categorySource = sources.find((source) => source.provider === 'products'
-                && source.logical_path.startsWith('/product-categories/'));
-            if (!categorySource) fail('A real product must belong to a price and origin category.');
+            const categorySource = sources.find((source) => source.provider === 'collection'
+                && source.logical_path.startsWith('/products/'));
+            if (!categorySource) fail('A real product must belong to an authored product category.');
 
             const results = [];
-            for (const collectionPath of ['/products/', categorySource.logical_path]) {
+            for (const collectionPath of ['/all-products/', categorySource.logical_path]) {
                 await gotoAndWait(page, `${baseUrl}${collectionPath}?sort=price-desc`);
                 const target = page.locator(`.slot-main .grid-products .collection-item-link[href^="${productPath}?"]`);
                 await target.click();
@@ -919,10 +922,10 @@ export const scenarios = [
                             .map((link) => new URL(link.href).pathname),
                         categories: [...document.querySelectorAll('.slot-breadcrumb .collection-item-link')]
                             .map((link) => new URL(link.href).pathname)
-                            .filter((href) => href.startsWith('/product-categories/')),
+                            .filter((href) => href.startsWith('/products/')),
                         currentSort: document.querySelector('.slot-breadcrumb .collection-column-sort')?.textContent
                     }));
-                    const expectedRoot = collectionPath === '/products/' ? '/products/' : categoriesPath;
+                    const expectedRoot = collectionPath === '/all-products/' ? '/all-products/' : categoriesPath;
                     if (state.from !== collectionPath.replace(/^\/|\/$/g, '')
                         || state.root !== expectedRoot
                         || !state.selected.includes(productPath)
@@ -930,7 +933,7 @@ export const scenarios = [
                         fail('Opening a product must preserve its source root, selected row and descending sort.', state);
                     }
                     if (expectedRoot === categoriesPath
-                        && (JSON.stringify(state.categories) !== JSON.stringify(expectedCategories)
+                        && (JSON.stringify(state.categories) !== JSON.stringify(categoryHrefs)
                             || !state.selected.includes(collectionPath))) {
                         fail('Category siblings and selection must survive entry breadcrumb hydration.', state);
                     }

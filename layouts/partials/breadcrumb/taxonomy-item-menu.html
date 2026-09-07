@@ -13,12 +13,12 @@
   {{- end -}}
   {{- if $ownerCtx -}}
     {{- $kind := cond (eq $ownerKind "term") "term" "root" -}}
-    {{- $entries := partial "taxonomy/direct-children.html" (dict "ctx" $ownerCtx "spec" $spec "kind" $kind) -}}
+    {{- $entries := partial "collection/rows.html" (dict "page" $ownerCtx) -}}
     {{- $menu = partial "breadcrumb/menu-items-from-entries.html" (dict
       "entries" $entries
       "selected_href" $selectedHref
       "text_key" "text"
-      "href_key" "url"
+      "href_key" "href"
     ) -}}
   {{- end -}}
 {{- end -}}

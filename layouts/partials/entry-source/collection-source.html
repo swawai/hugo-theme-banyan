@@ -1,42 +1,10 @@
-{{- $provider := lower (trim (printf "%v" (.provider | default "")) " \r\n\t") -}}
-{{- $logicalPath := trim (printf "%v" (.logical_path | default "")) " \r\n\t" -}}
-{{- $label := trim (printf "%v" (.label | default "")) " \r\n\t" -}}
-{{- $href := trim (printf "%v" (.href | default "")) " \r\n\t" -}}
-{{- if and (ne $logicalPath "") (not (hasPrefix $logicalPath "/")) -}}
-  {{- $logicalPath = printf "/%s" $logicalPath -}}
-{{- end -}}
-{{- if and (ne $logicalPath "") (not (hasSuffix $logicalPath "/")) -}}
-  {{- $logicalPath = printf "%s/" $logicalPath -}}
-{{- end -}}
-{{- $sortVariant := "" -}}
-{{- $defaultSort := "" -}}
-{{- if eq $provider "all" -}}
-  {{- $sortVariant = "all" -}}
-  {{- $defaultSort = "date-desc" -}}
-{{- else if eq $provider "products" -}}
-  {{- $sortVariant = "products" -}}
-  {{- $defaultSort = "name-asc" -}}
-{{- else if eq $provider "section-d" -}}
-  {{- $sortVariant = "section" -}}
-  {{- $defaultSort = "date-desc" -}}
-{{- else if eq $provider "taxonomy" -}}
-  {{- $sortVariant = "tree" -}}
-  {{- $defaultSort = "date-desc" -}}
-{{- end -}}
+{{- $page := .page -}}
+{{- $config := partial "collection/config.html" (dict "page" $page) -}}
 {{- $result := dict -}}
-{{- if ne $logicalPath "" -}}
-  {{- $result = merge $result (dict "logical_path" $logicalPath) -}}
-{{- end -}}
-{{- if ne $provider "" -}}
-  {{- $result = merge $result (dict "provider" $provider) -}}
-{{- end -}}
-{{- if ne $label "" -}}
-  {{- $result = merge $result (dict "label" $label) -}}
-{{- end -}}
-{{- if ne $href "" -}}
-  {{- $result = merge $result (dict "href" $href) -}}
-{{- end -}}
-{{- if ne $sortVariant "" -}}
-  {{- $result = merge $result (dict "sort_variant" $sortVariant "default_sort" $defaultSort) -}}
+{{- if $config.view -}}
+  {{- $result = dict "provider" "collection"
+    "logical_path" (partial "entry-source/logical-path-from-href.html" (dict "ctx" $page "href" $page.RelPermalink))
+    "href" $page.RelPermalink "label" ($page.LinkTitle | default $page.Title)
+    "sort_variant" $config.sort_variant "default_sort" $config.default_sort -}}
 {{- end -}}
 {{- return $result -}}

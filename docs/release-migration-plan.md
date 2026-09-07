@@ -188,7 +188,7 @@ Keep in theme content:
 - `language`, `appearance`, and `my` root pages use `build.list: local` so they
   appear under Home without joining global article lists.
 - `site/`, including `site/about` and `site/changelog`, and the `all`, `d`,
-  `product-categories`, and `products` structural/template pages for now.
+  `products`, and `all-products` structural/template pages for now.
   These are intentionally retained as theme live content until the page model is
   stable enough to split templates from live defaults.
 

@@ -336,7 +336,7 @@ bun run check:security:headers
 它当前覆盖：
 
 - `/all/`
-- `/p/xvenv/?from=product-categories/first-party&sorts=_,name-asc`
+- `/p/xvenv/?from=products/first-party&sorts=_,name-asc`
 - `/prefetchdebug`
 
 把它单独拆成一个入口，而不是塞进默认 `check:browser:security`，是刻意的：

@@ -1,9 +1,0 @@
-{{- $source := .source -}}
-{{- $page := index $source "page" -}}
-{{- $meta := index $page.Params "banyan_entry_source" | default dict -}}
-{{- $targetSection := trim (printf "%v" (index $meta "target_section" | default "d")) " " -}}
-{{- $target := $page.Site.GetPage (printf "/%s" $targetSection) -}}
-{{- if not $target -}}
-  {{- errorf "Build failed: page %q cannot resolve banyan_entry_source.target_section=%q." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) $targetSection -}}
-{{- end -}}
-{{- return partial "collection/rows-all.html" (dict "ctx" $target) -}}

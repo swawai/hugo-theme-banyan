@@ -2,17 +2,18 @@
 {{- $ctx := .ctx -}}
 {{- $items := slice -}}
 {{- if eq $kind "root" -}}
-  {{- range $entry := $ctx.Data.Terms.Alphabetical -}}
-    {{- $agg := partial "taxonomy/pages-dedup-latest.html" (dict "pages" $entry.Page.Pages) -}}
+  {{- range $entry := $ctx.Pages -}}
+    {{- $agg := partial "taxonomy/pages-dedup-latest.html" (dict "pages" $entry.Pages) -}}
     {{- $items = $items | append (dict
+        "node" $entry
         "kind" "cat"
-        "title" $entry.Page.Title
-        "text" ($entry.Page.LinkTitle | default $entry.Page.Title)
-        "term_key" (urlize (printf "%v" $entry.Page.Data.Term))
+        "title" $entry.Title
+        "text" ($entry.LinkTitle | default $entry.Title)
+        "term_key" (urlize (printf "%v" $entry.Data.Term))
         "latest" (index $agg "latest")
         "latestKey" (index $agg "latestKey")
-        "cnt" $entry.Count
-        "url" $entry.Page.RelPermalink
+        "cnt" (len $entry.Pages)
+        "url" $entry.RelPermalink
     ) -}}
   {{- end -}}
 {{- else if eq $kind "term" -}}
@@ -20,6 +21,7 @@
     {{- $bytes := len $page.RawContent -}}
     {{- $d := $page.Date -}}
     {{- $items = $items | append (dict
+        "node" $page
         "kind" "page"
         "title" $page.Title
         "text" ($page.LinkTitle | default $page.Title)

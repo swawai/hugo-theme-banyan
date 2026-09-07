@@ -1,8 +1,0 @@
-{{ $host := .Page }}
-{{ $target := $host.Parent }}
-{{ with .Get "section" }}{{ $target = $host.Site.GetPage (printf "/%s" .) }}{{ end }}
-{{ if not $target }}{{ $target = $host.Site.Home }}{{ end }}
-
-{{ $host.Scratch.Set "needs_sortable_grids_runtime" true }}
-
-{{ partial "list-all-common.html" (dict "ctx" $target "host" $host) }}

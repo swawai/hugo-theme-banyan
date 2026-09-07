@@ -1,0 +1,12 @@
+{{- $page := .page -}}
+{{- $bytes := len $page.RawContent -}}
+{{- $text := $page.LinkTitle | default $page.Title -}}
+{{- return (dict
+  "node" $page
+  "key" (partial "entry-source/page-entry-key.html" (dict "ctx" $page))
+  "kind" "page" "href" $page.RelPermalink "schema_href" $page.RelPermalink
+  "title" $page.Title "text" $text "icon" "file" "prefetch_kind" "post"
+  "sort_group" "1" "sort_name" $text
+  "sort_date" ($page.Date.Format "20060102150405") "date_text" ($page.Date.Format "2006-01-02")
+  "sort_count" (printf "%v" $bytes) "count_text" (printf "%v" (div (add $bytes 1023) 1024)) "count_unit" "&thinsp;KB"
+) -}}

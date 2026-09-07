@@ -96,7 +96,7 @@ export const canvasScenarios = [
             });
             for (const width of mobile ? [390] : [390, 1024, 1440]) {
                 if (!mobile) await page.setViewportSize({ width, height: 900 });
-                for (const source of ['product-categories/free', 'products']) {
+                for (const source of ['products/free', 'all-products']) {
                     await gotoAndWait(page, `${baseUrl}/zh/${source}/`);
                     await waitForBreadcrumbSettled(page);
                     assert.equal((await readCanvas(page)).canvasOffsetX, 0);

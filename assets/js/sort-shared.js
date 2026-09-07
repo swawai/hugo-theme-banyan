@@ -41,7 +41,7 @@ export const SORT_VARIANTS = {
         tieBreakField: 'name',
         fields: {
             name: { dataKey: 'sortName', type: 'string', defaultOrder: 'asc' },
-            price: { dataKey: 'sortPrice', type: 'number', defaultOrder: 'desc' },
+            price: { dataKey: 'sortPrice', type: 'number', defaultOrder: 'desc', missingLast: true },
             value: { dataKey: 'sortValue', type: 'string', defaultOrder: 'asc' }
         }
     }
@@ -84,6 +84,13 @@ export function compareSortRecords(
 ) {
     if (!variant?.fields?.[field] || typeof readValue !== 'function') {
         return 0;
+    }
+
+    const activeField = variant.fields[field];
+    if (activeField.missingLast) {
+        const leftMissing = String(readValue(left, activeField) ?? '').trim() === '';
+        const rightMissing = String(readValue(right, activeField) ?? '').trim() === '';
+        if (leftMissing !== rightMissing) return leftMissing ? 1 : -1;
     }
 
     let result = 0;

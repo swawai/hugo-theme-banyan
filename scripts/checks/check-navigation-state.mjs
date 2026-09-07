@@ -85,11 +85,11 @@ assert.equal(
 assert.equal(
     applySorts(
         navState,
-        'https://example.test/zh/p/example/?from=product-categories/first-party',
+        'https://example.test/zh/p/example/?from=products/first-party',
         ['', 'name-asc'],
         ['date-desc', 'name-asc']
     ),
-    '/zh/p/example/?from=product-categories/first-party',
+    '/zh/p/example/?from=products/first-party',
     'placeholder/default lineage sorts should be omitted when every layer is default'
 );
 
@@ -254,7 +254,7 @@ window.location.search = '?from=all';
 
 const allCollectionSource = {
     logical_path: '/all/',
-    provider: 'all',
+    provider: 'collection',
     sort_variant: 'all',
     default_sort: 'date-desc',
     label: 'All',
@@ -266,7 +266,7 @@ assert.deepEqual(
     {
         collectionSource: {
             logicalPath: '/all/',
-            provider: 'all',
+            provider: 'collection',
             sortVariant: 'all',
             defaultSort: 'date-desc',
             label: 'All',
@@ -303,7 +303,7 @@ window.location.search = '?from=d/wsl&sorts=name-asc,date-desc';
 assert.equal(
     breadcrumbItems.buildCollectionSortToggleHref({
         logical_path: '/d/wsl/',
-        provider: 'section-d',
+        provider: 'collection',
         sort_variant: 'section',
         default_sort: 'date-desc',
         label: 'WSL',
@@ -315,7 +315,7 @@ assert.equal(
 
 const directoryCollectionSource = {
     logical_path: '/d/',
-    provider: 'section-d',
+    provider: 'collection',
     sort_variant: 'section',
     default_sort: 'date-desc',
     label: 'Directory',
@@ -323,7 +323,7 @@ const directoryCollectionSource = {
 };
 const wslCollectionSource = {
     logical_path: '/d/wsl/',
-    provider: 'section-d',
+    provider: 'collection',
     sort_variant: 'section',
     default_sort: 'date-desc',
     label: 'WSL',
@@ -414,7 +414,7 @@ const previewMenuCurrentItem = breadcrumbPreview.buildPreviewCurrentItem(
     {
         currentCollectionSource: {
             logical_path: '/intent/decide/',
-            provider: 'taxonomy',
+            provider: 'collection',
             sort_variant: 'tree',
             default_sort: 'date-desc',
         },
@@ -443,7 +443,7 @@ assert.equal(
 
 const sourcePayload = JSON.stringify([{
     logical_path: '/intent/decide/',
-    provider: 'taxonomy',
+    provider: 'collection',
     root_item: {
         href: '/zh/intent/',
         text: 'Intent',
@@ -456,7 +456,7 @@ const sourcePayload = JSON.stringify([{
     }],
     current_collection_source: {
         logical_path: '/intent/decide/',
-        provider: 'taxonomy',
+        provider: 'collection',
         sort_variant: 'tree',
         default_sort: 'date-desc',
         label: 'Decide',
@@ -470,7 +470,7 @@ const sourcePayload = JSON.stringify([{
         },
         collection_source: {
             logical_path: '/intent/',
-            provider: 'taxonomy',
+            provider: 'collection',
             sort_variant: 'tree',
             default_sort: 'date-desc',
             label: 'Intent',
@@ -526,7 +526,7 @@ assert.deepEqual(
     ),
     {
         logicalPath: '/intent/',
-        provider: 'taxonomy',
+        provider: 'collection',
         sortVariant: 'tree',
         defaultSort: 'date-desc',
         label: 'Intent',
@@ -541,7 +541,7 @@ assert.deepEqual(
     ),
     {
         logicalPath: '/intent/decide/',
-        provider: 'taxonomy',
+        provider: 'collection',
         sortVariant: 'tree',
         defaultSort: 'date-desc',
         label: 'Decide',
@@ -565,7 +565,7 @@ assert.equal(
         },
         {
             logicalPath: '/intent/decide/',
-            provider: 'taxonomy',
+            provider: 'collection',
         },
         {
             sortToken: '',

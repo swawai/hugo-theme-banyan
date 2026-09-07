@@ -5,7 +5,7 @@ weight: 10
 browser_title: "Technical Library and Practical Guides"
 description: "Browse published articles and practical guides by topic and section."
 layout: "article-list"
-banyan_article_section_list: true
+list: directory
 slots:
   breadcrumb: true
 cascade:
@@ -19,9 +19,6 @@ cascade:
   - _target:
       kind: "section"
     layout: "article-list"
-    banyan_article_section_list: true
     slots:
       breadcrumb: true
 ---
-
-{{< section-list >}}

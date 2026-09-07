@@ -1,14 +1,13 @@
-{{- $source := .source -}}
-{{- $page := index $source "page" -}}
+{{- $page := .page -}}
 {{- if not $page -}}
-  {{- errorf "Build failed: entry-source/rows-taxonomy.html requires source.page." -}}
+  {{- errorf "Build failed: collection/rows-taxonomy.html requires page." -}}
 {{- end -}}
 {{- $spec := partial "taxonomy/spec-get.html" (dict "ctx" $page "plural" $page.Data.Plural) -}}
 {{- $rows := slice -}}
 {{- range $entry := partial "taxonomy/direct-children.html" (dict "ctx" $page "spec" $spec) -}}
   {{- $isCat := eq .kind "cat" -}}
   {{- $text := .text -}}
-  {{- $countText := printf "%v" (.cnt | default ".") -}}
+  {{- $countText := printf "%v" .cnt -}}
   {{- $countUnit := "" -}}
   {{- if not $isCat -}}
     {{- $bytes := .bytes | default .cnt | default 0 -}}
@@ -16,6 +15,7 @@
     {{- $countUnit = "&thinsp;KB" -}}
   {{- end -}}
   {{- $rows = $rows | append (dict
+    "node" .node
     "key" (cond $isCat .term_key .entry_key)
     "kind" .kind
     "href" .url

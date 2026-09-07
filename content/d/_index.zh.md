@@ -5,7 +5,7 @@ weight: 10
 browser_title: "技术文库与实战指南"
 description: "按主题与栏目浏览已发布文章和实战指南。"
 layout: "article-list"
-banyan_article_section_list: true
+list: directory
 slots:
   breadcrumb: true
 cascade:
@@ -19,9 +19,6 @@ cascade:
   - _target:
       kind: "section"
     layout: "article-list"
-    banyan_article_section_list: true
     slots:
       breadcrumb: true
 ---
-
-{{< section-list >}}

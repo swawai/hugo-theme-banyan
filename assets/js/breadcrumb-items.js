@@ -69,18 +69,7 @@ export function normalizeBreadcrumbCollectionSource(source) {
 }
 
 export function getSourceSortVariant(source) {
-    switch (source?.provider) {
-    case 'all':
-        return 'all';
-    case 'products':
-        return 'products';
-    case 'section-d':
-        return 'section';
-    case 'taxonomy':
-        return 'tree';
-    default:
-        return '';
-    }
+    return source?.sortVariant || source?.sort_variant || source?.current_collection_source?.sort_variant || '';
 }
 
 function toRelativeHref(url) {

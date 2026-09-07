@@ -1,14 +1,26 @@
 ---
-title: 产品－全部
-description: 查看所有产品，包含不同价格与来源。
-weight: 60
+title: 产品－分类
+description: 按价格或来源浏览产品。
+weight: 50
 layout: article-list
+list: directory
 outputs:
   - HTML
 slots:
   breadcrumb: true
-banyan_entry_source:
-  provider: products
+cascade:
+  - _target:
+      kind: term
+    layout: article-list
+    list: products
+    slots:
+      breadcrumb: true
+banyan_taxonomy:
+  mode: flat
+  show_in_home: false
+  home_weight: 50
+  article_weight: 40
+  normalize: identity
+  article_mode: all
+  require_term_bundles: false
 ---
-
-{{< products-list >}}
