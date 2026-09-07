@@ -42,7 +42,7 @@ function normalizePath(value) {
     return segments.length === 0 ? "" : "/" + segments.join("/") + "/";
 }
 
-function countVisibleItems(items, hideRootDuplicates) {
+function countVisibleItems(items) {
     if (!Array.isArray(items) || items.length === 0) {
         return 0;
     }
@@ -54,29 +54,25 @@ function countVisibleItems(items, hideRootDuplicates) {
             continue;
         }
 
-        if (hideRootDuplicates && (item.redundant_with_root_menu === true || item.redundantWithRootMenu === true)) {
-            continue;
-        }
-
         total += 1;
     }
 
     return total;
 }
 
-function countTrailItems(source, hideRootDuplicates) {
+function countTrailItems(source) {
     var levels = Array.isArray(source && source.levels) ? source.levels : [];
     if (levels.length > 0) {
         return countVisibleItems(levels.map(function (level) {
             return level && typeof level.item === "object" ? level.item : null;
-        }).filter(Boolean), hideRootDuplicates);
+        }).filter(Boolean));
     }
 
     var tailItems = Array.isArray(source && (source.tail_items || source.tailItems))
         ? (source.tail_items || source.tailItems)
         : [];
 
-    return countVisibleItems(tailItems, hideRootDuplicates);
+    return countVisibleItems(tailItems);
 }
 
 function findEntrySource(sources, logicalPath) {
@@ -151,13 +147,12 @@ try {
 
     var entryLineageKeys = parseJson(html.dataset.entryLineageKeys || "", []);
     var params = new URLSearchParams(window.location.search);
-    var hideRootDuplicates = document.querySelector(".page-shell.page-shell--has-breadcrumb-root.page-shell--has-breadcrumb-tail") !== null;
     var placeholderCount = 0;
 
     if (previewPending) {
         var entrySource = findEntrySource(entryBreadcrumbSources, readFirst(params, entryLineageKeys) || "");
         if (entrySource) {
-            placeholderCount = countTrailItems(entrySource, hideRootDuplicates);
+            placeholderCount = countTrailItems(entrySource);
 
             var currentPageText = body.dataset.currentPageText || document.title || "";
             var currentPageHref = window.location.pathname + window.location.search + window.location.hash;
@@ -172,7 +167,7 @@ try {
             var collectionLevels = Array.isArray(collectionSource.levels) ? collectionSource.levels : [];
             placeholderCount = countVisibleItems(collectionLevels.map(function (level) {
                 return level && typeof level.item === "object" ? level.item : null;
-            }).filter(Boolean), hideRootDuplicates);
+            }).filter(Boolean));
         }
     }
 

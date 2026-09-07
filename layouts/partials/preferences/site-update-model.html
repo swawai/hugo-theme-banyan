@@ -2,9 +2,9 @@
 {{- $page := $ctx.GetPage "/site" -}}
 {{- if not $page -}}{{- errorf "Build failed: site update controls require the /site page." -}}{{- end -}}
 {{- $labels := $page.Params.site_update.labels | default dict -}}
-{{- range slice "label" "text" "home" "check" "checking" "check_failed" "unavailable" "status" "status_current" "status_ready" "status_offline" "status_click_update" "status_click_retry" -}}
+{{- range slice "check" "checking" "check_failed" "unavailable" "status" "status_current" "status_ready" "status_offline" "status_click_update" "status_click_retry" -}}
   {{- if not (index $labels .) -}}{{- errorf "Build failed: %s requires site_update.labels.%s." $page.File.Path . -}}{{- end -}}
 {{- end -}}
 {{- $changelog := $ctx.GetPage $page.Params.site_update.changelog_page -}}
 {{- if not $changelog -}}{{- errorf "Build failed: %s cannot resolve site_update.changelog_page." $page.File.Path -}}{{- end -}}
-{{- return (dict "labels" $labels "href" $page.RelPermalink "title" $page.LinkTitle "changelog_href" $changelog.RelPermalink) -}}
+{{- return (dict "labels" $labels "changelog_href" $changelog.RelPermalink) -}}

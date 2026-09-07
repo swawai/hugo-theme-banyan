@@ -3,13 +3,9 @@ date: "2026-03-17T00:00:00+08:00"
 draft: false
 title: "离线浏览"
 slug: "offline"
-nav_primary: home
 type: "page"
 layout: "offline-page"
 robots: "noindex, follow"
-slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
 build:
   list: "never"
 ---

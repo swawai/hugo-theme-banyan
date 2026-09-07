@@ -16,8 +16,7 @@ export const systemPageScenarios = [
         async run({ page, baseUrl, dialogs, artifactDir }) {
             await gotoAndWait(page, `${baseUrl}/zh/p/xvenv/?from=%2Fproduct-categories%2Ffree%2F&sort=name-asc&sorts=_,name-asc#details`);
             const source = new URL(page.url());
-            await page.locator('[data-nav-utility-kind="language"] [data-nav-utility-trigger]').click();
-            await page.locator('[data-nav-utility-kind="language"] [data-settings-link]').click();
+            await page.locator('[data-root-navigation] a[data-root-href="/zh/language/"]').click();
             await page.waitForSelector(`${picker}[data-language-state="ready"]`);
             const returnHref = await page.locator('[data-settings-return]').getAttribute('href');
             assert.equal(returnHref, source.pathname + source.search + source.hash);
@@ -56,9 +55,10 @@ export const systemPageScenarios = [
             await gotoAndWait(page, `${baseUrl}/zh/all/?sort=name-asc`);
             const original = new URL(page.url());
             const expectedReturn = original.pathname + original.search;
-            const primaryLinks = await page.locator('.site-nav:not(.site-nav-utilities) a').evaluateAll(links => links.map(link => link.href));
+            const primaryLinks = await page.locator('[data-root-navigation] a[data-root-href]:not([data-settings-link])').evaluateAll(links => links.map(link => link.href));
+            assert.equal(primaryLinks.length, 6, 'The six collection entries are ordinary links.');
             assert.ok(primaryLinks.every(href => !new URL(href).searchParams.has('return')), 'Only settings links carry return context.');
-            await page.locator('.site-nav-link-account').click();
+            await page.locator('[data-root-navigation] a[data-root-href="/zh/my/"]').click();
             await page.waitForURL(url => url.pathname === '/zh/my/');
             assert.equal(new URL(page.url()).searchParams.get('return'), expectedReturn);
             await page.locator('[data-page-action="back"]').click();
@@ -79,18 +79,15 @@ export const systemPageScenarios = [
             assert.equal(await page.evaluate(() => localStorage.getItem('theme-preference')), 'dark');
             await page.reload();
             await page.waitForSelector(`${system} [data-theme-choice="dark"].is-current[aria-pressed="true"]`);
-            await page.locator('[data-nav-utility-kind="theme"] [data-nav-utility-trigger]').click();
-            await page.locator('[data-nav-utility-kind="theme"] [data-theme-choice="light"]').click();
+            await page.locator(`${system} [data-theme-choice="light"]`).click();
             await page.waitForSelector(`${system} [data-theme-choice="light"].is-current`);
 
-            // Removing the legacy controls must not remove preference behavior.
-            await page.evaluate(() => document.querySelectorAll('.site-nav-utilities').forEach((node) => node.remove()));
+            assert.equal(await page.locator('.site-nav-utilities').count(), 0, 'The old settings buttons are removed.');
             await page.locator(`${system} [data-theme-choice="auto"]`).click();
             await page.emulateMedia({ colorScheme: 'dark' });
             await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
             await page.locator('[data-settings-return]').click();
             await page.waitForURL((url) => url.pathname === '/zh/all/');
-            await page.evaluate(() => document.querySelectorAll('.site-nav-utilities').forEach((node) => node.remove()));
             await page.emulateMedia({ colorScheme: 'light' });
             await page.waitForFunction(() => document.documentElement.dataset.theme === 'light');
 
@@ -102,7 +99,7 @@ export const systemPageScenarios = [
             await page.goBack();
             await page.waitForSelector(`${system} [data-theme-choice="dark"].is-current`);
             await page.screenshot({ path: path.join(artifactDir, 'appearance-dark.png') });
-            return { message: 'Both controls share storage; refresh, return, system changes and cross-tab sync passed without legacy controls.' };
+            return { message: 'Appearance choices, refresh, return, system changes and cross-tab sync passed.' };
         }
     },
     {
@@ -111,14 +108,13 @@ export const systemPageScenarios = [
         title: 'Site Page Checks and Applies Service Worker Updates',
         dialogPolicy: 'dismiss',
         async run({ page, context, baseUrl, server, upgradePair, dialogs, artifactDir }) {
-            assert.ok(upgradePair?.fromDir && upgradePair?.toDir, 'Two stage-3 builds are required.');
+            assert.ok(upgradePair?.fromDir && upgradePair?.toDir, 'Two builds containing the system pages are required.');
             server.setRoot(upgradePair.fromDir);
             await gotoAndWait(page, `${baseUrl}/zh/site/`);
             await waitForServiceWorkerActive(page);
             await page.waitForSelector(`${updatePanel}[data-site-update-state]`);
             const versionBefore = await page.locator('[data-site-update-version]').getAttribute('title');
             const cacheKeysBefore = await page.evaluate(() => caches.keys());
-            await page.evaluate(() => document.querySelectorAll('.site-nav-utilities').forEach((node) => node.remove()));
             await context.setOffline(true);
             await page.locator('[data-site-update-action="check"]').click();
             await page.waitForSelector(`${updatePanel}[data-site-update-state="offline"]`);

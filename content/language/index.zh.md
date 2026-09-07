@@ -8,7 +8,4 @@ build:
   list: local
 outputs:
   - HTML
-slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
 ---

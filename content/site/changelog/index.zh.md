@@ -17,8 +17,6 @@ changelog:
   release_notes: "发布说明"
   release_notes_fallback: "这里暂不维护人工发布说明；当前页面先用于确认已部署构建，以及构建时可取得的来源信息。"
 slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
   footer: /fragments/home-footer-shortcuts
 build:
   list: local

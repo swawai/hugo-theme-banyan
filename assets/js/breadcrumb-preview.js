@@ -1,3 +1,4 @@
+import { renderRootSelection } from './root-navigation.js';
 import {
     buildBreadcrumbMenuItemsFromDecodedRows,
     normalizeBreadcrumbCollectionSource,
@@ -9,7 +10,7 @@ import {
     parseEntrySelection,
     pickSourceByLogicalPath,
 } from './breadcrumb-source.js';
-import { renderRootSelection, renderTopBreadcrumb } from './breadcrumb-ui.js';
+import { renderTopBreadcrumb } from './breadcrumb-ui.js';
 
 const ENTRY_BREADCRUMB_PREVIEW_PENDING_ATTR = 'data-entry-breadcrumb-preview-pending';
 const BREADCRUMB_SORT_PENDING_ATTR = 'data-breadcrumb-sort-pending';
@@ -176,7 +177,7 @@ export function runBreadcrumbPreview() {
                     prefixItems.push(currentItem);
                 }
 
-                renderRootSelection(entrySource.rootItem, entrySource.rootMenuItems, entrySource.rootMenuLabel);
+                renderRootSelection(entrySource.rootItem);
                 renderTopBreadcrumb(prefixItems);
             }
 

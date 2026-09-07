@@ -36,8 +36,6 @@ other = "价格"
 [products_col_value]
 other = "价值点"
 
-[breadcrumb_root_switch]
-other = "切换根页面"
 [products_free]
 other = "免费"
 [products_empty]
@@ -76,12 +74,6 @@ other = "为您推荐本页的 [{target}] 版本，确认前往吗？"
 
 [site_update_prompt]
 other = "已有新版本可用，立即刷新？"
-
-[site_update_confirm]
-other = "立即刷新"
-
-[site_update_later]
-other = "稍后"
 
 [notFoundTitle]
 other = "页面不存在"

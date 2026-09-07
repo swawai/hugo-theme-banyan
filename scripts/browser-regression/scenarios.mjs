@@ -1,17 +1,13 @@
 import path from 'node:path';
 
 import {
-    countUsableVersionMenus,
     fail,
     forceServiceWorkerUpdate,
     getLayoutShiftValue,
     getMainInlineStart,
     getVisibleBreadcrumbColumnCount,
     gotoAndWait,
-    markUsableVersionMenus,
-    markFirstUsableVersionMenu,
     readFirstMainLayout,
-    readFragmentRoot,
     readSecurityPolicyViolations,
     recordFirstMainLayoutScript,
     waitForBreadcrumbSettled,
@@ -20,6 +16,7 @@ import {
 } from './helpers.mjs';
 import { relFromSite } from './paths.mjs';
 import { systemPageScenarios } from './system-pages.mjs';
+import { siteUpdateNavigationScenarios } from './site-update-navigation.mjs';
 
 const WIDE_VIEWPORT = { width: 1600, height: 1100 };
 const BREADCRUMB_FIRST_FRAME_VIEWPORT = { width: 1280, height: 960 };
@@ -284,92 +281,24 @@ function ensureTwoBuilds(upgradePair) {
     }
 }
 
-async function readExpectedSiteVersionUpdateLabel(page, lang) {
-    return page.evaluate(async (targetLang) => {
-        const normalize = (value) => typeof value === 'string' ? value.toLowerCase() : '';
-        const fallbackPrompt = 'click update';
-        const manifestUrl = document.body?.dataset.assetManifestUrl || '';
-        if (!manifestUrl) return fallbackPrompt;
-
-        const manifestResponse = await fetch(manifestUrl, { credentials: 'same-origin' }).catch(() => null);
-        const manifest = manifestResponse && manifestResponse.ok ? await manifestResponse.json().catch(() => ({})) : {};
-        const i18nMap = manifest && typeof manifest.i18n === 'object' ? manifest.i18n : null;
-        const fallbackMap = manifest && typeof manifest.i18nFallbacks === 'object' ? manifest.i18nFallbacks : null;
-        if (!i18nMap) return fallbackPrompt;
-
-        let current = normalize(targetLang);
-        const visited = new Set();
-        let resolvedUrl = '';
-        while (current && !visited.has(current)) {
-            visited.add(current);
-            if (typeof i18nMap[current] === 'string' && i18nMap[current]) {
-                resolvedUrl = i18nMap[current];
-                break;
-            }
-            current = fallbackMap && typeof fallbackMap[current] === 'string'
-                ? normalize(fallbackMap[current])
-                : '';
-        }
-
-        if (!resolvedUrl) return fallbackPrompt;
-        const i18nResponse = await fetch(resolvedUrl, { credentials: 'same-origin' }).catch(() => null);
-        const messages = i18nResponse && i18nResponse.ok ? await i18nResponse.json().catch(() => ({})) : {};
-        return typeof messages?.site_version_status_click_update === 'string' && messages.site_version_status_click_update
-            ? messages.site_version_status_click_update
-            : fallbackPrompt;
-    }, lang);
-}
-
-async function clickMarkedVersionTrigger(page) {
-    const target = page.locator('[data-browser-regression-target="true"]').first();
-    const trigger = target.locator('[data-site-version-trigger]').first();
-    if (await trigger.count()) {
-        await trigger.click();
-        return;
-    }
-
-    await target.click();
-}
-
-async function waitForVersionDropdown(page) {
-    await page.waitForSelector('[data-site-version-menu].is-open [data-nav-utility-panel]:not([hidden])');
-}
-
-async function readVersionDropdownText(page) {
-    return (await page.locator('[data-site-version-menu] [data-nav-utility-panel]').first().textContent() || '').trim();
-}
-
-async function waitForVersionDropdownText(page, text) {
-    await page.waitForFunction((expected) => {
-        const panel = document.querySelector('[data-site-version-menu].is-open [data-nav-utility-panel]');
-        return Boolean(panel?.textContent?.includes(expected));
-    }, text);
-}
-
-async function readLanguageMenuState(page) {
+async function readLanguageSettingsState(page) {
     return page.evaluate(() => {
-        const root = document.querySelector('[data-nav-utility-kind="language"]');
-        const trigger = root?.querySelector('[data-nav-utility-trigger]');
-        const panel = root?.querySelector('[data-nav-utility-panel]');
-        const options = root
-            ? Array.from(root.querySelectorAll('[data-nav-utility-option]'))
-            : [];
-
+        const picker = document.querySelector('[data-language-settings]');
+        const context = JSON.parse(document.body?.dataset.languageContext || 'null');
         return {
-            initialized: root?.dataset.navPrimaryInit === 'true',
-            disabled: trigger instanceof HTMLButtonElement ? trigger.disabled : null,
-            languageSuggestionMessage: root?.dataset.languageSuggestionMessage || '',
-            noTranslationMessage: root?.dataset.noTranslationMessage || '',
-            open: root?.classList.contains('is-open') || false,
-            panelHidden: panel instanceof HTMLElement ? panel.hidden : null,
-            options: options.map((option) => ({
-                current: option.getAttribute('aria-current') || '',
-                hasTranslation: option.dataset.hasTrans !== 'false',
-                href: option instanceof HTMLAnchorElement ? option.getAttribute('href') || '' : '',
-                tagName: option.tagName,
-                text: option.textContent?.trim() || '',
-                value: option.dataset.value || ''
-            }))
+            state: picker?.dataset.languageState || '',
+            noTranslationMessage: context?.missing || '',
+            languageSuggestionMessage: context?.suggestion || '',
+            options: Array.from(picker?.querySelectorAll('[data-language-choice]') || [])
+                .map((option) => ({
+                    current: option.getAttribute('aria-current') || '',
+                    disabled: option.getAttribute('aria-disabled') === 'true',
+                    hasTranslation: option.dataset.hasTrans !== 'false',
+                    href: option.getAttribute('href') || '',
+                    tagName: option.tagName,
+                    text: option.textContent?.trim() || '',
+                    value: option.dataset.languageChoice || ''
+                }))
         };
     });
 }
@@ -436,14 +365,14 @@ async function readDesignAuditMetrics(page, viewportId) {
                 y: box.y
             };
         };
-        const navLabels = Array.from(document.querySelectorAll('.page-topbar a, .page-topbar button'))
+        const navLabels = Array.from(document.querySelectorAll('[data-root-navigation] a'))
             .map((node) => (node.textContent || '').trim())
             .filter(Boolean)
             .slice(0, 16);
         return {
             documentHeight: document.documentElement.scrollHeight,
             hasRailContext: (() => {
-                const node = document.querySelector('.page-rail-context');
+                const node = document.querySelector('[data-root-navigation]');
                 return node instanceof HTMLElement && getComputedStyle(node).display !== 'none';
             })(),
             main: rect('.slot-main'),
@@ -452,8 +381,8 @@ async function readDesignAuditMetrics(page, viewportId) {
             rail: rect('.page-rail'),
             stage: rect('.page-stage'),
             title: document.title,
-            topbar: rect('.page-topbar'),
-            topbarLabels: navLabels,
+            navigation: rect('[data-root-navigation]'),
+            navigationLabels: navLabels,
             viewportId: activeViewportId,
             visibleBreadcrumb: (() => {
                 const node = document.querySelector('.slot-row-breadcrumb');
@@ -716,7 +645,6 @@ async function readBreadcrumbPrefetchSlotContract(page) {
 
         const breadcrumbAnchors = Array.from(document.querySelectorAll([
             'a.breadcrumb-link[href]',
-            'a.breadcrumb-root-link[href]',
             'a.breadcrumb-menu-option[href]'
         ].join(',')));
         const slotRowAnchors = Array.from(document.querySelectorAll('.slot-row-breadcrumb a[href]'));
@@ -750,6 +678,172 @@ async function readBreadcrumbPrefetchSlotContract(page) {
 
 export const scenarios = [
     ...systemPageScenarios,
+    ...siteUpdateNavigationScenarios,
+    {
+        id: 'root-navigation-contract',
+        kind: 'single',
+        title: 'Root Navigation: One Complete List from Real Pages',
+        serviceWorkers: 'block',
+        viewport: WIDE_VIEWPORT,
+        async run({ page, baseUrl }) {
+            const rootPaths = ['d', 'intent', 'tags', 'all', 'product-categories', 'products',
+                'language', 'appearance', 'my', 'site'];
+            await gotoAndWait(page, `${baseUrl}/zh/all/`);
+            const staticRoots = await page.evaluate(async (paths) => {
+                const results = [];
+                for (const prefix of ['/', '/zh/', '/zh-tw/']) {
+                    const response = await fetch(prefix + 'all/');
+                    const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+                    const navs = doc.querySelectorAll('[data-root-navigation]');
+                    const nav = navs[0];
+                    results.push({
+                        prefix,
+                        count: navs.length,
+                        expected: paths.map((path) => prefix + path + '/'),
+                        hrefs: [...doc.querySelectorAll('[data-root-href]')].map((link) => link.dataset.rootHref),
+                        selected: [...doc.querySelectorAll('[data-root-href][aria-current="page"]')]
+                            .map((link) => link.dataset.rootHref),
+                        home: nav?.querySelector('.collection-list-header a')?.getAttribute('href'),
+                        settings: [...doc.querySelectorAll('[data-root-href][data-settings-link]')]
+                            .map((link) => link.dataset.rootHref),
+                        rowContentCount: nav?.querySelectorAll('.cell-title > .collection-item-link > .collection-item-title').length,
+                        oldControls: doc.querySelectorAll('[data-nav-utility-kind], [data-site-version-menu], [data-slot="primary_nav"]').length
+                    });
+                }
+                return results;
+            }, rootPaths);
+            for (const state of staticRoots) {
+                if (state.count !== 1 || JSON.stringify(state.hrefs) !== JSON.stringify(state.expected)
+                    || JSON.stringify(state.selected) !== JSON.stringify([state.prefix + 'all/'])
+                    || state.home !== state.prefix || state.rowContentCount !== 10 || state.oldControls !== 0
+                    || JSON.stringify(state.settings) !== JSON.stringify(rootPaths.slice(6).map((path) => state.prefix + path + '/'))) {
+                    fail('Every locale must SSR one weighted root list, its home header and four system links.', state);
+                }
+            }
+            const layouts = [];
+            for (const viewport of [{ width: 390, height: 844 }, { width: 1024, height: 960 }, WIDE_VIEWPORT]) {
+                await page.setViewportSize(viewport);
+                const state = await page.evaluate(() => {
+                    const nav = document.querySelector('[data-root-navigation]');
+                    const links = [...nav.querySelectorAll('[data-root-href]')];
+                    const footer = document.querySelector('.slot-footer');
+                    return {
+                        count: document.querySelectorAll('[data-root-navigation]').length,
+                        links: links.length,
+                        visible: links.every((link) => link.getClientRects().length > 0 && getComputedStyle(link).visibility !== 'hidden'),
+                        navBottom: nav.getBoundingClientRect().bottom,
+                        footerTop: footer?.getClientRects().length ? footer.getBoundingClientRect().top : null
+                    };
+                });
+                if (state.count !== 1 || state.links !== 10 || !state.visible
+                    || (state.footerTop !== null && state.footerTop < state.navBottom - 1)) {
+                    fail('The complete root list must remain available without overlapping the footer.', { viewport, ...state });
+                }
+                layouts.push({ viewport, ...state });
+            }
+            return { staticRoots, layouts };
+        }
+    },
+    {
+        id: 'root-navigation-entry-ownership',
+        kind: 'single',
+        title: 'Root Selection from Valid Sources and Content Ancestry',
+        serviceWorkers: 'block',
+        viewport: WIDE_VIEWPORT,
+        timeoutMs: 60000,
+        async run({ page, baseUrl }) {
+            const expectedRoots = ['d', 'intent', 'tags', 'all', 'product-categories', 'products',
+                'language', 'appearance', 'my', 'site'].map((root) => `/zh/${root}/`);
+            const assertSelection = async (expected) => {
+                await waitForBreadcrumbSettled(page);
+                const state = await page.evaluate(() => ({
+                    roots: [...document.querySelectorAll('[data-root-href]')].map((link) => link.dataset.rootHref),
+                    selected: [...document.querySelectorAll('[data-root-href].is-current')].map((link) => link.dataset.rootHref),
+                    current: [...document.querySelectorAll('[data-root-href][aria-current="page"]')].map((link) => link.dataset.rootHref)
+                }));
+                const selected = expected ? [expected] : [];
+                if (JSON.stringify(state.roots) !== JSON.stringify(expectedRoots)
+                    || JSON.stringify(state.selected) !== JSON.stringify(selected)
+                    || JSON.stringify(state.current) !== JSON.stringify(selected)) {
+                    fail('Selection must change without replacing the complete root list.', { expected, url: page.url(), ...state });
+                }
+                return state;
+            };
+            const directCases = [
+                ['/zh/p/xvenv/', '/zh/d/'],
+                ['/zh/p/xvenv/?from=products/not-a-source', '/zh/d/'],
+                ['/zh/about/', '/zh/site/'],
+                ['/zh/changelog/', '/zh/site/'],
+                ['/zh/wechat/', '/zh/site/'],
+                ['/zh/language/?return=%2Fzh%2Fall%2F', '/zh/language/'],
+                ['/zh/appearance/?return=%2Fzh%2Fall%2F', '/zh/appearance/'],
+                ['/zh/my/?return=%2Fzh%2Fall%2F', '/zh/my/'],
+                ['/zh/site/?return=%2Fzh%2Fall%2F', '/zh/site/'],
+                ['/zh/', '']
+            ];
+            for (const [target, root] of directCases) {
+                await gotoAndWait(page, baseUrl + target);
+                await assertSelection(root);
+            }
+
+            const articlePath = '/zh/p/xvenv/';
+            await gotoAndWait(page, baseUrl + articlePath);
+            const sources = await page.evaluate(() => JSON.parse(document.body.dataset.entryBreadcrumbSources || '[]'));
+            const sourceCases = ['all', 'tags', 'intent'].map((root) => sources.find((source) => (
+                source.logical_path === `/${root}/` || source.logical_path.startsWith(`/${root}/`)
+            )));
+            if (sourceCases.some((source) => !source)) fail('The fixture product must expose all, tags and intent sources.', { sources });
+            for (const source of sourceCases) {
+                const target = new URL(articlePath, baseUrl);
+                target.searchParams.set('from', source.logical_path.replace(/^\/|\/$/g, ''));
+                await gotoAndWait(page, target.href);
+                await assertSelection(source.root_item.href);
+                await page.reload();
+                await assertSelection(source.root_item.href);
+            }
+            await page.goBack();
+            await assertSelection(sourceCases[1].root_item.href);
+            await page.goForward();
+            await assertSelection(sourceCases[2].root_item.href);
+
+            // Keep source selection usable before external bundles finish loading.
+            await page.addInitScript(() => {
+                window.__banyanRootDomContentLoaded = false;
+                document.addEventListener('DOMContentLoaded', () => { window.__banyanRootDomContentLoaded = true; });
+            });
+            await page.route('**/js/*.js', async (route) => {
+                await new Promise((resolve) => setTimeout(resolve, 1200));
+                await route.continue();
+            });
+            const firstPaintCases = [
+                ['/zh/p/xvenv/?from=product-categories/free', '/zh/product-categories/'],
+                ['/zh/p/xvenv/?from=%2Fproduct-categories%2Ffree%2F', '/zh/product-categories/'],
+                ['/zh/p/xvenv/', '/zh/d/'],
+                ['/zh/p/xvenv/?from=products/not-a-source', '/zh/d/'],
+                ['/zh/language/?return=' + encodeURIComponent('/zh/p/xvenv/?from=product-categories/free'), '/zh/language/']
+            ];
+            const firstPaintStates = [];
+            for (const [target, expectedRoot] of firstPaintCases) {
+                await page.goto(baseUrl + target, { waitUntil: 'commit' });
+                await page.waitForSelector('.slot-main', { state: 'visible' });
+                const firstPaint = await page.evaluate(() => ({
+                    domContentLoaded: window.__banyanRootDomContentLoaded,
+                    selected: [...document.querySelectorAll('[data-root-href].is-current')].map((link) => link.dataset.rootHref),
+                    rootCount: document.querySelectorAll('[data-root-href]').length
+                }));
+                if (firstPaint.domContentLoaded || firstPaint.rootCount !== 10
+                    || JSON.stringify(firstPaint.selected) !== JSON.stringify([expectedRoot])) {
+                    fail('The complete root list and source selection must be correct before deferred scripts load.',
+                        { target, expectedRoot, ...firstPaint });
+                }
+                await page.waitForLoadState('domcontentloaded');
+                await assertSelection(expectedRoot);
+                firstPaintStates.push({ target, ...firstPaint });
+            }
+            await page.unroute('**/js/*.js');
+            return { directCases, firstPaintStates, sources: sourceCases.map((source) => source.logical_path) };
+        }
+    },
     {
         id: 'home-shell-smoke',
         kind: 'single',
@@ -819,7 +913,7 @@ export const scenarios = [
                 const assertSelection = async () => {
                     const state = await page.evaluate(() => ({
                         from: new URL(location.href).searchParams.get('from'),
-                        root: document.querySelector('.breadcrumb-root-link.is-current')?.getAttribute('href'),
+                        root: document.querySelector('[data-root-navigation] [data-root-href].is-current')?.dataset.rootHref,
                         selected: [...document.querySelectorAll('.slot-breadcrumb .collection-item-link.is-current')]
                             .map((link) => new URL(link.href).pathname),
                         categories: [...document.querySelectorAll('.slot-breadcrumb .collection-item-link')]
@@ -1599,7 +1693,7 @@ export const scenarios = [
                 const columnInline = measureInline('var(--breadcrumb-column-inline)');
                 const gapInline = measureInline('var(--breadcrumb-gap-inline)');
                 const mainInline = measureInline('var(--breadcrumb-main-inline)');
-                const railCurrent = document.querySelector('.page-rail-context .is-current');
+                const railCurrent = document.querySelector('[data-root-navigation] .is-current');
                 const railRect = railCurrent?.getBoundingClientRect();
                 const columnRects = visibleColumns.map((column) => column.getBoundingClientRect());
                 const breadcrumbGaps = columnRects.slice(1).map((rect, index) => (
@@ -1733,10 +1827,10 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
             await gotoAndWait(page, `${baseUrl}/zh/all/`);
-            await page.waitForSelector('.collection-list--grid .collection-item-link');
-            await page.locator('.collection-list--grid .collection-item-link').first().hover();
+            await page.waitForSelector('.slot-main .collection-list--grid .collection-item-link');
+            await page.locator('.slot-main .collection-list--grid .collection-item-link').first().hover();
             const grid = await page.evaluate(() => {
-                const list = document.querySelector('.collection-list--grid');
+                const list = document.querySelector('.slot-main .collection-list--grid');
                 const header = list?.querySelector('.collection-list-header');
                 const headerText = header?.querySelector('a');
                 const link = list?.querySelector('.collection-item-link');
@@ -1803,6 +1897,9 @@ export const scenarios = [
                 const hoverStateStyle = getComputedStyle(hovered, '::before');
                 const currentStyle = getComputedStyle(current);
                 const currentStateStyle = getComputedStyle(current, '::before');
+                const rootCurrent = document.querySelector('[data-root-navigation] [data-root-href].is-current');
+                const rootCurrentStyle = getComputedStyle(rootCurrent);
+                const rootCurrentState = getComputedStyle(rootCurrent, '::before');
                 const separatorStyle = getComputedStyle(list, '::after');
                 const directCells = Array.from(list.children);
                 const headerTrackSize = Number.parseFloat(getComputedStyle(list).gridTemplateRows);
@@ -1813,6 +1910,14 @@ export const scenarios = [
                     currentLinkBackground: currentStyle.backgroundColor,
                     currentStateBackground: currentStateStyle.backgroundColor,
                     currentStateShadow: currentStateStyle.boxShadow,
+                    rootLinkBackground: rootCurrentStyle.backgroundColor,
+                    rootStateBackground: rootCurrentState.backgroundColor,
+                    rootStateShadow: rootCurrentState.boxShadow,
+                    rootStateRadius: rootCurrentState.borderRadius,
+                    rootBlockSize: rootCurrent.getBoundingClientRect().height,
+                    rootInlineSize: rootCurrent.getBoundingClientRect().width,
+                    columnInlineSize: current.getBoundingClientRect().width,
+                    currentStateRadius: currentStateStyle.borderRadius,
                     headerTextBlockStart: headerTextRect.top,
                     hoverLinkBackground: hoveredStyle.backgroundColor,
                     hoverStateBackground: hoverStateStyle.backgroundColor,
@@ -1855,7 +1960,13 @@ export const scenarios = [
                 || grid.stateBackground !== column.hoverStateBackground
                 || grid.stateRadius !== column.hoverStateRadius
                 || column.currentStateBackground === transparent
-                || column.currentStateShadow === 'none';
+                || column.currentStateShadow === 'none'
+                || column.rootLinkBackground !== column.currentLinkBackground
+                || column.rootStateBackground !== column.currentStateBackground
+                || column.rootStateShadow !== column.currentStateShadow
+                || column.rootStateRadius !== column.currentStateRadius
+                || Math.abs(column.rootBlockSize - column.linkBlockSize) > 0.1
+                || Math.abs(column.rootInlineSize - column.columnInlineSize) > 1;
             if (invalid) {
                 fail('Collection list visual alignment contract failed.', { grid, column });
             }
@@ -1978,144 +2089,59 @@ export const scenarios = [
         }
     },
     {
-        id: 'language-menu-runtime-independent',
+        id: 'language-page-runtime-independent',
         kind: 'single',
-        title: 'Language Menu Without Runtime JSON',
+        title: 'Language Page Without Runtime JSON',
+        serviceWorkers: 'block',
         dialogPolicy: 'accept',
         viewport: { width: 1440, height: 960 },
         async run({ page, baseUrl, dialogs }) {
             await installRuntimeJsonFetchProbe(page);
-
             const blockedRuntimeRequests = [];
             await page.route('**/runtime/*.json', async (route) => {
                 blockedRuntimeRequests.push(new URL(route.request().url()).pathname);
                 await route.abort('failed');
             });
 
-            await gotoAndWait(page, `${baseUrl}/`);
-            await page.waitForSelector('[data-nav-utility-kind="language"][data-nav-primary-init="true"]');
-
-            const initialState = await readLanguageMenuState(page);
-            if (blockedRuntimeRequests.length === 0) {
-                fail('Language runtime-independence scenario did not block any runtime JSON request.');
+            await gotoAndWait(page, baseUrl + '/language/');
+            await page.waitForSelector('[data-language-settings][data-language-state="ready"]');
+            const initialState = await readLanguageSettingsState(page);
+            if (initialState.options.length !== 3
+                || initialState.options.some((option) => option.tagName !== 'A' || !option.href || option.disabled)) {
+                fail('Language settings must expose usable static links when runtime JSON is unavailable.', initialState);
             }
-            const initialRuntimeFetches = await readRuntimeJsonFetchProbe(page);
-            if (initialRuntimeFetches.length !== 0) {
-                fail('Language navigation eagerly fetched runtime JSON during initialization.', {
-                    initialRuntimeFetches
-                });
-            }
-            if (
-                initialState.disabled !== false
-                || initialState.options.length === 0
-                || initialState.options.some((option) => option.tagName !== 'A' || !option.href || !option.value)
-            ) {
-                fail('Language menu was not usable from its server-rendered links while runtime JSON was unavailable.', {
-                    blockedRuntimeRequests,
-                    initialState
-                });
-            }
-
-            await page.locator('[data-nav-utility-kind="language"] [data-nav-utility-trigger]').click();
-            await page.waitForSelector(
-                '[data-nav-utility-kind="language"].is-open [data-nav-utility-panel]:not([hidden])'
-            );
-
-            const openState = await readLanguageMenuState(page);
-            if (!openState.open || openState.panelHidden !== false) {
-                fail('Language menu did not open while runtime JSON was unavailable.', {
-                    blockedRuntimeRequests,
-                    initialState,
-                    openState
-                });
-            }
-
-            const targetOption = openState.options.find((option) => option.value === 'zh');
-            if (!targetOption?.href) {
-                fail('Language runtime-independence scenario could not find the expected Chinese link.', {
-                    openState
-                });
-            }
-
-            await page.locator(
-                '[data-nav-utility-kind="language"] [data-nav-utility-option][data-value="zh"]'
-            ).click();
+            const targetOption = initialState.options.find((option) => option.value === 'zh');
+            await page.locator('[data-language-choice="zh"]').click();
             await page.waitForURL((url) => url.pathname === new URL(targetOption.href, baseUrl).pathname);
-
-            const switchedState = await readLanguageMenuState(page);
-            if (
-                !switchedState.options.some(
-                    (option) => option.value === 'zh' && option.current === 'page'
-                )
-            ) {
-                fail('Language menu did not navigate to and mark the selected language.', {
-                    switchedState,
-                    targetOption
-                });
-            }
-
-            const switchedRuntimeFetches = await readRuntimeJsonFetchProbe(page);
-            if (switchedRuntimeFetches.length !== 0) {
-                fail('Direct language navigation fetched runtime JSON.', {
-                    switchedRuntimeFetches
-                });
+            await page.waitForSelector('[data-language-settings][data-language-state="ready"]');
+            const switchedState = await readLanguageSettingsState(page);
+            const preferredLanguage = await page.evaluate(() => localStorage.getItem('preferred_lang'));
+            if (!switchedState.options.some((option) => option.value === 'zh' && option.current === 'page')
+                || preferredLanguage !== 'zh') {
+                fail('Language navigation must mark and persist the selected language.', { switchedState, preferredLanguage });
             }
 
             await resetRuntimeJsonFetchProbe(page);
-            await gotoAndWait(page, `${baseUrl}/prefetchdebug/`);
-            await page.waitForSelector('[data-nav-utility-kind="language"][data-nav-primary-init="true"]');
-
-            const missingTranslationState = await readLanguageMenuState(page);
+            await gotoAndWait(page, baseUrl + '/language/?return=' + encodeURIComponent('/prefetchdebug/'));
+            await page.waitForSelector('[data-language-settings][data-language-state="ready"]');
+            const missingTranslationState = await readLanguageSettingsState(page);
             const missingTarget = missingTranslationState.options.find((option) => option.value === 'zh');
-            const missingPageRuntimeFetches = await readRuntimeJsonFetchProbe(page);
-            if (
-                !missingTranslationState.noTranslationMessage
+            if (!missingTranslationState.noTranslationMessage
                 || !missingTranslationState.languageSuggestionMessage
-                || !missingTarget?.href
-                || missingTarget.hasTranslation
-                || missingPageRuntimeFetches.length !== 0
-            ) {
-                fail('Missing-translation page did not expose its complete static language contract.', {
-                    missingTarget,
-                    missingTranslationState,
-                    missingPageRuntimeFetches
-                });
+                || !missingTarget?.href || missingTarget.hasTranslation || missingTarget.disabled) {
+                fail('Missing-translation choices must retain static labels, destination and prompt.', missingTranslationState);
             }
-
-            await resetRuntimeJsonFetchProbe(page);
             const dialogCountBeforeMissingSelection = dialogs.length;
-            await page.locator('[data-nav-utility-kind="language"] [data-nav-utility-trigger]').click();
-            await page.locator(
-                '[data-nav-utility-kind="language"] [data-nav-utility-option][data-value="zh"]'
-            ).click();
+            await page.locator('[data-language-choice="zh"]').click();
             await page.waitForURL((url) => url.pathname === new URL(missingTarget.href, baseUrl).pathname);
-
-            const missingRuntimeFetches = await readRuntimeJsonFetchProbe(page);
             const missingDialogs = dialogs.slice(dialogCountBeforeMissingSelection);
-            const acceptedPrompt = missingDialogs[0]?.message || '';
-            if (
-                missingDialogs.length !== 1
-                || !acceptedPrompt.includes(missingTarget.text)
-                || missingRuntimeFetches.length !== 0
-            ) {
-                fail('Missing-translation navigation depended on runtime JSON or lost its localized prompt.', {
-                    acceptedPrompt,
-                    missingDialogs,
-                    missingRuntimeFetches,
-                    missingTarget
-                });
+            if (missingDialogs.length !== 1 || !missingDialogs[0].message.includes(missingTarget.text)) {
+                fail('Missing-translation navigation must retain its localized confirmation.', { missingDialogs, missingTarget });
             }
-
             return {
                 blockedRuntimeRequests: [...new Set(blockedRuntimeRequests)],
-                initialState,
-                initialRuntimeFetches,
-                missingDialogs,
-                missingTranslationState,
-                missingRuntimeFetches,
-                openState,
-                switchedRuntimeFetches,
-                switchedState
+                runtimeFetches: await readRuntimeJsonFetchProbe(page),
+                initialState, switchedState, missingTranslationState, missingDialogs
             };
         }
     },
@@ -2142,289 +2168,33 @@ export const scenarios = [
         }
     },
     {
-        id: 'sw-update-language-menu-static',
+        id: 'sw-update-language-page-static',
         kind: 'upgrade',
-        title: 'SW Upgrade Static Language Menu',
+        title: 'Language Links While Site Update Waits',
         viewport: { width: 1440, height: 960 },
         async run({ page, baseUrl, server, upgradePair }) {
             ensureTwoBuilds(upgradePair);
             server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/`);
+            await gotoAndWait(page, baseUrl + '/language/');
+            await page.waitForSelector('[data-language-settings][data-language-state="ready"]');
             await waitForServiceWorkerActive(page);
-
-            const beforeUpdate = await readLanguageMenuState(page);
-            if (
-                beforeUpdate.disabled !== false
-                || beforeUpdate.options.length === 0
-                || beforeUpdate.options.some((option) => option.tagName !== 'A' || !option.href)
-            ) {
-                fail('Pre-upgrade page did not expose a usable server-rendered language menu.', {
-                    beforeUpdate
-                });
+            const beforeUpdate = await readLanguageSettingsState(page);
+            if (beforeUpdate.options.length !== 3
+                || beforeUpdate.options.some((option) => option.tagName !== 'A' || !option.href || option.disabled)) {
+                fail('Language page must expose static language links before an update.', beforeUpdate);
             }
 
             server.setRoot(upgradePair.toDir);
             await forceServiceWorkerUpdate(page);
             await waitForUpdateReady(page);
-
-            const afterUpdateReady = await readLanguageMenuState(page);
-            if (
-                afterUpdateReady.disabled !== false
-                || afterUpdateReady.options.length !== beforeUpdate.options.length
-            ) {
-                fail('Language menu stopped being usable while a new service worker waited for activation.', {
-                    afterUpdateReady,
-                    beforeUpdate
-                });
+            const afterUpdateReady = await readLanguageSettingsState(page);
+            if (JSON.stringify(afterUpdateReady.options) !== JSON.stringify(beforeUpdate.options)) {
+                fail('A waiting worker must not replace or disable the language links.', { beforeUpdate, afterUpdateReady });
             }
-
-            await page.locator('[data-nav-utility-kind="language"] [data-nav-utility-trigger]').click();
-            await page.waitForSelector(
-                '[data-nav-utility-kind="language"].is-open [data-nav-utility-panel]:not([hidden])'
-            );
-            const openState = await readLanguageMenuState(page);
-            if (!openState.open || openState.panelHidden !== false) {
-                fail('Language menu did not open while a new service worker waited for activation.', {
-                    afterUpdateReady,
-                    beforeUpdate,
-                    openState
-                });
-            }
-
-            return {
-                afterUpdateReady,
-                beforeUpdate,
-                openState
-            };
-        }
-    },
-    {
-        id: 'sw-update-version-dropdown',
-        kind: 'upgrade',
-        title: 'SW Upgrade Version Dropdown',
-        viewport: WIDE_VIEWPORT,
-        dialogPolicy: 'dismiss',
-        async run({ page, baseUrl, dialogs, server, upgradePair }) {
-            ensureTwoBuilds(upgradePair);
-            server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/all/`);
-            const fragmentRootBefore = await readFragmentRoot(page);
-            await waitForServiceWorkerActive(page);
-
-            server.setRoot(upgradePair.toDir);
-            await gotoAndWait(page, `${baseUrl}/all/`);
-            await forceServiceWorkerUpdate(page);
-            await waitForUpdateReady(page);
-
-            const usableMenus = await countUsableVersionMenus(page);
-            if (usableMenus < 1) {
-                fail('Update-ready page had no usable version menu.', { usableMenus });
-            }
-
-            await markFirstUsableVersionMenu(page);
-            await clickMarkedVersionTrigger(page);
-            await waitForVersionDropdown(page);
-            await page.waitForTimeout(250);
-
-            if (dialogs.length > 0) {
-                fail('Version menu page should not fall back to dialog when a usable menu exists.', { dialogs });
-            }
-
-            const fragmentRootAfter = await readFragmentRoot(page);
-            return {
-                fragmentRootBefore,
-                fragmentRootAfter,
-                usableMenus,
-                dialogs: dialogs.slice()
-            };
-        }
-    },
-    {
-        id: 'sw-update-home-version-dropdown',
-        kind: 'upgrade',
-        title: 'SW Upgrade Home Version Dropdown',
-        viewport: { width: 1440, height: 960 },
-        dialogPolicy: 'dismiss',
-        async run({ page, baseUrl, dialogs, server, upgradePair }) {
-            ensureTwoBuilds(upgradePair);
-            server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/`);
-            const fragmentRootBefore = await readFragmentRoot(page);
-            await waitForServiceWorkerActive(page);
-
-            server.setRoot(upgradePair.toDir);
-            await gotoAndWait(page, `${baseUrl}/`);
-            await forceServiceWorkerUpdate(page);
-            await waitForUpdateReady(page);
-
-            const usableMenus = await countUsableVersionMenus(page);
-            if (usableMenus !== 1) {
-                fail('Home page should expose exactly one usable version menu.', { usableMenus });
-            }
-
-            await markFirstUsableVersionMenu(page);
-            await clickMarkedVersionTrigger(page);
-            await waitForVersionDropdown(page);
-
-            if (dialogs.length > 0) {
-                fail('Home page should use the version dropdown instead of fallback dialog.', { dialogs });
-            }
-
-            const dropdownText = await readVersionDropdownText(page);
-            const fragmentRootAfter = await readFragmentRoot(page);
-            return {
-                dropdownText,
-                fragmentRootBefore,
-                fragmentRootAfter,
-                usableMenus
-            };
-        }
-    },
-    {
-        id: 'sw-update-version-menu-single-target',
-        kind: 'single',
-        title: 'SW Update Version Menu Single-target',
-        viewport: WIDE_VIEWPORT,
-        dialogPolicy: 'dismiss',
-        async run({ page, baseUrl, dialogs }) {
-            await gotoAndWait(page, `${baseUrl}/intent/explore/`);
-            await page.waitForSelector('[data-site-version-menu]');
-            await waitForServiceWorkerActive(page);
-            const menus = await markUsableVersionMenus(page);
-            if (menus.length !== 1) {
-                fail('Expected exactly one usable version menu on the page.', { menus });
-            }
-
-            await page.evaluate(() => {
-                document.documentElement.setAttribute('data-site-update', 'ready');
-            });
-
-            const clickedMenus = [];
-            for (const menu of menus) {
-                const locator = page.locator(`[data-browser-regression-menu-id="${menu.id}"]`).first();
-                const trigger = locator.locator('[data-site-version-trigger]').first();
-                if (await trigger.count()) {
-                    await trigger.click();
-                } else {
-                    await locator.click();
-                }
-                await waitForVersionDropdown(page);
-
-                const dropdownText = await readVersionDropdownText(page);
-                if (!dropdownText) {
-                    fail('Update dropdown opened without usable text.', { menu, menus, dialogs });
-                }
-                if (dialogs.length > 0) {
-                    fail('Version menu matrix should not fall back to dialog.', { menu, menus, dialogs });
-                }
-
-                clickedMenus.push({
-                    id: menu.id,
-                    text: menu.text,
-                    dropdownText
-                });
-
-                await page.keyboard.press('Escape');
-                await page.waitForSelector('.site-nav-version-menu.is-open', { state: 'detached' }).catch(async () => {
-                    await page.waitForFunction(() => !document.querySelector('.site-nav-version-menu.is-open'));
-                });
-            }
-
-            return {
-                menuCount: menus.length,
-                clickedMenus,
-                dialogs: dialogs.slice()
-            };
-        }
-    },
-    {
-        id: 'sw-update-version-dropdown-zh-hk',
-        kind: 'upgrade',
-        title: 'SW Update Version Dropdown zh-hk -> zh-tw',
-        viewport: { width: 1440, height: 960 },
-        dialogPolicy: 'dismiss',
-        async run({ page, baseUrl, dialogs, server, upgradePair }) {
-            ensureTwoBuilds(upgradePair);
-            server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/`);
-            await waitForServiceWorkerActive(page);
-
-            server.setRoot(upgradePair.toDir);
-            await gotoAndWait(page, `${baseUrl}/`);
-            const expectedDropdownMessage = await readExpectedSiteVersionUpdateLabel(page, 'zh-hk');
-            await page.evaluate(() => {
-                document.documentElement.lang = 'zh-hk';
-            });
-            await forceServiceWorkerUpdate(page);
-            await waitForUpdateReady(page);
-
-            await markFirstUsableVersionMenu(page);
-            await clickMarkedVersionTrigger(page);
-            await waitForVersionDropdown(page);
-            await waitForVersionDropdownText(page, expectedDropdownMessage);
-
-            if (dialogs.length > 0) {
-                fail('zh-hk update flow should use the version dropdown instead of dialog.', { dialogs, expectedDropdownMessage });
-            }
-
-            const actualDropdownText = await readVersionDropdownText(page);
-            if (!actualDropdownText.includes(expectedDropdownMessage)) {
-                fail('zh-hk version dropdown did not resolve to the expected localized copy.', {
-                    actualDropdownText,
-                    dialogs,
-                    expectedDropdownMessage
-                });
-            }
-
-            return {
-                actualDropdownText,
-                expectedDropdownMessage
-            };
-        }
-    },
-    {
-        id: 'sw-update-version-dropdown-zh-mo',
-        kind: 'upgrade',
-        title: 'SW Update Version Dropdown zh-mo -> zh-tw',
-        viewport: { width: 1440, height: 960 },
-        dialogPolicy: 'dismiss',
-        async run({ page, baseUrl, dialogs, server, upgradePair }) {
-            ensureTwoBuilds(upgradePair);
-            server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/`);
-            await waitForServiceWorkerActive(page);
-
-            server.setRoot(upgradePair.toDir);
-            await gotoAndWait(page, `${baseUrl}/`);
-            const expectedDropdownMessage = await readExpectedSiteVersionUpdateLabel(page, 'zh-mo');
-            await page.evaluate(() => {
-                document.documentElement.lang = 'zh-mo';
-            });
-            await forceServiceWorkerUpdate(page);
-            await waitForUpdateReady(page);
-
-            await markFirstUsableVersionMenu(page);
-            await clickMarkedVersionTrigger(page);
-            await waitForVersionDropdown(page);
-            await waitForVersionDropdownText(page, expectedDropdownMessage);
-
-            if (dialogs.length > 0) {
-                fail('zh-mo update flow should use the version dropdown instead of dialog.', { dialogs, expectedDropdownMessage });
-            }
-
-            const actualDropdownText = await readVersionDropdownText(page);
-            if (!actualDropdownText.includes(expectedDropdownMessage)) {
-                fail('zh-mo version dropdown did not resolve to the expected localized copy.', {
-                    actualDropdownText,
-                    dialogs,
-                    expectedDropdownMessage
-                });
-            }
-
-            return {
-                actualDropdownText,
-                expectedDropdownMessage
-            };
+            await page.locator('[data-language-choice="zh"]').click();
+            await page.waitForURL((url) => url.pathname === '/zh/language/');
+            await page.waitForSelector('[data-language-choice="zh"][aria-current="page"]');
+            return { beforeUpdate, afterUpdateReady, target: page.url() };
         }
     }
 ];

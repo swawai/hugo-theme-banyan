@@ -1,0 +1,18 @@
+.root-navigation {
+    margin-block-end: 1rem;
+}
+
+.root-navigation .collection-item-title {
+    white-space: nowrap;
+}
+
+[data-site-update-link][data-site-update-state="ready"] .collection-item-title::after {
+    content: " ↑";
+    font-weight: 700;
+}
+
+@media (min-width: 58rem) {
+    .root-navigation {
+        margin-block-end: 0;
+    }
+}

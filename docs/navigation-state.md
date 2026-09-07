@@ -16,7 +16,7 @@
 当前导航体系分成 3 层：
 
 1. 页面语义层
-   - 当前页面属于哪个导航族
+   - 当前页面在真实内容结构中属于哪个根入口
    - breadcrumb 各层分别对应哪个 collection
 2. 构建产物层
    - 为每个 collection 生成 `_items.json`
@@ -47,6 +47,17 @@
 `from` 只表达来源 collection lineage，不表达当前 entry，也不表达排序。
 当前 entry 由页面路径表达，例如 `/p/xvenv/`。因此
 `from=d/products/xvenv` 不是有效的新协议状态。
+
+只有当前页面发布的来源集合才是有效 `from`。不能根据一个任意字符串的
+前缀推断来源；不存在或不属于当前页面的来源使用内容祖先的默认选中项。
+第一列始终保留完整根页面列表，`from` 仅调整选中状态和后续路径列。
+
+### `return`
+
+`return` 是系统页面返回阅读现场的同源地址，包含原来的路径、查询参数和锚点。
+在语言、外观、我的、站点之间切换时保留原地址；系统页面仍选中自身入口。
+它不参与 collection lineage，也不替代 `from`。语言设置读取原页面的静态翻译
+关系后，将原查询参数和锚点带到对应翻译页；缺少翻译时先确认，再去目标语言首页。
 
 ### `sort`
 
@@ -136,7 +147,7 @@ breadcrumb 中每一层 item，都应该能追溯到它所属的 collection sour
 
 当前已统一成：
 
-1. canonical breadcrumb/source model 提供 levels 与 collection source
+1. 真实根页面列表提供第一列；canonical breadcrumb/source model 提供 root item、levels 与 collection source
 2. fragment 发布只产 `_items.json`
 3. runtime 通过 `_items.json + from/sort/sorts` 组装 breadcrumb menus
 
@@ -147,9 +158,9 @@ entry 页与 collection 页虽然仍有不同的 orchestration，但它们共享
 - row -> href 生成
 - breadcrumb menu item 组装
 
-## Wide Browser Mode 的前提
+## 布局边界
 
-如果后续做 wide browser mode，应继续沿用当前边界：
+调整宽屏分栏或后续统一横向画幅时，继续沿用当前边界：
 
 - `_items.json` 仍是单层 collection 数据源
 - `from/sorts` 仍是当前页面路径状态

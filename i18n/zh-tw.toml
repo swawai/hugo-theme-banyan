@@ -36,8 +36,6 @@ other = "價格"
 [products_col_value]
 other = "價值點"
 
-[breadcrumb_root_switch]
-other = "切換根頁面"
 [products_free]
 other = "免費"
 [products_empty]
@@ -76,12 +74,6 @@ other = "為您推薦本頁的 [{target}] 版本，確認前往嗎？"
 
 [site_update_prompt]
 other = "已有新版本可用，立即重新整理？"
-
-[site_update_confirm]
-other = "立即重新整理"
-
-[site_update_later]
-other = "稍後"
 
 [notFoundTitle]
 other = "頁面不存在"

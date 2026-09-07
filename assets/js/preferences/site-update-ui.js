@@ -1,5 +1,4 @@
 import { fetchRuntimeJson, getRuntimeBuildTime, getRuntimeBuildVersion, getRuntimeI18nUrl, getRuntimeManifest } from '../runtime-manifest.js';
-import { bindVersionMenuActions, closeVersionMenus, renderVersionMenus } from '../fragments/nav-utilities/version-menu.js';
 
 const updateCopyPromises = new Map();
 const updateCopyCache = new Map();
@@ -8,20 +7,16 @@ let renderRevision = 0;
 function getFallbackUpdateCopy() {
     return {
         message: 'A new version is ready. Refresh now?',
-        confirm: 'Refresh',
-        later: 'Later',
         versionCheck: 'Check now',
         versionChecking: 'Checking...',
         versionCheckFailed: 'Check failed',
         versionUnavailable: 'Updates are unavailable in this browser.',
-        versionHome: 'Home',
         versionStatus: 'Status',
         versionStatusCurrent: 'Up to date',
         versionStatusReady: 'New version available',
         versionStatusOffline: 'Offline',
         versionStatusClickUpdate: 'click update',
-        versionStatusClickRetry: 'click retry',
-        versionChangelogHref: ''
+        versionStatusClickRetry: 'click retry'
     };
 }
 
@@ -31,20 +26,16 @@ function normalizeUpdateCopy(messages) {
 
     return {
         message: typeof messages.site_update_prompt === 'string' && messages.site_update_prompt ? messages.site_update_prompt : fallback.message,
-        confirm: typeof messages.site_update_confirm === 'string' && messages.site_update_confirm ? messages.site_update_confirm : fallback.confirm,
-        later: typeof messages.site_update_later === 'string' && messages.site_update_later ? messages.site_update_later : fallback.later,
         versionCheck: typeof messages.site_version_check === 'string' && messages.site_version_check ? messages.site_version_check : fallback.versionCheck,
         versionChecking: typeof messages.site_version_checking === 'string' && messages.site_version_checking ? messages.site_version_checking : fallback.versionChecking,
         versionCheckFailed: typeof messages.site_version_check_failed === 'string' && messages.site_version_check_failed ? messages.site_version_check_failed : fallback.versionCheckFailed,
         versionUnavailable: messages.site_version_unavailable || fallback.versionUnavailable,
-        versionHome: typeof messages.site_version_home === 'string' && messages.site_version_home ? messages.site_version_home : fallback.versionHome,
         versionStatus: typeof messages.site_version_status === 'string' && messages.site_version_status ? messages.site_version_status : fallback.versionStatus,
         versionStatusCurrent: typeof messages.site_version_status_current === 'string' && messages.site_version_status_current ? messages.site_version_status_current : fallback.versionStatusCurrent,
         versionStatusReady: typeof messages.site_version_status_ready === 'string' && messages.site_version_status_ready ? messages.site_version_status_ready : fallback.versionStatusReady,
         versionStatusOffline: typeof messages.site_version_status_offline === 'string' && messages.site_version_status_offline ? messages.site_version_status_offline : fallback.versionStatusOffline,
         versionStatusClickUpdate: typeof messages.site_version_status_click_update === 'string' && messages.site_version_status_click_update ? messages.site_version_status_click_update : fallback.versionStatusClickUpdate,
-        versionStatusClickRetry: typeof messages.site_version_status_click_retry === 'string' && messages.site_version_status_click_retry ? messages.site_version_status_click_retry : fallback.versionStatusClickRetry,
-        versionChangelogHref: typeof messages.site_version_changelog_href === 'string' ? messages.site_version_changelog_href : fallback.versionChangelogHref
+        versionStatusClickRetry: typeof messages.site_version_status_click_retry === 'string' && messages.site_version_status_click_retry ? messages.site_version_status_click_retry : fallback.versionStatusClickRetry
     };
 }
 
@@ -92,7 +83,7 @@ function getVersionStatusValue(copy, status, latencyMs) {
 
 
 export function hasVisibleUpdateControl() {
-    return Array.from(document.querySelectorAll('[data-site-version-menu], [data-site-update-action]'))
+    return Array.from(document.querySelectorAll('[data-site-update-link], [data-site-update-action]'))
         .some((element) => getComputedStyle(element).visibility !== 'hidden' && element.getClientRects().length > 0);
 }
 
@@ -101,23 +92,31 @@ export async function confirmSiteUpdate() {
     return window.confirm(copy.message);
 }
 
-export function closeUpdateControls() {
-    closeVersionMenus();
-}
-
 export async function renderUpdateUi(status, latencyMs) {
     const revision = ++renderRevision;
     const root = document.documentElement;
     if (status === 'ready') root.dataset.siteUpdate = 'ready';
     else delete root.dataset.siteUpdate;
+    const links = document.querySelectorAll('[data-site-update-link]');
+    links.forEach((link) => {
+        link.dataset.siteUpdateState = status;
+        if (status !== 'ready') {
+            link.removeAttribute('title');
+            link.removeAttribute('aria-description');
+        }
+    });
     const panels = document.querySelectorAll('[data-site-update-panel]');
-    if (!panels.length && !document.querySelector('[data-site-version-menu].is-open')) return;
+    if (!panels.length && status !== 'ready') return;
 
     const [copy, manifest] = await Promise.all([hydrateUpdateCopy(), getRuntimeManifest()]);
     if (revision !== renderRevision) return;
     const version = getRuntimeBuildVersion(manifest) || '-';
     const versionLabel = getRuntimeBuildTime(manifest) || version;
     const statusValue = getVersionStatusValue(copy, status, latencyMs);
+    if (status === 'ready') links.forEach((link) => {
+        link.title = copy.versionStatusReady;
+        link.setAttribute('aria-description', copy.versionStatusReady);
+    });
     panels.forEach((panel) => {
         panel.dataset.siteUpdateState = status;
         const versionLink = panel.querySelector('[data-site-update-version]');
@@ -132,14 +131,12 @@ export async function renderUpdateUi(status, latencyMs) {
         const statusNode = panel.querySelector('[data-site-update-status]');
         if (statusNode) statusNode.textContent = statusValue ? copy.versionStatus + ': ' + statusValue : '';
     });
-    renderVersionMenus({ copy, version, versionLabel, status, statusValue });
 }
 
-export function bindUpdateUi(onCheck, onOpen) {
+export function bindUpdateUi(onCheck) {
     document.addEventListener('click', (event) => {
         if (!(event.target instanceof Element) || !event.target.closest('[data-site-update-action="check"]')) return;
         event.preventDefault();
         onCheck();
     });
-    bindVersionMenuActions(onCheck, onOpen);
 }

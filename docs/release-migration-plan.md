@@ -60,7 +60,7 @@ Extract into starter/template:
   `[languages]`, and `[permalinks]`.
 - Root `package.json` script shape for a consumer site.
 - Root taxonomy root-bundle shape from `content/intent/_index.*.md` and
-  `content/tags/_index.*.md`.
+  `content/tags/_index.*.md`, including page `weight` for root-entry ordering.
 
 Keep as site-owned:
 
@@ -68,7 +68,6 @@ Keep as site-owned:
 - `content/site/about/index.*.md` (moved under `site/` on 2026-09-07)
 - `content/d/products/*`
 - `content/fragments/site-meta/*`
-- `content/fragments/nav-primary-links/*`
 - `content/fragments/home-footer-shortcuts/*`
 - `assets/site/brand/*`
 - `assets/site/pwa/*`
@@ -79,6 +78,24 @@ Theme-side candidates:
 
 - Move theme-level change history into `themes/banyan/CHANGELOG.md`.
 - Keep root `CHANGELOG.md` only for the root site if needed.
+
+Navigation contract after the 2026-09-07 flattening step:
+
+- The theme derives the first-column list from `Home.Pages` plus taxonomy roots
+  whose parent is Home. Names, URLs, and order come from each page's
+  `LinkTitle`/`Title`, `RelPermalink`, and `weight`.
+- Sites customize real root pages and taxonomy bundles instead of maintaining a
+  separate menu whitelist. `nav_primary` and the `primary_nav`, `utilities`, and
+  `breadcrumb_root` slots are removed, including their navigation fragments.
+- `slots` now supports only `breadcrumb`, `meta`, and `footer`. Collection
+  providers, product metadata, and footer content retain their existing owners.
+- Taxonomy `show_in_home` and `home_weight` remain the configuration for the
+  independent homepage shortcut list; they do not order the first column.
+- Language, appearance, my, and site are real root pages. The site page owns
+  `site_update` copy and actions; its first-column link indicates update status.
+- This step does not complete the later responsive-layout merge or color work.
+  See [layout slots](layout-slots.md) and the
+  [navigation flattening plan](navigation-flattening-plan.md).
 
 Delete candidates for a later cleanup:
 
@@ -124,7 +141,7 @@ Required files:
 - `themes/banyan/exampleSite/package.json`
 - Minimal home page and taxonomy roots under `themes/banyan/exampleSite/content/`
 - Optional demo pages that exercise article pages, lists, products, breadcrumbs,
-  nav utilities, PWA assets, and Service Worker opt-in.
+  system pages, PWA assets, and Service Worker opt-in.
 
 Acceptance:
 
@@ -165,9 +182,13 @@ Purpose: keep live theme content small and intentional.
 
 Keep in theme content:
 
-- Default hidden fragments.
-- `offline`, `prefetch-debug`, `my`, and `changelog` utility pages.
-- `about`, `all`, `d`, and `products` structural/template pages for now.
+- Default hidden metadata and footer fragments; old navigation and breadcrumb
+  model fragments have been removed.
+- Hidden `offline` and `prefetch-debug` utility pages.
+- `language`, `appearance`, and `my` root pages use `build.list: local` so they
+  appear under Home without joining global article lists.
+- `site/`, including `site/about` and `site/changelog`, and the `all`, `d`,
+  `product-categories`, and `products` structural/template pages for now.
   These are intentionally retained as theme live content until the page model is
   stable enough to split templates from live defaults.
 

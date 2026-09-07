@@ -85,9 +85,6 @@
   {{- with $itemCollectionHref -}}
     {{- $menuDataAttrs = merge $menuDataAttrs (dict "breadcrumb-collection-href" .) -}}
   {{- end -}}
-  {{- if eq (index $item "redundant_with_root_menu") true -}}
-    {{- $menuDataAttrs = merge $menuDataAttrs (dict "breadcrumb-redundant-root" "true") -}}
-  {{- end -}}
   {{- $columnGridClass := "grid-list grid-list--single collection-list collection-list--column" -}}
   {{- if gt (len $itemCollectionSource) 0 -}}
     {{- $columnGridClass = printf "%s grid-list--headed" $columnGridClass -}}
@@ -102,7 +99,7 @@
     "panelHTML" $panelHTML
   ) -}}
 {{- else -}}
-  <span class="{{ $wrapperClass }}"{{ if eq (index $item "redundant_with_root_menu") true }} data-breadcrumb-redundant-root="true"{{ end }}>
+  <span class="{{ $wrapperClass }}">
     {{ partial "link.html" (dict
       "ctx" $ctx
       "href" (index $item "href")

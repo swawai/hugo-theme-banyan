@@ -41,12 +41,6 @@ function normalizeLinkItem(item) {
     if (typeof item.highlighted === 'boolean') {
         normalized.highlighted = item.highlighted;
     }
-    if (typeof item.redundant_with_root_menu === 'boolean') {
-        normalized.redundant_with_root_menu = item.redundant_with_root_menu;
-    }
-    if (typeof item.redundantWithRootMenu === 'boolean') {
-        normalized.redundant_with_root_menu = item.redundantWithRootMenu;
-    }
     if (typeof item.menu_button_label === 'string' && item.menu_button_label.trim() !== '') {
         normalized.menu_button_label = item.menu_button_label.trim();
     }
@@ -79,9 +73,6 @@ export function parseEntryBreadcrumbSources(rawValue) {
                     return null;
                 }
 
-                const rootMenuRaw = Array.isArray(source.root_menu || source.rootMenu)
-                    ? (source.root_menu || source.rootMenu)
-                    : [];
                 const tailItemsRaw = Array.isArray(source.tail_items || source.tailItems)
                     ? (source.tail_items || source.tailItems)
                     : [];
@@ -91,10 +82,6 @@ export function parseEntryBreadcrumbSources(rawValue) {
                     provider: typeof source.provider === 'string' ? source.provider.trim().toLowerCase() : '',
                     logicalPath,
                     rootItem,
-                    rootMenuItems: rootMenuRaw.map(normalizeLinkItem).filter(Boolean),
-                    rootMenuLabel: typeof (source.root_menu_label || source.rootMenuLabel) === 'string'
-                        ? (source.root_menu_label || source.rootMenuLabel).trim()
-                        : '',
                     tailItems: tailItemsRaw.map(normalizeLinkItem).filter(Boolean),
                     levels: levelsRaw
                         .map((level) => {
@@ -145,7 +132,7 @@ export function parseEntrySelection(sources, fromPath) {
         return null;
     }
 
-    const source = sources.find((item) => item?.logicalPath === normalized) || null;
+    const source = sources.find((item) => normalizeFromPath(item?.logical_path || item?.logicalPath || '') === normalized) || null;
     return source ? { source } : null;
 }
 

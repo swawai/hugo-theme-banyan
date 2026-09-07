@@ -7,8 +7,7 @@
     z-index: 0;
 }
 
-html[data-entry-breadcrumb-preview-pending="true"] .slot-row-breadcrumb,
-html[data-entry-breadcrumb-preview-pending="true"] .page-rail-context {
+html[data-entry-breadcrumb-preview-pending="true"] .slot-row-breadcrumb {
     visibility: hidden;
     pointer-events: none;
 }
@@ -31,17 +30,11 @@ html[data-entry-breadcrumb-preview-pending="true"] .page-rail-context {
     z-index: -1;
 }
 
-.slot-breadcrumb-root,
-.slot-breadcrumb,
-.breadcrumb-root-nav {
+.slot-breadcrumb {
     display: inline-flex;
     align-items: center;
     min-inline-size: 0;
     max-inline-size: 100%;
-}
-
-.breadcrumb-root-list {
-    display: none;
 }
 
 .breadcrumb-nav {

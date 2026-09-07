@@ -9,7 +9,7 @@
   {{- end -}}
   {{- if $owner -}}
     {{- $entries := slice -}}
-    {{- if eq $owner.Layout "section-index" -}}
+    {{- if in (slice "section-index" "site-page") $owner.Layout -}}
       {{- range $owner.Pages.ByWeight -}}
         {{- $entries = $entries | append (dict
           "href" .RelPermalink "text" .LinkTitle "title" .Title "kind" .Kind

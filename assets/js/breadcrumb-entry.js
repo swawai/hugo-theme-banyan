@@ -1,3 +1,4 @@
+import { renderRootSelection } from './root-navigation.js';
 import { initBreadcrumbMenus } from './breadcrumb-menu.js';
 import {
     buildBreadcrumbMenuItems,
@@ -11,7 +12,6 @@ import {
     parseEntrySelection,
 } from './breadcrumb-source.js';
 import {
-    renderRootSelection,
     renderTopBreadcrumb,
 } from './breadcrumb-ui.js';
 import {
@@ -139,8 +139,6 @@ async function buildEntryState() {
     const breadcrumbItems = buildBreadcrumbItems(prefixItems, currentItem);
     return {
         rootItem: selection.source.rootItem,
-        rootMenuItems: selection.source.rootMenuItems,
-        rootMenuLabel: selection.source.rootMenuLabel,
         breadcrumbItems,
     };
 }
@@ -152,7 +150,7 @@ export async function initEntryBreadcrumb() {
             return;
         }
 
-        renderRootSelection(state.rootItem, state.rootMenuItems, state.rootMenuLabel);
+        renderRootSelection(state.rootItem);
         renderTopBreadcrumb(state.breadcrumbItems);
         initBreadcrumbMenus();
     } finally {

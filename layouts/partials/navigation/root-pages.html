@@ -1,0 +1,9 @@
+{{- $ctx := . -}}
+{{- /* Local-list system pages belong to Home.Pages; taxonomy roots belong to Site.Pages. */ -}}
+{{- $pages := $ctx.Site.Home.Pages -}}
+{{- range where $ctx.Site.Pages "Kind" "taxonomy" -}}
+  {{- if and .Parent .Parent.IsHome -}}
+    {{- $pages = $pages | union (slice .) -}}
+  {{- end -}}
+{{- end -}}
+{{- return $pages.ByWeight -}}

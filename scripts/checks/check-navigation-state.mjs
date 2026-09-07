@@ -510,6 +510,14 @@ assert.equal(
     'from values with an entry key tail should not be treated as valid navigation state'
 );
 
+for (const invalidFrom of ['/intent/', '/intent/unknown/', '/tags/decide/', '']) {
+    assert.equal(
+        breadcrumbSource.parseEntrySelection(sources, invalidFrom),
+        null,
+        'root selection must use an exact published source, never infer a root from an unregistered prefix'
+    );
+}
+
 const collectionSourceIndex = breadcrumbSource.parseCollectionSourceIndex(sourcePayload);
 assert.deepEqual(
     breadcrumbSource.pickCollectionSourceByHref(

@@ -1,0 +1,24 @@
+{{- $ctx := . -}}
+{{- $roots := partialCached "navigation/root-pages.html" $ctx $ctx.Language.Lang -}}
+{{- $selected := partial "navigation/selected-page.html" $ctx -}}
+{{- $defaultHref := "" -}}
+{{- with $selected -}}{{- $defaultHref = .RelPermalink -}}{{- end -}}
+<nav class="root-navigation collection-list--index" data-root-navigation data-default-root-href="{{ $defaultHref }}" aria-label="{{ $ctx.Site.Title }}">
+  <div class="collection-list-header"><a href="{{ $ctx.Site.Home.RelPermalink }}" data-prefetch-slot="nav">{{ $ctx.Site.Title }}</a></div>
+  <div class="grid-list grid-list--single collection-list collection-list--grid">
+    {{- range $roots -}}
+      {{- $attrs := dict "root-href" .RelPermalink -}}
+      {{- if in (slice "language-page" "appearance-page" "my-page" "site-page") .Layout -}}
+        {{- $attrs = merge $attrs (dict "settings-link" "true") -}}
+      {{- end -}}
+      {{- if eq .Layout "site-page" -}}
+        {{- $attrs = merge $attrs (dict "site-update-link" "true") -}}
+      {{- end -}}
+      {{- partial "grid-title-cell.html" (dict
+        "ctx" $ctx "href" .RelPermalink "text" (.LinkTitle | default .Title)
+        "title" .Title "icon" "folder" "linkSlot" "nav" "linkDataAttrs" $attrs
+        "isCurrent" (eq .RelPermalink $defaultHref)
+      ) -}}
+    {{- end -}}
+  </div>
+</nav>

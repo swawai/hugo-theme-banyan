@@ -3,14 +3,10 @@ date: "2026-03-17T00:00:00+08:00"
 draft: false
 title: "Prefetch Debug"
 slug: "prefetchdebug"
-nav_primary: home
 url: "prefetchdebug"
 type: "page"
 layout: "prefetch-debug-page"
 robots: "noindex, follow"
-slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
 build:
   list: "never"
 prefetch_debug:

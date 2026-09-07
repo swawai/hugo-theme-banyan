@@ -8,7 +8,7 @@ export function suppressLanguageSuggestDialogScript() {
     return () => {
         try {
             // Keep browser-regression deterministic: language recommendation dialogs
-            // are covered by nav utilities, not by SW / breadcrumb scenarios.
+            // are covered by language preference scenarios, not by SW / breadcrumb scenarios.
             window.localStorage.setItem('lang-suggest-handled-v1', '1');
         } catch (error) { }
     };
@@ -200,59 +200,5 @@ export async function forceServiceWorkerUpdate(page) {
 export async function waitForUpdateReady(page, timeoutMs = 15000) {
     await page.waitForFunction(() => document.documentElement.getAttribute('data-site-update') === 'ready', {
         timeout: timeoutMs
-    });
-}
-
-export async function countUsableVersionMenus(page) {
-    return page.evaluate(() => {
-        const menus = Array.from(document.querySelectorAll('[data-site-version-menu]'));
-        return menus.filter((menu) => {
-            if (!(menu instanceof HTMLElement)) return false;
-            const style = window.getComputedStyle(menu);
-            if (style.display === 'none' || style.visibility === 'hidden') return false;
-            return menu.getClientRects().length > 0;
-        }).length;
-    });
-}
-
-export async function markFirstUsableVersionMenu(page) {
-    const found = await page.evaluate(() => {
-        const menus = Array.from(document.querySelectorAll('[data-site-version-menu]'));
-        const usable = menus.find((menu) => {
-            if (!(menu instanceof HTMLElement)) return false;
-            const style = window.getComputedStyle(menu);
-            if (style.display === 'none' || style.visibility === 'hidden') return false;
-            return menu.getClientRects().length > 0;
-        });
-        if (!usable) return false;
-        usable.setAttribute('data-browser-regression-target', 'true');
-        return true;
-    });
-
-    if (!found) {
-        fail('No usable data-site-version-menu was found on the page.');
-    }
-}
-
-export async function markUsableVersionMenus(page) {
-    return page.evaluate(() => {
-        const menus = Array.from(document.querySelectorAll('[data-site-version-menu]'));
-        const marked = [];
-        let nextId = 0;
-        menus.forEach((menu) => {
-            if (!(menu instanceof HTMLElement)) return;
-            const style = window.getComputedStyle(menu);
-            if (style.display === 'none' || style.visibility === 'hidden') return;
-            if (menu.getClientRects().length === 0) return;
-
-            const id = String(nextId);
-            nextId += 1;
-            menu.setAttribute('data-browser-regression-menu-id', id);
-            marked.push({
-                id,
-                text: (menu.textContent || '').trim()
-            });
-        });
-        return marked;
     });
 }

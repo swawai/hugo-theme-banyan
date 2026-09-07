@@ -7,8 +7,7 @@
 {{- if eq $logicalPath "" -}}
   {{- errorf "Build failed: entry source page %q is missing logical_path." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
 {{- end -}}
-{{- partial "slots/prepare.html" (dict "ctx" $page) -}}
-{{- $canonicalModel := partial "breadcrumb/canonical-model.html" (dict "ctx" $page "slot" "breadcrumb") -}}
+{{- $canonicalModel := partial "breadcrumb/canonical-model.html" (dict "ctx" $page) -}}
 {{- $rootRaw := index $canonicalModel "root_item" | default dict -}}
 {{- $rootText := trim (printf "%v" (index $rootRaw "text")) " " -}}
 {{- $rootHref := trim (printf "%v" (index $rootRaw "href")) " " -}}
@@ -20,8 +19,6 @@
   "href" $rootHref
 -}}
 {{- with index $rootRaw "title" }}{{ $rootItem = merge $rootItem (dict "title" (printf "%v" .)) }}{{ end -}}
-{{- $rootMenuItems := index $canonicalModel "root_menu" | default (slice $rootItem) -}}
-{{- $rootMenuLabel := trim (printf "%v" (index $canonicalModel "root_menu_label" | default "Breadcrumb root")) " " -}}
 {{- $tailItems := index $canonicalModel "tail_items" | default slice -}}
 {{- $canonicalLevels := index $canonicalModel "levels" | default slice -}}
 {{- $collectionLabelsByHref := dict $rootHref $rootText -}}
@@ -95,8 +92,6 @@
   "page" $page
   "logical_path" $logicalPath
   "root_item" $rootItem
-  "root_menu" $rootMenuItems
-  "root_menu_label" $rootMenuLabel
   "tail_items" $tailItems
   "levels" $levels
   "current_collection_source" $currentCollectionSource

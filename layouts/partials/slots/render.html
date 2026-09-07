@@ -3,18 +3,8 @@
 {{- $sources := $ctx.Scratch.Get "slot_sources" | default dict -}}
 {{- with index $sources $slot -}}
   {{- $source := . -}}
-  {{- if eq $slot "primary_nav" -}}
-    {{- partial "fragments/nav.html" (dict "ctx" $ctx "source" $source "section" "primary") -}}
-  {{- else if eq $slot "utilities" -}}
-    {{- partial "fragments/nav.html" (dict "ctx" $ctx "source" $source "section" "utilities") -}}
-  {{- else if eq $slot "breadcrumb_root" -}}
-    {{- partial "breadcrumb/root.html" (dict "ctx" $ctx "slot" "breadcrumb_root" "source" $source) -}}
-  {{- else if eq $slot "breadcrumb" -}}
-    {{- $omitLead := false -}}
-    {{- with index $sources "breadcrumb_root" -}}
-      {{- $omitLead = true -}}
-    {{- end -}}
-    {{- partial "breadcrumb/entry.html" (dict "ctx" $ctx "slot" "breadcrumb" "omit_lead" $omitLead) -}}
+  {{- if eq $slot "breadcrumb" -}}
+    {{- partial "breadcrumb/entry.html" (dict "ctx" $ctx) -}}
   {{- else if eq $slot "meta" -}}
     {{- partial "article/meta.html" (dict "ctx" $ctx) -}}
   {{- else if eq $slot "footer" -}}

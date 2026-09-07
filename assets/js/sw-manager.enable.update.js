@@ -1,4 +1,4 @@
-import { bindUpdateUi, closeUpdateControls, confirmSiteUpdate, hasVisibleUpdateControl, renderUpdateUi } from './preferences/site-update-ui.js';
+import { bindUpdateUi, confirmSiteUpdate, hasVisibleUpdateControl, renderUpdateUi } from './preferences/site-update-ui.js';
 
 const SW_ACTIVATION_TIMEOUT_MS = 4000;
 const NAVIGATION_CACHE_PREFIX = 'nav-html-';
@@ -268,7 +268,6 @@ async function applyWaitingWorker(runtime) {
     }
 
     setUpdateReadyState(false);
-    closeUpdateControls();
     reloadOnControllerChange = true;
     scheduleActivationFallback(runtime, activeRegistration, targetWaitingWorker);
 
@@ -323,10 +322,7 @@ export function startEnableMode(runtime) {
         return;
     }
     activeRuntime = runtime;
-    bindUpdateUi(() => void checkForUpdates(runtime), () => {
-        if (updateStatus === 'ready') void renderUpdateStatus();
-        else void checkForUpdates(runtime);
-    });
+    bindUpdateUi(() => void checkForUpdates(runtime));
     void renderUpdateStatus();
     if (document.readyState === 'complete') {
         void handleEnableMode(runtime);

@@ -2,13 +2,9 @@
 draft: false
 title: 系統－我的
 slug: my
-nav_primary: my
 type: my
 layout: my-page
 robots: noindex, follow
-slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
 build:
   list: local
 weight: 90

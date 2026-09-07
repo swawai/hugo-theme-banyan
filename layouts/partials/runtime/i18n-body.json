@@ -27,38 +27,19 @@
   {{- end -}}
 {{- end -}}
 
-{{- $siteUpdateConfirm := "Refresh" -}}
-{{- with index $translations "site_update_confirm" -}}
-  {{- with index . "other" -}}
-    {{- $siteUpdateConfirm = printf "%v" . -}}
-  {{- end -}}
-{{- end -}}
-
-{{- $siteUpdateLater := "Later" -}}
-{{- with index $translations "site_update_later" -}}
-  {{- with index . "other" -}}
-    {{- $siteUpdateLater = printf "%v" . -}}
-  {{- end -}}
-{{- end -}}
-
 {{- $updateModel := partial "preferences/site-update-model.html" (dict "ctx" .) -}}
 {{- $siteVersionLabels := $updateModel.labels -}}
-{{- $siteVersionChangelogHref := $updateModel.changelog_href -}}
 
 {{- dict
   "site_update_prompt" $siteUpdatePrompt
-  "site_update_confirm" $siteUpdateConfirm
-  "site_update_later" $siteUpdateLater
   "site_version_check" (printf "%v" (index $siteVersionLabels "check"))
   "site_version_checking" (printf "%v" (index $siteVersionLabels "checking"))
   "site_version_check_failed" (printf "%v" (index $siteVersionLabels "check_failed"))
   "site_version_unavailable" (printf "%v" (index $siteVersionLabels "unavailable"))
-  "site_version_home" (printf "%v" (index $siteVersionLabels "home"))
   "site_version_status" (printf "%v" (index $siteVersionLabels "status"))
   "site_version_status_current" (printf "%v" (index $siteVersionLabels "status_current"))
   "site_version_status_ready" (printf "%v" (index $siteVersionLabels "status_ready"))
   "site_version_status_offline" (printf "%v" (index $siteVersionLabels "status_offline"))
   "site_version_status_click_update" (printf "%v" (index $siteVersionLabels "status_click_update"))
   "site_version_status_click_retry" (printf "%v" (index $siteVersionLabels "status_click_retry"))
-  "site_version_changelog_href" $siteVersionChangelogHref
 | jsonify -}}

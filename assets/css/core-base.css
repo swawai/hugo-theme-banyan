@@ -79,23 +79,27 @@ body {
     min-width: 0;
 }
 
-.page-rail-context {
-    display: none;
+.page-shell {
+    display: flex;
+    flex-direction: column;
+}
+
+.page-rail {
+    display: contents;
+}
+
+.page-stage {
+    order: 1;
+}
+
+.page-rail > .slot-footer {
+    order: 2;
+    padding-block-start: 1.25rem;
+    padding-block-end: var(--page-footer-tail-space);
 }
 
 .slot-footer {
     display: flow-root;
-}
-
-.page-shell--has-footer > .slot-footer {
-    padding-block-end: var(--page-footer-tail-space);
-}
-
-.page-topbar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-end;
-    gap: 0.8rem;
 }
 
 @supports (height: 100svh) {

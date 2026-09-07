@@ -1,4 +1,3 @@
-import { normalizePathname } from './nav-state.js';
 import {
     buildCollectionPageHref,
     buildCollectionSortToggleHref,
@@ -246,9 +245,6 @@ function buildTopBreadcrumbItem(item, index) {
             itemSpan.dataset.breadcrumbCollectionHref = collectionHref;
         }
     }
-    if (item.redundant_with_root_menu === true) {
-        itemSpan.dataset.breadcrumbRedundantRoot = 'true';
-    }
 
     const link = document.createElement('a');
     link.href = item.href;
@@ -294,133 +290,4 @@ export function renderTopBreadcrumb(items) {
     });
 
     container.replaceChildren(nav);
-}
-
-function markMenuState(items, predicate) {
-    return items.map((item) => ({
-        ...item,
-        current: predicate(item),
-    }));
-}
-
-function normalizeMenuState(rootItem, rootMenuItems) {
-    const menuItems = Array.isArray(rootMenuItems)
-        ? rootMenuItems.filter(Boolean).map((item) => ({ ...item }))
-        : [];
-    if (menuItems.some((item) => item.highlighted === true)) {
-        return markMenuState(menuItems, (item) => item.highlighted === true);
-    }
-    if (menuItems.some((item) => item.current === true)) {
-        return markMenuState(menuItems, (item) => item.current === true);
-    }
-    if (menuItems.some((item) => item.selected === true)) {
-        return markMenuState(menuItems, (item) => item.selected === true);
-    }
-
-    let selectedPathname = '';
-    try {
-        selectedPathname = normalizePathname(new URL(rootItem.href, window.location.origin).pathname);
-    } catch (error) {
-        selectedPathname = '';
-    }
-
-    return markMenuState(menuItems, (item) => {
-        try {
-            return normalizePathname(new URL(item.href, window.location.origin).pathname) === selectedPathname;
-        } catch (error) {
-            return false;
-        }
-    });
-}
-
-function buildRootStageNav(rootItem, rootMenuItems, rootMenuLabel) {
-    const nav = document.createElement('nav');
-    nav.className = 'breadcrumb-root-nav breadcrumb-root-nav-stage';
-    nav.setAttribute('aria-label', rootMenuLabel || rootItem.text || 'Breadcrumb root');
-
-    const menuItems = normalizeMenuState(rootItem, rootMenuItems);
-    const visibleItem = {
-        text: rootItem.text,
-        href: rootItem.href,
-        current: false,
-        menu: menuItems,
-        menu_button_label: rootMenuLabel || rootItem.text || 'Breadcrumb root',
-    };
-    if (rootItem.title) {
-        visibleItem.title = rootItem.title;
-    }
-
-    nav.appendChild(buildTopBreadcrumbItem(visibleItem, 0));
-    return nav;
-}
-
-function buildRootRailNav(rootItem, rootMenuItems, rootMenuLabel) {
-    const nav = document.createElement('nav');
-    nav.className = 'breadcrumb-root-nav breadcrumb-root-nav-list';
-    nav.setAttribute('aria-label', rootMenuLabel || rootItem.text || 'Breadcrumb root');
-
-    const menuItems = normalizeMenuState(rootItem, rootMenuItems);
-    if (menuItems.length <= 1) {
-        const link = document.createElement('a');
-        link.href = rootItem.href;
-        link.className = 'breadcrumb-root-link';
-        applyBreadcrumbPrefetchSlot(link);
-        applyBreadcrumbKind(link, rootItem);
-        link.textContent = rootItem.text;
-        nav.appendChild(link);
-        return nav;
-    }
-
-    const list = document.createElement('div');
-    list.className = 'breadcrumb-root-list';
-    list.setAttribute('role', 'list');
-
-    menuItems.forEach((menuItem) => {
-        const item = document.createElement('span');
-        item.className = 'breadcrumb-root-list-item';
-        item.setAttribute('role', 'listitem');
-
-        const link = document.createElement('a');
-        link.href = menuItem.href;
-        link.className = menuItem.current
-            ? 'breadcrumb-root-link is-current'
-            : 'breadcrumb-root-link';
-        applyBreadcrumbPrefetchSlot(link);
-        applyBreadcrumbKind(link, menuItem);
-        link.textContent = menuItem.text;
-        if (menuItem.current) {
-            link.setAttribute('aria-current', 'page');
-        }
-        if (menuItem.title) {
-            link.title = menuItem.title;
-        }
-
-        item.appendChild(link);
-        list.appendChild(item);
-    });
-
-    nav.appendChild(list);
-    return nav;
-}
-
-export function renderRootSelection(rootItem, rootMenuItems, rootMenuLabel) {
-    if (
-        !rootItem
-        || typeof rootItem.text !== 'string'
-        || rootItem.text === ''
-        || typeof rootItem.href !== 'string'
-        || rootItem.href === ''
-    ) {
-        return;
-    }
-
-    const stageContainer = document.querySelector('.slot-breadcrumb-root-stage');
-    if (stageContainer) {
-        stageContainer.replaceChildren(buildRootStageNav(rootItem, rootMenuItems, rootMenuLabel));
-    }
-
-    const railContainer = document.querySelector('.slot-breadcrumb-root-rail');
-    if (railContainer) {
-        railContainer.replaceChildren(buildRootRailNav(rootItem, rootMenuItems, rootMenuLabel));
-    }
 }

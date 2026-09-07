@@ -6,15 +6,10 @@ weight: 100
 outputs:
   - HTML
 slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
   footer: /fragments/home-footer-shortcuts
 site_update:
   changelog_page: /site/changelog
   labels:
-    label: 站點與更新
-    text: ver
-    home: 首頁
     check: 立即檢查
     checking: 檢查中...
     check_failed: 檢查失敗

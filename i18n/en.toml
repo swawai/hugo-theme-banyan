@@ -36,8 +36,6 @@ other = "Price"
 [products_col_value]
 other = "Value"
 
-[breadcrumb_root_switch]
-other = "Switch root page"
 [products_free]
 other = "Free"
 [products_empty]
@@ -76,12 +74,6 @@ other = "We recommend the [{target}] version of this page.\nContinue?"
 
 [site_update_prompt]
 other = "A new version is ready. Refresh now?"
-
-[site_update_confirm]
-other = "Refresh"
-
-[site_update_later]
-other = "Later"
 
 [notFoundTitle]
 other = "Page not found"

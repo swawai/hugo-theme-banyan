@@ -8,7 +8,7 @@
 
 - 新 worker 能否被发现
 - waiting -> activate -> reload 这条链是否稳定
-- 更新提示是否能在站点页与现有 Ver 菜单中显示
+- 更新提示是否能在第一列「系统－站点」入口与站点页中显示
 - 没有可用更新控件时，是否正确退化到 `confirm`
 - 失败恢复是否会误伤正常用户
 
@@ -31,7 +31,6 @@
 - `themes/banyan/assets/js/sw-manager.enable.runtime.js`
 - `themes/banyan/assets/js/sw-manager.enable.update.js`
 - `themes/banyan/assets/js/preferences/site-update-ui.js`
-- `themes/banyan/assets/js/fragments/nav-utilities/version-menu.js`（导航展平第 4 步删除）
 - `themes/banyan/assets/js/sw-manager.disable.js`
 - `themes/banyan/assets/js/runtime-manifest.js`
 - `themes/banyan/layouts/_default/baseof.html`
@@ -49,13 +48,13 @@
 ### 更新提示界面
 
 - 站点页使用 `data-site-update-panel` 显示版本、检查按钮和状态；共用更新引擎，不依赖下拉菜单
-- 旧固定 Ver 菜单保留 `data-site-version-menu`，在导航展平第 4 步删除
-- 常规页面应只有一个可用旧更新菜单；站点页可同时有旧菜单和新面板
+- 第一列只有一个 `data-site-update-link` 普通链接；有新版本时，其 `data-site-update-state="ready"` 驱动可见标记，`title` 与 `aria-description` 提供本地化状态说明
+- 第一列链接仍然进入站点页，保留阅读返回地址；点击它不会检查或应用更新
+- 旧 Ver 下拉菜单及脚本已移除
 - 当前逻辑应当：
-  - fallback 检查时，同时识别旧版本菜单和站点页更新按钮
-  - 点击 Ver 按钮时打开版本 dropdown
-  - dropdown 提供首页、系统－站点、版本号及状态；站点页链接保留设置返回地址
-  - update ready 时，状态项显示“有新版本 · 点击更新”
+  - fallback 检查时，识别可见的第一列站点链接和站点页更新按钮
+  - 普通页面显示更新标记；进入站点页后，worker 仍处于 waiting
+  - 站点页按钮检查更新，ready 时应用更新；状态项显示“有新版本 · 点击更新”
 
 ### 语言文案
 
@@ -137,6 +136,9 @@ bun run build:browser:temp -- sw-upgrade-after
 - 存在当前 build 对应的 `nav-html-*`
 - 存在当前 build 对应的 `asset-versioned-*`
 - 存在 `asset-fingerprint`
+- 首次导航会预缓存当前 HTML 引用的样式与脚本资源
+- 导航使用 cache-first + versioned，带 hash 资源使用 cache-first + fingerprinted；`sw.js` 不进入缓存
+- `/sw.js` 响应为 `Cache-Control: no-cache, max-age=0, must-revalidate`
 
 失败信号：
 
@@ -166,7 +168,7 @@ bun run build:browser:temp -- sw-upgrade-after
 - 新 build 已部署，但浏览器长时间没有 waiting worker
 - `registration.update()` 后仍停留旧 worker 且无错误线索
 
-### 4. Ver 菜单的更新提示
+### 4. 第一列站点入口的更新提示
 
 建议页面：
 
@@ -178,25 +180,27 @@ bun run build:browser:temp -- sw-upgrade-after
 操作：
 
 1. 让页面进入 update ready 状态
-2. 点击可见的 Ver 更新菜单
+2. 点击第一列「系统－站点」
 
 预期：
 
-- 点击该菜单会出现 version dropdown
+- 第一列只出现一个更新标记，有本地化状态说明
+- 点击链接进入站点页，保留来源 URL 的查询参数和片段
+- 到达站点页后 worker 仍然 waiting，直到点击站点页的更新按钮
 - 不会错误退化为 `window.confirm`
-- breadcrumb 下拉菜单不会被更新提示抢占或遮挡
 
 失败信号：
 
-- 页面上明明有 Ver 菜单，但点击无反应
+- 有 waiting worker，第一列站点入口却没有更新标记
+- 点击普通链接就应用更新或弹出旧 dropdown
 - breadcrumb 当前项仍带有更新提示入口数据属性
-- 可见菜单存在，但仍直接弹 `confirm`
+- 可见入口存在，但仍直接弹 `confirm`
 
-### 5. 无可用菜单时的兜底 fallback
+### 5. 无可用更新入口时的兜底 fallback
 
 建议页面：
 
-- 临时让当前页没有可见 Ver 菜单和站点页更新按钮的场景
+- 临时隐藏第一列站点链接，且当前页没有站点页更新按钮的场景
 - offline 页面不属于这个场景，因为它不注入 enable manager
 
 操作：
@@ -206,12 +210,12 @@ bun run build:browser:temp -- sw-upgrade-after
 
 预期：
 
-- 真正没有可用菜单时，fallback confirm 会出现
+- 真正没有可用入口时，fallback confirm 会出现
 - 点击确认后，会继续走 waiting worker 应用链
 
 失败信号：
 
-- 无菜单也无任何提示
+- 无可用入口也无任何提示
 - fallback 连续反复弹出
 - fallback 出现后不能真正进入激活链
 
@@ -277,21 +281,18 @@ bun run build:browser:temp -- sw-upgrade-after
 操作：
 
 1. 分别让页面进入 update ready
-2. 打开 version dropdown 或 fallback confirm
+2. 查看第一列更新标记、站点页状态或 fallback confirm
 
 预期：
 
 - fallback confirm 文案来自对应语言的 runtime i18n
-- fallback confirm 的三个字段都正确：
-  - `site_update_prompt`
-  - `site_update_confirm`
-  - `site_update_later`
+- 原生 confirm 的提示来自 `site_update_prompt`；按钮文字由浏览器提供
 - 版本界面的字段来自站点页 `site_update.labels`
 
 失败信号：
 
 - 某语言退回英文但其实有本地化资源
-- fallback confirm 字段只部分本地化，或版本界面没有读到站点页文案
+- fallback confirm 提示未本地化，或版本界面没有读到站点页文案
 
 ### 9. fallback 语言链
 
@@ -312,7 +313,7 @@ bun run build:browser:temp -- sw-upgrade-after
 失败信号：
 
 - 仍然退回英文
-- `language-menu` 和 `sw-manager` 对同一语言的 fallback 行为不一致
+- 第一列更新状态仍使用英文，未解析 runtime i18n 的回退关系
 
 ## 关闭模式 checks
 
@@ -338,15 +339,16 @@ bun run build:browser:temp -- sw-upgrade-after
 
 ## 建议的最小回归矩阵
 
-如果不想每次都全测，至少覆盖这 5 组：
+如果不想每次都全测，至少覆盖这 6 组：
 
 1. 首页首次访问
-2. breadcrumb 页面出现 waiting 后，点击 Ver 菜单
-3. Ver 无更新时的版本号 dropdown
-4. `zh-hk` 或 `zh-mo` 的文案 fallback
-5. 站点页移除旧控件后，离线重试、检查新版本、激活刷新及旧导航缓存清理（`sw-system-site-update`）
+2. 首页与集合页面出现 waiting 后，通过第一列链接进入站点页，再应用更新（`sw-update-site-entry-home`、`sw-update-site-entry-collection`）
+3. `zh-hk` 与 `zh-mo` 的入口状态文案 fallback（`sw-update-site-entry-zh-hk`、`sw-update-site-entry-zh-mo`）
+4. 隐藏更新入口后出现一次 confirm，取消后继续保留 waiting（`sw-update-without-visible-control-fallback`）
+5. 站点页离线重试、检查新版本、激活刷新及旧导航缓存清理（`sw-system-site-update`）
+6. 新版本 waiting 时，语言设置页仍然可以使用
 
-运行升级回归时，显式设置 `BANYAN_BROWSER_UPGRADE_FROM_DIR` 和 `BANYAN_BROWSER_UPGRADE_TO_DIR`，指向两个完整构建；站点页回归需要两份都包含系统页。不要让自动选择误用临时结构探针的产物。
+运行升级回归时，显式设置 `BANYAN_BROWSER_UPGRADE_FROM_DIR` 和 `BANYAN_BROWSER_UPGRADE_TO_DIR`，指向两个完整构建；此矩阵需要两份都包含展平后的第一列和系统页。不要让自动选择误用临时结构探针的产物。
 
 ## 出问题时先怀疑哪一层
 
@@ -356,8 +358,8 @@ bun run build:browser:temp -- sw-upgrade-after
 
 1. 新 worker 根本没进入 `waiting`
 2. `data-site-update="ready"` 没被设置
-3. 当前页没有可用 Ver 菜单
-4. 菜单存在但点击命中的不是可用 Ver 入口
+3. 当前页没有可见的 `data-site-update-link` 或站点页更新按钮
+4. 入口的 `data-site-update-state` 或可见标记样式未更新
 
 ### 文案语言不对
 
@@ -386,10 +388,9 @@ bun run build:browser:temp -- sw-upgrade-after
 
 ## 当前已知敏感点
 
-### 固定版本菜单
+### 更新入口与操作分开
 
-常规页面应由固定 Ver 菜单独占 `data-site-version-menu`。
-breadcrumb、root rail、menu panel current option 不应再承担更新提示职责。
+第一列「系统－站点」独占 `data-site-update-link`，仅显示更新状态并导航。检查、应用更新都由站点页按钮执行；其他 breadcrumb 列和当前菜单选项不应带更新动作。
 
 ### 4 秒激活超时
 
