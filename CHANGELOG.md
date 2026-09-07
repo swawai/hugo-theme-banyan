@@ -22,6 +22,8 @@ and migration decisions.
 
 ### Changed
 
+- Aligned section index headings and column widths with the shared collection
+  styles, keeping site-information lists compact on desktop and narrow screens.
 - Moved default about and changelog bundles under `content/site/`, preserving
   their public URLs and updating navigation, footer, and agent-access lookups.
 - Made security, HTML audit, browser regression, and speculation-rules checks

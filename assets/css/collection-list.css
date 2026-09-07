@@ -94,6 +94,17 @@
     text-decoration: none;
 }
 
+.collection-list--index {
+    inline-size: var(--navigation-column-inline);
+    max-inline-size: 100%;
+}
+
+.collection-list--index > .collection-list-header {
+    margin: 0 0 0.14rem;
+    font-weight: 400;
+    line-height: 1.55;
+}
+
 .collection-sort-indicator {
     display: inline-block;
     min-width: 1.5ch;

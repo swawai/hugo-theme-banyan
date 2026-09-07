@@ -8,23 +8,23 @@
 
 {{ define "main" }}
 <article class="article">
-  <div class="prose">
-    <h1>{{ .Title }}</h1>
-    {{ .Content }}
-  </div>
-  <div class="grid-list grid-list--single collection-list collection-list--grid">
+  <div class="collection-list collection-list--index">
+    <h1 class="collection-list-header">{{ .Title }}</h1>
+    {{ with .Content }}<div class="prose">{{ . }}</div>{{ end }}
     {{ $entries := slice }}
-    {{ range .Pages.ByWeight }}
-      {{ partial "grid-title-cell.html" (dict
-        "ctx" $
-        "href" .RelPermalink
-        "title" .Title
-        "text" .LinkTitle
-        "icon" (cond .IsSection "folder" "file")
-        "linkSlot" "nav") }}
-      {{ $entries = $entries | append (dict "url" .Permalink "name" .Title) }}
-    {{ end }}
+    <div class="grid-list grid-list--single collection-list--grid">
+      {{ range .Pages.ByWeight }}
+        {{ partial "grid-title-cell.html" (dict
+          "ctx" $
+          "href" .RelPermalink
+          "title" .Title
+          "text" .LinkTitle
+          "icon" (cond .IsSection "folder" "file")
+          "linkSlot" "nav") }}
+        {{ $entries = $entries | append (dict "url" .Permalink "name" .Title) }}
+      {{ end }}
+    </div>
+    {{ partial "schema-itemlist.html" (dict "entries" $entries) }}
   </div>
-  {{ partial "schema-itemlist.html" (dict "entries" $entries) }}
 </article>
 {{ end }}
