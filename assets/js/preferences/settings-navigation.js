@@ -1,3 +1,5 @@
+import { NAVIGATION_STATE_CHANGE_EVENT } from '../navigation-events.js';
+
 // A settings return address is separate from the article collection's `from` state.
 export function localUrl(value) {
     if (typeof value !== 'string' || !value) return null;
@@ -33,5 +35,8 @@ export function initSettingsNavigation() {
     document.addEventListener('click', (event) => {
         if (event.target instanceof Element && event.target.closest('[data-settings-link]')) refreshLinks();
     }, true);
+    document.addEventListener(NAVIGATION_STATE_CHANGE_EVENT, refreshLinks);
+    window.addEventListener('hashchange', refreshLinks);
+    window.addEventListener('popstate', refreshLinks);
     window.addEventListener('pageshow', refreshLinks);
 }

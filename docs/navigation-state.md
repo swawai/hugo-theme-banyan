@@ -59,6 +59,11 @@
 它不参与 collection lineage，也不替代 `from`。语言设置读取原页面的静态翻译
 关系后，将原查询参数和锚点带到对应翻译页；缺少翻译时先确认，再去目标语言首页。
 
+系统链接的 `href` 在导航状态改变时同步更新，而不是等用户左键点击时再修正。
+两种集合排序完成 URL 更新后发出 `banyan:navigation-state-change`；系统链接还响应
+`hashchange`、`popstate` 和 `pageshow`。这样中键打开、复制链接也能保留最新状态。
+排序仅替换 URL，保留已有 `history.state`，不覆盖该次访问的其他状态。
+
 ### `sort`
 
 `sort` 表示当前页面的活动 collection 排序。

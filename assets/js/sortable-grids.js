@@ -16,9 +16,9 @@ import {
     readEffectiveSortsTokens,
 } from './nav-state.js';
 import {
-    BREADCRUMB_SORT_CHANGE_EVENT,
     refreshBreadcrumbCollectionColumns,
 } from './breadcrumb-column-sort.js';
+import { NAVIGATION_STATE_CHANGE_EVENT } from './navigation-events.js';
 import {
     ENTRY_LINEAGE_FIELD,
     hasFieldValue,
@@ -75,7 +75,8 @@ function buildSortHref(token, defaultToken) {
 function writeSortToken(token, defaultToken) {
     const url = new URL(window.location.href);
     applySortTokenToUrl(url, token, defaultToken);
-    window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    document.dispatchEvent(new Event(NAVIGATION_STATE_CHANGE_EVENT));
 }
 
 function buildRelativeHref(url) {
@@ -327,7 +328,7 @@ async function initSortableGrids() {
     });
 }
 
-document.addEventListener(BREADCRUMB_SORT_CHANGE_EVENT, refreshSortableGridNavigation);
+document.addEventListener(NAVIGATION_STATE_CHANGE_EVENT, refreshSortableGridNavigation);
 document.addEventListener('DOMContentLoaded', () => {
     void initSortableGrids();
 });

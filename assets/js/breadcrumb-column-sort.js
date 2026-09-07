@@ -14,8 +14,7 @@ import {
     readCurrentFromPath,
 } from './nav-state.js';
 import { getRuntimeFragmentRoot } from './runtime-manifest.js';
-
-export const BREADCRUMB_SORT_CHANGE_EVENT = 'banyan:breadcrumb-sort-change';
+import { NAVIGATION_STATE_CHANGE_EVENT } from './navigation-events.js';
 
 let collectionSourceIndex = null;
 let renderId = 0;
@@ -185,7 +184,7 @@ export function initBreadcrumbColumnSort() {
         const currentInteractionId = ++interactionId;
         const shouldRestoreFocus = document.activeElement === toggle;
         window.history.replaceState(window.history.state, '', nextHref);
-        document.dispatchEvent(new Event(BREADCRUMB_SORT_CHANGE_EVENT));
+        document.dispatchEvent(new Event(NAVIGATION_STATE_CHANGE_EVENT));
         void refreshBreadcrumbCollectionColumns().then(() => {
             if (!shouldRestoreFocus || currentInteractionId !== interactionId) {
                 return;
