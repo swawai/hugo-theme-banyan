@@ -69,7 +69,7 @@ export const systemPageScenarios = [
                 assert.equal(await page.locator(`[data-root-href="${prefix}/updates/"] .icon--text`).textContent(), '↻');
                 const aboutIcon = page.locator(`[data-root-href="${prefix}/about/"] img.icon--image`);
                 const aboutIconHref = await aboutIcon.getAttribute('src');
-                assert.match(aboutIconHref, /^\/site\/brand\/lib\/bornwhy\.[a-f0-9]{64}\.svg$/);
+                assert.equal(aboutIconHref, await page.locator('head link[rel="icon"][type="image/svg+xml"]').getAttribute('href'), 'The About entry reuses the published site favicon.');
                 await aboutIcon.evaluate(image => image.decode());
                 assert.deepEqual(await aboutIcon.evaluate(image => ({width: image.getBoundingClientRect().width, height: image.getBoundingClientRect().height})), {width: 15, height: 15});
                 assert.equal(await page.locator(`${grid} [data-site-update-action]`).count(), 0, 'Update actions stay outside sortable content.');
