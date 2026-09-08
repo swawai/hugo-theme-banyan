@@ -43,6 +43,7 @@ PWA 状态是主题 `content/site/pwa/index*.md` 的真实子页，声明 `layou
 
 | 实体文件（三语言） | 内容职责 |
 | --- | --- |
+| 项目 `content/site/about/index*.md` | Swaw 与创始人介绍；`icon: { image: "site/brand/lib/bornwhy.svg" }` 使用项目个人头像，按通用 assets 规则哈希发布，点击仍进入关于页 |
 | 项目 `content/wechat/index*.md` | 微信二维码页面；`icon: wechat`、`weight: 101` |
 | 主题 `content/rss/index*.md` | RSS 订阅说明，正文调用 `{{< rss-link >}}`；`icon: rss`、`weight: 103` |
 | 主题 `content/github/index*.md` | 默认的 Banyan 仓库说明；`icon: github`、`weight: 102`，项目可同路径覆盖 |

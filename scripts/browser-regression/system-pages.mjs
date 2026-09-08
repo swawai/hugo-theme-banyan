@@ -70,6 +70,11 @@ export const systemPageScenarios = [
                 const expected = children.map(name => `${prefix}/${name}/`).sort();
                 assert.deepEqual((await rowPaths(links)).sort(), expected, 'Only real site children belong to the directory.');
                 assert.equal(await page.locator(`${links}[href*="/site/pwa/"] .icon--text`).textContent(), '↻');
+                const aboutIcon = page.locator(`${links}[href*="/about/"] img.icon--image`);
+                const aboutIconHref = await aboutIcon.getAttribute('src');
+                assert.match(aboutIconHref, /^\/site\/brand\/lib\/bornwhy\.[a-f0-9]{64}\.svg$/);
+                await aboutIcon.evaluate(image => image.decode());
+                assert.deepEqual(await aboutIcon.evaluate(image => ({width: image.getBoundingClientRect().width, height: image.getBoundingClientRect().height})), {width: 15, height: 15});
                 assert.equal(await page.locator(`${grid} [data-site-update-action]`).count(), 0, 'Update actions stay outside sortable content.');
                 assert.equal(await page.locator('[data-site-update-panel], [data-site-update-action], [data-page-action="back"]').count(), 0, 'The directory contains no appended system controls.');
                 assert.equal(await page.locator('[data-site-update-link]').count(), 0, 'Root navigation does not specialize the site entry.');
@@ -160,6 +165,7 @@ export const systemPageScenarios = [
                     assert.deepEqual(await rowPaths('.slot-breadcrumb .collection-item-link'), expectedPaths);
                     assert.equal(await page.locator(`.slot-breadcrumb .is-current[href*="/${name}/"]`).count(), 1);
                     assert.equal(await page.locator('.slot-breadcrumb a[href*="/site/pwa/"] .icon--text').textContent(), '↻');
+                    assert.equal(await page.locator('.slot-breadcrumb a[href*="/about/"] img.icon--image').getAttribute('src'), aboutIconHref);
                 };
                 const defaultPaths = await rowPaths(links);
                 for (const name of children) {
