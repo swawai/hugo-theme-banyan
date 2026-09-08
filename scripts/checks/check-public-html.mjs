@@ -17,7 +17,8 @@ const productionGuardrails = [
         relativePath: 'index.html',
         // The canvas adds about 1 KB of inline positioning before first paint.
         maxRawBytes: 21_000,
-        maxGzipBytes: 7_000,
+        // Restoring the cloud/moon theme sprite adds about 180 B gzip.
+        maxGzipBytes: 7_200,
         maxBreadcrumbPayloadBytes: 16,
         maxBreadcrumbSourceCount: 0
     },
