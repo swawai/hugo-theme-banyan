@@ -19,7 +19,9 @@
 
 每步保持可运行并独立提交，用户确认后再进入下一步。复用现有回归，验证多语言、进入路径、排序、前进后退和系统操作；补充新入口及各宽度下的视觉核对。主题能力在本目录所属主题实现，业务内容在项目根目录同步；使用根目录内容测试，忽略 `exampleSite`。
 
-当前行动安排（2026-09-08，以下规则优先于后面的历史记录）：
+当前行动安排（2026-09-09，以下规则优先于后面的历史记录）：
+
+PWA 条目图标：主题三语言 `content/site/pwa/index*.md` 声明 `icon: { text: "↻" }`，沿用当前 15px 字号和 1.5rem 图标占位；目录主表、文章路径列及运行时数据使用相同字符，不增加特殊样式。生产构建 `temp_workspace/public/2609090012-pwa-update-icon` 的 141 页 HTML 审计及 `system-site-directory` 回归通过（`temp_workspace/regression/260909001233-browser/report.json`），验证三语言目录、路径列及排序／刷新／历史中的字符图标。关于条目暂未修改，已做现有 `info` SVG 的临时预览。
 
 说明页目标链接：RSS 订阅地址、备案页两个查询链接、GitHub 头像和文字链接均使用原生新标签打开，第一列入口仍在当前标签打开说明页。RSS 短代码为既有 `link.html` 传入 `target="_blank"` 和 `rel="noopener noreferrer"`；GitHub／备案正文使用小型 `new-tab` 短代码复用同一渲染器，主题 GitHub 默认页同步采用。保留 `unsafe: false`，不增加 JS 或全站链接重写。生产构建 `temp_workspace/public/2609082309-info-links-new-tab` 的 141 页 HTML 审计及 `system-site-directory` 回归通过（`temp_workspace/regression/260908231037-browser/report.json`）；三语言共 15 次实际点击验证新标签 URL、`window.opener` 为空、原页面 URL 保持，以及根入口仍在当前标签打开。测试拦截目标响应以排除外站和 XML 查看器差异，RSS 实际 XML 仍独立读取校验。
 

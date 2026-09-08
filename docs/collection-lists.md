@@ -65,7 +65,7 @@ GitHub 和备案页的目标链接使用 `{{< new-tab href="https://example.com/
 
 ## 怎样声明条目图标
 
-字符图标继承条目字号（当前为 15px），不再缩小到 `0.75em`。文字和 SVG 共用 `1.5rem` 宽的居中占位，容纳 `EN` 等短标记并保持名称起点一致；SVG 图形本身仍为 `1rem`。字符的具体字形由字体决定，需要严格一致的几何外观时使用 SVG。
+字符图标继承条目字号（当前为 15px），不再缩小到 `0.75em`。文字和 SVG 共用 `1.5rem` 宽的居中占位，容纳 `EN` 等短标记并保持名称起点一致；SVG 图形本身仍为 `1rem`。PWA 状态页在三语言 front matter 声明 `icon: { text: "↻" }`，表示查看版本与检查更新，无需调整公共字号或占位。字符的具体字形由字体决定，需要严格一致的几何外观时使用 SVG。
 
 SVG 名称来自 `data/icons.toml`，字符使用 `icon: { text: "©" }`，页面图片使用 `icon: { image: "0.webp" }`；三者都使用同一个 `icon` 值，不根据引号或是否命中图标库猜测类型。内容支持三个字段：`icon` 指定自己被列出时的图标，`list_icon_folder`／`list_icon_file` 分别指定本列表中的目录或分类／文章的默认图标。例如主题 `content/products/_index.zh.md` 可以声明：
 

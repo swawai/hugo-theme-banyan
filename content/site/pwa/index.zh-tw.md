@@ -5,6 +5,7 @@ type: page
 date: 2026-09-08
 slug: pwa
 layout: pwa-page
+icon: { text: "↻" }
 outputs:
   - HTML
 robots: noindex, follow

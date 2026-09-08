@@ -69,6 +69,7 @@ export const systemPageScenarios = [
                 const children = ['about', 'changelog', 'site/pwa'];
                 const expected = children.map(name => `${prefix}/${name}/`).sort();
                 assert.deepEqual((await rowPaths(links)).sort(), expected, 'Only real site children belong to the directory.');
+                assert.equal(await page.locator(`${links}[href*="/site/pwa/"] .icon--text`).textContent(), '↻');
                 assert.equal(await page.locator(`${grid} [data-site-update-action]`).count(), 0, 'Update actions stay outside sortable content.');
                 assert.equal(await page.locator('[data-site-update-panel], [data-site-update-action], [data-page-action="back"]').count(), 0, 'The directory contains no appended system controls.');
                 assert.equal(await page.locator('[data-site-update-link]').count(), 0, 'Root navigation does not specialize the site entry.');
@@ -158,6 +159,7 @@ export const systemPageScenarios = [
                     assert.equal(await page.locator(`[data-root-href="${prefix}/site/"].is-current`).count(), 1);
                     assert.deepEqual(await rowPaths('.slot-breadcrumb .collection-item-link'), expectedPaths);
                     assert.equal(await page.locator(`.slot-breadcrumb .is-current[href*="/${name}/"]`).count(), 1);
+                    assert.equal(await page.locator('.slot-breadcrumb a[href*="/site/pwa/"] .icon--text').textContent(), '↻');
                 };
                 const defaultPaths = await rowPaths(links);
                 for (const name of children) {
