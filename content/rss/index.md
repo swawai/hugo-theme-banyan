@@ -6,6 +6,7 @@ slug: rss
 type: page
 layout: article-page
 icon: rss
+weight: 103
 outputs:
   - HTML
 build:

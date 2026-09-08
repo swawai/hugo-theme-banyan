@@ -6,6 +6,7 @@ slug: github
 type: page
 layout: article-page
 icon: github
+weight: 102
 outputs:
   - HTML
 build:

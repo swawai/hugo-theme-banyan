@@ -44,7 +44,7 @@ export const systemPageScenarios = [
                 assert.deepEqual(await geometry(), directoryGeometry, 'Site and directory use the same columns, row height and icon spacing.');
                 assert.equal(await page.locator(grid).count(), 1);
                 assert.deepEqual(await page.locator(`${grid} [data-sort-field]`).evaluateAll(nodes => nodes.map(node => node.dataset.sortField)), ['name', 'date', 'count']);
-                const children = ['wechat', 'about', 'changelog', 'site/pwa', 'site/rss', 'site/github'];
+                const children = ['about', 'changelog', 'site/pwa'];
                 const expected = children.map(name => `${prefix}/${name}/`).sort();
                 assert.deepEqual((await rowPaths(links)).sort(), expected, 'Only real site children belong to the directory.');
                 assert.equal(await page.locator(`${grid} [data-site-update-action]`).count(), 0, 'Update actions stay outside sortable content.');
@@ -56,9 +56,6 @@ export const systemPageScenarios = [
                 assert.equal(await page.locator(`${homeEntry} .collection-item-title`).textContent(), brand);
                 assert.equal(await page.locator(`${homeEntry}.is-current`).count(), 0);
                 assert.equal(await page.locator(homeEntry).getAttribute('href'), `${prefix}/`);
-                for (const [name, icon] of [['rss', 'rss'], ['github', 'github']]) {
-                    assert.equal(await page.locator(`${links}[href*="/site/${name}/"] use`).getAttribute('href'), `#icon-${icon}`);
-                }
                 const filingEntry = page.locator(`[data-root-href="${prefix}/icp/"]`);
                 const filingIcon = filingEntry.locator('img.icon--image');
                 assert.match(await filingIcon.getAttribute('src'), /^\/media\/content\/icp\/0\.[a-f0-9]{64}\.webp$/);
@@ -75,6 +72,51 @@ export const systemPageScenarios = [
                 await page.waitForURL(`${baseUrl}${prefix}/site/`);
                 await waitForBreadcrumbSettled(page);
 
+                for (const name of ['wechat', 'github', 'rss']) {
+                    const entry = page.locator(`[data-root-href="${prefix}/${name}/"]`);
+                    assert.equal(await entry.locator('use').getAttribute('href'), `#icon-${name}`);
+                    await entry.click();
+                    await waitForBreadcrumbSettled(page);
+                    const assertRootPage = async () => {
+                        assert.equal(new URL(page.url()).pathname, `${prefix}/${name}/`);
+                        assert.equal(new URL(page.url()).search, '', 'An ordinary root link carries no directory source.');
+                        assert.deepEqual(await rowPaths('[data-root-href].is-current'), [`${prefix}/${name}/`]);
+                        assert.equal(await page.locator('[data-root-href]').count(), 15);
+                        assert.equal(await page.locator('.slot-breadcrumb .collection-item-link').count(), 0, 'Promoted pages do not retain a site directory column.');
+                    };
+                    await assertRootPage();
+                    if (name === 'github') {
+                        assert.equal(await page.locator('.slot-main .prose a[href="https://github.com/swawai"]').count(), 1);
+                    } else if (name === 'wechat') {
+                        const qrImages = page.locator('.slot-main .prose img');
+                        assert.equal(await qrImages.count(), 2);
+                        await qrImages.evaluateAll(images => Promise.all(images.map(image => image.decode())));
+                    } else {
+                        const feed = page.locator(`.slot-main .prose a[href="${feedHref}"]`);
+                        assert.equal(await feed.count(), 1, 'RSS uses the actual language homepage output.');
+                        assert.equal(new URL((await feed.textContent()).trim()).pathname, new URL(feedHref, baseUrl).pathname, 'The visible subscription address can be copied into a reader.');
+                        const response = await page.request.get(new URL(feedHref, baseUrl).href);
+                        assert.equal(response.status(), 200);
+                        const xml = await response.text();
+                        assert.match(xml, /<rss\b/);
+                        assert.match(xml, /<item>/);
+                        assert(!/\/(?:wechat|rss|github|icp)\//.test(xml), 'Local information pages do not become feed articles.');
+                    }
+                    if (prefix === '/zh') await page.screenshot({ path: path.join(artifactDir, `root-${name}.png`) });
+                    await page.reload();
+                    await waitForBreadcrumbSettled(page);
+                    await assertRootPage();
+                    await page.goBack();
+                    await page.waitForURL(`${baseUrl}${prefix}/site/`);
+                    await waitForBreadcrumbSettled(page);
+                    await page.goForward();
+                    await waitForBreadcrumbSettled(page);
+                    await assertRootPage();
+                    await page.goBack();
+                    await page.waitForURL(`${baseUrl}${prefix}/site/`);
+                    await waitForBreadcrumbSettled(page);
+                }
+
                 const assertArticle = async (name, expectedPaths) => {
                     assert.equal(await page.locator(`[data-root-href="${prefix}/site/"].is-current`).count(), 1);
                     assert.deepEqual(await rowPaths('.slot-breadcrumb .collection-item-link'), expectedPaths);
@@ -86,19 +128,6 @@ export const systemPageScenarios = [
                     await waitForBreadcrumbSettled(page);
                     await assertArticle(name, defaultPaths);
                     assert.equal(new URL(page.url()).pathname, `${prefix}/${name}/`, 'Selecting an information page stays on that page.');
-                    if (name === 'site/github') {
-                        assert.equal(await page.locator('.slot-main .prose a[href="https://github.com/swawai"]').count(), 1);
-                    } else if (name === 'site/rss') {
-                        const feed = page.locator(`.slot-main .prose a[href="${feedHref}"]`);
-                        assert.equal(await feed.count(), 1, 'RSS uses the actual language homepage output.');
-                        assert.equal(new URL((await feed.textContent()).trim()).pathname, new URL(feedHref, baseUrl).pathname, 'The visible subscription address can be copied into a reader.');
-                        const response = await page.request.get(new URL(feedHref, baseUrl).href);
-                        assert.equal(response.status(), 200);
-                        const xml = await response.text();
-                        assert.match(xml, /<rss\b/);
-                        assert.match(xml, /<item>/);
-                        assert(!/\/(?:site\/(?:rss|github)|icp)\//.test(xml), 'Local information pages do not become feed articles.');
-                    }
                     if (prefix === '/zh') await page.screenshot({ path: path.join(artifactDir, `site-${name.replaceAll('/', '-')}-default.png`) });
                     if (name === 'site/pwa') assert.equal(await page.locator('.slot-main > article [data-site-update-panel]').count(), 1, 'Only the real PWA child renders its update controls.');
                     await page.goBack();
@@ -142,7 +171,7 @@ export const systemPageScenarios = [
                     await waitForBreadcrumbSettled(page);
                 }
             }
-            return { message: 'Six real site children retain their columns and selection in three languages across sort/reload/history; home and ICP are the final ordinary root entries, information links stay in their pages, and RSS resolves to the actual language feed.' };
+            return { message: 'Three site children retain directory navigation; WeChat, GitHub and RSS are ordinary root pages with declared icons, stable selection across reload/history and working content in all three languages.' };
         }
     },
     {
@@ -159,7 +188,7 @@ export const systemPageScenarios = [
                     href: new URL(link.href).pathname + new URL(link.href).search + new URL(link.href).hash,
                     root: link.dataset.rootHref
                 })));
-                assert.equal(links.length, 12);
+                assert.equal(links.length, 15);
                 assert(links.every(link => link.href === link.root), 'All root entries retain their ordinary page URLs.');
             };
             await gotoAndWait(page, baseUrl + '/zh/all/');

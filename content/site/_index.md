@@ -2,7 +2,7 @@
 title: System - Site
 linkTitle: Site
 icon: { image: "site/pwa/favicon.svg" }
-description: Site information, release notes, and contact pages.
+description: Site information, release notes, and PWA status.
 layout: article-list
 list: directory
 weight: 100

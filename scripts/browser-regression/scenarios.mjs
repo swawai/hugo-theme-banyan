@@ -691,7 +691,7 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
             const rootPaths = ['d', 'intent', 'tags', 'all', 'products', 'all-products',
-                'language', 'appearance', 'my', 'site', 'icp', ''];
+                'language', 'appearance', 'my', 'site', 'wechat', 'github', 'rss', 'icp', ''];
             await gotoAndWait(page, `${baseUrl}/zh/all/`);
             const staticRoots = await page.evaluate(async (paths) => {
                 const results = [];
@@ -732,6 +732,9 @@ export const scenarios = [
                     || state.icons.language !== '#icon-language'
                     || state.icons.appearance !== '#icon-theme'
                     || state.icons.my !== '#icon-my'
+                    || state.icons.wechat !== '#icon-wechat'
+                    || state.icons.github !== '#icon-github'
+                    || state.icons.rss !== '#icon-rss'
                     || !state.favicon || state.siteIcon !== state.favicon) {
                     fail('Every locale must SSR one weighted root list with ordinary URLs, declared icons and no settings-link rewriting markers.', state);
                 }
@@ -769,7 +772,7 @@ export const scenarios = [
         timeoutMs: 60000,
         async run({ page, baseUrl }) {
             const expectedRoots = ['d', 'intent', 'tags', 'all', 'products', 'all-products',
-                'language', 'appearance', 'my', 'site', 'icp', ''].map((root) => `/zh/${root ? root + '/' : ''}`);
+                'language', 'appearance', 'my', 'site', 'wechat', 'github', 'rss', 'icp', ''].map((root) => `/zh/${root ? root + '/' : ''}`);
             const assertSelection = async (expected) => {
                 await waitForBreadcrumbSettled(page);
                 const state = await page.evaluate(() => ({
@@ -792,7 +795,9 @@ export const scenarios = [
                 ['/zh/p/xvenv/?from=products', '/zh/d/'],
                 ['/zh/about/', '/zh/site/'],
                 ['/zh/changelog/', '/zh/site/'],
-                ['/zh/wechat/', '/zh/site/'],
+                ['/zh/wechat/', '/zh/wechat/'],
+                ['/zh/github/', '/zh/github/'],
+                ['/zh/rss/', '/zh/rss/'],
                 ['/zh/icp/', '/zh/icp/'],
                 ['/zh/language/?return=%2Fzh%2Fall%2F', '/zh/language/'],
                 ['/zh/appearance/?return=%2Fzh%2Fall%2F', '/zh/appearance/'],

@@ -6,7 +6,7 @@
 
 第一列复用第二、三列的 `grid-title-cell.html`、`collection/item-content.html` 和 `collection-list.css`，沿用行结构、图标、间距、悬停及 `.is-current` 选中态；适配容器与断点限制。统一入口列表保持完整，来源变化只更新选中项，避免原根菜单渲染函数把它替换成局部菜单。
 
-目标入口：目录、阅读目的、标签、全部文章、产品－分类、产品－全部、语言、外观、我的、站点、备案（图片图标＋粤ICP备2024338434号）、首页（© 2026 Swaw）。
+目标入口：目录、阅读目的、标签、全部文章、产品－分类、产品－全部、语言、外观、我的、站点、微信、GitHub、RSS 订阅、备案（图片图标＋粤ICP备2024338434号）、首页（© 2026 Swaw）。
 
 实施顺序：
 
@@ -20,6 +20,10 @@
 每步保持可运行并独立提交，用户确认后再进入下一步。复用现有回归，验证多语言、进入路径、排序、前进后退和系统操作；补充新入口及各宽度下的视觉核对。主题能力在本目录所属主题实现，业务内容在项目根目录同步；使用根目录内容测试，忽略 `exampleSite`。
 
 当前行动安排（2026-09-08，以下规则优先于后面的历史记录）：
+
+联系与订阅入口：只将微信、GitHub、RSS 从 `content/site/` 提升到内容根层级，主题默认页与项目覆盖页同步迁移。三语言依次声明 `weight: 101/102/103`，沿用 `wechat/github/rss` SVG 图标；微信新增 `icon: wechat`。第一列仍按真实根页面生成，共 15 项，不修改导航模板或增加菜单声明。站点保留关于、更新记录、PWA 状态，Logo 与现有目录交互保持。微信继续 `/wechat/`，GitHub、RSS 改为 `/github/`、`/rss/`；sitemap 同步引用新内容路径，正文外部链接与当前语言 RSS 解析保持。
+
+联系与订阅入口验收：生产构建 `temp_workspace/public/2609082242-contact-root-entries` 的 141 页 HTML 审计及 4 项相关浏览器回归通过（`temp_workspace/regression/260908224256-browser/report.json`）。覆盖三语言 15 项根导航、微信 SVG 与二维码解码、GitHub 正文目标、RSS 实际地址及 XML、站点剩余三项排序和路径列，以及根入口选中、刷新、历史与设置返回。已查看站点和微信页截图；当前局域网预览服务未运行，本轮使用测试构建验证。
 
 站点 Logo：三语言站点入口声明 `icon: { image: "site/pwa/favicon.svg" }`，通用图片图标改为调用现有 `asset/publish.html`，复用页面 bundle／全站 assets 的既有解析和哈希发布规则。入口 Logo 与 HTML 的 favicon 共用 `/site/pwa/favicon.<sha256>.svg`；不复制 Logo、不增加发布器或 JS 分支。图片目录默认值和自身声明均支持 assets，既有 ICP bundle 图片继续使用原哈希路径。
 

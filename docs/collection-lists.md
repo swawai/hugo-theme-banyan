@@ -15,7 +15,7 @@
 | 上述文件的 `cascade`，目标 `kind: term` | `list: products` | 每个分类的 `.Pages`，无需逐类写来源 |
 | 主题 `content/all/index.zh.md` | `list: all`、`aggregate: /d` | `/d/` 下全部文章 |
 | 主题 `content/all-products/_index.zh.md` | `list: products`、`aggregate: /products` | 产品分类成员的去重并集 |
-| 主题 `content/site/_index.zh.md` | `list: directory` | 站点目录的直接子项：关于、更新记录、微信等真实页面 |
+| 主题 `content/site/_index.zh.md` | `list: directory` | 站点目录的直接子项：关于、更新记录、PWA 状态 |
 | 主题 `content/language/index.zh.md` | `list: choice` | `hugo.toml` 已启用的语言 |
 | 主题 `content/appearance/index.zh.md` | `list: choice` | 跟随系统、浅色、深色 |
 
@@ -33,24 +33,25 @@ list: products
 
 站点目录与 `/d/` 一样声明 `layout: article-list`、`list: directory`，完整复用相同模板、集合来源、排序及路径列。目录中只有真实子项，没有追加的版本、检查、状态或返回按钮；全站骨架、公共样式装配和根导航均不再识别 `site_update`。
 
-PWA 状态是主题 `content/site/pwa/index*.md` 的真实子页，声明 `layout: pwa-page` 和 `slots.breadcrumb: true`，在目录中和关于、微信一样显示、排序、选中。该子页的布局直接装配更新操作并加载所需样式，`site_update` 文案与更新记录引用也由该子页提供；更新引擎保持独立。语言、外观页的返回按钮分别由各自布局明确调用，不由全站骨架追加。
+PWA 状态是主题 `content/site/pwa/index*.md` 的真实子页，声明 `layout: pwa-page` 和 `slots.breadcrumb: true`，在目录中和关于、更新记录一样显示、排序、选中。该子页的布局直接装配更新操作并加载所需样式，`site_update` 文案与更新记录引用也由该子页提供；更新引擎保持独立。语言、外观页的返回按钮分别由各自布局明确调用，不由全站骨架追加。
 
 站点根与既有子页通过 `slots.breadcrumb: true` 启用路径列，目录的 `cascade` 同时为未声明 `slots` 的新子页提供默认值。已有子页自行声明了 `slots`，需在原 map 内加入 `breadcrumb: true`，不能期待父级 cascade 自动补进该 map。
 
 ## 站点信息与 RSS
 
-RSS、GitHub 和备案信息都使用普通 `article-page`，不新增外链条目类型、跳转布局或列表分支。它们声明 `build.list: local`、`slots.breadcrumb: true`，作为站点目录的真实子页参与排序和路径导航，但不进入全站文章 RSS。
+微信、GitHub、RSS 和备案信息都使用普通 `article-page`，声明 `build.list: local`、`slots.breadcrumb: true`。它们位于内容根层级，自动成为第一列普通入口，不进入全站文章 RSS；点击入口先打开说明页面，外部目标仍由正文链接提供。
 
 | 实体文件（三语言） | 内容职责 |
 | --- | --- |
-| 主题 `content/site/rss/index*.md` | RSS 订阅说明，正文调用 `{{< rss-link >}}` |
-| 主题 `content/site/github/index*.md` | 默认的 Banyan 仓库说明；项目可同路径覆盖 |
-| 项目 `content/site/github/index*.md` | Swaw 的 GitHub 主页说明与链接 |
+| 项目 `content/wechat/index*.md` | 微信二维码页面；`icon: wechat`、`weight: 101` |
+| 主题 `content/rss/index*.md` | RSS 订阅说明，正文调用 `{{< rss-link >}}`；`icon: rss`、`weight: 103` |
+| 主题 `content/github/index*.md` | 默认的 Banyan 仓库说明；`icon: github`、`weight: 102`，项目可同路径覆盖 |
+| 项目 `content/github/index*.md` | Swaw 的 GitHub 主页说明与链接，保留完整入口声明 |
 | 项目 `content/icp/index*.md` | 本站备案说明及工信部查询链接；作为普通根入口，`linkTitle: "粤ICP备2024338434号"`、`icon: { image: "0.webp" }`、`weight: 105`，排在首页入口之前；正文备案号本身链接到工信部查询网站；主题不存放业务备案信息 |
 
 `layouts/shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。GitHub 和备案链接直接写在 Markdown 正文中，用户进入说明页后自行点击。
 
-微信继续使用已有 `content/site/wechat/`。版权与备案均已成为普通根入口，旧页脚及其片段配置已移除。
+三个入口依次排在站点（`100`）之后、备案（`105`）和首页版权（`110`）之前。微信保持 `/wechat/`，GitHub、RSS 分别使用 `/github/`、`/rss/`，各语言沿用原语言前缀。站点中保留关于、更新记录、PWA 状态；旧页脚及其片段配置已移除。
 
 ## 统一更新时间
 
@@ -144,6 +145,6 @@ weight: 30
 
 ## 验证
 
-路径数据文件由各语言首页发布，直接使用当前语言来源模型的 `current_collection_items`，不在默认语言首页重新构建所有语言的数据。这样页面内嵌数据与后续请求的 `_items.json` 完全相同，避免中文主表使用中文排序、路径列却使用默认语言排序。浏览器回归 `system-site-directory` 覆盖根项目的七个真实子项、三语言列表几何、排序、进入后的路径顺序和刷新／历史恢复，同时验证首页普通入口、无页脚、信息页停留与目标链接、RSS 地址及 XML 内容。
+路径数据文件由各语言首页发布，直接使用当前语言来源模型的 `current_collection_items`，不在默认语言首页重新构建所有语言的数据。这样页面内嵌数据与后续请求的 `_items.json` 完全相同，避免中文主表使用中文排序、路径列却使用默认语言排序。浏览器回归 `system-site-directory` 覆盖根项目的三个站点子项、三语言列表几何、排序、进入后的路径顺序和刷新／历史恢复，同时验证微信、GitHub、RSS 三个普通根入口的图标、选中、内容与历史，以及首页入口、备案、无页脚、RSS 地址及 XML 内容。
 
 在根项目执行 `node themes/banyan/scripts/checks/check-collections.mjs`。它只向 `temp_workspace/` 写临时内容覆盖层，基于根内容构建三种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。时间用例覆盖发布日期与更新时间不同、只填更新时间、默认日期来源、完全无时间、目录／平面与树形分类汇总，以及升降序进入文章后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。
