@@ -8,6 +8,7 @@ weight: 10
 type: "page"
 layout: "article-page"
 slots:
+  breadcrumb: true
   footer: /fragments/home-footer-shortcuts
 build:
   list: local
@@ -22,4 +23,3 @@ As defined in our `theme.toml`:
 - **Description**: A Explorer-like Hugo theme.
 
 Enjoy using this theme!
-

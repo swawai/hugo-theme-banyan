@@ -17,6 +17,7 @@ changelog:
   release_notes: "發布說明"
   release_notes_fallback: "這裡暫不維護人工發布說明；目前頁面先用於確認已部署構建，以及構建時可取得的來源資訊。"
 slots:
+  breadcrumb: true
   footer: /fragments/home-footer-shortcuts
 build:
   list: local

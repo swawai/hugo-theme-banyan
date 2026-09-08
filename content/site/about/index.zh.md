@@ -8,6 +8,7 @@ weight: 10
 type: "page"
 layout: "article-page"
 slots:
+  breadcrumb: true
   footer: /fragments/home-footer-shortcuts
 build:
   list: local
@@ -22,4 +23,3 @@ Banyan 是一个类似资源管理器的极简 Hugo 主题，专为清晰结构�
 - **描述**: A Explorer-like Hugo theme. (类似资源管理器的极简主题)
 
 欢迎体验并使用本主题！
-

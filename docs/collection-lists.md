@@ -13,6 +13,7 @@
 | 上述文件的 `cascade`，目标 `kind: term` | `list: products` | 每个分类的 `.Pages`，无需逐类写来源 |
 | 主题 `content/all/index.zh.md` | `list: all`、`aggregate: /d` | `/d/` 下全部文章 |
 | 主题 `content/all-products/_index.zh.md` | `list: products`、`aggregate: /products` | 产品分类成员的去重并集 |
+| 主题 `content/site/_index.zh.md` | `list: directory` | 站点目录的直接子项：关于、更新记录、微信等真实页面 |
 | 主题 `content/language/index.zh.md` | `list: choice` | `hugo.toml` 已启用的语言 |
 | 主题 `content/appearance/index.zh.md` | `list: choice` | 跟随系统、浅色、深色 |
 
@@ -27,6 +28,10 @@ list: products
 新增普通列表目录时使用 `layout: article-list`、`list: directory` 和需要的 `slots.breadcrumb: true`；位于已有目录下时可继承布局和展示声明。正文只写介绍，表格自动在介绍后出现，旧的 `section-list`、`taxonomy-list`、`all-list`、`products-list` shortcode 已删除。
 
 `aggregate` 只用于汇总入口，指向一个 section 或 taxonomy 根。它不从父目录继承。普通目录和分类页无需写 `aggregate`，也不写 `list_source` 或 `product_filter`。主题默认页面的站点专用修改可通过项目同路径文件覆盖；三种语言各自保留完整 front matter。
+
+站点目录保留 `layout: site-page`，用于在列表之后承载版本检查和返回操作；子项完整使用共享 `collection/render.html`，由 `list: directory` 指定名称、日期、数量／大小列和排序。它和 `article-list` 一样注册集合来源，主表及进入子页后的路径列共用成员、图标与排序，不再单独按 `weight` 渲染站点列表。更新操作不属于内容子项，不参与表格排序。
+
+站点根与既有子页通过 `slots.breadcrumb: true` 启用路径列，目录的 `cascade` 同时为未声明 `slots` 的新子页提供默认值。已有子页自行声明了 `slots`，需在原 map 内加入 `breadcrumb: true`，不能期待父级 cascade 自动补进该 map。未填写发布日期的目录子项显示“—”，不把 Hugo 的零时间显示为公元 1 年。
 
 ## 怎样声明条目图标
 
@@ -105,5 +110,7 @@ weight: 30
 旧文章书签中的 `from=product-categories/free` 已不再是有效来源；`from=products` 也不能继续代表“全部产品”，因为新分类根只收录分类词项。两者按既有无效来源规则使用文章的真实目录路径，正文仍正常打开，刷新后规则一致。新链接分别携带 `from=products/free`、`from=all-products`。不在运行时增加旧产品命名适配层。系统页不携带 `return`；原生后退恢复历史中的文章网址及其 `from`／排序，回到带旧来源的文章也按上述规则处理。
 
 ## 验证
+
+路径数据文件由各语言首页发布，直接使用当前语言来源模型的 `current_collection_items`，不在默认语言首页重新构建所有语言的数据。这样页面内嵌数据与后续请求的 `_items.json` 完全相同，避免中文主表使用中文排序、路径列却使用默认语言排序。浏览器回归 `system-site-directory` 覆盖三语言的列表几何、列排序、真实子项、进入后的路径顺序和刷新／历史恢复。
 
 在根项目执行 `node themes/banyan/scripts/checks/check-collections.mjs`。它只向 `temp_workspace/` 写临时内容覆盖层，基于根内容构建三种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。

@@ -21,6 +21,10 @@
 
 当前行动安排（2026-09-08，以下规则优先于后面的历史记录）：
 
+站点目录统一（本次小步）：`content/site/_index*.md` 声明 `list: directory`，保留承载更新与返回操作的 `site-page` 布局，子项改用共享集合渲染。将站点页接入集合来源、排序与子页路径菜单，移除专用的 `.Pages.ByWeight` 列表；更新操作留在表格外。新增三语言回归覆盖与目录相同的列宽／行高、三列排序、真实子项、进入文章后的选中和排序、刷新及前进后退。本次不涉及首页合并、页脚迁移、新增链接条目或更新操作搬家。
+
+站点子页显式启用 `slots.breadcrumb`；目录子项缺失发布日期时显示“—”。路径一致性测试发现旧 `_items.json` 发布会在默认语言首页重新排序其他语言的数据，修订为各语言首页直接发布本语言已有来源模型，避免主表与路径列切换顺序。生产构建 `temp_workspace/public/2609081747-site-directory-verified` 的 129 页审计、导航检查、集合契约检查通过；完整 38 项浏览器回归和 3 项安全检查通过（`temp_workspace/regression/260908174738-browser/report.json`、`temp_workspace/regression/260908174841-browser-security/report.json`）。明暗主题及窄屏截图位于 `temp_workspace/site-directory-review/`。本步等待用户验收，后续整理继续逐项确认。
+
 内容图标声明与继承：新增 `icon`、`list_icon_folder`、`list_icon_file` 的统一处理。`list/icon-defaults.html` 为列表分别查找最近祖先的两种默认值；`list/item-icon.html` 优先选择条目自身的非空 `icon`，否则使用当前列表默认值，最终为 `folder`／`file`。不按同名字段继承 `icon`，不沿 `aggregate` 继承；普通文章误写子项默认字段或使用未定义的图标时构建报错。共享列表行、第一列、站点列表及首页快捷列表采用相同规则，路径菜单转换保留 `icon`。产品分类根与产品全部的三语言内容各声明 `list_icon_file: product`，分类子页自动继承，Xvenv 无需逐篇声明。
 
 图标依赖由实际静态渲染及本页可用来源收集，删除每页固定预装 `file`／`folder`／`product`；缓存的来源模型保持为纯数据，依赖注册在页面渲染阶段执行。生产构建 `temp_workspace/public/2609081654-list-icons-final` 的 129 页 HTML 审计、导航状态检查通过，预算未放宽。扩展集合契约覆盖三语言、三种列表样式、独立继承与覆盖、自身图标、汇总隔离、SSR 菜单、仅另一来源需要的 SVG、刷新和历史，以及非法声明；最终验证目录为 `temp_workspace/collection-contract-kHiNG7`。完整 37 项浏览器回归通过（`temp_workspace/regression/260908165048-browser/report.json`）；最终将依赖注册移到明确的页面调用处后，4 项相关回归及 3 项安全检查再次通过（`temp_workspace/regression/260908165426-browser/report.json`、`temp_workspace/regression/260908165426-browser-security/report.json`）。三语言 15 种真实列表及进入文章后的图标已核对，截图与测量位于 `temp_workspace/list-icons-review/`。第 6 步配色仍未开始。

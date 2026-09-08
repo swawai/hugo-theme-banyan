@@ -1,34 +1,21 @@
 {{ define "styles" }}
-{{ partial "head-styles.html" (dict "ctx" . "variant" "list") }}
+{{ $config := partial "collection/config.html" (dict "page" .) }}
+{{ partial "head-styles.html" (dict "ctx" . "variant" (cond (eq $config.view "directory") "list" $config.view)) }}
 {{ end }}
 
 {{ define "head-extra" }}
 {{ partial "article/styles.html" (dict "ctx" .) }}
 {{ partial "system/styles.html" . }}
+{{ .Scratch.Set "needs_sortable_grids_runtime" true }}
 {{ end }}
 
 {{ define "main" }}
 <article class="article system-page" data-system-page>
+  {{ with .Content }}<div class="prose">{{ . }}</div>{{ end }}
+  {{ partial "collection/render.html" (dict "page" .) }}
   <div class="collection-list collection-list--index">
-    <h1 class="collection-list-header">{{ .Title }}</h1>
-    {{ with .Content }}<div class="prose">{{ . }}</div>{{ end }}
-    {{ $entries := slice }}
-    {{ $iconDefaults := partial "list/icon-defaults.html" (dict "page" .) }}
-    <div class="grid-list grid-list--single collection-list--grid">
-      {{ range .Pages.ByWeight }}
-        {{ partial "grid-title-cell.html" (dict
-          "ctx" $
-          "href" .RelPermalink
-          "title" .Title
-          "text" .LinkTitle
-          "icon" (partial "list/item-icon.html" (dict "page" . "defaults" $iconDefaults "kind" (cond .IsSection "folder" "file")))
-          "linkSlot" "nav") }}
-        {{ $entries = $entries | append (dict "url" .Permalink "name" .Title) }}
-      {{ end }}
-    </div>
     {{ partial "system/site-update.html" . }}
     {{ partial "system/return.html" . }}
-    {{ partial "schema-itemlist.html" (dict "entries" $entries) }}
   </div>
 </article>
 {{ end }}

@@ -2,11 +2,16 @@
 title: 系統－站點
 description: 站點介紹、更新記錄與聯絡入口。
 layout: site-page
+list: directory
 weight: 100
 outputs:
   - HTML
 slots:
+  breadcrumb: true
   footer: /fragments/home-footer-shortcuts
+cascade:
+  slots:
+    breadcrumb: true
 site_update:
   changelog_page: /site/changelog
   labels:

@@ -2,11 +2,16 @@
 title: System - Site
 description: Site information, release notes, and contact pages.
 layout: site-page
+list: directory
 weight: 100
 outputs:
   - HTML
 slots:
+  breadcrumb: true
   footer: /fragments/home-footer-shortcuts
+cascade:
+  slots:
+    breadcrumb: true
 site_update:
   changelog_page: /site/changelog
   labels:

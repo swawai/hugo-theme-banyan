@@ -9,18 +9,18 @@
   {{- end -}}
   {{- if $owner -}}
     {{- $entries := slice -}}
-    {{- if in (slice "section-index" "site-page") $owner.Layout -}}
+    {{- if eq $owner.Layout "section-index" -}}
       {{- range $owner.Pages.ByWeight -}}
         {{- $entries = $entries | append (dict
           "node" . "href" .RelPermalink "text" .LinkTitle "title" .Title "kind" .Kind
         ) -}}
       {{- end -}}
-    {{- else if eq $owner.Layout "article-list" -}}
+    {{- else if in (slice "article-list" "site-page") $owner.Layout -}}
       {{- $entries = partial "collection/rows.html" (dict "page" $owner) -}}
     {{- else -}}
       {{- $entries = partial "section/direct-children.html" (dict "ctx" $owner) -}}
     {{- end -}}
-    {{- if ne $owner.Layout "article-list" -}}
+    {{- if not (in (slice "article-list" "site-page") $owner.Layout) -}}
       {{- $iconDefaults := partial "list/icon-defaults.html" (dict "page" $owner) -}}
       {{- $decorated := slice -}}
       {{- range $entry := $entries -}}

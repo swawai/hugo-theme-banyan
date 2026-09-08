@@ -130,8 +130,10 @@
     "page_collection_source" $pageCollectionSource
 ) -}}
 {{- partial "entry-source/register-icons.html" (dict "page" . "sources" $entryBreadcrumbSources) -}}
+{{- if .IsHome -}}
+    {{- partialCached "entry-fragments-publish.html" (dict "language" .Language.Lang "sources" $entryBreadcrumbSourceModels "build_version" $buildVersion) .Language.Lang $buildVersion -}}
+{{- end -}}
 {{- if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) -}}
-    {{- partialCached "entry-fragments-publish.html" (dict "ctx" . "build_version" $buildVersion) $buildVersion -}}
     {{- $headersBody := partial "cache-policy-cloudflare-headers-body.txt" (dict "routes" $cachePolicyHeaderRoutes) -}}
     {{- $headersResource := resources.FromString "_headers" $headersBody -}}
     {{- $publishHeaders := $headersResource.RelPermalink -}}

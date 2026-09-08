@@ -22,8 +22,8 @@
     "countValue" $count
     "countText" $count
     "countUnit" ""
-    "dateKey" ($dateValue.Format "20060102150405")
-    "dateText" ($dateValue.Format "2006-01-02")
+    "dateKey" (cond $dateValue.IsZero "" ($dateValue.Format "20060102150405"))
+    "dateText" (cond $dateValue.IsZero "—" ($dateValue.Format "2006-01-02"))
     "node" $section
     "logicalPath" (partial "section/d-logical-path.html" (dict "ctx" $section))
   ) -}}
@@ -43,8 +43,8 @@
     "countValue" $bytes
     "countText" $kb
     "countUnit" "&thinsp;KB"
-    "dateKey" ($dateValue.Format "20060102150405")
-    "dateText" ($dateValue.Format "2006-01-02")
+    "dateKey" (cond $dateValue.IsZero "" ($dateValue.Format "20060102150405"))
+    "dateText" (cond $dateValue.IsZero "—" ($dateValue.Format "2006-01-02"))
     "node" $page
     "logicalPath" (partial "section/d-logical-path.html" (dict "ctx" $page))
   ) -}}

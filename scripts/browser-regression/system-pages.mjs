@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { gotoAndWait, waitForServiceWorkerActive, waitForUpdateReady } from './helpers.mjs';
+import { gotoAndWait, waitForBreadcrumbSettled, waitForServiceWorkerActive, waitForUpdateReady } from './helpers.mjs';
 import { languageReturnScenarios } from './language-return.mjs';
 
 const system = '.system-page';
@@ -8,6 +8,77 @@ const updatePanel = '[data-site-update-panel]';
 
 export const systemPageScenarios = [
     ...languageReturnScenarios,
+    {
+        id: 'system-site-directory',
+        kind: 'single',
+        serviceWorkers: 'block',
+        viewport: { width: 1024, height: 700 },
+        title: 'Site Directory Sorting and Article Navigation',
+        async run({ page, baseUrl, artifactDir }) {
+            const grid = '.slot-main [data-sortable="true"]';
+            const links = `${grid} .cell-title:not(.header) a`;
+            const rowPaths = selector => page.locator(selector).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
+            const geometry = () => page.locator(grid).evaluate(node => {
+                const row = node.querySelector('.cell-title:not(.header) a');
+                return {
+                    columns: getComputedStyle(node).gridTemplateColumns,
+                    rowHeight: row.getBoundingClientRect().height,
+                    titleOffset: row.querySelector('.collection-item-title').getBoundingClientRect().left - row.getBoundingClientRect().left
+                };
+            });
+            for (const prefix of ['', '/zh', '/zh-tw']) {
+                await gotoAndWait(page, `${baseUrl}${prefix}/d/`);
+                const directoryGeometry = await geometry();
+                await gotoAndWait(page, `${baseUrl}${prefix}/site/`);
+                assert.deepEqual(await geometry(), directoryGeometry, 'Site and directory use the same columns, row height and icon spacing.');
+                assert.equal(await page.locator(grid).count(), 1);
+                assert.deepEqual(await page.locator(`${grid} [data-sort-field]`).evaluateAll(nodes => nodes.map(node => node.dataset.sortField)), ['name', 'date', 'count']);
+                const expected = ['about', 'changelog', 'wechat'].map(name => `${prefix}/${name}/`).sort();
+                assert.deepEqual((await rowPaths(links)).sort(), expected, 'Only real site children belong to the directory.');
+                assert.equal(await page.locator(`${grid} [data-site-update-action]`).count(), 0, 'Update actions stay outside sortable content.');
+                assert.equal(await page.locator('[data-site-update-action="check"]').count(), 1);
+                assert.equal(await page.locator('[data-page-action="back"]').count(), 1);
+
+                for (const [field, firstOrder] of [['count', 'desc'], ['date', 'desc'], ['name', 'asc']]) {
+                    await page.locator(`${grid} [data-sort-field="${field}"]`).click();
+                    await page.waitForURL(url => (url.searchParams.get('sort') || 'date-desc') === `${field}-${firstOrder}`);
+                    await page.locator(`${grid} [data-sort-field="${field}"]`).click();
+                    await page.waitForURL(url => (url.searchParams.get('sort') || 'date-desc') === `${field}-${firstOrder === 'asc' ? 'desc' : 'asc'}`);
+                    assert.deepEqual((await rowPaths(links)).sort(), expected);
+                }
+                const sortedUrl = page.url();
+                const sortedPaths = await rowPaths(links);
+                await page.reload();
+                await waitForBreadcrumbSettled(page);
+                assert.deepEqual(await rowPaths(links), sortedPaths);
+                await page.screenshot({ path: path.join(artifactDir, `site-${prefix.slice(1) || 'en'}.png`) });
+
+                await page.locator(`${links}[href*="/about/"]`).click();
+                await waitForBreadcrumbSettled(page);
+                assert.equal(new URL(page.url()).searchParams.get('from'), 'site');
+                const articleUrl = page.url();
+                const assertArticle = async () => {
+                    assert.equal(await page.locator(`[data-root-href="${prefix}/site/"].is-current`).count(), 1);
+                    assert.deepEqual(await rowPaths('.slot-breadcrumb .collection-item-link'), sortedPaths);
+                    assert.equal(await page.locator(`.slot-breadcrumb .is-current[href*="/about/"]`).count(), 1);
+                };
+                await assertArticle();
+                await page.reload();
+                await waitForBreadcrumbSettled(page);
+                await assertArticle();
+                await page.goBack();
+                await page.waitForURL(sortedUrl);
+                await waitForBreadcrumbSettled(page);
+                assert.deepEqual(await rowPaths(links), sortedPaths);
+                await page.goForward();
+                await page.waitForURL(articleUrl);
+                await waitForBreadcrumbSettled(page);
+                await assertArticle();
+                if (prefix === '/zh') await page.screenshot({ path: path.join(artifactDir, 'site-about.png') });
+            }
+            return { message: 'Three languages share directory geometry, all column sorts, real children, article selection and reload/back/forward order; update and back controls remain separate.' };
+        }
+    },
     {
         id: 'system-return-live-navigation-state',
         kind: 'single',
