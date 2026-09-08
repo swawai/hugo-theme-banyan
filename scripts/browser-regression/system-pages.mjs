@@ -27,13 +27,18 @@ export const systemPageScenarios = [
                 };
             });
             for (const prefix of ['', '/zh', '/zh-tw']) {
+                await gotoAndWait(page, `${baseUrl}${prefix}/`);
+                const feedHref = await page.locator('head link[rel="alternate"][type="application/rss+xml"]').getAttribute('href');
+                const brand = await page.locator('.footer-shortcuts .footer-shortcut-text').textContent();
+                assert.equal(await page.locator('.footer-shortcuts a').count(), 1, 'The homepage footer retains only its brand link.');
+                assert.equal(await page.locator('.footer-shortcuts a').getAttribute('href'), `${prefix}/`);
                 await gotoAndWait(page, `${baseUrl}${prefix}/d/`);
                 const directoryGeometry = await geometry();
                 await gotoAndWait(page, `${baseUrl}${prefix}/site/`);
                 assert.deepEqual(await geometry(), directoryGeometry, 'Site and directory use the same columns, row height and icon spacing.');
                 assert.equal(await page.locator(grid).count(), 1);
                 assert.deepEqual(await page.locator(`${grid} [data-sort-field]`).evaluateAll(nodes => nodes.map(node => node.dataset.sortField)), ['name', 'date', 'count']);
-                const children = ['wechat', 'about', 'changelog', 'site/pwa'];
+                const children = ['wechat', 'about', 'changelog', 'site/pwa', 'site/rss', 'site/github', 'site/icp'];
                 const expected = children.map(name => `${prefix}/${name}/`).sort();
                 assert.deepEqual((await rowPaths(links)).sort(), expected, 'Only real site children belong to the directory.');
                 assert.equal(await page.locator(`${grid} [data-site-update-action]`).count(), 0, 'Update actions stay outside sortable content.');
@@ -41,6 +46,12 @@ export const systemPageScenarios = [
                 assert.equal(await page.locator('[data-site-update-link]').count(), 0, 'Root navigation does not specialize the site entry.');
                 assert.equal(await page.locator('.slot-main > article > [data-sortable="true"]').count(), 1, 'The ordinary article-list renders the directory.');
                 assert.equal(await page.locator('.slot-main > article [data-site-update-panel]').count(), 0, 'Site tools are attached outside the list layout.');
+                assert.equal(await page.locator('.footer-shortcuts a').count(), 1, 'WeChat, RSS, GitHub and ICP no longer appear in the directory footer.');
+                assert.equal(await page.locator('.footer-shortcuts .footer-shortcut-text').textContent(), brand);
+                assert.equal(await page.locator('.footer-shortcuts a').getAttribute('href'), `${prefix}/`);
+                for (const [name, icon] of [['rss', 'rss'], ['github', 'github'], ['icp', 'info']]) {
+                    assert.equal(await page.locator(`${links}[href*="/site/${name}/"] use`).getAttribute('href'), `#icon-${icon}`);
+                }
 
                 const assertArticle = async (name, expectedPaths) => {
                     assert.equal(await page.locator(`[data-root-href="${prefix}/site/"].is-current`).count(), 1);
@@ -52,6 +63,23 @@ export const systemPageScenarios = [
                     await page.locator(`${links}[href*="/${name}/"]`).click();
                     await waitForBreadcrumbSettled(page);
                     await assertArticle(name, defaultPaths);
+                    assert.equal(new URL(page.url()).pathname, `${prefix}/${name}/`, 'Selecting an information page stays on that page.');
+                    if (name === 'site/github') {
+                        assert.equal(await page.locator('.slot-main .prose a[href="https://github.com/swawai"]').count(), 1);
+                    } else if (name === 'site/icp') {
+                        assert.match(await page.locator('.slot-main .prose').textContent(), /粤ICP备2024338434号/);
+                        assert.equal(await page.locator('.slot-main .prose a[href="https://beian.miit.gov.cn/"]').count(), 1);
+                    } else if (name === 'site/rss') {
+                        const feed = page.locator(`.slot-main .prose a[href="${feedHref}"]`);
+                        assert.equal(await feed.count(), 1, 'RSS uses the actual language homepage output.');
+                        assert.equal(new URL((await feed.textContent()).trim()).pathname, new URL(feedHref, baseUrl).pathname, 'The visible subscription address can be copied into a reader.');
+                        const response = await page.request.get(new URL(feedHref, baseUrl).href);
+                        assert.equal(response.status(), 200);
+                        const xml = await response.text();
+                        assert.match(xml, /<rss\b/);
+                        assert.match(xml, /<item>/);
+                        assert(!/\/site\/(rss|github|icp)\//.test(xml), 'Local information pages do not become feed articles.');
+                    }
                     if (prefix === '/zh') await page.screenshot({ path: path.join(artifactDir, `site-${name.replaceAll('/', '-')}-default.png`) });
                     if (name === 'site/pwa') assert.equal(await page.locator('.slot-main > article [data-site-update-panel]').count(), 1, 'Only the real PWA child renders its update controls.');
                     await page.goBack();
@@ -95,7 +123,7 @@ export const systemPageScenarios = [
                     await waitForBreadcrumbSettled(page);
                 }
             }
-            return { message: 'The site directory has four real children and no appended controls; all children, including PWA Status, retain path order and selection in three languages across sort, reload and history.' };
+            return { message: 'Seven real site children retain their columns and selection in three languages across sort/reload/history; only the brand remains in the footer, information links stay in their pages, and RSS resolves to the actual language feed.' };
         }
     },
     {

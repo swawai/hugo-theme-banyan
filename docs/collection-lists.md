@@ -35,13 +35,28 @@ PWA 状态是主题 `content/site/pwa/index*.md` 的真实子页，声明 `layou
 
 站点根与既有子页通过 `slots.breadcrumb: true` 启用路径列，目录的 `cascade` 同时为未声明 `slots` 的新子页提供默认值。已有子页自行声明了 `slots`，需在原 map 内加入 `breadcrumb: true`，不能期待父级 cascade 自动补进该 map。
 
+## 站点信息与 RSS
+
+RSS、GitHub 和备案信息都使用普通 `article-page`，不新增外链条目类型、跳转布局或列表分支。它们声明 `build.list: local`、`slots.breadcrumb: true`，作为站点目录的真实子页参与排序和路径导航，但不进入全站文章 RSS。
+
+| 实体文件（三语言） | 内容职责 |
+| --- | --- |
+| 主题 `content/site/rss/index*.md` | RSS 订阅说明，正文调用 `{{< rss-link >}}` |
+| 主题 `content/site/github/index*.md` | 默认的 Banyan 仓库说明；项目可同路径覆盖 |
+| 项目 `content/site/github/index*.md` | Swaw 的 GitHub 主页说明与链接 |
+| 项目 `content/site/icp/index*.md` | 本站备案号与工信部查询链接；主题不存放业务备案信息 |
+
+`layouts/shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。GitHub 和备案链接直接写在 Markdown 正文中，用户进入说明页后自行点击。
+
+微信继续使用已有 `content/site/wechat/`。共用页脚只保留原来的品牌主页链接及其 `brand_label`、`aria_label` 配置，移除微信、RSS、GitHub、备案和关于的旧页脚渲染分支；首页及其他使用该 fragment 的页面同步生效。品牌文字和年份暂不调整。
+
 ## 统一更新时间
 
 目录、分类、全部文章和路径列的时间统一读取 Hugo `.Lastmod`，列名为“更新时间”。文件显示自身更新时间；非空目录／分类汇总其包含文章的最新更新时间，目录递归到后代文章，树形分类也包含下级分类。空目录使用自身 `.Lastmod`，空分类及其他没有有效时间的条目显示 `—`，排序值为空。
 
 项目 `hugo.toml` 已启用 `enableGitInfo = true`，并配置 `[frontmatter] lastmod = ["lastmod", ":git", ":default"]`：显式 `lastmod` 优先，其次由 Hugo 取 Git 提交时间，最后使用 Hugo 的默认日期来源。无需为了列表补造 `date`；需要手动控制更新时间时，在文章 front matter 写 `lastmod: 2026-09-08T18:00:00+08:00`。
 
-显示和排序取同一 `.Lastmod`；显示到日，排序保留到秒。既有 `sort=date-asc/desc` URL 键保持不变，含义统一为更新时间，产品表仍只有名称、价格、价值说明三列。正文中的发布日期继续使用 `.Date`，不改变其含义；站点表格下面的版本时间仍是构建时间。
+显示和排序取同一 `.Lastmod`；显示到日，排序保留到秒。既有 `sort=date-asc/desc` URL 键保持不变，含义统一为更新时间，产品表仍只有名称、价格、价值说明三列。正文中的发布日期继续使用 `.Date`，不改变其含义；PWA 状态页中的版本时间仍是构建时间。
 
 ## 怎样声明条目图标
 
@@ -121,6 +136,6 @@ weight: 30
 
 ## 验证
 
-路径数据文件由各语言首页发布，直接使用当前语言来源模型的 `current_collection_items`，不在默认语言首页重新构建所有语言的数据。这样页面内嵌数据与后续请求的 `_items.json` 完全相同，避免中文主表使用中文排序、路径列却使用默认语言排序。浏览器回归 `system-site-directory` 覆盖三语言的列表几何、列排序、全部四个真实子项（含 PWA 状态）、无追加操作、进入后的路径顺序和刷新／历史恢复。
+路径数据文件由各语言首页发布，直接使用当前语言来源模型的 `current_collection_items`，不在默认语言首页重新构建所有语言的数据。这样页面内嵌数据与后续请求的 `_items.json` 完全相同，避免中文主表使用中文排序、路径列却使用默认语言排序。浏览器回归 `system-site-directory` 覆盖根项目的七个真实子项、三语言列表几何、排序、进入后的路径顺序和刷新／历史恢复，同时验证页脚只剩品牌链接、信息页停留与目标链接、RSS 地址及 XML 内容。
 
 在根项目执行 `node themes/banyan/scripts/checks/check-collections.mjs`。它只向 `temp_workspace/` 写临时内容覆盖层，基于根内容构建三种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。时间用例覆盖发布日期与更新时间不同、只填更新时间、默认日期来源、完全无时间、目录／平面与树形分类汇总，以及升降序进入文章后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。

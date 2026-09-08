@@ -64,6 +64,8 @@ slots:
 
 保留的 fragment 按内容语义命名，例如 `home-footer-shortcuts` 和 `site-meta`；不要用最终容器位置命名。`site-meta` 提供站点品牌与 SEO 元数据，`slots.meta` 则控制当前页面的日期、taxonomy 等元信息，两者职责不同。
 
+`home-footer-shortcuts` 当前只保留品牌主页链接，`footer` 配置仅使用 `brand_label` 与 `aria_label`；年份和品牌文字沿用原值。微信、RSS、GitHub、备案等信息通过 `content/site/` 的真实子页访问，不再由页脚模板生成快捷入口。
+
 ## 与导航状态和布局的边界
 
 `slots` 决定页面装配哪些区域；`from / sort / sorts` 表示当次浏览来源及排序。有效 `from` 决定第一列选中的来源根，没有有效来源时按真实内容祖先确定归属。不能从公开网址前缀推断归属：例如 Xvenv 的正文位于 `d/products/`，直接访问仍选中目录；通过产品分类进入时选中产品－分类。

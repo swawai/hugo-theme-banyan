@@ -21,6 +21,10 @@
 
 当前行动安排（2026-09-08，以下规则优先于后面的历史记录）：
 
+页脚信息收纳：共用页脚保留现有品牌主页链接及其年份，移除微信、RSS、GitHub、备案等快捷链接的配置与渲染分支。微信继续使用既有子页；RSS、GitHub、备案新增为站点目录的真实文章页，统一 `layout: article-page`、`build.list: local`、`slots.breadcrumb: true`，目录进入时先显示说明，再由用户点击正文链接。RSS 页使用 `rss-link` shortcode 读取当前语言首页真实 RSS 输出，未增加专用列表或跳转布局。主题提供 RSS 与默认 GitHub 页，Swaw GitHub 内容与备案信息在项目根目录；根项目 sitemap 声明同步加入三个公开信息页。现在站点目录共有七个子项，首页和站点页共享的页脚均只保留品牌行。
+
+本步验证：生产构建 `temp_workspace/public/2609081902-site-info-final` 的 141 页 HTML 审计、导航状态检查通过；4 项相关浏览器回归通过（`temp_workspace/regression/260908190154-browser/report.json`）。扩展 `system-site-directory` 覆盖三语言七个子项的默认与排序进入、刷新／前进后退、图标、品牌页脚、信息页目标链接，以及当前语言 RSS 地址与 XML 内容。实际 `192.168.1.114:5120` 预览运行相同场景并验证禁用 JS 的 21 个页面／语言组合；截图和报告位于 `temp_workspace/site-info-live/`。本步等待用户复测，品牌主页链接的后续设计暂不变。
+
 站点操作移入真实子页：`content/site/_index*.md` 只保留普通目录声明，删除 `site_update`；移除 `baseof.html` 的整块操作追加、公共系统样式条件和根入口更新标记。三语言 `content/site/pwa/index*.md` 新建「PWA 状态」页面，由 `pwa-page.html` 明确渲染版本、检查按钮和状态，并声明普通路径栏。`site_update` 文案及更新记录引用随功能移入子页，仍同时供静态界面与 runtime i18n 使用。按钮称为「检查更新」，ready 时为「立即更新」，不宣称同步用户数据；更新引擎与缓存策略未修改。没有可见按钮的页面沿用既有原生更新确认，PWA 页在面板内操作。语言、外观页的返回按钮保持各自布局调用，站点目录没有返回按钮或设置页 URL 清理行为。
 
 新增默认 PWA 页填写实际创建日期 `2026-09-08`；当前根项目的 Hugo Git 信息不覆盖主题默认内容，因此该页 `.Lastmod` 按既有 `:default` 规则取创建日期，不为 PWA 新增日期逻辑。目录、分类与文章继续共用上一小步的更新时间规则。
