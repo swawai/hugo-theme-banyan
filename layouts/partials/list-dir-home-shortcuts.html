@@ -1,5 +1,6 @@
 {{ $ctx := .ctx }}
 {{ $entries := slice }}
+{{ $iconDefaults := partial "list/icon-defaults.html" (dict "page" $ctx.Site.Home) }}
 
 {{ $siteLatest := "" }}
 {{ with first 1 ($ctx.Site.RegularPages.ByDate.Reverse) }}
@@ -51,7 +52,7 @@
   "kind" "section"
   "title" $directoryTitle
   "href" $directoryHref
-  "icon" "folder"
+  "icon" (partial "list/item-icon.html" (dict "page" $directoryPage "defaults" $iconDefaults "kind" "folder"))
   "prefetchKind" "nav"
   "cnt" $directoryCount
   "countText" $directoryCount
@@ -67,7 +68,7 @@
   "kind" "section"
   "title" $allTitle
   "href" $allHref
-  "icon" "folder"
+  "icon" (partial "list/item-icon.html" (dict "page" $allPage "defaults" $iconDefaults "kind" "folder"))
   "prefetchKind" "nav"
   "cnt" (len $ctx.Site.RegularPages)
   "countText" (len $ctx.Site.RegularPages)

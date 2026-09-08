@@ -21,6 +21,10 @@
 
 当前行动安排（2026-09-08，以下规则优先于后面的历史记录）：
 
+内容图标声明与继承：新增 `icon`、`list_icon_folder`、`list_icon_file` 的统一处理。`list/icon-defaults.html` 为列表分别查找最近祖先的两种默认值；`list/item-icon.html` 优先选择条目自身的非空 `icon`，否则使用当前列表默认值，最终为 `folder`／`file`。不按同名字段继承 `icon`，不沿 `aggregate` 继承；普通文章误写子项默认字段或使用未定义的图标时构建报错。共享列表行、第一列、站点列表及首页快捷列表采用相同规则，路径菜单转换保留 `icon`。产品分类根与产品全部的三语言内容各声明 `list_icon_file: product`，分类子页自动继承，Xvenv 无需逐篇声明。
+
+图标依赖由实际静态渲染及本页可用来源收集，删除每页固定预装 `file`／`folder`／`product`；缓存的来源模型保持为纯数据，依赖注册在页面渲染阶段执行。生产构建 `temp_workspace/public/2609081654-list-icons-final` 的 129 页 HTML 审计、导航状态检查通过，预算未放宽。扩展集合契约覆盖三语言、三种列表样式、独立继承与覆盖、自身图标、汇总隔离、SSR 菜单、仅另一来源需要的 SVG、刷新和历史，以及非法声明；最终验证目录为 `temp_workspace/collection-contract-kHiNG7`。完整 37 项浏览器回归通过（`temp_workspace/regression/260908165048-browser/report.json`）；最终将依赖注册移到明确的页面调用处后，4 项相关回归及 3 项安全检查再次通过（`temp_workspace/regression/260908165426-browser/report.json`、`temp_workspace/regression/260908165426-browser-security/report.json`）。三语言 15 种真实列表及进入文章后的图标已核对，截图与测量位于 `temp_workspace/list-icons-review/`。第 6 步配色仍未开始。
+
 外观子项最终改用 SVG：Unicode 半圆和圆点在实际页面回退到不同字体，字号相同仍出现图形尺寸差异。按用户确认，`data/icons.toml` 新增 `appearance-auto`／`appearance-light`／`appearance-dark`，统一画布、圆心、半径及描边；外观布局用既有 `icon` 引用它们，替代下述 Unicode 方案。第一列云月、语言文字图标、CSS 和选择操作均沿用。生产构建 `temp_workspace/public/2609081621-appearance-svg` 的 129 页 HTML 审计及 2 项相关浏览器回归通过；三语言明暗主题、窄屏截图及几何核对完成，行高和文字对齐不变，截图位于 `temp_workspace/appearance-svg-review/`，预算未调整。
 
 外观图标复测修订：第一列保留用户恢复到 `data/icons.toml` 的云月 `theme` SVG；三个 choice 子项通过既有 `iconText` 使用 `◐`（跟随系统）、`○`（浅色）、`●`（深色），按填充形态区分并继承文字颜色，不新增 CSS 或操作逻辑。生产构建 `temp_workspace/public/2609081606-appearance-circles` 的三语言明暗主题及窄屏截图已核对，2 项相关浏览器回归通过（`temp_workspace/regression/260908160646-browser/report.json`）。首页实测 gzip 7,054 字节；在同一 HTML 中仅替换回旧圆形 SVG 后为 6,873 字节，确认恢复云月增加 181 字节。因此首页 gzip 门槛从 7,000 调整为 7,200 字节，其他预算不变。

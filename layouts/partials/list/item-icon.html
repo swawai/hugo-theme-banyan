@@ -1,0 +1,8 @@
+{{- $icon := index .defaults .kind -}}
+{{- with .page -}}
+  {{- with .Params.icon -}}
+    {{- $own := lower (trim (printf "%v" .) " \r\n\t") -}}
+    {{- if $own -}}{{- $icon = $own -}}{{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $icon -}}

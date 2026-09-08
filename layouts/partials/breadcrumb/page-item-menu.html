@@ -12,13 +12,22 @@
     {{- if in (slice "section-index" "site-page") $owner.Layout -}}
       {{- range $owner.Pages.ByWeight -}}
         {{- $entries = $entries | append (dict
-          "href" .RelPermalink "text" .LinkTitle "title" .Title "kind" .Kind
+          "node" . "href" .RelPermalink "text" .LinkTitle "title" .Title "kind" .Kind
         ) -}}
       {{- end -}}
     {{- else if eq $owner.Layout "article-list" -}}
       {{- $entries = partial "collection/rows.html" (dict "page" $owner) -}}
     {{- else -}}
       {{- $entries = partial "section/direct-children.html" (dict "ctx" $owner) -}}
+    {{- end -}}
+    {{- if ne $owner.Layout "article-list" -}}
+      {{- $iconDefaults := partial "list/icon-defaults.html" (dict "page" $owner) -}}
+      {{- $decorated := slice -}}
+      {{- range $entry := $entries -}}
+        {{- $icon := partial "list/item-icon.html" (dict "page" $entry.node "defaults" $iconDefaults "kind" (cond (eq $entry.kind "page") "file" "folder")) -}}
+        {{- $decorated = $decorated | append (merge $entry (dict "icon" $icon)) -}}
+      {{- end -}}
+      {{- $entries = $decorated -}}
     {{- end -}}
     {{- $menu = partial "breadcrumb/menu-items-from-entries.html" (dict
       "entries" $entries

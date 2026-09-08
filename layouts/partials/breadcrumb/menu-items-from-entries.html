@@ -28,6 +28,7 @@
     {{- $kind := lower (trim (printf "%v" .) " ") -}}
     {{- if ne $kind "" -}}{{- $item = merge $item (dict "kind" $kind) -}}{{- end -}}
   {{- end -}}
+  {{- with index $entry "icon" -}}{{- $item = merge $item (dict "icon" .) -}}{{- end -}}
   {{- $items = $items | append $item -}}
 {{- end -}}
 {{- return $items -}}

@@ -17,8 +17,8 @@ const overlay = path.join(work, 'content');
 const langs = ['', '.zh', '.zh-tw'];
 const prefixes = ['', '/zh', '/zh-tw'];
 const cases = [
-    ['priced', 'products: [free, paid, "Special Tools", "$5~$50"]\noffer: {amount: 25, currency: "$", value: "Paid and free are opaque labels"}'],
-    ['missing', 'products: [free, "Special Tools"]\noffer: {value: "Value without a price"}'],
+    ['priced', 'icon: appearance-dark\nproducts: [free, paid, "Special Tools", "$5~$50"]\noffer: {amount: 25, currency: "$", value: "Paid and free are opaque labels"}'],
+    ['missing', 'products: [free, paid, "Special Tools"]\noffer: {value: "Value without a price"}'],
     ['zero', 'products: [free]\noffer: {amount: 0, currency: "$"}'],
     ['no-offer', 'products: [free]'],
     ['unclassified', 'offer: {amount: 99, currency: "$", value: "Not a product"}'],
@@ -26,12 +26,17 @@ const cases = [
     ['blank', 'products: [""]']
 ];
 for (const lang of langs) {
-    write(path.join(overlay, `products/contract-empty/_index${lang}.md`), '---\ntitle: Contract empty category\n---\n');
+    write(path.join(overlay, `products/contract-empty/_index${lang}.md`), '---\ntitle: Contract empty category\nicon: rss\n---\n');
+    const paid = fs.readFileSync(`content/products/paid/_index${lang}.md`, 'utf8');
+    write(path.join(overlay, `products/paid/_index${lang}.md`), paid.replace('---', '---\nlist_icon_file: appearance-light'));
     for (const [name, fields] of cases) write(path.join(overlay, `d/contract-${name}/index${lang}.md`),
         `---\ntitle: "Contract ${name}"\nslug: contract-${name}\ndate: 2026-01-01\n${fields}\n---\nArticle body stays an article.\n`);
-    write(path.join(overlay, `d/contract-override/_index${lang}.md`), '---\ntitle: Override\nlist: all\n---\n');
-    write(path.join(overlay, `d/contract-override/child/_index${lang}.md`), '---\ntitle: Child inherits override\n---\n');
+    write(path.join(overlay, `d/contract-override/_index${lang}.md`), '---\ntitle: Override\nicon: info\nlist: all\nlist_icon_folder: rss\nlist_icon_file: appearance-auto\n---\n');
+    write(path.join(overlay, `d/contract-override/child/_index${lang}.md`), '---\ntitle: Child inherits override\nlist_icon_file: theme\n---\n');
     write(path.join(overlay, `d/contract-override/child/item${lang}.md`), '---\ntitle: Child item\nslug: contract-child\n---\nChild.\n');
+    write(path.join(overlay, `d/contract-override/direct${lang}.md`), '---\ntitle: Direct item\nslug: contract-direct\n---\nDirect.\n');
+    write(path.join(overlay, `d/contract-override/child/nested/_index${lang}.md`), '---\ntitle: Nested\nlist_icon_file: ""\n---\n');
+    write(path.join(overlay, `d/contract-override/child/nested/item${lang}.md`), '---\ntitle: Nested item\nslug: contract-nested\n---\nNested.\n');
 }
 const config = path.join(work, 'overlay.toml');
 write(config, `[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
@@ -39,7 +44,7 @@ const hugo = resolveHugoCommand({ cwd: root });
 function build(view) {
     for (const lang of langs) {
         const source = fs.readFileSync(`themes/banyan/content/d/_index${lang}.md`, 'utf8');
-        write(path.join(overlay, `d/_index${lang}.md`), source.replace('list: directory', `list: ${view}`));
+        write(path.join(overlay, `d/_index${lang}.md`), source.replace('list: directory', `list: ${view}\nicon: info`));
     }
     const output = path.join(work, view);
     const result = spawnSync(hugo, ['--config', `hugo.toml,${rel(config)}`, '--minify', '--destination', rel(output)],
@@ -73,6 +78,22 @@ for (const view of ['directory', 'all', 'products']) {
         assert.equal(payload(output, lang, 'd/wsl').sv, current.sv, 'undeclared section inherits');
         assert.equal(payload(output, lang, 'd/contract-override').sv, 'all');
         assert.equal(payload(output, lang, 'd/contract-override/child').sv, 'all', 'nearest declaration wins');
+        const iconFor = (list, href) => payload(output, lang, list).rows.find(row => row.href === `${prefixes[index]}${href}`)?.icon;
+        assert.equal(iconFor('d', '/p/contract-empty/'), 'file', 'a parent icon is not inherited by its articles');
+        assert.equal(iconFor('d', '/d/contract-override/'), 'info', 'a directory may declare its own icon');
+        assert.equal(iconFor('d/contract-override', '/d/contract-override/child/'), 'rss');
+        assert.equal(iconFor('d/contract-override', '/p/contract-direct/'), 'appearance-auto');
+        assert.equal(iconFor('d/contract-override/child', '/d/contract-override/child/nested/'), 'rss', 'folder default still inherits after a file-only override');
+        assert.equal(iconFor('d/contract-override/child', '/p/contract-child/'), 'theme');
+        assert.equal(iconFor('d/contract-override/child/nested', '/p/contract-nested/'), 'theme', 'blank declarations inherit');
+        assert.equal(iconFor('products', '/products/contract-empty/'), 'rss', 'term own icon wins over the folder default');
+        assert.equal(iconFor('products/free', '/p/contract-missing/'), 'product', 'term inherits taxonomy file default');
+        assert.equal(iconFor('products/paid', '/p/contract-missing/'), 'appearance-light', 'a term can override its file default');
+        assert.equal(iconFor('all-products', '/p/contract-missing/'), 'product', 'aggregate uses its own default');
+        assert.equal(iconFor('all', '/p/contract-direct/'), 'file', 'aggregate does not inherit its target defaults');
+        for (const list of ['d', 'all', 'products/free', 'products/paid', 'all-products']) {
+            assert.equal(iconFor(list, '/p/contract-priced/'), 'appearance-dark', `own article icon wins in ${list}`);
+        }
         const all = payload(output, lang, 'all-products');
         assert.equal(all.rows.filter(row => /\/p\/contract-/.test(row.href)).length, 4, 'native union includes four fixture products, once each');
         assert.equal(new Set(all.rows.map(row => row.href)).size, all.rows.length);
@@ -110,6 +131,7 @@ try {
         await gotoAndWait(page, `${baseUrl}${prefixes[index]}/products/`);
         const names = await page.locator('.slot-main .collection-item-title').allTextContents();
         assert.deepEqual(names, payload(builds.directory, lang, 'products').rows.map(row => row.text), 'default category order agrees before and after hydration');
+        assert.equal(await page.locator(`[data-root-href="${prefixes[index]}/d/"] use`).getAttribute('href'), '#icon-info', 'root navigation honors the same own icon');
     }
     for (const direction of ['asc', 'desc']) {
         await gotoAndWait(page, `${baseUrl}/products/free/?sort=price-${direction}`);
@@ -139,6 +161,39 @@ try {
     assert.equal(await page.locator('[data-root-href].is-current').getAttribute('data-root-href'), '/products/');
     await context.close();
     console.log('PASS missing-price order, shared path rows, arbitrary term article entry');
+
+    // The paid-source icon is absent from the canonical rows, but its symbol
+    // must already be available when first-paint/runtime rebuild those rows.
+    const noJs = await browser.newContext({ javaScriptEnabled: false, serviceWorkers: 'block' });
+    const staticPage = await noJs.newPage();
+    await staticPage.goto(`${baseUrl}/p/contract-missing/`);
+    assert.equal(await staticPage.locator('use[href="#icon-appearance-light"]').count(), 0);
+    assert.equal(await staticPage.locator('symbol#icon-appearance-light').count(), 1, 'source-only SVG is packed without relying on SSR rows');
+    await staticPage.goto(`${baseUrl}/d/contract-override/child/`);
+    assert.equal(await staticPage.locator('.slot-breadcrumb a[href*="/d/contract-override/child/"] use').getAttribute('href'), '#icon-rss', 'SSR menu projection preserves inherited icons');
+    await noJs.close();
+
+    const iconsContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1440, height: 960 } });
+    await iconsContext.addInitScript(suppressLanguageSuggestDialogScript());
+    const iconsPage = await iconsContext.newPage();
+    const selectedIcon = () => iconsPage.locator('.slot-breadcrumb a.is-current[href*="/p/contract-missing/"] use').getAttribute('href');
+    await gotoAndWait(iconsPage, `${baseUrl}/products/free/?sort=name-desc`);
+    await iconsPage.locator('.slot-main a[href*="/p/contract-missing/?"]').click();
+    await waitForBreadcrumbSettled(iconsPage);
+    assert.equal(await selectedIcon(), '#icon-product');
+    await gotoAndWait(iconsPage, `${baseUrl}/p/contract-missing/?from=products/paid&sort=name-asc`);
+    assert.equal(await selectedIcon(), '#icon-appearance-light');
+    await iconsPage.reload();
+    await waitForBreadcrumbSettled(iconsPage);
+    assert.equal(await selectedIcon(), '#icon-appearance-light');
+    await iconsPage.goBack();
+    await waitForBreadcrumbSettled(iconsPage);
+    assert.equal(await selectedIcon(), '#icon-product');
+    await iconsPage.goForward();
+    await waitForBreadcrumbSettled(iconsPage);
+    assert.equal(await selectedIcon(), '#icon-appearance-light');
+    await iconsContext.close();
+    console.log('PASS inherited/own icons, source-only SVGs, SSR menus, reload and history');
 } finally {
     await browser.close();
     await server.stop();
@@ -148,7 +203,9 @@ const invalidFile = path.join(overlay, 'd/contract-priced/index.md');
 const validContent = fs.readFileSync(invalidFile, 'utf8');
 for (const [name, content, message] of [
     ['currency', validContent.replace('currency: "$", ', ''), 'requires offer.currency'],
-    ['amount', validContent.replace('amount: 25', 'amount: -1'), 'Invalid offer.amount']
+    ['amount', validContent.replace('amount: 25', 'amount: -1'), 'Invalid offer.amount'],
+    ['icon', validContent.replace('icon: appearance-dark', 'icon: no-such-icon'), 'undefined icon'],
+    ['article-default', validContent.replace('icon: appearance-dark', 'icon: appearance-dark\nlist_icon_file: product'), 'only supported on list pages']
 ]) {
     write(invalidFile, content);
     const result = spawnSync(hugo, ['--config', `hugo.toml,${rel(config)}`, '--destination', rel(path.join(work, `invalid-${name}`))],
@@ -156,5 +213,5 @@ for (const [name, content, message] of [
     assert.notEqual(result.status, 0, `invalid ${name} must fail the build`);
     assert((result.stdout + result.stderr).includes(message));
 }
-console.log('PASS supplied price validation');
+console.log('PASS supplied price and icon declaration validation');
 console.log(`Collection contract checks passed: ${rel(work)}`);

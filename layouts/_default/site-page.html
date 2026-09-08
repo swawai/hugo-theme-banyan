@@ -13,6 +13,7 @@
     <h1 class="collection-list-header">{{ .Title }}</h1>
     {{ with .Content }}<div class="prose">{{ . }}</div>{{ end }}
     {{ $entries := slice }}
+    {{ $iconDefaults := partial "list/icon-defaults.html" (dict "page" .) }}
     <div class="grid-list grid-list--single collection-list--grid">
       {{ range .Pages.ByWeight }}
         {{ partial "grid-title-cell.html" (dict
@@ -20,7 +21,7 @@
           "href" .RelPermalink
           "title" .Title
           "text" .LinkTitle
-          "icon" (cond .IsSection "folder" "file")
+          "icon" (partial "list/item-icon.html" (dict "page" . "defaults" $iconDefaults "kind" (cond .IsSection "folder" "file")))
           "linkSlot" "nav") }}
         {{ $entries = $entries | append (dict "url" .Permalink "name" .Title) }}
       {{ end }}

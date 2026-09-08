@@ -24,6 +24,7 @@
 {{- errorf "Build failed: params.service_worker.mode only supports enable/disable/off; got %q." $swModeRaw -}}
 {{- end -}}
 {{- partialCached "audit/permalink-collision.html" (dict "ctx" .) "audit-permalink-collision" -}}
+{{- partialCached "audit/content-icons.html" . "audit-content-icons" -}}
 {{- $primarySite := index (sort .Sites "Language.Weight") 0 -}}
 {{- $buildVersion := partial "build-version.html" $primarySite.Home -}}
 {{- $buildTimeISO := partial "build-time-iso.html" $primarySite.Home -}}
@@ -123,14 +124,12 @@
     {{- end -}}
 {{- end -}}
 {{- .Scratch.Set "entry_collection_sources_by_href" $entryCollectionSourcesByHref -}}
-{{- .Store.SetInMap "used_icons" "file" true -}}
-{{- .Store.SetInMap "used_icons" "folder" true -}}
-{{- .Store.SetInMap "used_icons" "product" true -}}
 {{- $entryBreadcrumbSources = partial "entry-source/browser-sources.html" (dict
     "page" .
     "source_models" $entryBreadcrumbSourceModels
     "page_collection_source" $pageCollectionSource
 ) -}}
+{{- partial "entry-source/register-icons.html" (dict "page" . "sources" $entryBreadcrumbSources) -}}
 {{- if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) -}}
     {{- partialCached "entry-fragments-publish.html" (dict "ctx" . "build_version" $buildVersion) $buildVersion -}}
     {{- $headersBody := partial "cache-policy-cloudflare-headers-body.txt" (dict "routes" $cachePolicyHeaderRoutes) -}}

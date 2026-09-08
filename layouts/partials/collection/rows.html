@@ -28,8 +28,11 @@
   {{- end -}}
 {{- end -}}
 {{- $decorated := slice -}}
+{{- $iconDefaults := partial "list/icon-defaults.html" (dict "page" $page) -}}
 {{- range $row := $rows -}}
   {{- $node := $row.node -}}
+  {{- $icon := partial "list/item-icon.html" (dict "page" $node "defaults" $iconDefaults "kind" (cond (eq $row.kind "page") "file" "folder")) -}}
+  {{- $row = merge $row (dict "icon" $icon) -}}
   {{- if eq $config.view "products" -}}
     {{- $offer := partial "products/offer.html" (dict "page" $node) -}}
     {{- $row = merge $row $offer -}}

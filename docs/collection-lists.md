@@ -28,6 +28,25 @@ list: products
 
 `aggregate` 只用于汇总入口，指向一个 section 或 taxonomy 根。它不从父目录继承。普通目录和分类页无需写 `aggregate`，也不写 `list_source` 或 `product_filter`。主题默认页面的站点专用修改可通过项目同路径文件覆盖；三种语言各自保留完整 front matter。
 
+## 怎样声明条目图标
+
+图形名称来自 `data/icons.toml`。内容支持三个字段：`icon` 指定自己被列出时的图标，`list_icon_folder`／`list_icon_file` 分别指定本列表中的目录或分类／文章的默认图标。例如主题 `content/products/_index.zh.md` 可以声明：
+
+```yaml
+icon: product
+list: directory
+list_icon_folder: folder
+list_icon_file: product
+```
+
+`icon` 只描述该入口本身，不按同名字段继承。条目未声明 `icon` 时，由列出它的列表提供默认值；两个 `list_icon_*` 字段分别沿当前列表的真实祖先取最近的非空声明，最终默认为 `folder`／`file`。省略或空白表示继承，明确写 `folder`／`file` 可以覆盖祖先设置。条目自己的非空 `icon` 始终优先，名称去除首尾空白并统一为小写。
+
+主题现在在 `content/products/_index*.md` 和 `content/all-products/_index*.md` 各声明 `list_icon_file: product`，产品分类子页继承分类根的设置，不需要逐篇给产品文章写图标。Xvenv 未写 `icon`，因此在产品分类和产品全部中显示包裹，在目录、标签和全部文章中仍显示文件；如果希望所有入口一致，在 Xvenv 各语言文件中声明 `icon: product` 即可。
+
+`aggregate` 只提供集合成员，不参与默认图标继承；`/all-products/` 与 `/products/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `index.md` 实现的 `/all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将根入口作为目录条目，使用首页的目录默认值或入口自身的 `icon`。
+
+实现集中在 `list/icon-defaults.html`（解析列表默认值）和 `list/item-icon.html`（自身声明优先）。`collection/rows.html` 为每行写入最终 `icon`，主表、来源 JSON 和路径列共用；站点列表、第一列及首页快捷列表也调用相同规则。`entry-source/register-icons.html` 只收集本页可用来源和祖先列依赖的图标，连同实际静态渲染的图标按需打包，不在每页固定预装一组图标。CSS、浏览器选择／排序逻辑和现有列表数据协议不变。
+
 ## 怎样声明选择列表
 
 语言和外观页面在顶层 front matter 声明 `list: choice`，与 `build.list: local` 是两件事：前者选择行的呈现协议，后者控制 Hugo 是否把页面列入父页面集合。`choice` 使用与其他列表相同的行、图标槽和 `.is-current` 状态，但不排序、不注册 collection 来源，也不参与文章路径。
@@ -87,4 +106,4 @@ weight: 30
 
 ## 验证
 
-在根项目执行 `node themes/banyan/scripts/checks/check-collections.mjs`。它只向 `temp_workspace/` 写临时内容覆盖层，基于根内容构建三种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。
+在根项目执行 `node themes/banyan/scripts/checks/check-collections.mjs`。它只向 `temp_workspace/` 写临时内容覆盖层，基于根内容构建三种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。

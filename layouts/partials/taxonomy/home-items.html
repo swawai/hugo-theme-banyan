@@ -1,5 +1,6 @@
 {{- $ctx := .ctx | default . -}}
 {{- $entries := slice -}}
+{{- $iconDefaults := partial "list/icon-defaults.html" (dict "page" $ctx.Site.Home) -}}
 {{- $siteLatest := "" -}}
 {{- with first 1 ($ctx.Site.RegularPages.ByDate.Reverse) -}}
   {{- $siteLatest = (index . 0).Date -}}
@@ -24,7 +25,7 @@
     "title" $page.Title
     "text" $text
     "href" $page.RelPermalink
-    "icon" "folder"
+    "icon" (partial "list/item-icon.html" (dict "page" $page "defaults" $iconDefaults "kind" "folder"))
     "prefetchKind" "nav"
     "cnt" $count
     "countText" $count

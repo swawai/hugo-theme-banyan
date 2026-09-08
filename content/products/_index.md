@@ -4,6 +4,7 @@ description: Browse products by price or origin.
 weight: 50
 layout: article-list
 list: directory
+list_icon_file: product
 outputs:
   - HTML
 slots:

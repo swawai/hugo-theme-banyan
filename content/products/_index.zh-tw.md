@@ -4,6 +4,7 @@ description: 按價格或來源瀏覽產品。
 weight: 50
 layout: article-list
 list: directory
+list_icon_file: product
 outputs:
   - HTML
 slots:

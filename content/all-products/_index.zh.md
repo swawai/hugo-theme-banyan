@@ -8,5 +8,6 @@ outputs:
 slots:
   breadcrumb: true
 list: products
+list_icon_file: product
 aggregate: /products
 ---

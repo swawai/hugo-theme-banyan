@@ -1,0 +1,15 @@
+{{- $page := .page -}}
+{{- $defaults := dict -}}
+{{- $candidates := slice $page -}}
+{{- range $page.Ancestors -}}{{- $candidates = $candidates | append . -}}{{- end -}}
+{{- range $candidate := $candidates -}}
+  {{- range $kind := slice "folder" "file" -}}
+    {{- if not (isset $defaults $kind) -}}
+      {{- with index $candidate.Params (printf "list_icon_%s" $kind) -}}
+        {{- $icon := lower (trim (printf "%v" .) " \r\n\t") -}}
+        {{- if $icon -}}{{- $defaults = merge $defaults (dict $kind $icon) -}}{{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return (merge (dict "folder" "folder" "file" "file") $defaults) -}}
