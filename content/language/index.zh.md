@@ -1,5 +1,6 @@
 ---
 title: 系统－语言
+linkTitle: 语言
 slug: language
 layout: language-page
 list: choice

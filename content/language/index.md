@@ -1,5 +1,6 @@
 ---
 title: System - Language
+linkTitle: Language
 slug: language
 layout: language-page
 list: choice

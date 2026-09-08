@@ -1,5 +1,6 @@
 ---
 title: System - Appearance
+linkTitle: Appearance
 slug: appearance
 layout: appearance-page
 list: choice

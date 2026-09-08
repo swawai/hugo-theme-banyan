@@ -1,6 +1,7 @@
 ---
 draft: false
 title: System - My
+linkTitle: My
 slug: my
 type: my
 layout: my-page

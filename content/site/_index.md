@@ -1,5 +1,6 @@
 ---
 title: System - Site
+linkTitle: Site
 description: Site information, release notes, and contact pages.
 layout: article-list
 list: directory

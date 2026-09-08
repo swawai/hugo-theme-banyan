@@ -1,5 +1,6 @@
 ---
 title: 系統－外觀
+linkTitle: 外觀
 slug: appearance
 layout: appearance-page
 list: choice
