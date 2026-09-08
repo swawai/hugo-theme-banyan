@@ -75,7 +75,9 @@ list_icon_file: product
 
 `icon` 只描述该入口本身，不按同名字段继承。条目未声明 `icon` 时，由列出它的列表提供默认值；两个 `list_icon_*` 字段分别沿当前列表的真实祖先取最近的非空声明，最终默认为 `folder`／`file`。省略或空白表示继承，明确写 `folder`／`file` 可以覆盖祖先设置。条目自己的非空 `icon` 始终优先，SVG 名称去除首尾空白并统一为小写；对象只允许一个非空字符串字段 `text` 或 `image`，保留大小写。`list_icon_folder` 与 `list_icon_file` 同样接受文字、图片对象，继承时整体替换。
 
-图片路径相对于声明它的页面 bundle：`content/icp/index.zh.md` 写 `icon: { image: "0.webp" }`，读取 `content/icp/0.webp`，复用 `page-resource/publish.html` 发布为 `/media/content/icp/0.<sha256>.webp`。图片默认值在声明目录解析后才继承，不会改成从子目录寻找同名文件；所有语言共用同一资源地址。图片按 `1rem` 显示、保持比例，使用共用图标占位，无灯箱或正文图片的响应式变体。仅接受 bundle 内真实图片，缺失资源、远程地址和非图片文件会使构建失败。若页面自行声明 `build`，需同时保留 `publishResources: false`，避免覆盖全局 cascade 后又发布无哈希原图。语言配置中的图片由对应语言的首页 bundle 提供。
+图片统一调用现有 `asset/publish.html`：先查声明页面的 bundle，再查全站 `assets/`。例如 `content/icp/index.zh.md` 写 `icon: { image: "0.webp" }`，读取 `content/icp/0.webp`，发布为 `/media/content/icp/0.<sha256>.webp`。站点三语言入口声明 `icon: { image: "site/pwa/favicon.svg" }`，读取 `assets/site/pwa/favicon.svg`，发布为 `/site/pwa/favicon.<sha256>.svg`，与浏览器标签图标共用同一资源和 URL。全站资源路径不带 `assets/` 前缀；`./0.webp` 则明确只从声明页面的 bundle 查找，缺失时不转查 assets。
+
+图片默认值在声明目录解析后才继承，不会改成从子目录寻找同名文件。图片按 `1rem` 显示、保持比例，使用共用图标占位，无灯箱或正文图片的响应式变体。缺失资源、静态／远程 URL 和非图片文件会使构建失败。若页面自行声明 `build`，需同时保留 `publishResources: false`，避免覆盖全局 cascade 后又发布无哈希原图。语言配置中的图片以对应语言首页作为 bundle 上下文，同样支持全站 assets。
 
 主题现在在 `content/products/_index*.md` 和 `content/all-products/_index*.md` 各声明 `list_icon_file: product`，产品分类子页继承分类根的设置，不需要逐篇给产品文章写图标。Xvenv 未写 `icon`，因此在产品分类和产品全部中显示包裹，在目录、标签和全部文章中仍显示文件；如果希望所有入口一致，在 Xvenv 各语言文件中声明 `icon: product` 即可。
 

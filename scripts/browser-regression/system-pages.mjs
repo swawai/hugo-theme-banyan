@@ -35,6 +35,9 @@ export const systemPageScenarios = [
                 assert.equal(await page.locator(`${homeEntry}.is-current`).count(), 1);
                 assert.equal(await page.locator(`${homeEntry} .icon--text`).textContent(), '©');
                 assert.equal(await page.locator(homeEntry).getAttribute('href'), `${prefix}/`);
+                const siteIcon = page.locator(`[data-root-href="${prefix}/site/"] img.icon--image`);
+                assert.equal(await siteIcon.getAttribute('src'), await page.locator('head link[rel="icon"][type="image/svg+xml"]').getAttribute('href'));
+                await siteIcon.evaluate(image => image.decode());
                 await gotoAndWait(page, `${baseUrl}${prefix}/d/`);
                 const directoryGeometry = await geometry();
                 await gotoAndWait(page, `${baseUrl}${prefix}/site/`);

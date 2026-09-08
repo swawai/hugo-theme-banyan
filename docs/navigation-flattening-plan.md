@@ -21,6 +21,10 @@
 
 当前行动安排（2026-09-08，以下规则优先于后面的历史记录）：
 
+站点 Logo：三语言站点入口声明 `icon: { image: "site/pwa/favicon.svg" }`，通用图片图标改为调用现有 `asset/publish.html`，复用页面 bundle／全站 assets 的既有解析和哈希发布规则。入口 Logo 与 HTML 的 favicon 共用 `/site/pwa/favicon.<sha256>.svg`；不复制 Logo、不增加发布器或 JS 分支。图片目录默认值和自身声明均支持 assets，既有 ICP bundle 图片继续使用原哈希路径。
+
+站点 Logo 验收：集合契约 `temp_workspace/collection-contract-BeFSY5` 覆盖 assets 自身／默认图标、三语言 SSR／运行时、刷新和历史，以及显式 bundle、静态／远程 URL、缺失及非图片资源校验；确认全站 Logo 只生成一份哈希资源。生产构建 `temp_workspace/public/2609082213-site-logo-assets` 的 141 页 HTML 审计、图片发布检查和 2 项相关浏览器回归通过（`temp_workspace/regression/260908221328-browser/report.json`）。局域网预览核对三语言同一 favicon URL、15px 图标尺寸、文章进入后的选中态及浅色／深色截图，产物在 `temp_workspace/site-logo-live/`。
+
 入口名称简化：语言、外观、我的、站点三语言页面通过 front matter 的 `linkTitle` 声明简称，第一列统一去掉“系统－／System -”前缀；页面自身 `title` 继续用于页内标题，无需修改导航模板。
 
 备案名称与链接补齐：三语言入口显示完整 `粤ICP备2024338434号`；正文备案号自身加粗并链接至 `https://beian.miit.gov.cn/`，原有查询网站说明链接继续保留。

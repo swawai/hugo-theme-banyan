@@ -1,4 +1,4 @@
-// Mirror published icon values; image URLs already point to hashed page resources.
+// Mirror published icon values; image URLs already point to hashed resources.
 export function normalizeIcon(value) {
     if (typeof value === 'string') return value.trim().toLowerCase() || null;
     if (value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === 1) {

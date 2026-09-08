@@ -709,6 +709,8 @@ export const scenarios = [
                             .map((link) => link.dataset.rootHref),
                         home: nav?.querySelector(`[data-root-href="${prefix}"]`)?.getAttribute('href'),
                         homeIcon: nav?.querySelector(`[data-root-href="${prefix}"] .icon--text`)?.textContent,
+                        siteIcon: nav?.querySelector(`[data-root-href="${prefix}site/"] img.icon--image`)?.getAttribute('src'),
+                        favicon: doc.querySelector('link[rel="icon"][type="image/svg+xml"]')?.getAttribute('href'),
                         footerCount: doc.querySelectorAll('footer, .slot-footer').length,
                         settings: [...doc.querySelectorAll('[data-root-href][data-settings-link]')]
                             .map((link) => link.dataset.rootHref),
@@ -730,7 +732,7 @@ export const scenarios = [
                     || state.icons.language !== '#icon-language'
                     || state.icons.appearance !== '#icon-theme'
                     || state.icons.my !== '#icon-my'
-                    || state.icons.site !== '#icon-folder') {
+                    || !state.favicon || state.siteIcon !== state.favicon) {
                     fail('Every locale must SSR one weighted root list with ordinary URLs, declared icons and no settings-link rewriting markers.', state);
                 }
             }

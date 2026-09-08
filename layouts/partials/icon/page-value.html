@@ -1,11 +1,9 @@
-{{- /* Resolve images against the declaring page, before inheritance or projection into another list. */ -}}
+{{- /* Resolve bundle/global images before inheritance or projection into another list. */ -}}
 {{- $value := partial "icon/resolve.html" . -}}
 {{- if and (reflect.IsMap $value) (isset $value "image") -}}
   {{- $owner := .page -}}
-  {{- $published := partialCached "page-resource/publish.html" (dict "ctx" (dict "Page" $owner) "src" $value.image) $owner.RelPermalink $value.image -}}
-  {{- if not $published.resolved -}}
-    {{- errorf "Build failed: %s icon.image must name an image in the declaring page bundle: %q." $owner.RelPermalink $value.image -}}
-  {{- else if ne $published.resource.MediaType.MainType "image" -}}
+  {{- $published := partialCached "asset/publish.html" (dict "ctx" (dict "Page" $owner) "src" $value.image) $owner.RelPermalink $value.image -}}
+  {{- if ne $published.resource.MediaType.MainType "image" -}}
     {{- errorf "Build failed: %s icon.image must reference an image resource: %q." $owner.RelPermalink $value.image -}}
   {{- else -}}
     {{- $value = dict "image" $published.src -}}
