@@ -44,7 +44,7 @@ RSS、GitHub 和备案信息都使用普通 `article-page`，不新增外链条�
 | 主题 `content/site/rss/index*.md` | RSS 订阅说明，正文调用 `{{< rss-link >}}` |
 | 主题 `content/site/github/index*.md` | 默认的 Banyan 仓库说明；项目可同路径覆盖 |
 | 项目 `content/site/github/index*.md` | Swaw 的 GitHub 主页说明与链接 |
-| 项目 `content/icp/index*.md` | 本站备案说明及工信部查询链接；作为普通根入口，`linkTitle: "ICP备2024338434号"`、`icon: { image: "0.webp" }`、`weight: 105`，排在首页入口之前；主题不存放业务备案信息 |
+| 项目 `content/icp/index*.md` | 本站备案说明及工信部查询链接；作为普通根入口，`linkTitle: "粤ICP备2024338434号"`、`icon: { image: "0.webp" }`、`weight: 105`，排在首页入口之前；正文备案号本身链接到工信部查询网站；主题不存放业务备案信息 |
 
 `layouts/shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。GitHub 和备案链接直接写在 Markdown 正文中，用户进入说明页后自行点击。
 

@@ -61,13 +61,13 @@ export const systemPageScenarios = [
                 assert.match(await filingIcon.getAttribute('src'), /^\/media\/content\/icp\/0\.[a-f0-9]{64}\.webp$/);
                 await filingIcon.evaluate(image => image.decode());
                 assert.equal(await filingIcon.getAttribute('alt'), '');
-                assert.equal(await filingEntry.locator('.collection-item-title').textContent(), 'ICP备2024338434号');
+                assert.equal(await filingEntry.locator('.collection-item-title').textContent(), '粤ICP备2024338434号');
                 assert.deepEqual((await rowPaths('[data-root-href]')).slice(-2), [`${prefix}/icp/`, `${prefix}/`]);
                 await filingEntry.click();
                 await waitForBreadcrumbSettled(page);
                 assert.equal(await filingEntry.getAttribute('aria-current'), 'page');
                 assert.match(await page.locator('.slot-main .prose').textContent(), /粤ICP备2024338434号/);
-                assert.equal(await page.locator('.slot-main .prose a[href="https://beian.miit.gov.cn/"]').count(), 1);
+                assert.equal(await page.locator('.slot-main .prose a[href="https://beian.miit.gov.cn/"]').filter({hasText: /^粤ICP备2024338434号$/}).count(), 1);
                 await page.goBack();
                 await page.waitForURL(`${baseUrl}${prefix}/site/`);
                 await waitForBreadcrumbSettled(page);
