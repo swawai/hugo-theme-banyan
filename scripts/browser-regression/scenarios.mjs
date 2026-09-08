@@ -2098,7 +2098,7 @@ export const scenarios = [
             });
 
             await gotoAndWait(page, baseUrl + '/language/');
-            await page.waitForSelector('[data-language-settings][data-language-state="ready"]');
+            await page.waitForSelector('[data-language-settings] .is-current');
             const initialState = await readLanguageSettingsState(page);
             if (initialState.options.length !== 3
                 || initialState.options.some((option) => option.tagName !== 'A' || !option.href || option.disabled)) {
@@ -2107,7 +2107,7 @@ export const scenarios = [
             const targetOption = initialState.options.find((option) => option.value === 'zh');
             await page.locator('[data-language-choice="zh"]').click();
             await page.waitForURL((url) => url.pathname === new URL(targetOption.href, baseUrl).pathname);
-            await page.waitForSelector('[data-language-settings][data-language-state="ready"]');
+            await page.waitForSelector('[data-language-settings] .is-current');
             const switchedState = await readLanguageSettingsState(page);
             const preferredLanguage = await page.evaluate(() => localStorage.getItem('preferred_lang'));
             if (!switchedState.options.some((option) => option.value === 'zh' && option.current === 'page')
@@ -2117,20 +2117,20 @@ export const scenarios = [
 
             await resetRuntimeJsonFetchProbe(page);
             await gotoAndWait(page, baseUrl + '/language/?return=' + encodeURIComponent('/prefetchdebug/'));
-            await page.waitForSelector('[data-language-settings][data-language-state="ready"]');
+            await page.waitForSelector('[data-language-settings] .is-current');
             const missingTranslationState = await readLanguageSettingsState(page);
             const missingTarget = missingTranslationState.options.find((option) => option.value === 'zh');
             if (!missingTranslationState.noTranslationMessage
                 || !missingTranslationState.languageSuggestionMessage
-                || !missingTarget?.href || missingTarget.hasTranslation || missingTarget.disabled) {
-                fail('Missing-translation choices must retain static labels, destination and prompt.', missingTranslationState);
+                || !missingTarget?.href || !missingTarget.hasTranslation || missingTarget.disabled) {
+                fail('Settings language choices depend on their own translations, not the return page.', missingTranslationState);
             }
             const dialogCountBeforeMissingSelection = dialogs.length;
             await page.locator('[data-language-choice="zh"]').click();
             await page.waitForURL((url) => url.pathname === new URL(missingTarget.href, baseUrl).pathname);
             const missingDialogs = dialogs.slice(dialogCountBeforeMissingSelection);
-            if (missingDialogs.length !== 1 || !missingDialogs[0].message.includes(missingTarget.text)) {
-                fail('Missing-translation navigation must retain its localized confirmation.', { missingDialogs, missingTarget });
+            if (missingDialogs.length !== 0 || new URL(page.url()).pathname !== '/zh/language/') {
+                fail('Language selection stays in settings without a return-page translation prompt.', { missingDialogs, missingTarget });
             }
             return {
                 blockedRuntimeRequests: [...new Set(blockedRuntimeRequests)],
@@ -2170,7 +2170,7 @@ export const scenarios = [
             ensureTwoBuilds(upgradePair);
             server.setRoot(upgradePair.fromDir);
             await gotoAndWait(page, baseUrl + '/language/');
-            await page.waitForSelector('[data-language-settings][data-language-state="ready"]');
+            await page.waitForSelector('[data-language-settings] .is-current');
             await waitForServiceWorkerActive(page);
             const beforeUpdate = await readLanguageSettingsState(page);
             if (beforeUpdate.options.length !== 3

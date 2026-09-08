@@ -19,20 +19,22 @@ function message(template, replacements) {
 }
 
 export function initLanguagePreference() {
-    let context = readContext(document.body);
+    const context = readContext(document.body);
     if (!context) return;
     const picker = document.querySelector('[data-language-settings]');
     const returnAddress = picker ? settingsReturnUrl() : null;
-    const hasReturn = picker && new URL(window.location.href).searchParams.has('return');
-    let sourceUrl = returnAddress || new URL(window.location.href);
-    let available = !hasReturn;
 
     const targetHref = (option) => {
         const target = localUrl(option.href);
         if (!target) return '';
         if (option.translated) {
+            const sourceUrl = new URL(window.location.href);
             target.search = sourceUrl.search;
             target.hash = sourceUrl.hash;
+            if (picker) {
+                target.searchParams.delete('return');
+                if (returnAddress) target.searchParams.set('return', returnAddress.pathname + returnAddress.search + returnAddress.hash);
+            }
         }
         return target.pathname + target.search + target.hash;
     };
@@ -40,61 +42,22 @@ export function initLanguagePreference() {
         document.querySelectorAll('[data-language-choice]').forEach((link) => {
             const option = context.options.find((item) => item.code === link.dataset.languageChoice);
             if (!option) return;
-            if (available) link.href = targetHref(option);
-            else link.removeAttribute('href');
+            link.href = targetHref(option);
             link.dataset.hasTrans = String(option.translated);
             const selected = option.code === context.language;
             link.classList.toggle('is-current', selected);
             if (selected) link.setAttribute('aria-current', 'page');
             else link.removeAttribute('aria-current');
-            if (available) link.removeAttribute('aria-disabled');
-            else link.setAttribute('aria-disabled', 'true');
         });
     };
-    const setStatus = (state) => {
-        if (!picker) return;
-        picker.dataset.languageState = state;
-        const status = picker.querySelector('[data-settings-status]');
-        const retry = picker.querySelector('[data-settings-retry]');
-        if (status) {
-            status.textContent = state === 'loading' ? picker.dataset.loadingLabel
-                : state === 'error' ? picker.dataset.errorLabel : '';
-            status.hidden = state === 'ready';
-        }
-        if (retry) retry.hidden = state !== 'error';
-    };
-    const loadReturnContext = async () => {
-        if (!hasReturn) { setStatus('ready'); render(); return; }
-        available = false;
-        setStatus('loading');
-        render();
-        try {
-            if (!returnAddress) throw new Error('Invalid return address');
-            const response = await fetch(returnAddress.pathname + returnAddress.search, { credentials: 'same-origin' });
-            if (!response.ok || !response.headers.get('content-type')?.includes('text/html')) throw new Error('Unavailable return page');
-            const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
-            const original = readContext(doc.body);
-            if (!original || original.page !== returnAddress.pathname
-                || original.options.some((option) => !localUrl(option.href))) throw new Error('Unavailable translation context');
-            context = original;
-            sourceUrl = returnAddress;
-            available = true;
-            setStatus('ready');
-            render();
-        } catch { setStatus('error'); }
-    };
-    let ready = loadReturnContext();
-    picker?.querySelector('[data-settings-retry]')?.addEventListener('click', () => { ready = loadReturnContext(); });
+    render();
 
-    document.addEventListener('click', async (event) => {
+    document.addEventListener('click', (event) => {
         const link = event.target instanceof Element ? event.target.closest('a[data-language-choice]') : null;
         if (!link || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
         event.preventDefault();
-        await ready;
-        if (!available) return;
         const option = context.options.find((item) => item.code === link.dataset.languageChoice);
         if (!option) return;
-        if (!hasReturn) sourceUrl = new URL(window.location.href);
         const href = targetHref(option);
         if (!href) return;
         if (!option.translated && !window.confirm(message(context.missing, { lang: option.name }))) return;

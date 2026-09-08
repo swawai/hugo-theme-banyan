@@ -49,7 +49,7 @@ export const systemPageScenarios = [
             await settingsEntry('language').click({ button: 'middle' });
             const popup = await popupReady;
             try {
-                await popup.waitForSelector('[data-language-state="ready"]');
+                await popup.waitForSelector('[data-settings-return]:not([hidden])');
                 assert.equal(new URL(popup.url()).searchParams.get('return'), relativeUrl());
                 assert.equal(await popup.locator('[data-settings-return]').getAttribute('href'), relativeUrl());
             } finally { await popup.close(); }
@@ -88,7 +88,7 @@ export const systemPageScenarios = [
             await page.waitForURL(url => url.pathname === '/zh/site/');
             await assertReturnLinks(source);
             await settingsEntry('language').click();
-            await page.waitForSelector('[data-language-state="ready"]');
+            await page.waitForSelector('[data-settings-return]:not([hidden])');
             await assertReturnLinks(source);
             await page.locator('[data-settings-return]').click();
             await page.waitForURL(url => url.pathname + url.search + url.hash === source);
@@ -99,47 +99,51 @@ export const systemPageScenarios = [
         id: 'system-language-return',
         kind: 'single',
         serviceWorkers: 'block',
-        title: 'Language Page Preserves Reading Context',
+        title: 'Language Changes Stay on the Settings Page',
         dialogPolicy: 'dismiss',
         async run({ page, baseUrl, dialogs, artifactDir }) {
-            await gotoAndWait(page, `${baseUrl}/zh/p/xvenv/?from=%2Fproducts%2Ffree%2F&sort=name-asc&sorts=_,name-asc#details`);
+            await gotoAndWait(page, baseUrl + '/zh/p/xvenv/?from=%2Fproducts%2Ffree%2F&sort=name-asc&sorts=_,name-asc#details');
             const source = new URL(page.url());
+            const returnHref = source.pathname + source.search + source.hash;
             await page.locator('[data-root-navigation] a[data-root-href="/zh/language/"]').click();
-            await page.waitForSelector(`${picker}[data-language-state="ready"]`);
-            const returnHref = await page.locator('[data-settings-return]').getAttribute('href');
-            assert.equal(returnHref, source.pathname + source.search + source.hash);
-            await page.locator(`${system} [data-language-choice="en"]`).click();
-            await page.waitForURL((url) => url.pathname === '/p/xvenv/');
-            const translated = new URL(page.url());
-            assert.equal(translated.search, source.search);
-            assert.equal(translated.hash, source.hash);
-            assert.equal(await page.evaluate(() => localStorage.getItem('preferred_lang')), 'en');
-
-            // The root project's existing debug page intentionally has no Chinese translation.
-            await gotoAndWait(page, `${baseUrl}/zh/language/?return=${encodeURIComponent('/prefetchdebug/?sort=name.asc#debug')}`);
-            await page.waitForSelector(`${picker}[data-language-state="ready"]`);
-            const before = page.url();
-            const dialogCount = dialogs.length;
-            await page.locator(`${system} [data-language-choice="zh"]`).click();
-            assert.equal(page.url(), before);
-            assert.equal(dialogs.length, dialogCount + 1);
-
-            await gotoAndWait(page, `${baseUrl}/zh/language/?return=${encodeURIComponent('https://example.invalid/article/')}`);
-            await page.waitForSelector(`${picker}[data-language-state="error"]`);
-            assert.equal(await page.locator('[data-settings-return]').isVisible(), false);
-            assert.equal(await page.locator(`${system} [data-language-choice="en"]`).getAttribute('aria-disabled'), 'true');
-            assert.equal(await page.locator(`${system} [data-language-choice="en"]`).getAttribute('href'), null);
+            for (const [code, pathname] of [['en', '/language/'], ['zh-tw', '/zh-tw/language/'], ['zh', '/zh/language/']]) {
+                const choice = page.locator('[data-language-choice="' + code + '"]');
+                const href = new URL(await choice.getAttribute('href'), baseUrl);
+                assert.equal(href.pathname, pathname, 'Static choice href targets the language page itself.');
+                await choice.click();
+                await page.waitForURL(url => url.pathname === pathname);
+                await page.waitForSelector('[data-settings-return]:not([hidden])');
+                assert.equal(new URL(page.url()).searchParams.get('return'), returnHref);
+                assert.equal(await page.locator('[data-settings-return]').getAttribute('href'), returnHref);
+                assert.equal(await page.evaluate(() => localStorage.getItem('preferred_lang')), code);
+                assert.equal(await page.locator('[data-language-choice="' + code + '"]').getAttribute('aria-current'), 'page');
+            }
+            await page.reload();
+            await page.waitForSelector('[data-settings-return]:not([hidden])');
             assert.equal(new URL(page.url()).pathname, '/zh/language/');
+            await page.locator('[data-settings-return]').click();
+            await page.waitForURL(url => url.pathname + url.search + url.hash === returnHref);
 
-            // A failed source lookup offers retry, without guessing a translation URL.
-            await page.route('**/zh/about/**', (route) => route.fulfill({ status: 503, body: '' }));
-            await gotoAndWait(page, `${baseUrl}/zh/language/?return=${encodeURIComponent('/zh/about/?probe=language-retry')}`);
-            await page.waitForSelector(`${picker}[data-language-state="error"]`);
+            // An unavailable or untranslated return page does not participate in language selection.
+            let sourceRequests = 0;
+            await page.route('**/zh/about/**', route => { sourceRequests++; return route.fulfill({status: 503, body: ''}); });
+            await gotoAndWait(page, baseUrl + '/zh/language/?return=' + encodeURIComponent('/zh/about/?probe=language'));
+            await page.locator('[data-language-choice="en"]').click();
+            await page.waitForURL(url => url.pathname === '/language/');
+            assert.equal(sourceRequests, 0, 'Language switching does not fetch the return page.');
             await page.unroute('**/zh/about/**');
-            await page.locator('[data-settings-retry]').click();
-            await page.waitForSelector(`${picker}[data-language-state="ready"]`);
-            await page.screenshot({ path: path.join(artifactDir, 'language.png') });
+            const dialogCount = dialogs.length;
+            await gotoAndWait(page, baseUrl + '/language/?return=' + encodeURIComponent('/prefetchdebug/'));
+            await page.locator('[data-language-choice="zh"]').click();
+            await page.waitForURL(url => url.pathname === '/zh/language/');
+            assert.equal(dialogs.length, dialogCount, 'The return page missing a translation causes no prompt.');
 
+            await gotoAndWait(page, baseUrl + '/zh/language/?return=' + encodeURIComponent('https://example.invalid/article/'));
+            assert.equal(await page.locator('[data-settings-return]').isVisible(), false);
+            await page.locator('[data-language-choice="en"]').click();
+            await page.waitForURL(url => url.pathname === '/language/');
+            assert.equal(new URL(page.url()).searchParams.has('return'), false);
+            await page.screenshot({ path: path.join(artifactDir, 'language.png') });
             await gotoAndWait(page, `${baseUrl}/zh/all/?sort=name-asc`);
             const original = new URL(page.url());
             const expectedReturn = original.pathname + original.search;
@@ -151,7 +155,7 @@ export const systemPageScenarios = [
             assert.equal(new URL(page.url()).searchParams.get('return'), expectedReturn);
             await page.locator('[data-page-action="back"]').click();
             await page.waitForURL(url => url.pathname === original.pathname && url.search === original.search);
-            return { message: 'Translation, source query/hash, missing-translation cancellation, invalid return and retry passed.' };
+            return { message: 'Three language switches stay in settings; preference, refresh, explicit return and unavailable/invalid source independence passed.' };
         }
     },
     {

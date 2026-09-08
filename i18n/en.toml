@@ -90,15 +90,6 @@ other = "Try other language versions:"
 [settings_return]
 other = "Return to previous page"
 
-[settings_loading]
-other = "Loading the previous page…"
-
-[settings_load_failed]
-other = "Unable to load the previous page. Retry or return to it."
-
-[settings_retry]
-other = "Retry"
-
 [appearance_auto]
 other = "Follow system"
 
