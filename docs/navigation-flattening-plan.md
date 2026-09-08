@@ -21,6 +21,8 @@
 
 当前行动安排（2026-09-08，以下规则优先于后面的历史记录）：
 
+字符图标字号微调：移除旧语言短标记遗留的 `0.75em`，字符直接继承条目字号。实测 `EN` 在 15px 字号下宽约 20.5px，因此共享占位统一为 `1.5rem`，SVG 图形维持 `1rem`；三语言文字起点一致，EN 与名称间保留约 3.3px。保留用户在中文与繁体首页设置的 `weight: 110`。生产构建 `temp_workspace/public/2609082052-character-icon-size` 的 HTML 审计与 3 项相关回归通过（`temp_workspace/regression/260908205240-browser/report.json`）；实际预览截图及测量在 `temp_workspace/character-icon-size/`。本次只微调共用样式，不进入后续配色步骤。
+
 本步验收记录：最终生产构建 `temp_workspace/public/2609082014-home-entry-reviewed` 的 141 页 HTML 审计和导航检查通过；集合契约 `temp_workspace/collection-contract-GLRG0o` 覆盖三语言／三种列表、字符继承与 SVG 覆盖、纯文本转义、来源 JSON、静态路径列、刷新和历史，以及非法声明。完整 38 项浏览器回归先通过 37 项，发现语言图标槽缺少原有装饰性辅助标记；补齐后包含该失败项的 4 项相关回归全部通过（`temp_workspace/regression/260908201303-browser/report.json`），另有 3 项安全检查通过（`temp_workspace/regression/260908201304-browser-security/report.json`）。实际局域网预览验证 15 个路由、9 个禁用 JS 页面、切换语言后的返回，并核对浅色／深色／窄屏截图，产物在 `temp_workspace/unified-icons-live/`。等待用户复测后再推进后续设计。
 
 统一字符图标与首页入口：`icon`、`list_icon_folder`、`list_icon_file` 同时支持 SVG 名称和 `{ text: "©" }`。语言配置迁移到相同的 `params.icon`，移除专用 `icon_text`／`iconText` 数据通道；共享渲染与浏览器路径列保留字符大小写、按纯文本输出，SVG 继续按需打包。首页自身加入第一列，用根 `content/_index*.md` 的 `linkTitle`、`icon`、`weight` 排在第一项；首页只在访问自身时选中，其他入口及有效 `from` 保持原规则。移除重复列头首页链接、版权页脚、`slots.footer` 及其专用片段／模板／样式。首页动画布局与后续配色计划保持原范围。

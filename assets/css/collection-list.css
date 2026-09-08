@@ -33,14 +33,14 @@
     position: relative;
     z-index: 1;
     display: inline-flex;
-    inline-size: 1rem;
+    /* Fit short text marks such as EN without shrinking their font. */
+    inline-size: 1.5rem;
     flex: none;
     align-items: center;
     justify-content: center;
 }
 
 .collection-item-icon--text {
-    font-size: 0.75em;
     line-height: 1;
     text-decoration: none;
 }
