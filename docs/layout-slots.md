@@ -16,7 +16,7 @@
 - `build.list: never` 的内部节点不作为入口。内部 fragment 同时设置 `build.render: never`，避免生成独立页面。
 - `weight` 只需在入口本身定义，不应 cascade 到所有文章。
 
-当前项目显示文章 - 全部、文章 - 分类、产品 - 全部、产品 - 分类及语言、外观、我的、关于、更新、微信、GitHub、RSS、备案、首页共 14 项，来自根页面声明而非模板白名单。首页在 `content/_index*.md` 声明 `root_nav: true`、`linkTitle`、`icon` 和 `weight`，使用普通条目组件，正文继续使用 `home-brand`。
+当前项目显示文章 - 全部、文章 - 分类、产品 - 全部、产品 - 分类及语言、外观、我的、关于、更新、RSS、微信、GitHub、备案、首页共 14 项，来自根页面声明而非模板白名单。首页在 `content/_index*.md` 声明 `root_nav: true`、`linkTitle`、`icon` 和 `weight`，使用普通条目组件，正文继续使用 `home-brand`。
 
 `nav_primary`、`slots.primary_nav`、`slots.utilities` 和 `slots.breadcrumb_root` 已移除，对应的主菜单、系统下拉及 breadcrumb model fragment 不再参与装配。新增入口应建立真实根页面或 taxonomy 根，声明 `root_nav: true` 并提供名称与顺序。
 

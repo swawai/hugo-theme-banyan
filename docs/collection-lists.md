@@ -78,7 +78,7 @@ slots:
 | --- | --- |
 | 项目 `content/about/index*.md` | Swaw 与创始人介绍；`weight: 95`、`icon: { image: "site/pwa/favicon.svg" }` 使用站点 logo，与浏览器 favicon、GitHub 头像共用同一哈希资源，点击仍进入 `/about/`；主题同路径保留通用默认内容 |
 | 项目 `content/wechat/index*.md` | 微信二维码页面；`icon: wechat`、`weight: 101` |
-| 主题 `content/rss/index*.md` | RSS 订阅说明，正文调用 `{{< rss-link >}}`；`icon: rss`、`weight: 103` |
+| 项目 `content/rss/index*.md` | 覆盖主题 RSS 默认页的入口顺序，正文仍调用 `{{< rss-link >}}`；`icon: rss`、`weight: 100`，排在更新之后、微信之前；主题默认权重仍为 `103` |
 | 主题 `content/github/index*.md` | 默认的 Banyan 仓库说明；`icon: github`、`weight: 102`，项目可同路径覆盖 |
 | 项目 `content/github/index*.md` | 仅展示 SwawHQ 组织账号的头像与普通链接，保留完整入口声明；头像通过现有 `asset` 短代码引用项目 `assets/site/pwa/favicon.svg`，与浏览器图标共用哈希资源，不使用表格 |
 | 项目 `content/icp/index*.md` | 本站备案说明及工信部查询链接；作为普通根入口，`linkTitle: "粤ICP备2024338434号"`、`icon: { image: "0.webp" }`、`weight: 105`，排在首页入口之前；正文备案号本身链接到工信部查询网站；主题不存放业务备案信息 |
@@ -87,7 +87,7 @@ slots:
 
 GitHub 和备案页的目标链接使用 `{{< new-tab href="https://example.com/" >}}链接文字{{< /new-tab >}}`，头像可在其中嵌套 `asset` 短代码；加粗可在短代码外侧使用 Markdown `**`。该短代码复用 `link.html` 输出 `target="_blank"`、`rel="noopener noreferrer"`，不需要 JavaScript，也无需开启 Markdown 原始 HTML。第一列入口仍使用当前标签打开说明页。
 
-关于（`95`）、更新（`96`）排在我的（`90`）之后；微信、GitHub、RSS 三个入口依次排在更新之后、备案（`105`）和首页版权（`110`）之前。微信保持 `/wechat/`，GitHub、RSS 分别使用 `/github/`、`/rss/`，各语言沿用原语言前缀。第一列共 14 项；原 PWA 状态和站点合并为更新，旧页脚及其片段配置已移除。
+关于（`95`）、更新（`96`）排在我的（`90`）之后；RSS（`100`）、微信（`101`）、GitHub（`102`）依次排在更新之后、备案（`105`）和首页版权（`110`）之前。微信保持 `/wechat/`，GitHub、RSS 分别使用 `/github/`、`/rss/`，各语言沿用原语言前缀。第一列共 14 项；原 PWA 状态和站点合并为更新，旧页脚及其片段配置已移除。
 
 ## 统一更新时间
 
