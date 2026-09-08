@@ -4,7 +4,7 @@ draft: false
 title: "关于"
 slug: "about"
 url: about/
-weight: 10
+weight: 95
 type: "page"
 layout: "article-page"
 slots:

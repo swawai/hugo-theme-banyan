@@ -6,7 +6,7 @@
 
 第一列复用第二、三列的 `grid-title-cell.html`、`collection/item-content.html` 和 `collection-list.css`，沿用行结构、图标、间距、悬停及 `.is-current` 选中态；适配容器与断点限制。统一入口列表保持完整，来源变化只更新选中项，避免原根菜单渲染函数把它替换成局部菜单。
 
-目标入口：目录、阅读目的、标签、全部文章、产品－分类、产品－全部、语言、外观、我的、站点、微信、GitHub、RSS 订阅、备案（图片图标＋粤ICP备2024338434号）、首页（© 2026 Swaw）。
+目标入口：目录、阅读目的、标签、全部文章、产品－分类、产品－全部、语言、外观、我的、关于、PWA 状态、站点、微信、GitHub、RSS 订阅、备案（图片图标＋粤ICP备2024338434号）、首页（© 2026 Swaw）。
 
 实施顺序：
 
@@ -20,6 +20,10 @@
 每步保持可运行并独立提交，用户确认后再进入下一步。复用现有回归，验证多语言、进入路径、排序、前进后退和系统操作；补充新入口及各宽度下的视觉核对。主题能力在本目录所属主题实现，业务内容在项目根目录同步；使用根目录内容测试，忽略 `exampleSite`。
 
 当前行动安排（2026-09-09，以下规则优先于后面的历史记录）：
+
+关于与 PWA 状态提升为普通根入口：项目及主题关于内容迁至 `content/about/`，主题 PWA 内容迁至 `content/pwa/`，三语言权重分别为 95、96，排在我的之后、站点之前。关于保持 `/about/`，PWA 使用 `/pwa/`；分别保留个人小花图片和 `↻` 图标。第一列自动依据真实根页面生成 17 项，站点仅剩更新记录，不新增菜单白名单或布局分支。同步更新 sitemap、llms.txt 的关于内容引用与 PWA 文案模型的页面引用；更新记录仍指向 `/site/changelog`，`assets/site/pwa/` 资源目录保持原位置。下面图标验收记录中的 `content/site/about/`、`content/site/pwa/` 是迁移前位置。
+
+本次迁移验收：生产构建 `temp_workspace/public/2609090027-about-pwa-roots-to` 的 141 页 HTML 审计通过；11 项浏览器回归全部通过（`temp_workspace/regression/260909002748-browser/report.json`），覆盖三语言根入口、图标、刷新／历史、系统返回，以及 PWA 离线／重试、发现新版本、应用并重载、清理旧导航缓存和更新提示。已查看站点、关于、PWA 三张截图，核对 sitemap 与 llms.txt 三语言关于链接；等待用户确认布局。
 
 关于条目图标：项目三语言 `content/site/about/index*.md` 声明 `icon: { image: "site/brand/lib/bornwhy.svg" }`，沿用用户整理后的个人小花头像路径。该业务图标只配置在项目内容，主题默认关于页保持通用；图片通过现有发布器生成哈希资源，使用共用 15×15px 图标尺寸，点击仍打开关于页。生产构建 `temp_workspace/public/2609090018-about-flower-icon` 的 141 页 HTML 审计与 `system-site-directory` 回归通过（`temp_workspace/regression/260909001836-browser/report.json`），覆盖三语言主表图标解码、尺寸，以及路径列、排序／刷新／历史中的同一资源地址；已查看实际截图。
 

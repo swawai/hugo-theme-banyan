@@ -77,7 +77,7 @@ Sitemap: {{ absURL "sitemap.xml" }}
 {{- with index $homeMeta "description" -}}{{- $homeDescription = trim (printf "%v" .) " \r\n\t" -}}{{- end -}}
 {{- $homeLabel := printf "%s Home" ($site.Language.LanguageName | default $site.Language.Lang) }}
 - [{{ $homeLabel }}]({{ $site.Home.Permalink }}){{ with $homeDescription }}: {{ . }}{{ end }}
-{{ with $site.GetPage "/site/about" }}
+{{ with $site.GetPage "/about" }}
 {{ if .IsPage }}
 {{- $aboutDescription := trim (printf "%v" (.Params.description | default "")) " \r\n\t" -}}
 - [{{ .Title }}]({{ .Permalink }}){{ with $aboutDescription }}: {{ . }}{{ end }}

@@ -691,7 +691,7 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
             const rootPaths = ['d', 'intent', 'tags', 'all', 'products', 'all-products',
-                'language', 'appearance', 'my', 'site', 'wechat', 'github', 'rss', 'icp', ''];
+                'language', 'appearance', 'my', 'about', 'pwa', 'site', 'wechat', 'github', 'rss', 'icp', ''];
             await gotoAndWait(page, `${baseUrl}/zh/all/`);
             const staticRoots = await page.evaluate(async (paths) => {
                 const results = [];
@@ -772,7 +772,7 @@ export const scenarios = [
         timeoutMs: 60000,
         async run({ page, baseUrl }) {
             const expectedRoots = ['d', 'intent', 'tags', 'all', 'products', 'all-products',
-                'language', 'appearance', 'my', 'site', 'wechat', 'github', 'rss', 'icp', ''].map((root) => `/zh/${root ? root + '/' : ''}`);
+                'language', 'appearance', 'my', 'about', 'pwa', 'site', 'wechat', 'github', 'rss', 'icp', ''].map((root) => `/zh/${root ? root + '/' : ''}`);
             const assertSelection = async (expected) => {
                 await waitForBreadcrumbSettled(page);
                 const state = await page.evaluate(() => ({
@@ -793,7 +793,8 @@ export const scenarios = [
                 ['/zh/p/xvenv/?from=products/not-a-source', '/zh/d/'],
                 ['/zh/p/xvenv/?from=product-categories/free', '/zh/d/'],
                 ['/zh/p/xvenv/?from=products', '/zh/d/'],
-                ['/zh/about/', '/zh/site/'],
+                ['/zh/about/', '/zh/about/'],
+                ['/zh/pwa/', '/zh/pwa/'],
                 ['/zh/changelog/', '/zh/site/'],
                 ['/zh/wechat/', '/zh/wechat/'],
                 ['/zh/github/', '/zh/github/'],

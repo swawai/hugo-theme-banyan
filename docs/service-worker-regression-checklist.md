@@ -47,18 +47,18 @@
 
 ### 更新提示界面
 
-- PWA 状态子页 `/site/pwa/` 使用 `data-site-update-panel` 显示版本、检查按钮和状态；共用更新引擎
+- PWA 状态根页面 `/pwa/` 使用 `data-site-update-panel` 显示版本、检查按钮和状态；共用更新引擎
 - 站点目录只显示真实子项，第一列没有 `data-site-update-link` 或专用更新标记
-- 第一列进入站点目录，再通过普通子项进入 PWA 状态页；点击目录条目不会检查或应用更新
+- 第一列通过普通入口直接进入 PWA 状态页；点击入口不会检查或应用更新
 - 旧 Ver 下拉菜单及脚本已移除
 - 当前逻辑应当：
   - 当前页存在可见更新按钮时，在页面内显示状态；没有可见按钮时沿用原生确认提示
-  - 拒绝确认后仍能通过目录进入 PWA 状态页，worker 仍处于 waiting
+  - 拒绝确认后仍能通过第一列进入 PWA 状态页，worker 仍处于 waiting
   - PWA 页按钮检查更新，ready 时显示“立即更新”并负责应用更新；目录和路径列不承担更新动作
 
 ### 语言文案
 
-- 更新确认文案来自 runtime i18n JSON；版本界面文案的事实源为 `content/site/pwa/index*.md` 的 `site_update.labels`，由同一 partial 提供给静态界面和 runtime JSON
+- 更新确认文案来自 runtime i18n JSON；版本界面文案的事实源为 `content/pwa/index*.md` 的 `site_update.labels`，由同一 partial 提供给静态界面和 runtime JSON
 - 语言 fallback 依赖 `runtime/asset-manifest.json` 内的 `i18nFallbacks`
 - `sw-manager` 使用 `runtime-manifest.js`；语言偏好独立使用页面内静态译文关系，不再依赖版本菜单或 runtime JSON
 

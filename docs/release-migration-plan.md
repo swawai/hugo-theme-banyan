@@ -65,7 +65,7 @@ Extract into starter/template:
 Keep as site-owned:
 
 - `content/_index.*.md`
-- `content/site/about/index.*.md` (moved under `site/` on 2026-09-07)
+- `content/about/index*.md` (promoted to a root entry on 2026-09-09)
 - `content/d/products/*`
 - `content/fragments/site-meta/*`
 - `assets/site/brand/*`
@@ -92,7 +92,7 @@ Navigation contract after the 2026-09-07 flattening step:
   independent homepage shortcut list; they do not order the first column.
 - Language, appearance, my, and site are real root pages. The site directory
   lists real children without appended controls or a special navigation marker.
-  `content/site/pwa/index.*.md` owns update copy and actions through `pwa-page`;
+  `content/pwa/index*.md` is a root entry owning update copy and actions through `pwa-page`;
   other pages use the existing update confirmation when no control is visible.
 - This step does not complete the later responsive-layout merge or color work.
   See [layout slots](layout-slots.md) and the

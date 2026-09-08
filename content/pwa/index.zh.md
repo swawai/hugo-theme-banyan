@@ -6,6 +6,7 @@ date: 2026-09-08
 slug: pwa
 layout: pwa-page
 icon: { text: "↻" }
+weight: 96
 outputs:
   - HTML
 robots: noindex, follow
