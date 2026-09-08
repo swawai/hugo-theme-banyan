@@ -46,6 +46,8 @@ icon_text = "EN"
 
 当前站点分别使用 `EN`、`简`、`繁`。未设置 `icon_text` 时回退到主题的语言 SVG；不根据 `en`、`zh-CN` 或 `zh-TW` 猜测国旗或字符。
 
+语言页的选择仍留在设置页；返回原内容时优先打开刚选语言的真实译文。此行为由语言脚本处理，不属于 `choice` 渲染协议，具体规则见 [系统页面与返回](navigation-state.md#系统页面与返回)。
+
 ## 怎样收录产品
 
 根项目 `hugo.toml` 注册 `product = "products"`。文章的内容位置、`slug` 和 `/p/.../` 地址保持不变，例如 `content/d/products/xvenv/index.zh.md`：

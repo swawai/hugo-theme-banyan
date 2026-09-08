@@ -1,5 +1,7 @@
 import { LANG_SUGGEST_HANDLED_KEY, PREFERRED_LANG_KEY, readStorage, runAfterPageSettles, writeStorage } from './storage.js';
 
+const RETURN_LANGUAGE_KEY = 'banyan:language-return';
+
 function localUrl(value) {
     if (typeof value !== 'string' || !value) return null;
     try {
@@ -41,6 +43,37 @@ export function initLanguagePreference() {
         }
         return target.pathname + target.search + target.hash;
     };
+
+    const applyReturnLanguage = (fromHistory) => {
+        if (picker) return false;
+        document.querySelector('[data-language-return-notice]')?.remove();
+        let language;
+        try {
+            language = sessionStorage.getItem(RETURN_LANGUAGE_KEY);
+            sessionStorage.removeItem(RETURN_LANGUAGE_KEY);
+        } catch { return false; }
+        // Only this settings visit can translate a restored page. Explicit URLs keep their language.
+        if (!fromHistory || !language || language === context.language) return false;
+        const option = context.options.find((item) => item.code === language);
+        if (!option) return false;
+        if (!option.translated) {
+            const notice = document.createElement('p');
+            notice.dataset.languageReturnNotice = '';
+            notice.setAttribute('role', 'status');
+            notice.textContent = message(context.returnMissing, { lang: option.name });
+            document.getElementById('main')?.prepend(notice);
+            return false;
+        }
+        const href = targetHref(option);
+        if (!href) return false;
+        window.location.replace(href);
+        return true;
+    };
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted) applyReturnLanguage(true);
+    });
+    if (applyReturnLanguage(performance.getEntriesByType('navigation')[0]?.type === 'back_forward')) return;
+
     const render = () => {
         document.querySelectorAll('[data-language-choice]').forEach((link) => {
             const option = context.options.find((item) => item.code === link.dataset.languageChoice);
@@ -66,8 +99,10 @@ export function initLanguagePreference() {
         if (!option.translated && !window.confirm(message(context.missing, { lang: option.name }))) return;
         writeStorage(PREFERRED_LANG_KEY, normalizeLang(option.code));
         // A preference change stays in the same history slot as the language settings page.
-        if (picker) window.location.replace(href);
-        else window.location.href = href;
+        if (picker) {
+            try { sessionStorage.setItem(RETURN_LANGUAGE_KEY, option.code); } catch { /* Keep language links usable without storage. */ }
+            window.location.replace(href);
+        } else window.location.href = href;
     });
 
     // Language recommendation belongs to the page, independently of any menu UI.

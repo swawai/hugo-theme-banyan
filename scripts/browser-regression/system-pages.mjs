@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { gotoAndWait, waitForServiceWorkerActive, waitForUpdateReady } from './helpers.mjs';
+import { languageReturnScenarios } from './language-return.mjs';
 
 const system = '.system-page';
 const updatePanel = '[data-site-update-panel]';
 
 export const systemPageScenarios = [
+    ...languageReturnScenarios,
     {
         id: 'system-return-live-navigation-state',
         kind: 'single',
