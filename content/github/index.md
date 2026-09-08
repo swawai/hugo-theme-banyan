@@ -17,4 +17,4 @@ slots:
 
 Banyan's source repository contains the theme code and documentation.
 
-[Open the Banyan repository on GitHub](https://github.com/swawai/banyan)
+{{< new-tab href="https://github.com/swawai/banyan" >}}Open the Banyan repository on GitHub{{< /new-tab >}}

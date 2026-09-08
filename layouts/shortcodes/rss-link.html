@@ -1,5 +1,5 @@
 {{- with .Page.Site.Home.OutputFormats.Get "RSS" -}}
-<p>{{ partial "link.html" (dict "href" .RelPermalink "text" .Permalink) }}</p>
+<p>{{ partial "link.html" (dict "href" .RelPermalink "text" .Permalink "target" "_blank" "rel" "noopener noreferrer") }}</p>
 {{- else -}}
   {{- errorf "Page %s uses rss-link, but the language homepage has no RSS output. Enable RSS in [outputs].home." .Page.RelPermalink -}}
 {{- end -}}

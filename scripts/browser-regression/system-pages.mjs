@@ -14,10 +14,31 @@ export const systemPageScenarios = [
         serviceWorkers: 'block',
         viewport: { width: 1024, height: 700 },
         title: 'Site Directory Sorting and Article Navigation',
-        async run({ page, baseUrl, artifactDir }) {
+        async run({ page, baseUrl, artifactDir, context }) {
             const grid = '.slot-main [data-sortable="true"]';
             const links = `${grid} .cell-title:not(.header) a`;
             const rowPaths = selector => page.locator(selector).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
+            const assertNewTabs = async (links) => {
+                const originalUrl = page.url();
+                for (const link of await links.all()) {
+                    assert.equal(await link.getAttribute('target'), '_blank');
+                    const rel = (await link.getAttribute('rel')).split(/\s+/);
+                    assert(rel.includes('noopener') && rel.includes('noreferrer'));
+                    const destination = await link.evaluate(node => node.href);
+                    // Verify native tab navigation without depending on external sites or the XML viewer.
+                    const destinationResponse = route => route.fulfill({status: 200, contentType: 'text/plain', body: 'Link destination'});
+                    await context.route(destination, destinationResponse);
+                    try {
+                        const [opened] = await Promise.all([context.waitForEvent('page'), link.click()]);
+                        try {
+                            await opened.waitForLoadState('domcontentloaded');
+                            assert.equal(opened.url(), destination);
+                            assert.equal(await opened.evaluate(() => window.opener), null);
+                            assert.equal(page.url(), originalUrl, 'The information page stays open in its original tab.');
+                        } finally { await opened.close(); }
+                    } finally { await context.unroute(destination, destinationResponse); }
+                }
+            };
             const geometry = () => page.locator(grid).evaluate(node => {
                 const row = node.querySelector('.cell-title:not(.header) a');
                 return {
@@ -32,6 +53,7 @@ export const systemPageScenarios = [
                 const homeEntry = `[data-root-href="${prefix}/"]`;
                 const brand = await page.locator(`${homeEntry} .collection-item-title`).textContent();
                 assert.equal(await page.locator('footer, .slot-footer').count(), 0);
+                assert.equal(await page.locator('[data-root-href][target="_blank"]').count(), 0, 'First-column entries open in the current tab.');
                 assert.equal(await page.locator(`${homeEntry}.is-current`).count(), 1);
                 assert.equal(await page.locator(`${homeEntry} .icon--text`).textContent(), '©');
                 assert.equal(await page.locator(homeEntry).getAttribute('href'), `${prefix}/`);
@@ -68,6 +90,9 @@ export const systemPageScenarios = [
                 assert.equal(await filingEntry.getAttribute('aria-current'), 'page');
                 assert.match(await page.locator('.slot-main .prose').textContent(), /粤ICP备2024338434号/);
                 assert.equal(await page.locator('.slot-main .prose a[href="https://beian.miit.gov.cn/"]').filter({hasText: /^粤ICP备2024338434号$/}).count(), 1);
+                const filingLinks = page.locator('.slot-main .prose a[href="https://beian.miit.gov.cn/"]');
+                assert.equal(await filingLinks.count(), 2);
+                await assertNewTabs(filingLinks);
                 await page.goBack();
                 await page.waitForURL(`${baseUrl}${prefix}/site/`);
                 await waitForBreadcrumbSettled(page);
@@ -88,6 +113,7 @@ export const systemPageScenarios = [
                     if (name === 'github') {
                         const accountLinks = page.locator('.slot-main .prose a[href="https://github.com/SwawHQ"]');
                         assert.equal(await accountLinks.count(), 2, 'Both the avatar and visible URL link to the organization.');
+                        await assertNewTabs(accountLinks);
                         const avatar = accountLinks.locator('img');
                         assert.equal(await avatar.count(), 1);
                         assert.match(await avatar.getAttribute('src'), /^\/site\/brand\/favicon\.[a-f0-9]{64}\.svg$/);
@@ -103,6 +129,7 @@ export const systemPageScenarios = [
                     } else {
                         const feed = page.locator(`.slot-main .prose a[href="${feedHref}"]`);
                         assert.equal(await feed.count(), 1, 'RSS uses the actual language homepage output.');
+                        await assertNewTabs(feed);
                         assert.equal(new URL((await feed.textContent()).trim()).pathname, new URL(feedHref, baseUrl).pathname, 'The visible subscription address can be copied into a reader.');
                         const response = await page.request.get(new URL(feedHref, baseUrl).href);
                         assert.equal(response.status(), 200);

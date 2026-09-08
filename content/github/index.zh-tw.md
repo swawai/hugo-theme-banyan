@@ -17,4 +17,4 @@ slots:
 
 Banyan 的 GitHub 儲存庫提供主題原始碼和使用文件。
 
-[開啟 Banyan 的 GitHub 儲存庫](https://github.com/swawai/banyan)
+{{< new-tab href="https://github.com/swawai/banyan" >}}開啟 Banyan 的 GitHub 儲存庫{{< /new-tab >}}

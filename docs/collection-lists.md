@@ -49,7 +49,9 @@ PWA 状态是主题 `content/site/pwa/index*.md` 的真实子页，声明 `layou
 | 项目 `content/github/index*.md` | 仅展示 SwawHQ 组织账号的头像与普通链接，保留完整入口声明；头像通过现有 `asset` 短代码引用项目 `assets/site/brand/favicon.svg`，不使用表格 |
 | 项目 `content/icp/index*.md` | 本站备案说明及工信部查询链接；作为普通根入口，`linkTitle: "粤ICP备2024338434号"`、`icon: { image: "0.webp" }`、`weight: 105`，排在首页入口之前；正文备案号本身链接到工信部查询网站；主题不存放业务备案信息 |
 
-`layouts/shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。GitHub 和备案链接直接写在 Markdown 正文中，用户进入说明页后自行点击。
+`layouts/shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址，并在新标签打开。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。
+
+GitHub 和备案页的目标链接使用 `{{< new-tab href="https://example.com/" >}}链接文字{{< /new-tab >}}`，头像可在其中嵌套 `asset` 短代码；加粗可在短代码外侧使用 Markdown `**`。该短代码复用 `link.html` 输出 `target="_blank"`、`rel="noopener noreferrer"`，不需要 JavaScript，也无需开启 Markdown 原始 HTML。第一列入口仍使用当前标签打开说明页。
 
 三个入口依次排在站点（`100`）之后、备案（`105`）和首页版权（`110`）之前。微信保持 `/wechat/`，GitHub、RSS 分别使用 `/github/`、`/rss/`，各语言沿用原语言前缀。站点中保留关于、更新记录、PWA 状态；旧页脚及其片段配置已移除。
 
