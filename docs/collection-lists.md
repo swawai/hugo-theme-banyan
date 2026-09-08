@@ -36,6 +36,8 @@ list: products
 
 选择列表只接受两种原生控件：链接或按钮。共享模板负责文字、图标、选中样式、可访问状态和 `data-*` 输出；页面布局负责提供选项，功能脚本只响应自己的标记。语言项保留真实 `href` 和 `data-language-choice`，无 JavaScript 时仍可切换；外观项使用按钮和 `data-theme-choice`。模板不认识语言代码或主题值，front matter 也不声明脚本文件。
 
+外观的三个子项在 `layouts/_default/appearance-page.html` 中通过 `iconText` 分别使用 `◐`（跟随系统）、`☀︎`（浅色）、`☾`（深色）；太阳包含 `U+FE0E`，请求文本样式。第一列入口继续使用页面声明的 `icon: theme` SVG。文字图标复用固定宽度图标槽，并从按钮的可访问名称中排除。
+
 语言名称、顺序和启用状态仍以根项目 `hugo.toml` 的 `[languages]` 为事实源。可在对应语言参数中设置短文字图标：
 
 ```toml

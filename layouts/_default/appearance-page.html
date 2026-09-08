@@ -10,9 +10,10 @@
 <article class="article system-page" data-system-page>
   <div class="collection-list collection-list--index">
     {{- $items := slice -}}
+    {{- $icons := dict "auto" "◐" "light" "☀︎" "dark" "☾" -}}
     {{- range slice "auto" "light" "dark" -}}
       {{- $items = $items | append (dict
-        "control" "button" "text" (i18n (printf "appearance_%s" .)) "icon" "theme"
+        "control" "button" "text" (i18n (printf "appearance_%s" .)) "iconText" (index $icons .)
         "dataAttrs" (dict "theme-choice" .)
       ) -}}
     {{- end -}}
