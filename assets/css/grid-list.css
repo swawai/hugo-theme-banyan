@@ -33,6 +33,10 @@
     white-space: nowrap;
 }
 
+.grid-list > .cell-title:not(.header) {
+    display: flex;
+}
+
 .grid-list > :not(.cell-title) {
     font-size: small;
 }

@@ -3,7 +3,8 @@
 {{- if ne $view "choice" -}}
   {{- errorf "Choice page %s needs list: choice (own declaration or nearest ancestor)." $page.RelPermalink -}}
 {{- end -}}
-<div class="choice-list grid-list grid-list--single collection-list--grid" data-list-view="{{ $view }}">
+<div class="choice-list grid-list grid-list--single grid-list--headed collection-list--grid" data-list-view="{{ $view }}">
+  <h1 class="cell-title header collection-list-header">{{ .title }}</h1>
   {{- range .items -}}
     {{- $control := printf "%v" (.control | default "") -}}
     {{- $text := .text | default "" -}}

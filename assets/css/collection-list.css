@@ -118,13 +118,18 @@
     text-align: center;
 }
 
-.collection-list--grid .collection-list-header a {
+.collection-list--grid .collection-list-header a,
+.collection-list--grid h1.collection-list-header {
     display: block;
     width: 100%;
     height: 1.55em;
-    margin-bottom: 0.14rem;
+    margin: 0 0 0.14rem;
     line-height: 1.18;
     text-decoration: none;
+}
+
+.collection-list--grid h1.collection-list-header {
+    font-weight: 400;
 }
 
 .collection-list--grid .collection-list-header a[data-sort-active="true"] {
