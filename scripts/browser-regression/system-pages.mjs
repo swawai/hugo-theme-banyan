@@ -116,9 +116,10 @@ export const systemPageScenarios = [
                         await assertNewTabs(accountLinks);
                         const avatar = accountLinks.locator('img');
                         assert.equal(await avatar.count(), 1);
-                        assert.match(await avatar.getAttribute('src'), /^\/site\/brand\/favicon\.[a-f0-9]{64}\.svg$/);
+                        assert.equal(await avatar.getAttribute('src'), await page.locator('head link[rel="icon"][type="image/svg+xml"]').getAttribute('href'), 'The GitHub avatar reuses the published favicon resource.');
                         await avatar.evaluate(image => image.decode());
-                        assert.deepEqual(await avatar.evaluate(image => ({width: image.getBoundingClientRect().width, height: image.getBoundingClientRect().height})), {width: 64, height: 64});
+                        assert.equal(await avatar.getAttribute('height'), '48');
+                        assert.deepEqual(await avatar.evaluate(image => ({width: image.getBoundingClientRect().width, naturalRatio: image.naturalWidth / image.naturalHeight})), {width: 64, naturalRatio: 4 / 3});
                         assert.equal(await page.locator('.slot-main .prose table').count(), 0);
                         assert.equal(await page.locator('.slot-main .prose img').count(), 1);
                         assert.equal(await page.locator('.slot-main .prose a[href="https://github.com/swawai"], .slot-main .prose a[href="https://github.com/bornwhy"]').count(), 0);
