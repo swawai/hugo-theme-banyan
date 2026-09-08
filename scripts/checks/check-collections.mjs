@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { chromium } from 'playwright';
 import { resolveHugoCommand } from '../build/hugo-command.mjs';
@@ -16,11 +17,15 @@ const write = (p, s) => { fs.mkdirSync(path.dirname(p), { recursive: true }); fs
 const overlay = path.join(work, 'content');
 const langs = ['', '.zh', '.zh-tw'];
 const prefixes = ['', '/zh', '/zh-tw'];
+const imageBytes = fs.readFileSync('content/icp/0.webp');
+const imageHash = createHash('sha256').update(imageBytes).digest('hex');
+const ownImage = {image: `/media/content/d/contract-no-offer/badge.${imageHash}.webp`};
+const inheritedImage = {image: `/media/content/d/contract-image/badge.${imageHash}.webp`};
 const cases = [
     ['priced', 'icon: appearance-dark\nlastmod: 2026-08-01\ntags: [contract-dates]\nproducts: [free, paid, "Special Tools", "$5~$50", contract-dates]\noffer: {amount: 25, currency: "$", value: "Paid and free are opaque labels"}'],
     ['missing', 'lastmod: 2026-08-02\ntags: [contract-dates/child]\nproducts: [free, paid, "Special Tools", contract-dates]\noffer: {value: "Value without a price"}'],
     ['zero', 'icon: {text: "<b>EN</b>"}\nproducts: [free]\noffer: {amount: 0, currency: "$"}'],
-    ['no-offer', 'products: [free]'],
+    ['no-offer', 'icon: {image: "badge.webp"}\nproducts: [free]'],
     ['unclassified', 'offer: {amount: 99, currency: "$", value: "Not a product"}'],
     ['empty', 'products: []'],
     ['blank', 'products: [""]']
@@ -45,7 +50,12 @@ for (const lang of langs) {
     write(path.join(overlay, `d/contract-text/child/_index${lang}.md`), '---\ntitle: Child text icons\nlist_icon_file: product\n---\n');
     write(path.join(overlay, `d/contract-text/item${lang}.md`), '---\ntitle: Text item\nslug: contract-text\n---\nText.\n');
     write(path.join(overlay, `d/contract-text/child/item${lang}.md`), '---\ntitle: Text child\nslug: contract-text-child\n---\nText child.\n');
+    write(path.join(overlay, `d/contract-image/_index${lang}.md`), '---\ntitle: Image icons\nlist_icon_file: {image: "badge.webp"}\nlist_icon_folder: {image: "badge.webp"}\n---\n');
+    write(path.join(overlay, `d/contract-image/child/_index${lang}.md`), '---\ntitle: Inherited image\n---\n');
+    write(path.join(overlay, `d/contract-image/child/item${lang}.md`), '---\ntitle: Inherited image article\nslug: contract-image-child\n---\nImage.\n');
 }
+write(path.join(overlay, 'd/contract-no-offer/badge.webp'), imageBytes);
+write(path.join(overlay, 'd/contract-image/badge.webp'), imageBytes);
 const config = path.join(work, 'overlay.toml');
 write(config, `[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
 const hugo = resolveHugoCommand({ cwd: root });
@@ -109,6 +119,13 @@ for (const view of ['directory', 'all', 'products']) {
         assertUpdated('tags/contract-dates', '/p/contract-priced/', '2026-08-01', '20260801000000');
         assertUpdated('tags/contract-dates/child', '/p/contract-missing/', '2026-08-02', '20260802000000');
         const iconFor = (list, href) => payload(output, lang, list).rows.find(row => row.href === `${prefixes[index]}${href}`)?.icon;
+        for (const list of ['d', 'all', 'products/free', 'all-products']) {
+            assert.deepEqual(iconFor(list, '/p/contract-no-offer/'), ownImage, 'own image resolves against its article bundle in every list');
+        }
+        assert.deepEqual(iconFor('d/contract-image', '/d/contract-image/child/'), inheritedImage);
+        assert.deepEqual(iconFor('d/contract-image/child', '/p/contract-image-child/'), inheritedImage, 'inherited image keeps its declaring directory, not the child bundle');
+        assert.deepEqual(fs.readFileSync(path.join(output, ownImage.image)), imageBytes, 'published hash matches the original bytes');
+        assert.equal(fs.existsSync(path.join(output, 'icp/0.webp')), false, 'icon source is not also published at an unhashed URL');
         assert.deepEqual(iconFor('d', '/d/contract-text/'), {text: '©'});
         assert.deepEqual(iconFor('d/contract-text', '/d/contract-text/child/'), {text: 'Dir'});
         assert.deepEqual(iconFor('d/contract-text', '/p/contract-text/'), {text: 'EN'});
@@ -228,8 +245,11 @@ try {
     await staticPage.goto(`${baseUrl}/p/contract-text/`);
     assert.equal(await staticPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
     await staticPage.goto(`${baseUrl}/products/free/`);
+    assert.equal(await staticPage.locator('.slot-main a[href*="/p/contract-no-offer/"] img.icon--image').getAttribute('src'), ownImage.image);
     assert.equal(await staticPage.locator('.slot-main a[href*="/p/contract-zero/"] .icon--text').textContent(), '<b>EN</b>');
     assert.equal(await staticPage.locator('.icon--text b').count(), 0, 'text icons are escaped during SSR');
+    await staticPage.goto(`${baseUrl}/p/contract-image-child/`);
+    assert.equal(await staticPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-image-child/"] img.icon--image').getAttribute('src'), inheritedImage.image);
     await noJs.close();
 
     const iconsContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1440, height: 960 } });
@@ -252,6 +272,23 @@ try {
     await waitForBreadcrumbSettled(iconsPage);
     assert.equal(await selectedIcon(), '#icon-appearance-light');
     for (const prefix of prefixes) {
+        await gotoAndWait(iconsPage, `${baseUrl}${prefix}/products/free/?sort=name-asc`);
+        await iconsPage.locator('.slot-main a[href*="/p/contract-no-offer/?"]').click();
+        const selectedImage = () => iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-no-offer/"] img.icon--image');
+        await waitForBreadcrumbSettled(iconsPage);
+        assert.equal(await selectedImage().getAttribute('src'), ownImage.image);
+        await selectedImage().evaluate(image => image.decode());
+        await iconsPage.reload();
+        await waitForBreadcrumbSettled(iconsPage);
+        assert.equal(await selectedImage().getAttribute('src'), ownImage.image);
+        await iconsPage.goBack();
+        await iconsPage.goForward();
+        await waitForBreadcrumbSettled(iconsPage);
+        assert.equal(await selectedImage().getAttribute('src'), ownImage.image);
+        await gotoAndWait(iconsPage, `${baseUrl}${prefix}/d/contract-image/child/`);
+        await iconsPage.locator('.slot-main a[href*="/p/contract-image-child/?"]').click();
+        await waitForBreadcrumbSettled(iconsPage);
+        assert.equal(await iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-image-child/"] img.icon--image').getAttribute('src'), inheritedImage.image);
         await gotoAndWait(iconsPage, `${baseUrl}${prefix}/products/free/?sort=name-asc`);
         await iconsPage.locator('.slot-main a[href*="/p/contract-zero/?"]').click();
         const selectedText = () => iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-zero/"] .icon--text').textContent();
@@ -288,8 +325,13 @@ for (const [name, content, message] of [
     ['text-empty', validContent.replace('icon: appearance-dark', 'icon: {text: " "}'), 'text must be a non-empty string'],
     ['text-number', validContent.replace('icon: appearance-dark', 'icon: {text: 12}'), 'text must be a non-empty string'],
     ['text-keys', validContent.replace('icon: appearance-dark', 'icon: {text: "©", svg: folder}'), 'object containing only text'],
-    ['text-bare', validContent.replace('icon: appearance-dark', 'icon: "©"'), 'undefined icon']
+    ['text-bare', validContent.replace('icon: appearance-dark', 'icon: "©"'), 'undefined icon'],
+    ['image-empty', validContent.replace('icon: appearance-dark', 'icon: {image: " "}'), 'image must be a non-empty string'],
+    ['image-missing', validContent.replace('icon: appearance-dark', 'icon: {image: "missing.webp"}'), 'cannot resolve local page resource'],
+    ['image-remote', validContent.replace('icon: appearance-dark', 'icon: {image: "https://example.com/a.webp"}'), 'must name an image in the declaring page bundle'],
+    ['image-text', validContent.replace('icon: appearance-dark', 'icon: {image: "not-an-image.txt"}'), 'must reference an image resource']
 ]) {
+    write(path.join(overlay, 'd/contract-priced/not-an-image.txt'), 'Not an image.');
     write(invalidFile, content);
     const result = spawnSync(hugo, ['--config', `hugo.toml,${rel(config)}`, '--destination', rel(path.join(work, `invalid-${name}`))],
         { cwd: root, env: createHugoEnv({ cwd: root }), encoding: 'utf8', windowsHide: true });

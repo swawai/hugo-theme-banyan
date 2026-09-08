@@ -6,7 +6,7 @@
         {{- errorf "Build failed: %s declares %s, which is only supported on list pages; articles may declare icon." $page.RelPermalink $field -}}
       {{- end -}}
       {{- if isset $page.Params $field -}}
-        {{- $validated := partial "icon/resolve.html" (dict "value" (index $page.Params $field) "context" (printf "%s %s" $page.RelPermalink $field)) -}}
+        {{- $validated := partial "icon/page-value.html" (dict "value" (index $page.Params $field) "page" $page "context" (printf "%s %s" $page.RelPermalink $field)) -}}
       {{- end -}}
     {{- end -}}
   {{- end -}}

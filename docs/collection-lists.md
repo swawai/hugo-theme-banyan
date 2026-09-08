@@ -44,11 +44,11 @@ RSS、GitHub 和备案信息都使用普通 `article-page`，不新增外链条�
 | 主题 `content/site/rss/index*.md` | RSS 订阅说明，正文调用 `{{< rss-link >}}` |
 | 主题 `content/site/github/index*.md` | 默认的 Banyan 仓库说明；项目可同路径覆盖 |
 | 项目 `content/site/github/index*.md` | Swaw 的 GitHub 主页说明与链接 |
-| 项目 `content/icp/index*.md` | 本站备案说明及工信部查询链接；作为普通根入口，`linkTitle: "ICP备2024338434号"`、`icon: { text: "粤" }`、`weight: 120`，排在首页入口之后；主题不存放业务备案信息 |
+| 项目 `content/icp/index*.md` | 本站备案说明及工信部查询链接；作为普通根入口，`linkTitle: "ICP备2024338434号"`、`icon: { image: "0.webp" }`、`weight: 105`，排在首页入口之前；主题不存放业务备案信息 |
 
 `layouts/shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。GitHub 和备案链接直接写在 Markdown 正文中，用户进入说明页后自行点击。
 
-微信继续使用已有 `content/site/wechat/`。共用页脚只保留原来的品牌主页链接及其 `brand_label`、`aria_label` 配置，移除微信、RSS、GitHub、备案和关于的旧页脚渲染分支；首页及其他使用该 fragment 的页面同步生效。品牌文字和年份暂不调整。
+微信继续使用已有 `content/site/wechat/`。版权与备案均已成为普通根入口，旧页脚及其片段配置已移除。
 
 ## 统一更新时间
 
@@ -62,7 +62,7 @@ RSS、GitHub 和备案信息都使用普通 `article-page`，不新增外链条�
 
 字符图标继承条目字号（当前为 15px），不再缩小到 `0.75em`。文字和 SVG 共用 `1.5rem` 宽的居中占位，容纳 `EN` 等短标记并保持名称起点一致；SVG 图形本身仍为 `1rem`。字符的具体字形由字体决定，需要严格一致的几何外观时使用 SVG。
 
-SVG 名称来自 `data/icons.toml`，字符使用 `icon: { text: "©" }`；两者都使用同一个 `icon` 值，不根据引号或是否命中图标库猜测类型。内容支持三个字段：`icon` 指定自己被列出时的图标，`list_icon_folder`／`list_icon_file` 分别指定本列表中的目录或分类／文章的默认图标。例如主题 `content/products/_index.zh.md` 可以声明：
+SVG 名称来自 `data/icons.toml`，字符使用 `icon: { text: "©" }`，页面图片使用 `icon: { image: "0.webp" }`；三者都使用同一个 `icon` 值，不根据引号或是否命中图标库猜测类型。内容支持三个字段：`icon` 指定自己被列出时的图标，`list_icon_folder`／`list_icon_file` 分别指定本列表中的目录或分类／文章的默认图标。例如主题 `content/products/_index.zh.md` 可以声明：
 
 ```yaml
 icon: product
@@ -71,13 +71,15 @@ list_icon_folder: folder
 list_icon_file: product
 ```
 
-`icon` 只描述该入口本身，不按同名字段继承。条目未声明 `icon` 时，由列出它的列表提供默认值；两个 `list_icon_*` 字段分别沿当前列表的真实祖先取最近的非空声明，最终默认为 `folder`／`file`。省略或空白表示继承，明确写 `folder`／`file` 可以覆盖祖先设置。条目自己的非空 `icon` 始终优先，SVG 名称去除首尾空白并统一为小写；字符对象只允许一个非空字符串 `text`，保留大小写，按纯文本输出。`list_icon_folder` 与 `list_icon_file` 同样接受 `{ text: "…" }`，继承时整体替换，不把文字与 SVG 合并。
+`icon` 只描述该入口本身，不按同名字段继承。条目未声明 `icon` 时，由列出它的列表提供默认值；两个 `list_icon_*` 字段分别沿当前列表的真实祖先取最近的非空声明，最终默认为 `folder`／`file`。省略或空白表示继承，明确写 `folder`／`file` 可以覆盖祖先设置。条目自己的非空 `icon` 始终优先，SVG 名称去除首尾空白并统一为小写；对象只允许一个非空字符串字段 `text` 或 `image`，保留大小写。`list_icon_folder` 与 `list_icon_file` 同样接受文字、图片对象，继承时整体替换。
+
+图片路径相对于声明它的页面 bundle：`content/icp/index.zh.md` 写 `icon: { image: "0.webp" }`，读取 `content/icp/0.webp`，复用 `page-resource/publish.html` 发布为 `/media/content/icp/0.<sha256>.webp`。图片默认值在声明目录解析后才继承，不会改成从子目录寻找同名文件；所有语言共用同一资源地址。图片按 `1rem` 显示、保持比例，使用共用图标占位，无灯箱或正文图片的响应式变体。仅接受 bundle 内真实图片，缺失资源、远程地址和非图片文件会使构建失败。若页面自行声明 `build`，需同时保留 `publishResources: false`，避免覆盖全局 cascade 后又发布无哈希原图。语言配置中的图片由对应语言的首页 bundle 提供。
 
 主题现在在 `content/products/_index*.md` 和 `content/all-products/_index*.md` 各声明 `list_icon_file: product`，产品分类子页继承分类根的设置，不需要逐篇给产品文章写图标。Xvenv 未写 `icon`，因此在产品分类和产品全部中显示包裹，在目录、标签和全部文章中仍显示文件；如果希望所有入口一致，在 Xvenv 各语言文件中声明 `icon: product` 即可。
 
 `aggregate` 只提供集合成员，不参与默认图标继承；`/all-products/` 与 `/products/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `index.md` 实现的 `/all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将首页自身与直属入口一起渲染，使用首页的目录默认值或条目自身的 `icon`。根项目 `content/_index*.md` 声明 `linkTitle: "2026 Swaw"`、`icon: { text: "©" }`、`weight: 110`；访问首页只选中首页，其他页面仍按真实入口或有效来源选中。旧版权页脚、顶部重复首页链接及 `slots.footer` 已移除。
 
-图标值由 `icon/resolve.html` 校验，`icon.html` 统一输出文字或 SVG；浏览器用 `icon-value.js` 保留同样的值结构，JSON 编解码不得把字符对象转成字符串。默认值实现集中在 `list/icon-defaults.html`（解析列表默认值）和 `list/item-icon.html`（自身声明优先）。`collection/rows.html` 为每行写入最终 `icon`，主表、来源 JSON 和路径列共用；站点列表、第一列及首页快捷列表也调用相同规则。`entry-source/register-icons.html` 只收集本页可用来源和祖先列依赖的图标，连同实际静态渲染的图标按需打包，不在每页固定预装一组图标。CSS、浏览器选择／排序逻辑和现有列表数据协议不变。
+图标值由 `icon/resolve.html` 校验，`icon/page-value.html` 在读取页面声明时解析并发布图片，`icon.html` 接收解析后的值统一输出文字、SVG 或图片。浏览器用 `icon-value.js` 保留同样的值结构，JSON 编解码不得把对象转成字符串。默认值实现集中在 `list/icon-defaults.html`（解析列表默认值）和 `list/item-icon.html`（自身声明优先）。`collection/rows.html` 为每行写入最终 `icon`，主表、来源 JSON 和路径列共用；站点列表、第一列及首页快捷列表也调用相同规则。`entry-source/register-icons.html` 只为命名 SVG 收集依赖，文字、图片不加入 sprite。浏览器选择／排序逻辑和现有列表数据协议不变。
 
 ## 怎样声明选择列表
 

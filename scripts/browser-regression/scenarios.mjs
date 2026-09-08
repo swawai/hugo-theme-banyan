@@ -691,7 +691,7 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
             const rootPaths = ['d', 'intent', 'tags', 'all', 'products', 'all-products',
-                'language', 'appearance', 'my', 'site', '', 'icp'];
+                'language', 'appearance', 'my', 'site', 'icp', ''];
             await gotoAndWait(page, `${baseUrl}/zh/all/`);
             const staticRoots = await page.evaluate(async (paths) => {
                 const results = [];
@@ -767,7 +767,7 @@ export const scenarios = [
         timeoutMs: 60000,
         async run({ page, baseUrl }) {
             const expectedRoots = ['d', 'intent', 'tags', 'all', 'products', 'all-products',
-                'language', 'appearance', 'my', 'site', '', 'icp'].map((root) => `/zh/${root ? root + '/' : ''}`);
+                'language', 'appearance', 'my', 'site', 'icp', ''].map((root) => `/zh/${root ? root + '/' : ''}`);
             const assertSelection = async (expected) => {
                 await waitForBreadcrumbSettled(page);
                 const state = await page.evaluate(() => ({

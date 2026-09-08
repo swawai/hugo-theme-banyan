@@ -151,6 +151,10 @@ a:focus-visible {
     justify-content: center;
 }
 
+.icon--image {
+    object-fit: contain;
+}
+
 .icon-language,
 .icon-theme,
 .icon-my {

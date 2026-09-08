@@ -57,9 +57,12 @@ export const systemPageScenarios = [
                     assert.equal(await page.locator(`${links}[href*="/site/${name}/"] use`).getAttribute('href'), `#icon-${icon}`);
                 }
                 const filingEntry = page.locator(`[data-root-href="${prefix}/icp/"]`);
-                assert.equal(await filingEntry.locator('.icon--text').textContent(), '粤');
+                const filingIcon = filingEntry.locator('img.icon--image');
+                assert.match(await filingIcon.getAttribute('src'), /^\/media\/content\/icp\/0\.[a-f0-9]{64}\.webp$/);
+                await filingIcon.evaluate(image => image.decode());
+                assert.equal(await filingIcon.getAttribute('alt'), '');
                 assert.equal(await filingEntry.locator('.collection-item-title').textContent(), 'ICP备2024338434号');
-                assert.deepEqual((await rowPaths('[data-root-href]')).slice(-2), [`${prefix}/`, `${prefix}/icp/`]);
+                assert.deepEqual((await rowPaths('[data-root-href]')).slice(-2), [`${prefix}/icp/`, `${prefix}/`]);
                 await filingEntry.click();
                 await waitForBreadcrumbSettled(page);
                 assert.equal(await filingEntry.getAttribute('aria-current'), 'page');

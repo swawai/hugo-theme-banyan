@@ -36,7 +36,18 @@ function buildCollectionItemContent(item) {
     const value = normalizeIcon(item?.icon) || (kind === 'page' ? 'file' : 'folder');
     const icon = document.createElement('span');
     icon.className = 'collection-item-icon';
-    if (typeof value === 'object') {
+    if (typeof value === 'object' && value.image) {
+        icon.setAttribute('aria-hidden', 'true');
+        const image = document.createElement('img');
+        image.className = 'icon icon--image';
+        image.src = value.image;
+        image.alt = '';
+        image.width = 16;
+        image.height = 16;
+        image.decoding = 'async';
+        image.setAttribute('aria-hidden', 'true');
+        icon.appendChild(image);
+    } else if (typeof value === 'object') {
         icon.classList.add('collection-item-icon--text');
         icon.setAttribute('aria-hidden', 'true');
         const text = document.createElement('span');
