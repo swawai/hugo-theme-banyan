@@ -1,14 +1,10 @@
 .grid-list {
     position: relative;
     display: grid;
-    width: max-content;
+    width: var(--navigation-column-inline);
     max-width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    overscroll-behavior-x: none;
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
-    grid-template-columns: var(--navigation-column-inline) minmax(5.1rem, max-content) minmax(4rem, max-content);
+    overflow: visible;
+    grid-template-columns: minmax(0, 1fr);
     justify-content: start;
     align-items: end;
     column-gap: 0.6rem;
@@ -16,14 +12,13 @@
     line-height: 1.55;
 }
 
-.grid-list--single {
-    width: 100%;
-    overflow: visible;
-    grid-template-columns: minmax(0, 1fr);
-}
-
-.grid-list--single:not(.grid-list--headed)::after {
-    display: none;
+.grid-list--table {
+    width: max-content;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: none;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .grid-list > * {
@@ -87,7 +82,7 @@
 }
 
 
-.grid-list::after {
+.grid-list--headed::after {
     content: "";
     position: absolute;
     top: 1.34rem;
@@ -97,7 +92,3 @@
     opacity: 0.2;
     pointer-events: none;
 }
-
-/* .grid-list .cell-title.header a {
-    padding-left: 0.8rem;
-} */

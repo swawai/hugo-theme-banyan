@@ -3,12 +3,12 @@
 {{- $view := "" -}}
 {{- if eq $page.Layout "article-list" -}}
   {{- $view = partial "list/view.html" (dict "page" $page) -}}
-  {{- if not (in (slice "directory" "all" "products") $view) -}}
-    {{- errorf "List page %s needs list: directory, all or products (own declaration or nearest ancestor)." $page.RelPermalink -}}
+  {{- if not (in (slice "name" "directory" "all" "products") $view) -}}
+    {{- errorf "List page %s needs list: name, directory, all or products (own declaration or nearest ancestor)." $page.RelPermalink -}}
   {{- end -}}
 {{- end -}}
 {{- $variant := $view -}}
 {{- if eq $view "directory" -}}
   {{- $variant = cond (in (slice "taxonomy" "term") $page.Kind) "tree" "section" -}}
 {{- end -}}
-{{- return (dict "view" $view "sort_variant" $variant "default_sort" (cond (eq $view "products") "name-asc" "date-desc")) -}}
+{{- return (dict "view" $view "sort_variant" $variant "default_sort" (cond (in (slice "name" "products") $view) "name-asc" "date-desc")) -}}

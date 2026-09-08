@@ -2,7 +2,7 @@
 {{ $labels := $model.labels }}
 {{ $buildVersion := partial "build-version.html" . }}
 <div class="system-page-section" data-site-update-panel>
-  <div class="grid-list grid-list--single collection-list--grid">
+  <div class="grid-list collection-list--grid">
     {{ partial "grid-title-cell.html" (dict "ctx" . "href" $model.changelog_href
       "text" (partial "build-time-display.html" . | default $buildVersion)
       "title" $buildVersion "icon" "file" "linkSlot" "nav"

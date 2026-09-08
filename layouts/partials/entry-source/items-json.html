@@ -6,7 +6,7 @@
   {{- $fields = $fields | append "sort_price" "sort_value" "price_text" "value_text" -}}
 {{- else if eq $config.view "all" -}}
   {{- $fields = $fields | append "sort_date" "sort_size" "sort_path" "date_text" "size_text" "size_unit" "path_text" "path_href" -}}
-{{- else -}}
+{{- else if eq $config.view "directory" -}}
   {{- $fields = $fields | append "sort_date" "sort_count" "date_text" "count_text" "count_unit" -}}
 {{- end -}}
 {{- partial "entry-source/items-json-encode.html" (dict

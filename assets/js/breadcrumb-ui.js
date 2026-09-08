@@ -172,7 +172,7 @@ function buildCollectionCell(item, current) {
 
 function buildCollectionColumnGrid(items, collectionSource, options = {}) {
     const grid = document.createElement('div');
-    grid.className = 'grid-list grid-list--single collection-list collection-list--column';
+    grid.className = 'grid-list collection-list collection-list--column';
     const header = buildCollectionColumnHeader(collectionSource, options);
     if (header) {
         grid.classList.add('grid-list--headed');

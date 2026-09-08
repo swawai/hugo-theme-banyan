@@ -1,6 +1,6 @@
 {{ define "styles" }}
 {{ $config := partial "collection/config.html" (dict "page" .) }}
-{{ partial "head-styles.html" (dict "ctx" . "variant" (cond (eq $config.view "directory") "list" $config.view)) }}
+{{ partial "head-styles.html" (dict "ctx" . "variant" $config.view) }}
 {{ end }}
 {{ define "head-extra" }}
 {{ partial "article/styles.html" (dict "ctx" . "with_meta" true) }}

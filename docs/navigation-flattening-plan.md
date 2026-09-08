@@ -1,6 +1,19 @@
 # 导航入口展平纲要
 
-2026-09-08｜分支：`codex/flatten-navigation`｜状态：5A 已验收；5B／5C 已实施，等待用户复测；第 6 步尚未开始
+2026-09-09｜分支：`codex/flatten-navigation`｜状态：第 5 步持续收敛；本轮接入名称列表与公共单列样式；第 6 步尚未开始
+
+## 当前增量：名称列表与更新入口
+
+用户已确认以 `/updates/` 收纳“检查更新”和“更新记录”，采用真实内容子页。本轮先完成列表基础，交用户确认后再迁移内容和更新入口，不在中间增加临时专用列表。
+
+1. **名称列表与样式拆分（已实施，待用户确认）**：增加 `list: name`，仅显示图标和名称，默认名称升序，完整复用集合来源、继承、排序、路径列和历史。`grid-list.css` 改名为 `grid-base.css` 并成为单列基底；目录三列配置移到 `grid-directory.css`，all／products 只叠加各自列布局。choice 共用基底，保留原生链接／按钮及各自功能逻辑，不增加排序。不引入 `list: base`、`list_columns` 或 `grid-name.css`。
+2. **更新入口迁移（待本轮确认）**：主题 `content/updates/_index*.md` 使用 `layout: article-list`、`list: name`、`root_nav: true`；`updates/check/index*.md` 承载现有检查操作，`updates/changelog/index*.md` 承载更新记录，项目同路径内容同步迁移。检查页内显示实际版本／状态，名称列表不伪造运行时更新时间。删除旧 `pwa/`、`site/` 内容入口，更新模型、引用、导航及对应测试；`assets/site/pwa/` 资源路径不变。核对历史更新记录网址与新目录的关系后，保留已有公开链接。
+
+本轮验证：生产构建 `temp_workspace/public/2609090126-name-list-base` 的 141 页 HTML 审计通过；10 项浏览器回归通过，报告为 `temp_workspace/regression/260909012714-browser/report.json`，覆盖画幅宽度、系统页面、入口、产品路径、排序隔离与视觉对齐。四种列表 × 三语言集合契约及 name 的目录／分类／汇总、升降序、进入文章、刷新、前进后退验证通过，产物为 `temp_workspace/collection-contract-umloRE`。已查看名称主列、文章路径列、目录及语言页截图。本轮不迁移业务内容，PWA 和站点仍保持原入口。
+
+干净效果图为 `temp_workspace/name-list-preview/directory-as-name.png`：仅在临时覆盖层将真实 `/d/` 改成 `list: name`，没有加入测试文章，也未改动正式目录声明。
+
+以下为之前各阶段的设计与验收记录；当前增量以上述两步为准。
 
 已确认：现有面包屑通过 `from` 保存进入路径，结合 `sort/sorts` 恢复排序，并已有根入口及各列选中逻辑。本次复用该机制，将结果接到统一第一列，清除主菜单另用 `nav_primary` 判断归属的分支。
 

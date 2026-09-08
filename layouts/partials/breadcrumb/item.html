@@ -15,7 +15,7 @@
 {{- $hasCurrent := gt (len (where $items "current" true)) 0 -}}
 {{- $hasSelected := gt (len (where $items "selected" true)) 0 -}}
 <div class="breadcrumb-column" data-collection-column="true"{{ with $collectionHref }} data-breadcrumb-collection-href="{{ . }}"{{ end }}>
-  <div class="grid-list grid-list--single collection-list collection-list--column{{ if $header }} grid-list--headed{{ end }}">
+  <div class="grid-list collection-list collection-list--column{{ if $header }} grid-list--headed{{ end }}">
     {{- $header -}}
     {{- range $row := $items -}}
       {{- $isCurrent := eq (index $row "highlighted") true -}}

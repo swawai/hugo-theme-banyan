@@ -44,7 +44,7 @@ async function readCanvas(page) {
             columns: columns.map(rect),
             columnLinks: columns.map(column => column.querySelectorAll('.breadcrumb-column-link[href]').length),
             plainColumns: columns.every(column => (
-                column.querySelector(':scope > .grid-list--single.collection-list--column')
+                column.querySelector(':scope > .grid-list.collection-list--column')
                 && !column.querySelector('[aria-expanded], [role="menu"], [hidden]')
             )),
             obsoleteControls: document.querySelectorAll('.breadcrumb-item-menu, .breadcrumb-menu-panel, .breadcrumb-menu-trigger').length,

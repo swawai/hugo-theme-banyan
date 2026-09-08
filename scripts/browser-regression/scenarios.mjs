@@ -61,7 +61,7 @@ async function startBreadcrumbContinuityProbe(page, columnIndex = 0) {
             }
 
             const columns = Array.from(document.querySelectorAll(
-                '.slot-row-breadcrumb .grid-list--single'
+                '.slot-row-breadcrumb .grid-list'
             )).filter((column) => column.querySelector('.collection-column-header'));
             const column = columns[targetColumnIndex];
             const rail = document.querySelector('.slot-row-breadcrumb');
@@ -1435,7 +1435,7 @@ export const scenarios = [
             initialUrl.searchParams.set('from', 'd/wsl');
 
             const readColumns = () => page.evaluate(() => (
-                Array.from(document.querySelectorAll('.slot-row-breadcrumb .grid-list--single'))
+                Array.from(document.querySelectorAll('.slot-row-breadcrumb .grid-list'))
                     .filter((column) => column.querySelector('.collection-column-header'))
                     .map((column) => ({
                         indicator: column.querySelector('.collection-sort-indicator')?.textContent?.trim() || '',
@@ -1470,7 +1470,7 @@ export const scenarios = [
                     await childToggle.click();
                     await page.waitForFunction((beforeRows) => {
                         const columns = Array.from(document.querySelectorAll(
-                            '.slot-row-breadcrumb .grid-list--single'
+                            '.slot-row-breadcrumb .grid-list'
                         )).filter((column) => (
                             column.querySelector('.collection-column-header')
                         ));
@@ -1538,7 +1538,7 @@ export const scenarios = [
                     await ancestorToggle.click();
                     await page.waitForFunction((beforeRows) => {
                         const columns = Array.from(document.querySelectorAll(
-                            '.slot-row-breadcrumb .grid-list--single'
+                            '.slot-row-breadcrumb .grid-list'
                         )).filter((column) => (
                             column.querySelector('.collection-column-header')
                         ));
@@ -1626,7 +1626,7 @@ export const scenarios = [
 
             const readState = () => page.evaluate(() => {
                 const column = Array.from(document.querySelectorAll(
-                    '.slot-row-breadcrumb .grid-list--single'
+                    '.slot-row-breadcrumb .grid-list'
                 )).find((candidate) => candidate.querySelector('.collection-column-header'));
                 const mainGrid = document.querySelector(
                     '.slot-main [data-sortable="true"][data-sort-variant]'
@@ -1672,7 +1672,7 @@ export const scenarios = [
                     await page.waitForFunction((beforeRows) => {
                         const currentUrl = new URL(window.location.href);
                         const column = Array.from(document.querySelectorAll(
-                            '.slot-row-breadcrumb .grid-list--single'
+                            '.slot-row-breadcrumb .grid-list'
                         )).find((candidate) => (
                             candidate.querySelector('.collection-column-header')
                         ));
@@ -2021,7 +2021,7 @@ export const scenarios = [
                     separatorBlockStart: list.getBoundingClientRect().top
                         + Number.parseFloat(separatorStyle.top),
                     singleGridContract: list.matches(
-                        '.grid-list.grid-list--single.grid-list--headed.collection-list--column'
+                        '.grid-list.grid-list--headed.collection-list--column'
                     )
                 };
             });

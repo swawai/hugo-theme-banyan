@@ -8,13 +8,14 @@
 {{ $coreMotion := resources.Get "css/core-motion.css" }}
 {{ $collectionList := resources.Get "css/collection-list.css" }}
 {{ $gridAll := resources.Get "css/grid-all.css" }}
-{{ $gridList := resources.Get "css/grid-list.css" }}
+{{ $gridBase := resources.Get "css/grid-base.css" }}
+{{ $gridDirectory := resources.Get "css/grid-directory.css" }}
 {{ $gridProducts := resources.Get "css/grid-products.css" }}
 {{ $navBreadcrumb := resources.Get "css/nav-breadcrumb.css" }}
 {{ $siteHeader := resources.Get "css/site-header.css" }}
 {{ $rootNavigation := resources.Get "css/root-navigation.css" }}
 {{ $pageBundleParts := slice $coreBase $siteHeader }}
-{{ $pageBundleParts = $pageBundleParts | append $collectionList $gridList $rootNavigation }}
+{{ $pageBundleParts = $pageBundleParts | append $collectionList $gridBase $rootNavigation }}
 {{ $pageBundleParts = $pageBundleParts | append $coreA11y }}
 {{ $pageBundleParts = $pageBundleParts | append $coreMotion }}
 {{ $pageBundle := $pageBundleParts | resources.Concat "css/bundle-page.css" }}
@@ -23,12 +24,13 @@
 {{ $pageCrumbBundleParts = $pageCrumbBundleParts | append $navBreadcrumb }}
 {{ $pageCrumbBundle := $pageCrumbBundleParts | resources.Concat "css/bundle-page-crumb.css" }}
 {{ $pageCrumbBundle = partial "css-process.html" (dict "resource" $pageCrumbBundle "fingerprint" true) }}
-{{ $listBundleParts := $pageCrumbBundleParts }}
-{{ $listBundle := $pageCrumbBundle }}
-{{ $productsBundleParts := $listBundleParts | append $gridProducts }}
+{{ $directoryBundleParts := $pageCrumbBundleParts | append $gridDirectory }}
+{{ $directoryBundle := $directoryBundleParts | resources.Concat "css/bundle-directory.css" }}
+{{ $directoryBundle = partial "css-process.html" (dict "resource" $directoryBundle "fingerprint" true) }}
+{{ $productsBundleParts := $pageCrumbBundleParts | append $gridProducts }}
 {{ $productsBundle := $productsBundleParts | resources.Concat "css/bundle-products.css" }}
 {{ $productsBundle = partial "css-process.html" (dict "resource" $productsBundle "fingerprint" true) }}
-{{ $allBundleParts := $listBundleParts | append $gridAll }}
+{{ $allBundleParts := $pageCrumbBundleParts | append $gridAll }}
 {{ $allBundle := $allBundleParts | resources.Concat "css/bundle-all.css" }}
 {{ $allBundle = partial "css-process.html" (dict "resource" $allBundle "fingerprint" true) }}
 {{ $resolvedVariant := $variant }}
@@ -39,8 +41,8 @@
 <link rel="stylesheet" href="{{ $allBundle.RelPermalink }}">
 {{ else if eq $resolvedVariant "products" }}
 <link rel="stylesheet" href="{{ $productsBundle.RelPermalink }}">
-{{ else if eq $resolvedVariant "list" }}
-<link rel="stylesheet" href="{{ $listBundle.RelPermalink }}">
+{{ else if eq $resolvedVariant "directory" }}
+<link rel="stylesheet" href="{{ $directoryBundle.RelPermalink }}">
 {{ else if eq $resolvedVariant "page" }}
 <link rel="stylesheet" href="{{ $pageBundle.RelPermalink }}">
 {{ else }}

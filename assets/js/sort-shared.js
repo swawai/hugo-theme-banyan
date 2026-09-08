@@ -4,6 +4,13 @@ import {
 } from './nav-state.js';
 
 export const SORT_VARIANTS = {
+    name: {
+        defaultToken: 'name-asc',
+        grouped: false,
+        fields: {
+            name: { dataKey: 'sortName', type: 'string', defaultOrder: 'asc' }
+        }
+    },
     section: {
         defaultToken: 'date-desc',
         grouped: true,

@@ -31,7 +31,7 @@
 list: products
 ```
 
-原有 WSL 文章仍全部保留，只把列换成名称、价格、价值说明；没有 `offer` 的文章显示价格 `—`。改成 `list: all` 就使用名称、更新时间、大小、路径列；改成 `list: directory` 就使用名称、更新时间、数量／大小列。没有声明时，继承最近内容祖先的 `list`。普通文章仍使用 `article-page`，不会因祖先的列表声明变成列表。
+原有 WSL 文章仍全部保留，只把列换成名称、价格、价值说明；没有 `offer` 的文章显示价格 `—`。改成 `list: all` 就使用名称、更新时间、大小、路径列；改成 `list: directory` 就使用名称、更新时间、数量／大小列；改成 `list: name` 就只显示带图标的名称列。没有声明时，继承最近内容祖先的 `list`。普通文章仍使用 `article-page`，不会因祖先的列表声明变成列表。
 
 新增普通列表目录时使用 `layout: article-list`、`list: directory` 和需要的 `slots.breadcrumb: true`；位于已有目录下时可继承布局和展示声明。正文只写介绍，表格自动在介绍后出现，旧的 `section-list`、`taxonomy-list`、`all-list`、`products-list` shortcode 已删除。
 
@@ -42,6 +42,31 @@ list: products
 PWA 状态是主题 `content/pwa/index*.md` 的真实根页面，声明 `layout: pwa-page`、`weight: 96` 和 `icon: { text: "↻" }`，自动成为第一列普通入口，网址为 `/pwa/`（各语言加对应前缀）。该页的布局直接装配更新操作并加载所需样式，`site_update` 文案与更新记录引用也由该页提供；更新引擎保持独立，更新记录仍引用 `/site/changelog`。图片资源目录 `assets/site/pwa/` 与内容路径无关，保持原位置。语言、外观页的返回按钮分别由各自布局明确调用，不由全站骨架追加。
 
 站点根与既有子页通过 `slots.breadcrumb: true` 启用路径列，目录的 `cascade` 同时为未声明 `slots` 的新子页提供默认值。已有子页自行声明了 `slots`，需在原 map 内加入 `breadcrumb: true`，不能期待父级 cascade 自动补进该 map。
+
+## 名称列表与公共样式
+
+`list: name` 是完整的集合列表，默认按名称升序，点击名称列头切换升／降序，不按目录和文章分组。它使用与其他集合列表相同的成员、图标继承、`from`、路径列及历史恢复；来源 JSON 只携带名称列表需要的字段，不输出更新时间、计数或价格。普通目录列出直接子项，分类页列出分类成员，汇总页仍显式声明 `aggregate`，不因为换成单列而改变收录范围。
+
+例如将已有 WSL 目录改成名称列表，只需在 `content/d/wsl/_index.zh.md` 增加 `list: name`。新建独立目录时可声明：
+
+```yaml
+layout: article-list
+list: name
+slots:
+  breadcrumb: true
+```
+
+`name` 描述内容作者看到的列表类型，`base` 描述样式实现层，因此没有 `list: base` 或 `list_columns`。`choice` 同样使用单列基底，但仍由语言／外观布局提供选项和操作，不需要先转成 `name` 集合。
+
+| 样式文件 | 职责 |
+| --- | --- |
+| `assets/css/grid-base.css` | `.grid-list` 默认单列；共用网格间距、单元格及列头横线，供名称列表、第一列、路径列和选择列表使用 |
+| `assets/css/grid-directory.css` | 目录列表的名称、更新时间、计数三列宽度 |
+| `assets/css/grid-all.css` | 全部文章的四列布局与路径单元格 |
+| `assets/css/grid-products.css` | 产品的三列布局与价格／说明单元格 |
+| `assets/css/collection-list.css` | 共用条目行、图标占位、悬停及选中状态 |
+
+`head-styles.html` 按列表类型装配 CSS：`name`、`choice`、第一列和路径列无需目录三列样式，多列表格在基底上叠加自己的列定义。公共单列无需 `grid-name.css`，旧 `grid-list.css` 和 `grid-list--single` 已移除；带列头的网格显式使用 `grid-list--headed`，多列表格使用 `grid-list--table`。
 
 ## 站点信息与 RSS
 
@@ -156,4 +181,4 @@ weight: 30
 
 路径数据文件由各语言首页发布，直接使用当前语言来源模型的 `current_collection_items`，不在默认语言首页重新构建所有语言的数据。这样页面内嵌数据与后续请求的 `_items.json` 完全相同，避免中文主表使用中文排序、路径列却使用默认语言排序。浏览器回归 `system-site-directory` 覆盖站点仅保留更新记录、三语言列表几何、排序、进入后的路径顺序和刷新／历史恢复，同时验证关于、PWA、微信、GitHub、RSS 五个普通根入口的图标、选中、内容与历史，以及首页入口、备案、无页脚、RSS 地址及 XML 内容。PWA 升级回归覆盖从第一列进入、离线／重试、更新应用后保留根入口选中、清理旧导航缓存。
 
-在根项目执行 `node themes/banyan/scripts/checks/check-collections.mjs`。它只向 `temp_workspace/` 写临时内容覆盖层，基于根内容构建三种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。时间用例覆盖发布日期与更新时间不同、只填更新时间、默认日期来源、完全无时间、目录／平面与树形分类汇总，以及升降序进入文章后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。
+在根项目执行 `node themes/banyan/scripts/checks/check-collections.mjs`。它只向 `temp_workspace/` 写临时内容覆盖层，基于根内容构建 directory／all／products／name 四种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。name 用例同时覆盖目录、子目录继承、分类、聚合入口，检查首帧仅名称列、名称升降序、进入文章后的路径列、刷新及历史恢复。时间用例覆盖发布日期与更新时间不同、只填更新时间、默认日期来源、完全无时间、目录／平面与树形分类汇总，以及升降序进入文章后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。

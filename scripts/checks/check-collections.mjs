@@ -25,8 +25,8 @@ const logoBytes = fs.readFileSync('assets/site/pwa/favicon.svg');
 const logoHash = createHash('sha256').update(logoBytes).digest('hex');
 const assetImage = {image: `/site/pwa/favicon.${logoHash}.svg`};
 const cases = [
-    ['priced', 'icon: appearance-dark\nlastmod: 2026-08-01\ntags: [contract-dates]\nproducts: [free, paid, "Special Tools", "$5~$50", contract-dates]\noffer: {amount: 25, currency: "$", value: "Paid and free are opaque labels"}'],
-    ['missing', 'lastmod: 2026-08-02\ntags: [contract-dates/child]\nproducts: [free, paid, "Special Tools", contract-dates]\noffer: {value: "Value without a price"}'],
+    ['priced', 'icon: appearance-dark\nlastmod: 2026-08-01\ntags: [contract-dates]\nproducts: [free, paid, "Special Tools", "$5~$50", contract-dates, contract-name]\noffer: {amount: 25, currency: "$", value: "Paid and free are opaque labels"}'],
+    ['missing', 'lastmod: 2026-08-02\ntags: [contract-dates/child]\nproducts: [free, paid, "Special Tools", contract-dates, contract-name]\noffer: {value: "Value without a price"}'],
     ['zero', 'icon: {text: "<b>EN</b>"}\nproducts: [free]\noffer: {amount: 0, currency: "$"}'],
     ['no-offer', 'icon: {image: "badge.webp"}\nproducts: [free]'],
     ['unclassified', 'icon: {image: "site/pwa/favicon.svg"}\noffer: {amount: 99, currency: "$", value: "Not a product"}'],
@@ -39,6 +39,8 @@ for (const lang of langs) {
     }
     write(path.join(overlay, `products/contract-empty/_index${lang}.md`), '---\ntitle: Contract empty category\nicon: rss\n---\n');
     write(path.join(overlay, `products/contract-dates/_index${lang}.md`), '---\ntitle: Contract dates\nlist: directory\n---\n');
+    write(path.join(overlay, `products/contract-name/_index${lang}.md`), '---\ntitle: Names only\nlist: name\n---\n');
+    write(path.join(overlay, `contract-name-all/index${lang}.md`), '---\ntitle: All names\nslug: contract-name-all\nroot_nav: true\nlayout: article-list\nlist: name\naggregate: /d\nslots: {breadcrumb: true}\n---\n');
     for (const term of ['contract-dates', 'contract-dates/child']) {
         write(path.join(overlay, `tags/${term}/_index${lang}.md`), `---\ntitle: ${term}\n---\n`);
     }
@@ -91,7 +93,7 @@ function payload(output, lang, logical) {
 }
 const builds = {};
 const directoryMembers = new Map();
-for (const view of ['directory', 'all', 'products']) {
+for (const view of ['directory', 'all', 'products', 'name']) {
     const output = builds[view] = build(view);
     for (const [index, lang] of ['en', 'zh', 'zh-tw'].entries()) {
         const current = payload(output, lang, 'd');
@@ -108,7 +110,7 @@ for (const view of ['directory', 'all', 'products']) {
             assert.equal(row.date_text, text, `${list}: display uses Lastmod`);
             assert.equal(row.sort_date, key, `${list}: sorting uses the displayed time`);
         };
-        for (const list of ['all', 'products/contract-dates', ...(view === 'products' ? [] : ['d'])]) {
+        for (const list of ['all', 'products/contract-dates', ...(['products', 'name'].includes(view) ? [] : ['d'])]) {
             assertUpdated(list, '/p/contract-priced/', '2026-08-01', '20260801000000');
             assertUpdated(list, '/p/contract-missing/', '2026-08-02', '20260802000000');
             const dated = payload(output, lang, list).rows.filter(row => /\/p\/contract-(priced|missing)\//.test(row.href));
@@ -117,7 +119,7 @@ for (const view of ['directory', 'all', 'products']) {
         assertUpdated('all', '/p/contract-no-offer/', '2026-01-01', '20260101000000'); // Hugo default falls back to date.
         assertUpdated('all', '/p/contract-direct/', '2026-08-03', '20260803000000'); // No publication date.
         assertUpdated('all', '/p/contract-child/', '—', ''); // No usable time at all.
-        if (view !== 'products') assertUpdated('d', '/d/contract-override/', '2026-08-03', '20260803000000');
+        if (!['products', 'name'].includes(view)) assertUpdated('d', '/d/contract-override/', '2026-08-03', '20260803000000');
         assertUpdated('products', '/products/contract-dates/', '2026-08-02', '20260802000000');
         assertUpdated('products', '/products/contract-empty/', '—', '');
         assertUpdated('tags', '/tags/contract-dates/', '2026-08-02', '20260802000000');
@@ -180,6 +182,15 @@ for (const view of ['directory', 'all', 'products']) {
         }
         const html = fs.readFileSync(path.join(output, prefixes[index].slice(1), 'p/contract-missing/index.html'), 'utf8');
         assert(!/data-sortable=(?:"true"|true)/.test(html), 'article remains an article despite inherited list');
+        for (const list of ['products/contract-name', 'contract-name-all', ...(view === 'name' ? ['d', 'd/wsl'] : [])]) {
+            const names = payload(output, lang, list);
+            assert.equal(names.sv, 'name');
+            assert.equal(names.ds, 'name-asc');
+            assert(names.rows.length > 0);
+            assert(names.rows.every(row => !('sort_date' in row) && !('date_text' in row) && !('count_text' in row) && !('price_text' in row)), 'name payloads only contain name and shared navigation fields');
+            const ranks = names.rows.map(row => Number(row.sort_name));
+            assert.deepEqual(ranks, [...ranks].sort((a, b) => a - b), 'SSR name order agrees with its shipped sort ranks');
+        }
     }
     console.log(`PASS collection membership, inheritance and Lastmod dates: ${view}, all three languages`);
 }
@@ -343,6 +354,70 @@ try {
     }
     await iconsContext.close();
     console.log('PASS inherited/own icons, source-only SVGs, SSR menus, reload and history');
+
+    server.setRoot(builds.name);
+    const namesContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1024, height: 700 } });
+    await namesContext.addInitScript(suppressLanguageSuggestDialogScript());
+    const namesPage = await namesContext.newPage();
+    const paths = selector => namesPage.locator(selector).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
+    const nameGrid = '.slot-main [data-sortable="true"]';
+    const mainLinks = `${nameGrid} .collection-item-link`;
+    for (const [index, lang] of ['en', 'zh', 'zh-tw'].entries()) {
+        const prefix = prefixes[index];
+        for (const list of ['d', 'd/wsl', 'products/contract-name', 'contract-name-all']) {
+            const address = `${baseUrl}${prefix}/${list}/`;
+            await gotoAndWait(namesPage, address);
+            const expected = payload(builds.name, lang, list).rows.map(row => row.href);
+            const staticRows = await namesPage.evaluate(async href => {
+                const html = await (await fetch(href)).text();
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const grid = doc.querySelector('.slot-main [data-sortable]');
+                return { fields: [...grid.querySelectorAll('[data-sort-field]')].map(node => node.dataset.sortField),
+                    items: [...grid.querySelectorAll('.collection-item-link')].map(node => new URL(node.getAttribute('href'), location.href).pathname),
+                    nonNameCells: grid.querySelectorAll(':scope > :not(.cell-title)').length };
+            }, address);
+            assert.deepEqual(staticRows, {fields: ['name'], items: expected, nonNameCells: 0}, 'SSR renders only name cells and canonical name order');
+            assert.deepEqual(await paths(mainLinks), expected, 'Hydration preserves SSR order');
+            assert.equal(await namesPage.locator(nameGrid).getAttribute('data-sort-columns'), '1');
+            assert.equal(await namesPage.locator(nameGrid).evaluate(grid => getComputedStyle(grid).gridTemplateColumns), '225px');
+            await namesPage.locator(`${nameGrid} [data-sort-field="name"]`).click();
+            await namesPage.waitForURL(url => url.searchParams.get('sort') === 'name-desc');
+            const descending = [...expected].reverse();
+            assert.deepEqual(await paths(mainLinks), descending, 'Single-column sorting reverses all names');
+            const collectionUrl = namesPage.url();
+            const articleLink = namesPage.locator(`${mainLinks}[href*="/p/"]`).first();
+            const articlePath = await articleLink.evaluate(node => new URL(node.href).pathname);
+            await articleLink.click();
+            await waitForBreadcrumbSettled(namesPage);
+            const column = `.slot-breadcrumb [data-breadcrumb-collection-href="${prefix}/${list}/"]`;
+            const assertNameColumn = async () => {
+                assert.equal(new URL(namesPage.url()).searchParams.get('from'), list);
+                assert.deepEqual(await paths(`${column} .collection-item-link`), descending, 'Article path uses the same name list order');
+                assert.deepEqual(await paths(`${column} .collection-item-link.is-current`), [articlePath]);
+                assert.match(await namesPage.locator(`${column} .collection-column-sort`).textContent(), /↓/);
+            };
+            await assertNameColumn();
+            await namesPage.reload();
+            await waitForBreadcrumbSettled(namesPage);
+            await assertNameColumn();
+            await namesPage.goBack();
+            await namesPage.waitForURL(collectionUrl);
+            await waitForBreadcrumbSettled(namesPage);
+            assert.deepEqual(await paths(mainLinks), descending);
+            await namesPage.goForward();
+            await waitForBreadcrumbSettled(namesPage);
+            await assertNameColumn();
+            await namesPage.locator(`${column} .collection-column-sort`).click();
+            await namesPage.waitForFunction(selector => document.querySelector(selector)?.textContent.includes('↑'), `${column} .collection-column-sort`);
+            assert.deepEqual(await paths(`${column} .collection-item-link`), expected, 'Path-column toggle uses name sorting too');
+        }
+    }
+    await gotoAndWait(namesPage, `${baseUrl}/zh/d/`);
+    await namesPage.screenshot({path: path.join(work, 'name-list-zh.png')});
+    await gotoAndWait(namesPage, `${baseUrl}/zh/p/contract-missing/?from=products/contract-name&sort=name-desc`);
+    await namesPage.screenshot({path: path.join(work, 'name-list-path-zh.png')});
+    await namesContext.close();
+    console.log('PASS name-only SSR, section inheritance, taxonomy/aggregate sources, ascending/descending sort, path columns and history in three languages');
 } finally {
     await browser.close();
     await server.stop();

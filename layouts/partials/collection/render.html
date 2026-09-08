@@ -7,17 +7,20 @@
 {{- $fields := slice "name" "date" "count" -}}
 {{- $classes := dict "name" "cell-title" "date" "cell-date" "count" "cell-count" "size" "cell-count" "path" "cell-path" "price" "cell-price" "value" "cell-value" -}}
 {{- $prefix := "list" -}}
-{{- $gridClass := "" -}}
-{{- if eq $config.view "all" -}}
+{{- $gridClass := "grid-directory grid-list--table" -}}
+{{- if eq $config.view "name" -}}
+  {{- $fields = slice "name" -}}
+  {{- $gridClass = "" -}}
+{{- else if eq $config.view "all" -}}
   {{- $fields = slice "name" "date" "size" "path" -}}
-  {{- $gridClass = "grid-all" -}}
+  {{- $gridClass = "grid-all grid-list--table" -}}
 {{- else if eq $config.view "products" -}}
   {{- $fields = slice "name" "price" "value" -}}
-  {{- $gridClass = "grid-products" -}}
+  {{- $gridClass = "grid-products grid-list--table" -}}
   {{- $prefix = "products" -}}
 {{- end -}}
 {{- $default := split $config.default_sort "-" -}}
-<div class="grid-list {{ $gridClass }} collection-list collection-list--grid" data-sortable="true" data-sort-variant="{{ $config.sort_variant }}" data-sort-columns="{{ len $fields }}" data-sort-default="{{ $config.default_sort }}">
+<div class="grid-list {{ $gridClass }} grid-list--headed collection-list collection-list--grid" data-sortable="true" data-sort-variant="{{ $config.sort_variant }}" data-sort-columns="{{ len $fields }}" data-sort-default="{{ $config.default_sort }}">
   {{- range $field := $fields -}}
     {{- partial "grid-sort-cell.html" (dict
       "class" (index $classes $field) "ctx" $page "baseHref" $page.RelPermalink
@@ -41,7 +44,7 @@
     {{- if eq $config.view "products" -}}
       <span class="cell-price" title="{{ $row.price_text }}">{{ $row.price_text }}</span>
       <span class="cell-value" title="{{ $row.value_text }}">{{ $row.value_text }}</span>
-    {{- else -}}
+    {{- else if ne $config.view "name" -}}
       <span class="cell-date" title="{{ $row.date_text }}">{{ $row.date_text }}</span>
       {{- $count := $row.count_text -}}{{- $unit := $row.count_unit -}}
       {{- if eq $config.view "all" -}}{{- $count = $row.size_text -}}{{- $unit = $row.size_unit -}}{{- end -}}
