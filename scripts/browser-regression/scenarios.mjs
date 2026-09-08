@@ -690,7 +690,7 @@ export const scenarios = [
         serviceWorkers: 'block',
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
-            const rootPaths = ['d', 'intent', 'tags', 'all', 'products', 'all-products',
+            const rootPaths = ['all', 'tags', 'all-products', 'products',
                 'language', 'appearance', 'my', 'about', 'pwa', 'site', 'wechat', 'github', 'rss', 'icp', ''];
             await gotoAndWait(page, `${baseUrl}/zh/all/`);
             const staticRoots = await page.evaluate(async (paths) => {
@@ -705,6 +705,7 @@ export const scenarios = [
                         count: navs.length,
                         expected: paths.map((path) => prefix + (path ? path + '/' : '')),
                         hrefs: [...doc.querySelectorAll('[data-root-href]')].map((link) => link.dataset.rootHref),
+                        articleLabels: [...doc.querySelectorAll('[data-root-href] .collection-item-title')].slice(0, 4).map(node => node.textContent),
                         selected: [...doc.querySelectorAll('[data-root-href][aria-current="page"]')]
                             .map((link) => link.dataset.rootHref),
                         home: nav?.querySelector(`[data-root-href="${prefix}"]`)?.getAttribute('href'),
@@ -725,6 +726,12 @@ export const scenarios = [
                 return results;
             }, rootPaths);
             for (const state of staticRoots) {
+                const labels = {
+                    '/': ['Articles - All', 'Articles - Categories', 'Products - All', 'Products - Categories'],
+                    '/zh/': ['文章 - 全部', '文章 - 分类', '产品 - 全部', '产品 - 分类'],
+                    '/zh-tw/': ['文章 - 全部', '文章 - 分類', '產品 - 全部', '產品 - 分類']
+                };
+                if (JSON.stringify(state.articleLabels) !== JSON.stringify(labels[state.prefix])) fail('Article and product entries must use the same All/Categories naming and order.', state);
                 if (state.count !== 1 || JSON.stringify(state.hrefs) !== JSON.stringify(state.expected)
                     || JSON.stringify(state.selected) !== JSON.stringify([state.prefix + 'all/'])
                     || state.home !== state.prefix || state.rowContentCount !== rootPaths.length || state.homeIcon !== '©' || state.footerCount !== 0 || state.oldControls !== 0
@@ -771,7 +778,7 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         timeoutMs: 60000,
         async run({ page, baseUrl }) {
-            const expectedRoots = ['d', 'intent', 'tags', 'all', 'products', 'all-products',
+            const expectedRoots = ['all', 'tags', 'all-products', 'products',
                 'language', 'appearance', 'my', 'about', 'pwa', 'site', 'wechat', 'github', 'rss', 'icp', ''].map((root) => `/zh/${root ? root + '/' : ''}`);
             const assertSelection = async (expected) => {
                 await waitForBreadcrumbSettled(page);
@@ -789,10 +796,12 @@ export const scenarios = [
                 return state;
             };
             const directCases = [
-                ['/zh/p/xvenv/', '/zh/d/'],
-                ['/zh/p/xvenv/?from=products/not-a-source', '/zh/d/'],
-                ['/zh/p/xvenv/?from=product-categories/free', '/zh/d/'],
-                ['/zh/p/xvenv/?from=products', '/zh/d/'],
+                ['/zh/p/xvenv/', null],
+                ['/zh/p/xvenv/?from=products/not-a-source', null],
+                ['/zh/p/xvenv/?from=product-categories/free', null],
+                ['/zh/p/xvenv/?from=products', null],
+                ['/zh/d/', null],
+                ['/zh/intent/', null],
                 ['/zh/about/', '/zh/about/'],
                 ['/zh/pwa/', '/zh/pwa/'],
                 ['/zh/changelog/', '/zh/site/'],
@@ -822,14 +831,14 @@ export const scenarios = [
                 const target = new URL(articlePath, baseUrl);
                 target.searchParams.set('from', source.logical_path.replace(/^\/|\/$/g, ''));
                 await gotoAndWait(page, target.href);
-                await assertSelection(source.root_item.href);
+                await assertSelection(expectedRoots.includes(source.root_item.href) ? source.root_item.href : null);
                 await page.reload();
-                await assertSelection(source.root_item.href);
+                await assertSelection(expectedRoots.includes(source.root_item.href) ? source.root_item.href : null);
             }
             await page.goBack();
             await assertSelection(sourceCases[1].root_item.href);
             await page.goForward();
-            await assertSelection(sourceCases[2].root_item.href);
+            await assertSelection(null);
 
             // Keep source selection usable before external bundles finish loading.
             await page.addInitScript(() => {
@@ -842,11 +851,12 @@ export const scenarios = [
             });
             const firstPaintCases = [
                 ['/zh/p/xvenv/?from=products/free', '/zh/products/'],
-                ['/zh/p/xvenv/?from=product-categories/free', '/zh/d/'],
-                ['/zh/p/xvenv/?from=products', '/zh/d/'],
+                ['/zh/p/xvenv/?from=product-categories/free', null],
+                ['/zh/p/xvenv/?from=products', null],
                 ['/zh/p/xvenv/?from=%2Fproducts%2Ffree%2F', '/zh/products/'],
-                ['/zh/p/xvenv/', '/zh/d/'],
-                ['/zh/p/xvenv/?from=products/not-a-source', '/zh/d/'],
+                ['/zh/p/xvenv/', null],
+                ['/zh/p/xvenv/?from=products/not-a-source', null],
+                ['/zh/p/xvenv/?from=intent/decide', null],
                 ['/zh/language/?return=' + encodeURIComponent('/zh/p/xvenv/?from=products/free'), '/zh/language/']
             ];
             const firstPaintStates = [];
@@ -859,7 +869,7 @@ export const scenarios = [
                     rootCount: document.querySelectorAll('[data-root-href]').length
                 }));
                 if (firstPaint.domContentLoaded || firstPaint.rootCount !== expectedRoots.length
-                    || JSON.stringify(firstPaint.selected) !== JSON.stringify([expectedRoot])) {
+                    || JSON.stringify(firstPaint.selected) !== JSON.stringify(expectedRoot ? [expectedRoot] : [])) {
                     fail('The complete root list and source selection must be correct before deferred scripts load.',
                         { target, expectedRoot, ...firstPaint });
                 }
@@ -869,6 +879,70 @@ export const scenarios = [
             }
             await page.unroute('**/js/*.js');
             return { directCases, firstPaintStates, sources: sourceCases.map((source) => source.logical_path) };
+        }
+    },
+    {
+        id: 'root-navigation-hidden-exploration',
+        kind: 'single',
+        title: 'Article Metadata Keeps Hidden Directory and Intent Paths Usable',
+        serviceWorkers: 'block',
+        viewport: { width: 1024, height: 700 },
+        async run({ page, baseUrl, artifactDir }) {
+            const roots = '[data-root-href]';
+            const readPaths = selector => page.locator(selector).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
+            const assertHiddenPath = async () => {
+                const state = { count: await page.locator(roots).count(), selected: await readPaths(`${roots}.is-current`) };
+                if (state.count !== 15 || state.selected.length) fail('Hidden paths preserve the visible root list without a misleading selected entry.', state);
+            };
+            for (const prefix of ['', '/zh', '/zh-tw']) {
+                for (const [root, collection] of [['d', '/d/products/'], ['intent', '/intent/decide/']]) {
+                    const article = `${prefix}/p/xvenv/`;
+                    await gotoAndWait(page, `${baseUrl}${article}?from=all`);
+                    const metadataLink = page.locator(`.slot-meta a[href="${prefix}${collection}"]`);
+                    await metadataLink.click();
+                    await waitForBreadcrumbSettled(page);
+                    if (new URL(page.url()).pathname !== `${prefix}${collection}`) fail('Article metadata must navigate to the real collection.', { url: page.url() });
+                    await assertHiddenPath();
+                    await page.locator('.slot-main [data-sort-field="name"]').click();
+                    await page.waitForURL(url => url.searchParams.get('sort') === 'name-asc');
+                    const collectionUrl = page.url();
+                    const order = await readPaths('.slot-main .collection-item-link');
+                    await page.locator(`.slot-main .collection-item-link[href^="${article}?"]`).click();
+                    await waitForBreadcrumbSettled(page);
+                    const articleUrl = page.url();
+                    const assertArticle = async () => {
+                        await assertHiddenPath();
+                        const column = `.slot-breadcrumb [data-breadcrumb-collection-href="${prefix}${collection}"]`;
+                        const pathOrder = await readPaths(`${column} .collection-item-link`);
+                        const selected = await readPaths(`${column} .collection-item-link.is-current`);
+                        const source = await page.evaluate(logical => JSON.parse(document.body.dataset.entryBreadcrumbSources).find(item => item.logical_path === logical), collection);
+                        if (new URL(page.url()).searchParams.get('from') !== collection.slice(1, -1)
+                            || source?.root_item?.href !== `${prefix}/${root}/`
+                            || JSON.stringify(pathOrder) !== JSON.stringify(order)
+                            || JSON.stringify(selected) !== JSON.stringify([article])) {
+                            fail('Hidden roots retain source ancestry, sorted siblings and the selected article.', { url: page.url(), source: source?.root_item, order, pathOrder, selected });
+                        }
+                    };
+                    await assertArticle();
+                    await page.reload();
+                    await waitForBreadcrumbSettled(page);
+                    await assertArticle();
+                    await page.goBack();
+                    await page.waitForURL(collectionUrl);
+                    await waitForBreadcrumbSettled(page);
+                    await assertHiddenPath();
+                    await page.goForward();
+                    await page.waitForURL(articleUrl);
+                    await waitForBreadcrumbSettled(page);
+                    await assertArticle();
+                    if (prefix === '/zh') await page.screenshot({ path: path.join(artifactDir, `hidden-${root}-article.png`) });
+                }
+            }
+            for (const entry of ['all', 'tags']) {
+                await gotoAndWait(page, `${baseUrl}/zh/${entry}/`);
+                await page.screenshot({ path: path.join(artifactDir, `articles-${entry}.png`) });
+            }
+            return { message: 'All three languages retain metadata links to directory/intent collections, sorting, source columns and selection through reload/back/forward; hidden roots never appear in the first column.' };
         }
     },
     {

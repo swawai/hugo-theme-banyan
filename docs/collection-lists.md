@@ -4,6 +4,12 @@
 
 第一列名称使用页面的 `linkTitle`，未声明时使用 `title`。语言、外观、我的、站点的三语言主题页面已声明简称，例如 `title: 系统－语言`、`linkTitle: 语言`；入口显示“语言”，页面自身标题仍来自 `title`。
 
+第一列采用显式加入：只有根页面顶层声明布尔值 `root_nav: true` 才显示；未声明、`false` 或字符串 `"true"` 均不显示。首页自身也遵守该规则。此字段只对首页及其直接子页／分类根生效，不能把深层文章提升成根入口；不要放入 `cascade`。项目覆盖主题页面时，每种语言各自保留该声明。
+
+当前前四项依次为：主题 `content/all/index*.md` 的“文章 - 全部”（`weight: 10`）、项目 `content/tags/_index*.md` 的“文章 - 分类”（`20`）、主题 `content/all-products/_index*.md` 的“产品 - 全部”（`30`）、主题 `content/products/_index*.md` 的“产品 - 分类”（`40`），均使用 `linkTitle` 指定入口文字。
+
+`/d/` 和 `/intent/` 不声明 `root_nav`。它们继续渲染目录／分类页，文章底部目录和阅读目的链接、集合成员、排序、`from` 及路径列均保留。隐藏来源没有对应的第一列选中项；直接访问正文时若实际根为隐藏的 `/d/`，同样不选中第一列。可见入口过滤仅发生在 `navigation/root.html`，`navigation/root-pages.html` 保留完整结构供归属与来源模型使用。`banyan_taxonomy.show_in_home` 控制另一个首页快捷列表，与第一列无关。
+
 ## 在哪里改表格
 
 | 文件（每种语言分别配置） | 当前声明 | 列出的对象 |
@@ -54,7 +60,7 @@ PWA 状态是主题 `content/pwa/index*.md` 的真实根页面，声明 `layout:
 
 GitHub 和备案页的目标链接使用 `{{< new-tab href="https://example.com/" >}}链接文字{{< /new-tab >}}`，头像可在其中嵌套 `asset` 短代码；加粗可在短代码外侧使用 Markdown `**`。该短代码复用 `link.html` 输出 `target="_blank"`、`rel="noopener noreferrer"`，不需要 JavaScript，也无需开启 Markdown 原始 HTML。第一列入口仍使用当前标签打开说明页。
 
-关于（`95`）、PWA 状态（`96`）排在我的（`90`）之后、站点（`100`）之前；微信、GitHub、RSS 三个入口依次排在站点之后、备案（`105`）和首页版权（`110`）之前。微信保持 `/wechat/`，GitHub、RSS 分别使用 `/github/`、`/rss/`，各语言沿用原语言前缀。第一列共 17 项，站点中只保留更新记录；旧页脚及其片段配置已移除。
+关于（`95`）、PWA 状态（`96`）排在我的（`90`）之后、站点（`100`）之前；微信、GitHub、RSS 三个入口依次排在站点之后、备案（`105`）和首页版权（`110`）之前。微信保持 `/wechat/`，GitHub、RSS 分别使用 `/github/`、`/rss/`，各语言沿用原语言前缀。第一列共 15 项，站点中只保留更新记录；旧页脚及其片段配置已移除。
 
 ## 统一更新时间
 

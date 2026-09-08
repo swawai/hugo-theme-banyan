@@ -1,4 +1,5 @@
 ---
+root_nav: true
 title: PWA Status
 description: View the current site version and check for updates.
 type: page

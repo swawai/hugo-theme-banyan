@@ -1,4 +1,5 @@
 ---
+root_nav: true
 title: 系統－站點
 linkTitle: 站點
 icon: { image: "site/pwa/favicon.svg" }

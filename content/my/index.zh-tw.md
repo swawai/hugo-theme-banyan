@@ -1,4 +1,5 @@
 ---
+root_nav: true
 draft: false
 title: 系統－我的
 linkTitle: 我的

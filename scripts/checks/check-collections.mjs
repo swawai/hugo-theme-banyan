@@ -34,6 +34,9 @@ const cases = [
     ['blank', 'products: [""]']
 ];
 for (const lang of langs) {
+    for (const [name, field] of [['enabled', 'root_nav: true'], ['disabled', 'root_nav: false'], ['omitted', ''], ['string', 'root_nav: "true"']]) {
+        write(path.join(overlay, `contract-nav-${name}/index${lang}.md`), `---\ntitle: Navigation ${name}\nslug: contract-nav-${name}\nlayout: article-page\nbuild: {list: local}\n${field}\n---\nDirectly accessible information page.\n`);
+    }
     write(path.join(overlay, `products/contract-empty/_index${lang}.md`), '---\ntitle: Contract empty category\nicon: rss\n---\n');
     write(path.join(overlay, `products/contract-dates/_index${lang}.md`), '---\ntitle: Contract dates\nlist: directory\n---\n');
     for (const term of ['contract-dates', 'contract-dates/child']) {
@@ -43,7 +46,7 @@ for (const lang of langs) {
     write(path.join(overlay, `products/paid/_index${lang}.md`), paid.replace('---', '---\nlist_icon_file: appearance-light'));
     for (const [name, fields] of cases) write(path.join(overlay, `d/contract-${name}/index${lang}.md`),
         `---\ntitle: "Contract ${name}"\nslug: contract-${name}\ndate: 2026-01-01\n${fields}\n---\nArticle body stays an article.\n`);
-    write(path.join(overlay, `d/contract-override/_index${lang}.md`), '---\ntitle: Override\nicon: info\nlist: all\nlist_icon_folder: rss\nlist_icon_file: appearance-auto\n---\n');
+    write(path.join(overlay, `d/contract-override/_index${lang}.md`), '---\ntitle: Override\nroot_nav: true\nicon: info\nlist: all\nlist_icon_folder: rss\nlist_icon_file: appearance-auto\n---\n');
     write(path.join(overlay, `d/contract-override/child/_index${lang}.md`), '---\ntitle: Child inherits override\nlist_icon_file: theme\n---\n');
     write(path.join(overlay, `d/contract-override/child/item${lang}.md`), '---\ntitle: Child item\nslug: contract-child\n---\nChild.\n');
     write(path.join(overlay, `d/contract-override/direct${lang}.md`), '---\ntitle: Direct item\nslug: contract-direct\nlastmod: 2026-08-03\n---\nDirect.\n');
@@ -65,7 +68,7 @@ const hugo = resolveHugoCommand({ cwd: root });
 function build(view) {
     for (const lang of langs) {
         const source = fs.readFileSync(`themes/banyan/content/d/_index${lang}.md`, 'utf8');
-        write(path.join(overlay, `d/_index${lang}.md`), source.replace('list: directory', `list: ${view}\nicon: info`));
+        write(path.join(overlay, `d/_index${lang}.md`), source.replace('list: directory', `list: ${view}\nroot_nav: true\nicon: info`));
     }
     const output = path.join(work, view);
     const result = spawnSync(hugo, ['--config', `hugo.toml,${rel(config)}`, '--minify', '--destination', rel(output)],
@@ -194,6 +197,13 @@ try {
         const names = await page.locator('.slot-main .collection-item-title').allTextContents();
         assert.deepEqual(names, payload(builds.directory, lang, 'products').rows.map(row => row.text), 'default category order agrees before and after hydration');
         assert.equal(await page.locator(`[data-root-href="${prefixes[index]}/d/"] use`).getAttribute('href'), '#icon-info', 'root navigation honors the same own icon');
+        const nav = page.locator('[data-root-href*="/contract-nav-"]');
+        assert.deepEqual(await nav.evaluateAll(nodes => nodes.map(node => node.dataset.rootHref)), [`${prefixes[index]}/contract-nav-enabled/`], 'Only boolean root_nav: true opts a root page into navigation.');
+        assert.equal(await page.locator(`[data-root-href="${prefixes[index]}/d/contract-override/"]`).count(), 0, 'Opting in a child does not promote it to the content root.');
+        for (const name of ['enabled', 'disabled', 'omitted', 'string']) {
+            const response = await page.request.get(`${baseUrl}${prefixes[index]}/contract-nav-${name}/`);
+            assert.equal(response.status(), 200, 'Navigation visibility must not disable page output.');
+        }
     }
     for (const list of ['d', 'all', 'products/contract-dates']) {
         for (const direction of ['asc', 'desc']) {

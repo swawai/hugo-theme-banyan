@@ -1,4 +1,5 @@
 ---
+root_nav: true
 title: PWA 狀態
 description: 查看目前站點版本並檢查更新。
 type: page

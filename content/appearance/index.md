@@ -1,4 +1,5 @@
 ---
+root_nav: true
 title: System - Appearance
 linkTitle: Appearance
 slug: appearance

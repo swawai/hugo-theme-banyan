@@ -1,4 +1,5 @@
 ---
+root_nav: true
 date: "2025-10-11T20:10:44+08:00"
 draft: false
 title: "关于"

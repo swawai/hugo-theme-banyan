@@ -1,4 +1,5 @@
 ---
+root_nav: true
 draft: false
 title: System - My
 linkTitle: My

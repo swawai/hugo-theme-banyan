@@ -82,7 +82,9 @@ Navigation contract after the 2026-09-07 flattening step:
 
 - The theme derives the first-column list from `Home.Pages` plus taxonomy roots
   whose parent is Home. Names, URLs, and order come from each page's
-  `LinkTitle`/`Title`, `RelPermalink`, and `weight`.
+  `LinkTitle`/`Title`, `RelPermalink`, and `weight`. As of 2026-09-09, only
+  roots with boolean `root_nav: true` appear; unlisted roots retain their
+  content ancestry and collection navigation without a first-column selection.
 - Sites customize real root pages and taxonomy bundles instead of maintaining a
   separate menu whitelist. `nav_primary` and the `primary_nav`, `utilities`, and
   `breadcrumb_root` slots are removed, including their navigation fragments.

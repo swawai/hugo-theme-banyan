@@ -1,4 +1,5 @@
 ---
+root_nav: true
 title: System - Language
 linkTitle: Language
 slug: language

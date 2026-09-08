@@ -1,7 +1,9 @@
 ---
+root_nav: true
 title: Products - Categories
 description: Browse products by price or origin.
-weight: 50
+linkTitle: Products - Categories
+weight: 40
 layout: article-list
 list: directory
 list_icon_file: product

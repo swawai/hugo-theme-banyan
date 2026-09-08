@@ -1,4 +1,5 @@
 ---
+root_nav: true
 title: RSS 訂閱
 description: 使用 RSS 閱讀器訂閱文章更新。
 date: 2026-09-08

@@ -6,7 +6,7 @@
 {{- with $selected -}}{{- $defaultHref = .RelPermalink -}}{{- end -}}
 <nav class="root-navigation collection-list--index" data-root-navigation data-default-root-href="{{ $defaultHref }}" aria-label="{{ $ctx.Site.Title }}">
   <div class="grid-list grid-list--single collection-list collection-list--grid">
-    {{- range $roots -}}
+    {{- range where $roots "Params.root_nav" true -}}
       {{- $attrs := dict "root-href" .RelPermalink -}}
       {{- $icon := partial "list/item-icon.html" (dict "page" . "defaults" $iconDefaults "kind" "folder") -}}
       {{- partial "grid-title-cell.html" (dict

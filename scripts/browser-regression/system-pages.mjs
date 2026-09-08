@@ -112,7 +112,7 @@ export const systemPageScenarios = [
                         assert.equal(new URL(page.url()).pathname, `${prefix}/${name}/`);
                         assert.equal(new URL(page.url()).search, '', 'An ordinary root link carries no directory source.');
                         assert.deepEqual(await rowPaths('[data-root-href].is-current'), [`${prefix}/${name}/`]);
-                        assert.equal(await page.locator('[data-root-href]').count(), 17);
+                        assert.equal(await page.locator('[data-root-href]').count(), 15);
                         assert.equal(await page.locator(`[data-root-href="${prefix}/pwa/"] .icon--text`).textContent(), '↻');
                         assert.equal(await page.locator(`[data-root-href="${prefix}/about/"] img.icon--image`).getAttribute('src'), aboutIconHref);
                         assert.equal(await page.locator('.slot-breadcrumb .collection-item-link').count(), 0, 'Promoted pages do not retain a site directory column.');
@@ -238,7 +238,7 @@ export const systemPageScenarios = [
                     href: new URL(link.href).pathname + new URL(link.href).search + new URL(link.href).hash,
                     root: link.dataset.rootHref
                 })));
-                assert.equal(links.length, 17);
+                assert.equal(links.length, 15);
                 assert(links.every(link => link.href === link.root), 'All root entries retain their ordinary page URLs.');
             };
             await gotoAndWait(page, baseUrl + '/zh/all/');

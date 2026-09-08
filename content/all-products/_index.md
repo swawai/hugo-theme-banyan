@@ -1,7 +1,9 @@
 ---
+root_nav: true
 title: Products - All
 description: All products, across prices and origins.
-weight: 60
+linkTitle: Products - All
+weight: 30
 layout: article-list
 outputs:
   - HTML

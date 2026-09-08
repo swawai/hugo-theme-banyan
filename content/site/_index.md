@@ -1,4 +1,5 @@
 ---
+root_nav: true
 title: System - Site
 linkTitle: Site
 icon: { image: "site/pwa/favicon.svg" }

@@ -240,7 +240,7 @@ export const canvasScenarios = [
             }
             const roots = await readCanvas(page);
             assert.equal(roots.canvasOffsetX, 0, 'Dragging right on prose and the adjacent list reveals the canvas start.');
-            assert.ok(roots.nav.x >= 0 && roots.nav.right <= 390 && roots.rootCount === 11);
+            assert.ok(roots.nav.x >= 0 && roots.nav.right <= 390 && roots.rootCount === 15);
             await page.screenshot({ path: path.join(artifactDir, 'mobile-root-entries.png') });
 
             await swipe(210, -180);
@@ -293,7 +293,7 @@ export const canvasScenarios = [
                     await nextPaint(page);
                     const state = await readCanvas(page);
                     const detail = JSON.stringify({ viewport, name, state });
-                    assert.equal(state.rootCount, 11, detail);
+                    assert.equal(state.rootCount, 15, detail);
                     assert.equal(state.obsoleteControls, 0, detail);
                     assert.equal(state.plainColumns, true, detail);
                     assert.ok(Math.abs(state.nav.width - 225) <= 1, detail);
@@ -324,7 +324,7 @@ export const canvasScenarios = [
                     await nextPaint(page);
                     const rootBounds = await page.locator('[data-root-navigation]').boundingBox();
                     assert.ok(rootBounds.x >= 0 && rootBounds.x + rootBounds.width <= viewport.width,
-                        'Scrolling left must reveal all ten navigation entries.');
+                        'Scrolling left must reveal the complete visible navigation list.');
                     results.push({ viewport, name, ...state });
                 }
             }
