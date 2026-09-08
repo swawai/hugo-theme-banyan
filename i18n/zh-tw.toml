@@ -91,7 +91,7 @@ other = "返回本語言首頁"
 other = "嘗試其他語言版本："
 
 [settings_return]
-other = "返回上一頁"
+other = "返回"
 
 [appearance_auto]
 other = "跟隨系統"

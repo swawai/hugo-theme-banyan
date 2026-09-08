@@ -91,7 +91,7 @@ other = "Go to this language's homepage"
 other = "Try other language versions:"
 
 [settings_return]
-other = "Return to previous page"
+other = "Back"
 
 [appearance_auto]
 other = "Follow system"
