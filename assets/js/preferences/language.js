@@ -65,7 +65,9 @@ export function initLanguagePreference() {
         if (!href) return;
         if (!option.translated && !window.confirm(message(context.missing, { lang: option.name }))) return;
         writeStorage(PREFERRED_LANG_KEY, normalizeLang(option.code));
-        window.location.href = href;
+        // A preference change stays in the same history slot as the language settings page.
+        if (picker) window.location.replace(href);
+        else window.location.href = href;
     });
 
     // Language recommendation belongs to the page, independently of any menu UI.

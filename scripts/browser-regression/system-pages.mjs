@@ -44,8 +44,13 @@ export const systemPageScenarios = [
                 assert.equal(new URL(popup.url()).pathname, '/zh/language/');
                 assert.equal(new URL(popup.url()).search, '');
                 assert.equal(await popup.evaluate(() => history.length), 1);
+                await popup.locator('[data-language-choice="en"]').click();
+                await popup.waitForURL(baseUrl + '/language/');
+                await popup.locator('[data-language-choice="zh-tw"]').click();
+                await popup.waitForURL(baseUrl + '/zh-tw/language/');
+                assert.equal(await popup.evaluate(() => history.length), 1, 'Language choices do not create a previous page in a new tab.');
                 await popup.locator('[data-page-action="back"]').click();
-                await popup.waitForURL(baseUrl + '/zh/');
+                await popup.waitForURL(baseUrl + '/zh-tw/');
             } finally { await popup.close(); }
 
             await gotoAndWait(page, baseUrl + '/zh/p/xvenv/?from=all');
@@ -79,12 +84,13 @@ export const systemPageScenarios = [
         id: 'system-language-return',
         kind: 'single',
         serviceWorkers: 'block',
-        title: 'Language Settings Use Clean URLs and Native Back',
+        title: 'Language Choices Replace the Settings History Entry',
         dialogPolicy: 'dismiss',
         async run({ page, baseUrl, dialogs, artifactDir }) {
             await gotoAndWait(page, baseUrl + '/zh/p/xvenv/?from=products/free&sorts=_,name-asc#details');
             const article = page.url();
             await page.locator('[data-root-href="/zh/language/"]').click();
+            const historyLength = await page.evaluate(() => history.length);
             for (const [code, pathname] of [['en', '/language/'], ['zh-tw', '/zh-tw/language/'], ['zh', '/zh/language/']]) {
                 const choice = page.locator('[data-language-choice="' + code + '"]');
                 assert.equal(await choice.getAttribute('href'), pathname);
@@ -92,14 +98,16 @@ export const systemPageScenarios = [
                 await page.waitForURL(baseUrl + pathname);
                 assert.equal(await page.evaluate(() => localStorage.getItem('preferred_lang')), code);
                 assert.equal(await page.locator('[data-language-choice="' + code + '"]').getAttribute('aria-current'), 'page');
+                assert.equal(await page.evaluate(() => history.length), historyLength, 'Choosing a language replaces the current settings entry.');
             }
             await page.reload();
-            for (const pathname of ['/zh-tw/language/', '/language/', '/zh/language/']) {
-                await page.locator('[data-page-action="back"]').click();
-                await page.waitForURL(baseUrl + pathname);
-            }
             await page.locator('[data-page-action="back"]').click();
             await page.waitForURL(article);
+            await page.goForward();
+            await page.waitForURL(baseUrl + '/zh/language/');
+            await page.goBack();
+            await page.waitForURL(article);
+            assert.equal(await page.evaluate(() => localStorage.getItem('preferred_lang')), 'zh', 'Returning does not undo the chosen preference.');
 
             // Old links only lose the obsolete parameter; its value is never used.
             await page.addInitScript(() => history.replaceState({ ...history.state, cleanupMarker: true }, '', location.href));
@@ -115,7 +123,7 @@ export const systemPageScenarios = [
             await page.waitForURL(baseUrl + '/zh/language/');
             assert.equal(dialogs.length, dialogCount);
             await page.screenshot({path: path.join(artifactDir, 'language.png')});
-            return {message: 'Three clean language routes, preference, refresh, native back and old-URL cleanup passed.'};
+            return {message: 'Three language choices share one history entry; button/browser back restores the article, forward restores the final language, and clean URLs/preference survive refresh.'};
         }
     },
     {
