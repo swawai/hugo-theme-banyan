@@ -7,7 +7,7 @@ let renderRevision = 0;
 function getFallbackUpdateCopy() {
     return {
         message: 'A new version is ready. Refresh now?',
-        versionCheck: 'Check now',
+        versionCheck: 'Check for updates',
         versionChecking: 'Checking...',
         versionCheckFailed: 'Check failed',
         versionUnavailable: 'Updates are unavailable in this browser.',
@@ -15,7 +15,7 @@ function getFallbackUpdateCopy() {
         versionStatusCurrent: 'Up to date',
         versionStatusReady: 'New version available',
         versionStatusOffline: 'Offline',
-        versionStatusClickUpdate: 'click update',
+        versionStatusClickUpdate: 'Update now',
         versionStatusClickRetry: 'click retry'
     };
 }
@@ -83,7 +83,7 @@ function getVersionStatusValue(copy, status, latencyMs) {
 
 
 export function hasVisibleUpdateControl() {
-    return Array.from(document.querySelectorAll('[data-site-update-link], [data-site-update-action]'))
+    return Array.from(document.querySelectorAll('[data-site-update-action]'))
         .some((element) => getComputedStyle(element).visibility !== 'hidden' && element.getClientRects().length > 0);
 }
 
@@ -97,26 +97,14 @@ export async function renderUpdateUi(status, latencyMs) {
     const root = document.documentElement;
     if (status === 'ready') root.dataset.siteUpdate = 'ready';
     else delete root.dataset.siteUpdate;
-    const links = document.querySelectorAll('[data-site-update-link]');
-    links.forEach((link) => {
-        link.dataset.siteUpdateState = status;
-        if (status !== 'ready') {
-            link.removeAttribute('title');
-            link.removeAttribute('aria-description');
-        }
-    });
     const panels = document.querySelectorAll('[data-site-update-panel]');
-    if (!panels.length && status !== 'ready') return;
+    if (!panels.length) return;
 
     const [copy, manifest] = await Promise.all([hydrateUpdateCopy(), getRuntimeManifest()]);
     if (revision !== renderRevision) return;
     const version = getRuntimeBuildVersion(manifest) || '-';
     const versionLabel = getRuntimeBuildTime(manifest) || version;
     const statusValue = getVersionStatusValue(copy, status, latencyMs);
-    if (status === 'ready') links.forEach((link) => {
-        link.title = copy.versionStatusReady;
-        link.setAttribute('aria-description', copy.versionStatusReady);
-    });
     panels.forEach((panel) => {
         panel.dataset.siteUpdateState = status;
         const versionLink = panel.querySelector('[data-site-update-version]');

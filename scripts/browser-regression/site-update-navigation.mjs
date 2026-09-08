@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { forceServiceWorkerUpdate, gotoAndWait, pollUntil, waitForServiceWorkerActive, waitForUpdateReady } from './helpers.mjs';
 
-const siteEntry = '[data-root-navigation] a[data-site-update-link]';
+const siteEntry = '[data-root-navigation] a[data-root-href="/zh/site/"]';
 
 function requireUpgradePair(upgradePair) {
     assert.ok(upgradePair?.fromDir && upgradePair?.toDir, 'Two builds containing the flattened navigation are required.');
@@ -15,32 +15,34 @@ export const siteUpdateNavigationScenarios = [
     ].map(({ name, href }) => ({
         id: `sw-update-site-entry-${name}`,
         kind: 'upgrade',
-        title: `Site Update Entry Navigates Before Applying (${name})`,
+        title: `Ordinary Site Directory Leads to PWA Status (${name})`,
         dialogPolicy: 'dismiss',
         async run({ page, baseUrl, server, upgradePair, dialogs, artifactDir }) {
             requireUpgradePair(upgradePair);
             server.setRoot(upgradePair.fromDir);
             await gotoAndWait(page, baseUrl + href);
             await waitForServiceWorkerActive(page);
-            assert.equal(await page.locator(siteEntry).count(), 1, 'Only the single root site entry carries update status.');
+            assert.equal(await page.locator(siteEntry).count(), 1);
+            assert.equal(await page.locator('[data-site-update-link]').count(), 0, 'The root site link has no special update role.');
 
             server.setRoot(upgradePair.toDir);
             await forceServiceWorkerUpdate(page);
             await waitForUpdateReady(page);
-            await page.waitForSelector(`${siteEntry}[data-site-update-state="ready"][aria-description]`);
-            assert.ok(await page.locator(siteEntry).getAttribute('title'));
-            const marker = await page.locator(`${siteEntry} .collection-item-title`).evaluate(node => getComputedStyle(node, '::after').content);
-            assert.ok(marker && marker !== 'none' && marker !== 'normal' && marker !== '""', 'The ordinary root row shows a visible update marker.');
-            assert.equal(dialogs.length, 0, 'A visible root site entry suppresses the confirmation fallback.');
+            await pollUntil(() => dialogs.length === 1, { label: 'ordinary page update confirmation' });
+            assert.equal(dialogs[0].type, 'confirm');
             await page.screenshot({ path: path.join(artifactDir, 'site-entry-ready.png') });
 
             await page.locator(siteEntry).click();
             await page.waitForURL(url => url.pathname === '/zh/site/');
+            assert.equal(await page.locator('[data-site-update-panel], [data-site-update-action], [data-page-action="back"]').count(), 0);
+            await page.locator('.slot-main .collection-item-link[href*="/site/pwa/"]').click();
+            await page.waitForURL(url => url.pathname === '/zh/site/pwa/');
             await page.waitForSelector('[data-site-update-panel][data-site-update-state="ready"]');
             assert.equal(new URL(page.url()).searchParams.has('return'), false);
             assert.equal(await page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration('/'))?.waiting), true,
-                'Navigating through the root entry must leave the worker waiting for the site-page action.');
-            assert.equal(dialogs.length, 0);
+                'Directory navigation must leave the worker waiting for the PWA page action.');
+            const dialogsBeforeApply = dialogs.length;
+            assert.equal(await page.locator('.slot-breadcrumb .is-current[href*="/site/pwa/"]').count(), 1);
 
             const reload = page.waitForEvent('load');
             await page.locator('[data-site-update-action="check"]').click();
@@ -48,18 +50,19 @@ export const siteUpdateNavigationScenarios = [
             await waitForServiceWorkerActive(page);
             await page.waitForFunction(async () => !(await navigator.serviceWorker.getRegistration('/'))?.waiting
                 && document.documentElement.dataset.siteUpdate !== 'ready');
-            return { message: 'One visible update entry navigates to its ordinary URL; only the site-page action activates and reloads.' };
+            assert.equal(dialogs.length, dialogsBeforeApply, 'The PWA page applies updates in place without another confirmation.');
+            return { message: 'Ordinary pages retain update confirmation; the ordinary site directory leads to a real PWA child, whose action applies and reloads.' };
         }
     })),
     ...['zh-hk', 'zh-mo'].map(lang => ({
         id: `sw-update-site-entry-${lang}`,
         kind: 'upgrade',
-        title: `Site Update Entry Uses Traditional Chinese for ${lang}`,
+        title: `PWA Status Uses Traditional Chinese for ${lang}`,
         dialogPolicy: 'dismiss',
         async run({ page, baseUrl, server, upgradePair, dialogs }) {
             requireUpgradePair(upgradePair);
             server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/`);
+            await gotoAndWait(page, `${baseUrl}/site/pwa/`);
             await waitForServiceWorkerActive(page);
             const expected = await page.evaluate(async () => {
                 const manifest = await (await fetch(document.body.dataset.assetManifestUrl)).json();
@@ -71,8 +74,7 @@ export const siteUpdateNavigationScenarios = [
             server.setRoot(upgradePair.toDir);
             await forceServiceWorkerUpdate(page);
             await waitForUpdateReady(page);
-            await page.waitForFunction(value => document.querySelector('[data-site-update-link]')?.getAttribute('aria-description') === value, expected);
-            assert.equal(await page.locator(siteEntry).getAttribute('title'), expected);
+            await page.waitForFunction(value => document.querySelector('[data-site-update-status]')?.textContent.includes(value), expected);
             assert.equal(dialogs.length, 0);
             return { message: `${lang} resolves to the Traditional Chinese site update notice.`, details: { expected } };
         }
@@ -80,15 +82,15 @@ export const siteUpdateNavigationScenarios = [
     {
         id: 'sw-update-without-visible-control-fallback',
         kind: 'upgrade',
-        title: 'Hidden Update Entry Falls Back to One Confirmation',
+        title: 'Hidden PWA Control Falls Back to One Confirmation',
         dialogPolicy: 'dismiss',
         async run({ page, baseUrl, server, upgradePair, dialogs }) {
             requireUpgradePair(upgradePair);
             server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/zh/all/`);
+            await gotoAndWait(page, `${baseUrl}/zh/site/pwa/`);
             await waitForServiceWorkerActive(page);
-            await page.locator(siteEntry).evaluate(node => { node.style.visibility = 'hidden'; });
-            assert.equal(await page.locator('[data-site-update-action]').count(), 0);
+            await page.locator('[data-site-update-action]').evaluate(node => { node.style.visibility = 'hidden'; });
+            assert.equal(await page.locator('[data-site-update-link]').count(), 0);
             server.setRoot(upgradePair.toDir);
             await forceServiceWorkerUpdate(page);
             await waitForUpdateReady(page);
@@ -98,7 +100,7 @@ export const siteUpdateNavigationScenarios = [
             assert.equal(dialogs.length, 1, 'Repeated discovery of the same waiting worker must not repeat the fallback.');
             assert.equal(await page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration('/'))?.waiting), true,
                 'Dismissing the fallback leaves the waiting worker unapplied.');
-            return { message: 'A hidden site entry allows one confirmation; dismissing it keeps the waiting update available.' };
+            return { message: 'A hidden PWA action allows one confirmation; dismissing it keeps the waiting update available.' };
         }
     }
 ];

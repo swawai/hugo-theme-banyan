@@ -21,6 +21,12 @@
 
 当前行动安排（2026-09-08，以下规则优先于后面的历史记录）：
 
+站点操作移入真实子页：`content/site/_index*.md` 只保留普通目录声明，删除 `site_update`；移除 `baseof.html` 的整块操作追加、公共系统样式条件和根入口更新标记。三语言 `content/site/pwa/index*.md` 新建「PWA 状态」页面，由 `pwa-page.html` 明确渲染版本、检查按钮和状态，并声明普通路径栏。`site_update` 文案及更新记录引用随功能移入子页，仍同时供静态界面与 runtime i18n 使用。按钮称为「检查更新」，ready 时为「立即更新」，不宣称同步用户数据；更新引擎与缓存策略未修改。没有可见按钮的页面沿用既有原生更新确认，PWA 页在面板内操作。语言、外观页的返回按钮保持各自布局调用，站点目录没有返回按钮或设置页 URL 清理行为。
+
+新增默认 PWA 页填写实际创建日期 `2026-09-08`；当前根项目的 Hugo Git 信息不覆盖主题默认内容，因此该页 `.Lastmod` 按既有 `:default` 规则取创建日期，不为 PWA 新增日期逻辑。目录、分类与文章继续共用上一小步的更新时间规则。
+
+本步验证：38 项完整浏览器用例中 37 项一次通过；一条仍把站点目录视作设置页的旧 URL 清理断言已修订，单独复测通过（`temp_workspace/regression/260908184215-browser/report.json`、`temp_workspace/regression/260908184409-browser/report.json`），3 项安全检查通过（`temp_workspace/regression/260908184335-browser-security/report.json`）。最终构建 `temp_workspace/public/2609081845-pwa-child-final` 的 132 页 HTML 审计通过，并复测站点目录、语言返回、PWA 更新。局域网预览完整重建后验证四个子页的三语言进入、排序、刷新、历史及禁用 JS 的 12 种组合，截图与报告位于 `temp_workspace/pwa-child-live/`。HTTP 局域网环境显示更新不可用，Service Worker 测试地址验证离线／重试、新版本激活、旧导航缓存清除与页面重载。
+
 列表时间统一：目录、分类、全部文章及路径列改用 Hugo `.Lastmod`，三语言日期列改名为“更新时间／更新時間／Updated”，排序取相同时间；保留既有 `sort=date-asc/desc` URL 键。非空目录与分类延续文章最新时间汇总规则，递归目录与树形分类包含后代文章；空目录使用自身时间，无有效时间显示 `—`。沿用项目 `lastmod → :git → :default` 配置，无需逐篇补造发布日期，正文发布日期与站点构建时间维持各自含义。此前“缺失发布日期就显示 —”的说明由本规则替代。
 
 本步验证：集合契约 `temp_workspace/collection-contract-YZQQJy` 覆盖三语言、三种列表、显式更新时间／默认日期／无时间、目录和平面／树形分类汇总、升降序进入路径列；生产构建 `temp_workspace/public/2609081815-list-lastmod` 的 HTML 与导航检查、5 项相关浏览器回归通过（`temp_workspace/regression/260908181601-browser/report.json`）。实际 `192.168.1.114:5120` 预览检查五个列表根的三语言列名，站点三个子项显示日期及排序值与 Git 一致，进入子页、排序、刷新和历史保留第二列；截图与报告位于 `temp_workspace/list-lastmod-live/`。本步等待用户复测，不推进后续布局整理。

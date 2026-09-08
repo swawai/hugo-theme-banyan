@@ -47,18 +47,18 @@
 
 ### 更新提示界面
 
-- 站点页使用 `data-site-update-panel` 显示版本、检查按钮和状态；共用更新引擎，不依赖下拉菜单
-- 第一列只有一个 `data-site-update-link` 普通链接；有新版本时，其 `data-site-update-state="ready"` 驱动可见标记，`title` 与 `aria-description` 提供本地化状态说明
-- 第一列链接仍然进入站点页，保留阅读返回地址；点击它不会检查或应用更新
+- PWA 状态子页 `/site/pwa/` 使用 `data-site-update-panel` 显示版本、检查按钮和状态；共用更新引擎
+- 站点目录只显示真实子项，第一列没有 `data-site-update-link` 或专用更新标记
+- 第一列进入站点目录，再通过普通子项进入 PWA 状态页；点击目录条目不会检查或应用更新
 - 旧 Ver 下拉菜单及脚本已移除
 - 当前逻辑应当：
-  - fallback 检查时，识别可见的第一列站点链接和站点页更新按钮
-  - 普通页面显示更新标记；进入站点页后，worker 仍处于 waiting
-  - 站点页按钮检查更新，ready 时应用更新；状态项显示“有新版本 · 点击更新”
+  - 当前页存在可见更新按钮时，在页面内显示状态；没有可见按钮时沿用原生确认提示
+  - 拒绝确认后仍能通过目录进入 PWA 状态页，worker 仍处于 waiting
+  - PWA 页按钮检查更新，ready 时显示“立即更新”并负责应用更新；目录和路径列不承担更新动作
 
 ### 语言文案
 
-- 更新确认文案来自 runtime i18n JSON；版本界面文案的事实源为 `content/site/_index*.md` 的 `site_update.labels`，由同一 partial 提供给静态界面和 runtime JSON
+- 更新确认文案来自 runtime i18n JSON；版本界面文案的事实源为 `content/site/pwa/index*.md` 的 `site_update.labels`，由同一 partial 提供给静态界面和 runtime JSON
 - 语言 fallback 依赖 `runtime/asset-manifest.json` 内的 `i18nFallbacks`
 - `sw-manager` 使用 `runtime-manifest.js`；语言偏好独立使用页面内静态译文关系，不再依赖版本菜单或 runtime JSON
 
@@ -281,18 +281,18 @@ bun run build:browser:temp -- sw-upgrade-after
 操作：
 
 1. 分别让页面进入 update ready
-2. 查看第一列更新标记、站点页状态或 fallback confirm
+2. 查看 PWA 状态页或普通页面的 confirm
 
 预期：
 
 - fallback confirm 文案来自对应语言的 runtime i18n
 - 原生 confirm 的提示来自 `site_update_prompt`；按钮文字由浏览器提供
-- 版本界面的字段来自站点页 `site_update.labels`
+- 版本界面的字段来自 PWA 子页 `site_update.labels`
 
 失败信号：
 
 - 某语言退回英文但其实有本地化资源
-- fallback confirm 提示未本地化，或版本界面没有读到站点页文案
+- fallback confirm 提示未本地化，或版本界面没有读到 PWA 子页文案
 
 ### 9. fallback 语言链
 
@@ -358,8 +358,8 @@ bun run build:browser:temp -- sw-upgrade-after
 
 1. 新 worker 根本没进入 `waiting`
 2. `data-site-update="ready"` 没被设置
-3. 当前页没有可见的 `data-site-update-link` 或站点页更新按钮
-4. 入口的 `data-site-update-state` 或可见标记样式未更新
+3. 当前页更新按钮的可见性判断不正确，或原生确认提示未触发
+4. PWA 页的 `data-site-update-state` 或状态文字未更新
 
 ### 文案语言不对
 
@@ -390,7 +390,7 @@ bun run build:browser:temp -- sw-upgrade-after
 
 ### 更新入口与操作分开
 
-第一列「系统－站点」独占 `data-site-update-link`，仅显示更新状态并导航。检查、应用更新都由站点页按钮执行；其他 breadcrumb 列和当前菜单选项不应带更新动作。
+第一列「系统－站点」与其他目录入口相同，不承担更新标记。检查、应用更新由真实子页「PWA 状态」中的按钮执行；其他 breadcrumb 列和当前菜单选项不带更新动作。没有可见更新按钮的页面继续使用既有原生确认提示。
 
 ### 4 秒激活超时
 

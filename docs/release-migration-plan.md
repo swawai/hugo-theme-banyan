@@ -91,8 +91,10 @@ Navigation contract after the 2026-09-07 flattening step:
   providers, product metadata, and footer content retain their existing owners.
 - Taxonomy `show_in_home` and `home_weight` remain the configuration for the
   independent homepage shortcut list; they do not order the first column.
-- Language, appearance, my, and site are real root pages. The site page owns
-  `site_update` copy and actions; its first-column link indicates update status.
+- Language, appearance, my, and site are real root pages. The site directory
+  lists real children without appended controls or a special navigation marker.
+  `content/site/pwa/index.*.md` owns update copy and actions through `pwa-page`;
+  other pages use the existing update confirmation when no control is visible.
 - This step does not complete the later responsive-layout merge or color work.
   See [layout slots](layout-slots.md) and the
   [navigation flattening plan](navigation-flattening-plan.md).

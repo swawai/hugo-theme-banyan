@@ -33,11 +33,12 @@ export const systemPageScenarios = [
                 assert.deepEqual(await geometry(), directoryGeometry, 'Site and directory use the same columns, row height and icon spacing.');
                 assert.equal(await page.locator(grid).count(), 1);
                 assert.deepEqual(await page.locator(`${grid} [data-sort-field]`).evaluateAll(nodes => nodes.map(node => node.dataset.sortField)), ['name', 'date', 'count']);
-                const expected = ['about', 'changelog', 'wechat'].map(name => `${prefix}/${name}/`).sort();
+                const children = ['wechat', 'about', 'changelog', 'site/pwa'];
+                const expected = children.map(name => `${prefix}/${name}/`).sort();
                 assert.deepEqual((await rowPaths(links)).sort(), expected, 'Only real site children belong to the directory.');
                 assert.equal(await page.locator(`${grid} [data-site-update-action]`).count(), 0, 'Update actions stay outside sortable content.');
-                assert.equal(await page.locator('[data-site-update-action="check"]').count(), 1);
-                assert.equal(await page.locator('[data-page-action="back"]').count(), 1);
+                assert.equal(await page.locator('[data-site-update-panel], [data-site-update-action], [data-page-action="back"]').count(), 0, 'The directory contains no appended system controls.');
+                assert.equal(await page.locator('[data-site-update-link]').count(), 0, 'Root navigation does not specialize the site entry.');
                 assert.equal(await page.locator('.slot-main > article > [data-sortable="true"]').count(), 1, 'The ordinary article-list renders the directory.');
                 assert.equal(await page.locator('.slot-main > article [data-site-update-panel]').count(), 0, 'Site tools are attached outside the list layout.');
 
@@ -47,11 +48,12 @@ export const systemPageScenarios = [
                     assert.equal(await page.locator(`.slot-breadcrumb .is-current[href*="/${name}/"]`).count(), 1);
                 };
                 const defaultPaths = await rowPaths(links);
-                for (const name of ['wechat', 'about', 'changelog']) {
+                for (const name of children) {
                     await page.locator(`${links}[href*="/${name}/"]`).click();
                     await waitForBreadcrumbSettled(page);
                     await assertArticle(name, defaultPaths);
-                    if (prefix === '/zh') await page.screenshot({ path: path.join(artifactDir, `site-${name}-default.png`) });
+                    if (prefix === '/zh') await page.screenshot({ path: path.join(artifactDir, `site-${name.replaceAll('/', '-')}-default.png`) });
+                    if (name === 'site/pwa') assert.equal(await page.locator('.slot-main > article [data-site-update-panel]').count(), 1, 'Only the real PWA child renders its update controls.');
                     await page.goBack();
                     await page.waitForURL(`${baseUrl}${prefix}/site/`);
                     await waitForBreadcrumbSettled(page);
@@ -71,7 +73,7 @@ export const systemPageScenarios = [
                 assert.deepEqual(await rowPaths(links), sortedPaths);
                 await page.screenshot({ path: path.join(artifactDir, `site-${prefix.slice(1) || 'en'}.png`) });
 
-                for (const name of ['wechat', 'about', 'changelog']) {
+                for (const name of children) {
                     await page.locator(`${links}[href*="/${name}/"]`).click();
                     await waitForBreadcrumbSettled(page);
                     assert.equal(new URL(page.url()).searchParams.get('from'), 'site');
@@ -93,7 +95,7 @@ export const systemPageScenarios = [
                     await waitForBreadcrumbSettled(page);
                 }
             }
-            return { message: 'The ordinary list layout and every site child retain the directory column in three languages, with default/sorted entry, selection, reload/back/forward; site tools stay outside the list.' };
+            return { message: 'The site directory has four real children and no appended controls; all children, including PWA Status, retain path order and selection in three languages across sort, reload and history.' };
         }
     },
     {
@@ -157,7 +159,10 @@ export const systemPageScenarios = [
             }
             await page.reload();
             for (const name of ['site', 'appearance']) {
-                await back();
+                if (name === 'appearance') {
+                    assert.equal(await page.locator('[data-page-action="back"]').count(), 0, 'The ordinary site directory has no custom back control.');
+                    await page.goBack();
+                } else await back();
                 await page.waitForURL(baseUrl + '/zh/' + name + '/');
             }
             await back();
@@ -235,12 +240,14 @@ export const systemPageScenarios = [
 
             // Old links only lose the obsolete parameter; its value is never used.
             await page.addInitScript(() => history.replaceState({ ...history.state, cleanupMarker: true }, '', location.href));
-            for (const name of ['language', 'appearance', 'my', 'site']) {
+            for (const name of ['language', 'appearance', 'my', 'site/pwa']) {
                 await gotoAndWait(page, baseUrl + '/zh/' + name + '/?return=https%3A%2F%2Fexample.invalid%2F&probe=keep#anchor');
                 assert.equal(new URL(page.url()).search, '?probe=keep');
                 assert.equal(new URL(page.url()).hash, '#anchor');
                 assert.equal(await page.evaluate(() => history.state.cleanupMarker), true);
             }
+            await gotoAndWait(page, baseUrl + '/zh/site/?return=unused&probe=keep');
+            assert.equal(new URL(page.url()).search, '?return=unused&probe=keep', 'The ordinary directory does not apply settings-specific URL cleanup.');
             await gotoAndWait(page, baseUrl + '/language/?return=' + encodeURIComponent('/prefetchdebug/'));
             const dialogCount = dialogs.length;
             await page.locator('[data-language-choice="zh"]').click();
@@ -307,12 +314,12 @@ export const systemPageScenarios = [
     {
         id: 'sw-system-site-update',
         kind: 'upgrade',
-        title: 'Site Page Checks and Applies Service Worker Updates',
+        title: 'PWA Status Child Checks and Applies Service Worker Updates',
         dialogPolicy: 'dismiss',
         async run({ page, context, baseUrl, server, upgradePair, dialogs, artifactDir }) {
             assert.ok(upgradePair?.fromDir && upgradePair?.toDir, 'Two builds containing the system pages are required.');
             server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/zh/site/`);
+            await gotoAndWait(page, `${baseUrl}/zh/site/pwa/?from=site`);
             await waitForServiceWorkerActive(page);
             await page.waitForSelector(`${updatePanel}[data-site-update-state]`);
             const versionBefore = await page.locator('[data-site-update-version]').getAttribute('title');
@@ -328,13 +335,16 @@ export const systemPageScenarios = [
             await page.locator('[data-site-update-action="check"]').click();
             await waitForUpdateReady(page);
             await page.waitForSelector(`${updatePanel}[data-site-update-state="ready"]`);
-            assert.equal(dialogs.length, 0, 'The site page should show the update in place.');
+            assert.equal(dialogs.length, 0, 'The PWA status page should show the update in place.');
             await page.screenshot({ path: path.join(artifactDir, 'site-update-ready.png') });
             const navigation = page.waitForEvent('load');
             await page.locator('[data-site-update-action="check"]').click();
             await navigation;
             await page.waitForFunction((previous) => document.querySelector('[data-site-update-version]')?.title !== previous, versionBefore);
             await waitForServiceWorkerActive(page);
+            assert.equal(new URL(page.url()).pathname, '/zh/site/pwa/');
+            assert.equal(await page.locator('[data-root-href="/zh/site/"].is-current').count(), 1);
+            assert.equal(await page.locator('.slot-breadcrumb .is-current[href*="/site/pwa/"]').count(), 1, 'Applying updates preserves the ordinary directory selection.');
             const cacheKeysAfter = await page.evaluate(() => caches.keys());
             for (const key of cacheKeysBefore.filter((key) => key.startsWith('nav-html-'))) {
                 assert.ok(!cacheKeysAfter.includes(key), `Old navigation cache remains: ${key}`);
