@@ -44,7 +44,7 @@ RSS、GitHub 和备案信息都使用普通 `article-page`，不新增外链条�
 | 主题 `content/site/rss/index*.md` | RSS 订阅说明，正文调用 `{{< rss-link >}}` |
 | 主题 `content/site/github/index*.md` | 默认的 Banyan 仓库说明；项目可同路径覆盖 |
 | 项目 `content/site/github/index*.md` | Swaw 的 GitHub 主页说明与链接 |
-| 项目 `content/site/icp/index*.md` | 本站备案号与工信部查询链接；主题不存放业务备案信息 |
+| 项目 `content/icp/index*.md` | 本站备案说明及工信部查询链接；作为普通根入口，`linkTitle: "ICP备2024338434号"`、`icon: { text: "粤" }`、`weight: 120`，排在首页入口之后；主题不存放业务备案信息 |
 
 `layouts/shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。GitHub 和备案链接直接写在 Markdown 正文中，用户进入说明页后自行点击。
 
@@ -75,7 +75,7 @@ list_icon_file: product
 
 主题现在在 `content/products/_index*.md` 和 `content/all-products/_index*.md` 各声明 `list_icon_file: product`，产品分类子页继承分类根的设置，不需要逐篇给产品文章写图标。Xvenv 未写 `icon`，因此在产品分类和产品全部中显示包裹，在目录、标签和全部文章中仍显示文件；如果希望所有入口一致，在 Xvenv 各语言文件中声明 `icon: product` 即可。
 
-`aggregate` 只提供集合成员，不参与默认图标继承；`/all-products/` 与 `/products/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `index.md` 实现的 `/all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将首页自身与直属入口一起渲染，使用首页的目录默认值或条目自身的 `icon`。根项目 `content/_index*.md` 声明 `linkTitle: "2026 Swaw"`、`icon: { text: "©" }`、`weight: 5`；访问首页只选中首页，其他页面仍按真实入口或有效来源选中。旧版权页脚、顶部重复首页链接及 `slots.footer` 已移除。
+`aggregate` 只提供集合成员，不参与默认图标继承；`/all-products/` 与 `/products/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `index.md` 实现的 `/all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将首页自身与直属入口一起渲染，使用首页的目录默认值或条目自身的 `icon`。根项目 `content/_index*.md` 声明 `linkTitle: "2026 Swaw"`、`icon: { text: "©" }`、`weight: 110`；访问首页只选中首页，其他页面仍按真实入口或有效来源选中。旧版权页脚、顶部重复首页链接及 `slots.footer` 已移除。
 
 图标值由 `icon/resolve.html` 校验，`icon.html` 统一输出文字或 SVG；浏览器用 `icon-value.js` 保留同样的值结构，JSON 编解码不得把字符对象转成字符串。默认值实现集中在 `list/icon-defaults.html`（解析列表默认值）和 `list/item-icon.html`（自身声明优先）。`collection/rows.html` 为每行写入最终 `icon`，主表、来源 JSON 和路径列共用；站点列表、第一列及首页快捷列表也调用相同规则。`entry-source/register-icons.html` 只收集本页可用来源和祖先列依赖的图标，连同实际静态渲染的图标按需打包，不在每页固定预装一组图标。CSS、浏览器选择／排序逻辑和现有列表数据协议不变。
 
