@@ -59,7 +59,7 @@ weight: 30
 
 `/products/` 现在是分类根，产品全部是 `/all-products/`。项目 `data/redirects.toml` 将旧 `/product-categories/.../` 直接转到新地址，删除与新真实页面重叠的旧规则；`/products/` 本身不重定向。
 
-旧文章书签中的 `from=product-categories/free` 已不再是有效来源；`from=products` 也不能继续代表“全部产品”，因为新分类根只收录分类词项。两者按既有无效来源规则使用文章的真实目录路径，正文仍正常打开，刷新后规则一致。新链接分别携带 `from=products/free`、`from=all-products`。不在运行时增加旧产品命名适配层。系统页的 `return` 原样保留返回地址，回到带旧来源的文章也按上述规则处理。
+旧文章书签中的 `from=product-categories/free` 已不再是有效来源；`from=products` 也不能继续代表“全部产品”，因为新分类根只收录分类词项。两者按既有无效来源规则使用文章的真实目录路径，正文仍正常打开，刷新后规则一致。新链接分别携带 `from=products/free`、`from=all-products`。不在运行时增加旧产品命名适配层。系统页不携带 `return`；原生后退恢复历史中的文章网址及其 `from`／排序，回到带旧来源的文章也按上述规则处理。
 
 ## 验证
 

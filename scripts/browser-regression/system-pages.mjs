@@ -3,7 +3,6 @@ import path from 'node:path';
 import { gotoAndWait, waitForServiceWorkerActive, waitForUpdateReady } from './helpers.mjs';
 
 const system = '.system-page';
-const picker = '[data-language-settings]';
 const updatePanel = '[data-site-update-panel]';
 
 export const systemPageScenarios = [
@@ -12,150 +11,111 @@ export const systemPageScenarios = [
         kind: 'single',
         serviceWorkers: 'block',
         viewport: { width: 1440, height: 900 },
-        title: 'Settings Links Track Live Sort and History State',
+        title: 'Ordinary System Links and Native Back Navigation',
         async run({ page, baseUrl, context }) {
-            const settingsEntry = (name) => page.locator(`[data-root-navigation] a[data-root-href="/zh/${name}/"]`);
-            const relativeUrl = () => {
-                const url = new URL(page.url());
-                return url.pathname + url.search + url.hash;
+            const entry = name => page.locator('[data-root-href="/zh/' + name + '/"]');
+            const back = () => page.locator('[data-page-action="back"]').click();
+            const assertCleanLinks = async () => {
+                const links = await page.locator('[data-root-href]').evaluateAll(links => links.map(link => ({
+                    href: new URL(link.href).pathname + new URL(link.href).search + new URL(link.href).hash,
+                    root: link.dataset.rootHref
+                })));
+                assert.equal(links.length, 10);
+                assert(links.every(link => link.href === link.root), 'All root entries retain their ordinary page URLs.');
             };
-            const assertReturnLinks = async (expected) => {
-                const targets = await page.locator('[data-root-navigation] a[data-settings-link]').evaluateAll(
-                    links => links.map(link => new URL(link.href).searchParams.get('return'))
-                );
-                assert.equal(targets.length, 4);
-                assert.deepEqual(targets, Array(4).fill(expected), 'Every settings href must already contain the current reading state.');
-            };
-            const markDocument = () => page.evaluate(() => {
-                window.__settingsNavigationDocument = 'same-document';
-                history.replaceState({ ...history.state, settingsReviewMarker: 'preserved' }, '', location.href);
-            });
-            const assertDocumentPreserved = async () => {
-                assert.deepEqual(await page.evaluate(() => ({
-                    document: window.__settingsNavigationDocument,
-                    history: history.state?.settingsReviewMarker
-                })), { document: 'same-document', history: 'preserved' });
-            };
-
-            await gotoAndWait(page, `${baseUrl}/zh/all/`);
-            await markDocument();
-            await page.locator('.slot-main [data-sort-control="true"][data-sort-field="name"]').click();
+            await gotoAndWait(page, baseUrl + '/zh/all/');
+            await page.locator('.slot-main [data-sort-field="name"]').click();
             await page.waitForURL(url => url.searchParams.get('sort') === 'name-asc');
-            await assertDocumentPreserved();
-            await assertReturnLinks(relativeUrl());
+            await page.evaluate(() => { location.hash = 'reading-position'; });
+            await assertCleanLinks();
+            const source = page.url();
+            await entry('my').click();
+            assert.equal(new URL(page.url()).search, '');
+            await back();
+            await page.waitForURL(source);
+            await assertCleanLinks();
 
-            // Middle-click consumes the existing href without firing the normal click handler.
-            const popupReady = context.waitForEvent('page');
-            await settingsEntry('language').click({ button: 'middle' });
-            const popup = await popupReady;
+            // Opening a system entry in a new tab carries no return context.
+            const opened = context.waitForEvent('page');
+            await entry('language').click({button: 'middle'});
+            const popup = await opened;
             try {
-                await popup.waitForSelector('[data-settings-return]:not([hidden])');
-                assert.equal(new URL(popup.url()).searchParams.get('return'), relativeUrl());
-                assert.equal(await popup.locator('[data-settings-return]').getAttribute('href'), relativeUrl());
+                await popup.waitForLoadState('networkidle');
+                assert.equal(new URL(popup.url()).pathname, '/zh/language/');
+                assert.equal(new URL(popup.url()).search, '');
+                assert.equal(await popup.evaluate(() => history.length), 1);
+                await popup.locator('[data-page-action="back"]').click();
+                await popup.waitForURL(baseUrl + '/zh/');
             } finally { await popup.close(); }
 
-            // Native hash/history changes also update the link before copying or opening it.
-            await page.evaluate(() => { location.hash = 'return-first'; });
-            await page.waitForFunction(() => document.querySelector('[data-settings-link]')?.href.includes('%23return-first'));
-            await assertReturnLinks(relativeUrl());
-            await page.evaluate(() => { location.hash = 'return-second'; });
-            await page.waitForFunction(() => document.querySelector('[data-settings-link]')?.href.includes('%23return-second'));
-            await page.goBack();
-            await page.waitForURL(url => url.hash === '#return-first');
-            await assertReturnLinks(relativeUrl());
-            await page.goForward();
-            await page.waitForURL(url => url.hash === '#return-second');
-            await assertReturnLinks(relativeUrl());
-
-            await gotoAndWait(page, `${baseUrl}/zh/p/xvenv/?from=all`);
-            await markDocument();
-            const before = relativeUrl();
+            await gotoAndWait(page, baseUrl + '/zh/p/xvenv/?from=all');
+            const beforeSort = page.url();
             await page.locator('.slot-breadcrumb [data-collection-sort-toggle="true"]').click();
-            await page.waitForURL(url => url.pathname + url.search + url.hash !== before);
-            await assertDocumentPreserved();
-            const source = relativeUrl();
-            await assertReturnLinks(source);
-
-            await settingsEntry('appearance').click();
-            await page.waitForURL(url => url.pathname === '/zh/appearance/');
-            await assertReturnLinks(source);
-            await page.evaluate(() => { location.hash = 'settings-only'; });
-            await assertReturnLinks(source);
+            await page.waitForURL(url => url.href !== beforeSort);
+            await page.evaluate(() => history.replaceState({ ...history.state, backMarker: true }, '', location.href));
+            const article = page.url();
+            await assertCleanLinks();
+            for (const name of ['appearance', 'site', 'language']) {
+                await entry(name).click();
+                await page.waitForURL(baseUrl + '/zh/' + name + '/');
+                await assertCleanLinks();
+            }
             await page.reload();
-            await page.waitForSelector('[data-settings-return]:not([hidden])');
-            await assertReturnLinks(source);
-            await settingsEntry('site').click();
-            await page.waitForURL(url => url.pathname === '/zh/site/');
-            await assertReturnLinks(source);
-            await settingsEntry('language').click();
-            await page.waitForSelector('[data-settings-return]:not([hidden])');
-            await assertReturnLinks(source);
-            await page.locator('[data-settings-return]').click();
-            await page.waitForURL(url => url.pathname + url.search + url.hash === source);
-            return { message: 'Live main/breadcrumb sorts, pre-click hrefs, middle-click, hash/history, history-state preservation and chained settings return passed.' };
+            for (const name of ['site', 'appearance']) {
+                await back();
+                await page.waitForURL(baseUrl + '/zh/' + name + '/');
+            }
+            await back();
+            await page.waitForURL(article);
+            assert.equal(await page.evaluate(() => history.state.backMarker), true);
+            await page.goForward();
+            await page.waitForURL(baseUrl + '/zh/appearance/');
+            await back();
+            await page.waitForURL(article);
+            return {message: 'Clean root links, My back, new-tab home, one-step settings history and article sort/state restoration passed.'};
         }
     },
     {
         id: 'system-language-return',
         kind: 'single',
         serviceWorkers: 'block',
-        title: 'Language Changes Stay on the Settings Page',
+        title: 'Language Settings Use Clean URLs and Native Back',
         dialogPolicy: 'dismiss',
         async run({ page, baseUrl, dialogs, artifactDir }) {
-            await gotoAndWait(page, baseUrl + '/zh/p/xvenv/?from=%2Fproducts%2Ffree%2F&sort=name-asc&sorts=_,name-asc#details');
-            const source = new URL(page.url());
-            const returnHref = source.pathname + source.search + source.hash;
-            await page.locator('[data-root-navigation] a[data-root-href="/zh/language/"]').click();
+            await gotoAndWait(page, baseUrl + '/zh/p/xvenv/?from=products/free&sorts=_,name-asc#details');
+            const article = page.url();
+            await page.locator('[data-root-href="/zh/language/"]').click();
             for (const [code, pathname] of [['en', '/language/'], ['zh-tw', '/zh-tw/language/'], ['zh', '/zh/language/']]) {
                 const choice = page.locator('[data-language-choice="' + code + '"]');
-                const href = new URL(await choice.getAttribute('href'), baseUrl);
-                assert.equal(href.pathname, pathname, 'Static choice href targets the language page itself.');
+                assert.equal(await choice.getAttribute('href'), pathname);
                 await choice.click();
-                await page.waitForURL(url => url.pathname === pathname);
-                await page.waitForSelector('[data-settings-return]:not([hidden])');
-                assert.equal(new URL(page.url()).searchParams.get('return'), returnHref);
-                assert.equal(await page.locator('[data-settings-return]').getAttribute('href'), returnHref);
+                await page.waitForURL(baseUrl + pathname);
                 assert.equal(await page.evaluate(() => localStorage.getItem('preferred_lang')), code);
                 assert.equal(await page.locator('[data-language-choice="' + code + '"]').getAttribute('aria-current'), 'page');
             }
             await page.reload();
-            await page.waitForSelector('[data-settings-return]:not([hidden])');
-            assert.equal(new URL(page.url()).pathname, '/zh/language/');
-            await page.locator('[data-settings-return]').click();
-            await page.waitForURL(url => url.pathname + url.search + url.hash === returnHref);
-
-            // An unavailable or untranslated return page does not participate in language selection.
-            let sourceRequests = 0;
-            await page.route('**/zh/about/**', route => { sourceRequests++; return route.fulfill({status: 503, body: ''}); });
-            await gotoAndWait(page, baseUrl + '/zh/language/?return=' + encodeURIComponent('/zh/about/?probe=language'));
-            await page.locator('[data-language-choice="en"]').click();
-            await page.waitForURL(url => url.pathname === '/language/');
-            assert.equal(sourceRequests, 0, 'Language switching does not fetch the return page.');
-            await page.unroute('**/zh/about/**');
-            const dialogCount = dialogs.length;
-            await gotoAndWait(page, baseUrl + '/language/?return=' + encodeURIComponent('/prefetchdebug/'));
-            await page.locator('[data-language-choice="zh"]').click();
-            await page.waitForURL(url => url.pathname === '/zh/language/');
-            assert.equal(dialogs.length, dialogCount, 'The return page missing a translation causes no prompt.');
-
-            await gotoAndWait(page, baseUrl + '/zh/language/?return=' + encodeURIComponent('https://example.invalid/article/'));
-            assert.equal(await page.locator('[data-settings-return]').isVisible(), false);
-            await page.locator('[data-language-choice="en"]').click();
-            await page.waitForURL(url => url.pathname === '/language/');
-            assert.equal(new URL(page.url()).searchParams.has('return'), false);
-            await page.screenshot({ path: path.join(artifactDir, 'language.png') });
-            await gotoAndWait(page, `${baseUrl}/zh/all/?sort=name-asc`);
-            const original = new URL(page.url());
-            const expectedReturn = original.pathname + original.search;
-            const primaryLinks = await page.locator('[data-root-navigation] a[data-root-href]:not([data-settings-link])').evaluateAll(links => links.map(link => link.href));
-            assert.equal(primaryLinks.length, 6, 'The six collection entries are ordinary links.');
-            assert.ok(primaryLinks.every(href => !new URL(href).searchParams.has('return')), 'Only settings links carry return context.');
-            await page.locator('[data-root-navigation] a[data-root-href="/zh/my/"]').click();
-            await page.waitForURL(url => url.pathname === '/zh/my/');
-            assert.equal(new URL(page.url()).searchParams.get('return'), expectedReturn);
+            for (const pathname of ['/zh-tw/language/', '/language/', '/zh/language/']) {
+                await page.locator('[data-page-action="back"]').click();
+                await page.waitForURL(baseUrl + pathname);
+            }
             await page.locator('[data-page-action="back"]').click();
-            await page.waitForURL(url => url.pathname === original.pathname && url.search === original.search);
-            return { message: 'Three language switches stay in settings; preference, refresh, explicit return and unavailable/invalid source independence passed.' };
+            await page.waitForURL(article);
+
+            // Old links only lose the obsolete parameter; its value is never used.
+            await page.addInitScript(() => history.replaceState({ ...history.state, cleanupMarker: true }, '', location.href));
+            for (const name of ['language', 'appearance', 'my', 'site']) {
+                await gotoAndWait(page, baseUrl + '/zh/' + name + '/?return=https%3A%2F%2Fexample.invalid%2F&probe=keep#anchor');
+                assert.equal(new URL(page.url()).search, '?probe=keep');
+                assert.equal(new URL(page.url()).hash, '#anchor');
+                assert.equal(await page.evaluate(() => history.state.cleanupMarker), true);
+            }
+            await gotoAndWait(page, baseUrl + '/language/?return=' + encodeURIComponent('/prefetchdebug/'));
+            const dialogCount = dialogs.length;
+            await page.locator('[data-language-choice="zh"]').click();
+            await page.waitForURL(baseUrl + '/zh/language/');
+            assert.equal(dialogs.length, dialogCount);
+            await page.screenshot({path: path.join(artifactDir, 'language.png')});
+            return {message: 'Three clean language routes, preference, refresh, native back and old-URL cleanup passed.'};
         }
     },
     {
@@ -165,7 +125,9 @@ export const systemPageScenarios = [
         title: 'Appearance Page and Global Preference',
         async run({ page, baseUrl, context, artifactDir }) {
             await page.emulateMedia({ colorScheme: 'light' });
-            await gotoAndWait(page, `${baseUrl}/zh/appearance/?return=${encodeURIComponent('/zh/all/?sort=name.asc')}`);
+            await gotoAndWait(page, baseUrl + '/zh/all/?sort=name-asc');
+            await page.locator('[data-root-href="/zh/appearance/"]').click();
+            await page.waitForURL(baseUrl + '/zh/appearance/');
             await page.locator(`${system} [data-theme-choice="dark"]`).click();
             await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
             assert.equal(await page.evaluate(() => localStorage.getItem('theme-preference')), 'dark');
@@ -178,7 +140,7 @@ export const systemPageScenarios = [
             await page.locator(`${system} [data-theme-choice="auto"]`).click();
             await page.emulateMedia({ colorScheme: 'dark' });
             await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
-            await page.locator('[data-settings-return]').click();
+            await page.locator('[data-page-action="back"]').click();
             await page.waitForURL((url) => url.pathname === '/zh/all/');
             await page.emulateMedia({ colorScheme: 'light' });
             await page.waitForFunction(() => document.documentElement.dataset.theme === 'light');
@@ -188,7 +150,7 @@ export const systemPageScenarios = [
             await other.locator(`${system} [data-theme-choice="dark"]`).click();
             await page.waitForFunction(() => document.documentElement.dataset.themePreference === 'dark');
             await other.close();
-            await page.goBack();
+            await page.goForward();
             await page.waitForSelector(`${system} [data-theme-choice="dark"].is-current`);
             await page.screenshot({ path: path.join(artifactDir, 'appearance-dark.png') });
             return { message: 'Appearance choices, refresh, return, system changes and cross-tab sync passed.' };

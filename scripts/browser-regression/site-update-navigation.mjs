@@ -23,7 +23,6 @@ export const siteUpdateNavigationScenarios = [
             await gotoAndWait(page, baseUrl + href);
             await waitForServiceWorkerActive(page);
             assert.equal(await page.locator(siteEntry).count(), 1, 'Only the single root site entry carries update status.');
-            const source = new URL(page.url());
 
             server.setRoot(upgradePair.toDir);
             await forceServiceWorkerUpdate(page);
@@ -38,7 +37,7 @@ export const siteUpdateNavigationScenarios = [
             await page.locator(siteEntry).click();
             await page.waitForURL(url => url.pathname === '/zh/site/');
             await page.waitForSelector('[data-site-update-panel][data-site-update-state="ready"]');
-            assert.equal(new URL(page.url()).searchParams.get('return'), source.pathname + source.search + source.hash);
+            assert.equal(new URL(page.url()).searchParams.has('return'), false);
             assert.equal(await page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration('/'))?.waiting), true,
                 'Navigating through the root entry must leave the worker waiting for the site-page action.');
             assert.equal(dialogs.length, 0);
@@ -49,7 +48,7 @@ export const siteUpdateNavigationScenarios = [
             await waitForServiceWorkerActive(page);
             await page.waitForFunction(async () => !(await navigator.serviceWorker.getRegistration('/'))?.waiting
                 && document.documentElement.dataset.siteUpdate !== 'ready');
-            return { message: 'One visible update entry navigates with return context; only the site-page action activates and reloads.' };
+            return { message: 'One visible update entry navigates to its ordinary URL; only the site-page action activates and reloads.' };
         }
     })),
     ...['zh-hk', 'zh-mo'].map(lang => ({

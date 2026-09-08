@@ -1,12 +1,12 @@
 import { initRootNavigation } from './root-navigation.js';
 import { initLanguagePreference } from './preferences/language.js';
-import { initSettingsNavigation } from './preferences/settings-navigation.js';
+import { initBackLinks } from './back-links.js';
 import { initThemePreference } from './preferences/theme.js';
 
 initRootNavigation();
 
 document.addEventListener('DOMContentLoaded', () => {
-    initSettingsNavigation();
+    initBackLinks();
     initThemePreference();
     initLanguagePreference();
 });

@@ -14,4 +14,4 @@ weight: 90
 
 目前尚未開放。
 
-{{< page-actions left_href="/zh-tw/" left_label="返回上一頁" left_action="back" left_home="true" right_href="/zh-tw/" right_label="回到首頁" >}}
+{{< page-actions left_href="/zh-tw/" left_label="返回上一頁" left_action="back" right_href="/zh-tw/" right_label="回到首頁" >}}

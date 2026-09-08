@@ -717,8 +717,8 @@ export const scenarios = [
                 if (state.count !== 1 || JSON.stringify(state.hrefs) !== JSON.stringify(state.expected)
                     || JSON.stringify(state.selected) !== JSON.stringify([state.prefix + 'all/'])
                     || state.home !== state.prefix || state.rowContentCount !== 10 || state.oldControls !== 0
-                    || JSON.stringify(state.settings) !== JSON.stringify(rootPaths.slice(6).map((path) => state.prefix + path + '/'))) {
-                    fail('Every locale must SSR one weighted root list, its home header and four system links.', state);
+                    || state.settings.length !== 0) {
+                    fail('Every locale must SSR one weighted root list with ordinary URLs and no settings-link rewriting markers.', state);
                 }
             }
             const layouts = [];

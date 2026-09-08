@@ -1,5 +1,13 @@
 import { LANG_SUGGEST_HANDLED_KEY, PREFERRED_LANG_KEY, readStorage, runAfterPageSettles, writeStorage } from './storage.js';
-import { localUrl, settingsReturnUrl } from './settings-navigation.js';
+
+function localUrl(value) {
+    if (typeof value !== 'string' || !value) return null;
+    try {
+        const url = new URL(value, window.location.href);
+        return url.origin === window.location.origin && /^https?:$/.test(url.protocol)
+            && !url.username && !url.password ? url : null;
+    } catch { return null; }
+}
 
 function normalizeLang(code) {
     const value = (code || '').toLowerCase();
@@ -22,19 +30,14 @@ export function initLanguagePreference() {
     const context = readContext(document.body);
     if (!context) return;
     const picker = document.querySelector('[data-language-settings]');
-    const returnAddress = picker ? settingsReturnUrl() : null;
 
     const targetHref = (option) => {
         const target = localUrl(option.href);
         if (!target) return '';
-        if (option.translated) {
+        if (option.translated && !picker) {
             const sourceUrl = new URL(window.location.href);
             target.search = sourceUrl.search;
             target.hash = sourceUrl.hash;
-            if (picker) {
-                target.searchParams.delete('return');
-                if (returnAddress) target.searchParams.set('return', returnAddress.pathname + returnAddress.search + returnAddress.hash);
-            }
         }
         return target.pathname + target.search + target.hash;
     };

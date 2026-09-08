@@ -11,5 +11,5 @@
     "href" (index $translated $code | default .Home.RelPermalink)
     "translated" (isset $translated $code)) -}}
 {{- end -}}
-{{- return (dict "language" $ctx.Language.Lang "page" $ctx.RelPermalink "options" $options
+{{- return (dict "language" $ctx.Language.Lang "options" $options
   "missing" (i18n "no_trans_msg") "suggestion" (i18n "lang_suggest_msg")) -}}

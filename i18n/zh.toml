@@ -88,7 +88,7 @@ other = "返回本语言首页"
 other = "尝试其他语言版本："
 
 [settings_return]
-other = "返回原页面"
+other = "返回上一页"
 
 [appearance_auto]
 other = "跟随系统"

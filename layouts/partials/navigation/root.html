@@ -8,9 +8,6 @@
   <div class="grid-list grid-list--single collection-list collection-list--grid">
     {{- range $roots -}}
       {{- $attrs := dict "root-href" .RelPermalink -}}
-      {{- if in (slice "language-page" "appearance-page" "my-page" "site-page") .Layout -}}
-        {{- $attrs = merge $attrs (dict "settings-link" "true") -}}
-      {{- end -}}
       {{- if eq .Layout "site-page" -}}
         {{- $attrs = merge $attrs (dict "site-update-link" "true") -}}
       {{- end -}}
