@@ -53,9 +53,10 @@ export const systemPageScenarios = [
                 assert.equal(await page.locator(`${homeEntry} .collection-item-title`).textContent(), brand);
                 assert.equal(await page.locator(`${homeEntry}.is-current`).count(), 0);
                 assert.equal(await page.locator(homeEntry).getAttribute('href'), `${prefix}/`);
-                for (const [name, icon] of [['rss', 'rss'], ['github', 'github'], ['icp', 'info']]) {
+                for (const [name, icon] of [['rss', 'rss'], ['github', 'github']]) {
                     assert.equal(await page.locator(`${links}[href*="/site/${name}/"] use`).getAttribute('href'), `#icon-${icon}`);
                 }
+                assert.equal(await page.locator(`${links}[href*="/site/icp/"] .icon--text`).textContent(), '粤');
 
                 const assertArticle = async (name, expectedPaths) => {
                     assert.equal(await page.locator(`[data-root-href="${prefix}/site/"].is-current`).count(), 1);
