@@ -86,16 +86,16 @@ export const systemPageScenarios = [
                     };
                     await assertRootPage();
                     if (name === 'github') {
-                        for (const [account, asset] of [['SwawHQ', 'favicon'], ['bornwhy', 'bornwhy']]) {
-                            const accountLinks = page.locator(`.slot-main .prose a[href="https://github.com/${account}"]`);
-                            assert.equal(await accountLinks.count(), 2, 'Both the avatar and account name link to the account.');
-                            const avatar = accountLinks.locator('img');
-                            assert.equal(await avatar.count(), 1);
-                            assert.match(await avatar.getAttribute('src'), new RegExp(`^/site/brand/${asset}\\.[a-f0-9]{64}\\.svg$`));
-                            await avatar.evaluate(image => image.decode());
-                            assert.deepEqual(await avatar.evaluate(image => ({width: image.getBoundingClientRect().width, height: image.getBoundingClientRect().height})), {width: 64, height: 64});
-                        }
-                        assert.equal(await page.locator('.slot-main .prose a[href="https://github.com/swawai"]').count(), 0);
+                        const accountLinks = page.locator('.slot-main .prose a[href="https://github.com/SwawHQ"]');
+                        assert.equal(await accountLinks.count(), 2, 'Both the avatar and visible URL link to the organization.');
+                        const avatar = accountLinks.locator('img');
+                        assert.equal(await avatar.count(), 1);
+                        assert.match(await avatar.getAttribute('src'), /^\/site\/brand\/favicon\.[a-f0-9]{64}\.svg$/);
+                        await avatar.evaluate(image => image.decode());
+                        assert.deepEqual(await avatar.evaluate(image => ({width: image.getBoundingClientRect().width, height: image.getBoundingClientRect().height})), {width: 64, height: 64});
+                        assert.equal(await page.locator('.slot-main .prose table').count(), 0);
+                        assert.equal(await page.locator('.slot-main .prose img').count(), 1);
+                        assert.equal(await page.locator('.slot-main .prose a[href="https://github.com/swawai"], .slot-main .prose a[href="https://github.com/bornwhy"]').count(), 0);
                     } else if (name === 'wechat') {
                         const qrImages = page.locator('.slot-main .prose img');
                         assert.equal(await qrImages.count(), 2);
@@ -138,10 +138,8 @@ export const systemPageScenarios = [
                     await assertArticle(name, defaultPaths);
                     assert.equal(new URL(page.url()).pathname, `${prefix}/${name}/`, 'Selecting an information page stays on that page.');
                     if (name === 'about') {
-                        for (const account of ['SwawHQ', 'bornwhy']) {
-                            assert.equal(await page.locator(`.slot-main .prose a[href="https://github.com/${account}"]`).count(), 1);
-                        }
-                        assert.equal(await page.locator('.slot-main .prose a[href="https://github.com/swawai"]').count(), 0);
+                        assert.equal(await page.locator('.slot-main .prose a[href="https://github.com/SwawHQ"]').count(), 1);
+                        assert.equal(await page.locator('.slot-main .prose a[href="https://github.com/swawai"], .slot-main .prose a[href="https://github.com/bornwhy"]').count(), 0);
                     }
                     if (prefix === '/zh') await page.screenshot({ path: path.join(artifactDir, `site-${name.replaceAll('/', '-')}-default.png`) });
                     if (name === 'site/pwa') assert.equal(await page.locator('.slot-main > article [data-site-update-panel]').count(), 1, 'Only the real PWA child renders its update controls.');

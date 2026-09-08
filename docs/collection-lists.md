@@ -46,7 +46,7 @@ PWA 状态是主题 `content/site/pwa/index*.md` 的真实子页，声明 `layou
 | 项目 `content/wechat/index*.md` | 微信二维码页面；`icon: wechat`、`weight: 101` |
 | 主题 `content/rss/index*.md` | RSS 订阅说明，正文调用 `{{< rss-link >}}`；`icon: rss`、`weight: 103` |
 | 主题 `content/github/index*.md` | 默认的 Banyan 仓库说明；`icon: github`、`weight: 102`，项目可同路径覆盖 |
-| 项目 `content/github/index*.md` | SwawHQ 组织账号与 bornwhy 个人账号，保留完整入口声明；头像通过现有 `asset` 短代码引用项目 `assets/site/brand/favicon.svg`、`bornwhy.svg`，正文链接包裹头像及账号名称 |
+| 项目 `content/github/index*.md` | 仅展示 SwawHQ 组织账号的头像与普通链接，保留完整入口声明；头像通过现有 `asset` 短代码引用项目 `assets/site/brand/favicon.svg`，不使用表格 |
 | 项目 `content/icp/index*.md` | 本站备案说明及工信部查询链接；作为普通根入口，`linkTitle: "粤ICP备2024338434号"`、`icon: { image: "0.webp" }`、`weight: 105`，排在首页入口之前；正文备案号本身链接到工信部查询网站；主题不存放业务备案信息 |
 
 `layouts/shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。GitHub 和备案链接直接写在 Markdown 正文中，用户进入说明页后自行点击。
