@@ -1,7 +1,7 @@
 [list_col_name]
 other = "名稱"
 [list_col_date]
-other = "日期"
+other = "更新時間"
 [list_col_count]
 other = "計數"
 [list_col_size]
@@ -13,9 +13,9 @@ other = "按名稱升冪排序"
 [list_sort_name_desc]
 other = "按名稱降冪排序"
 [list_sort_date_asc]
-other = "按日期升冪排序"
+other = "按更新時間升冪排序"
 [list_sort_date_desc]
-other = "按日期降冪排序"
+other = "按更新時間降冪排序"
 [list_sort_count_asc]
 other = "按計數升冪排序"
 [list_sort_count_desc]

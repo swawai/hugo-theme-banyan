@@ -17,8 +17,8 @@ const overlay = path.join(work, 'content');
 const langs = ['', '.zh', '.zh-tw'];
 const prefixes = ['', '/zh', '/zh-tw'];
 const cases = [
-    ['priced', 'icon: appearance-dark\nproducts: [free, paid, "Special Tools", "$5~$50"]\noffer: {amount: 25, currency: "$", value: "Paid and free are opaque labels"}'],
-    ['missing', 'products: [free, paid, "Special Tools"]\noffer: {value: "Value without a price"}'],
+    ['priced', 'icon: appearance-dark\nlastmod: 2026-08-01\ntags: [contract-dates]\nproducts: [free, paid, "Special Tools", "$5~$50", contract-dates]\noffer: {amount: 25, currency: "$", value: "Paid and free are opaque labels"}'],
+    ['missing', 'lastmod: 2026-08-02\ntags: [contract-dates/child]\nproducts: [free, paid, "Special Tools", contract-dates]\noffer: {value: "Value without a price"}'],
     ['zero', 'products: [free]\noffer: {amount: 0, currency: "$"}'],
     ['no-offer', 'products: [free]'],
     ['unclassified', 'offer: {amount: 99, currency: "$", value: "Not a product"}'],
@@ -27,6 +27,10 @@ const cases = [
 ];
 for (const lang of langs) {
     write(path.join(overlay, `products/contract-empty/_index${lang}.md`), '---\ntitle: Contract empty category\nicon: rss\n---\n');
+    write(path.join(overlay, `products/contract-dates/_index${lang}.md`), '---\ntitle: Contract dates\nlist: directory\n---\n');
+    for (const term of ['contract-dates', 'contract-dates/child']) {
+        write(path.join(overlay, `tags/${term}/_index${lang}.md`), `---\ntitle: ${term}\n---\n`);
+    }
     const paid = fs.readFileSync(`content/products/paid/_index${lang}.md`, 'utf8');
     write(path.join(overlay, `products/paid/_index${lang}.md`), paid.replace('---', '---\nlist_icon_file: appearance-light'));
     for (const [name, fields] of cases) write(path.join(overlay, `d/contract-${name}/index${lang}.md`),
@@ -34,7 +38,7 @@ for (const lang of langs) {
     write(path.join(overlay, `d/contract-override/_index${lang}.md`), '---\ntitle: Override\nicon: info\nlist: all\nlist_icon_folder: rss\nlist_icon_file: appearance-auto\n---\n');
     write(path.join(overlay, `d/contract-override/child/_index${lang}.md`), '---\ntitle: Child inherits override\nlist_icon_file: theme\n---\n');
     write(path.join(overlay, `d/contract-override/child/item${lang}.md`), '---\ntitle: Child item\nslug: contract-child\n---\nChild.\n');
-    write(path.join(overlay, `d/contract-override/direct${lang}.md`), '---\ntitle: Direct item\nslug: contract-direct\n---\nDirect.\n');
+    write(path.join(overlay, `d/contract-override/direct${lang}.md`), '---\ntitle: Direct item\nslug: contract-direct\nlastmod: 2026-08-03\n---\nDirect.\n');
     write(path.join(overlay, `d/contract-override/child/nested/_index${lang}.md`), '---\ntitle: Nested\nlist_icon_file: ""\n---\n');
     write(path.join(overlay, `d/contract-override/child/nested/item${lang}.md`), '---\ntitle: Nested item\nslug: contract-nested\n---\nNested.\n');
 }
@@ -78,6 +82,28 @@ for (const view of ['directory', 'all', 'products']) {
         assert.equal(payload(output, lang, 'd/wsl').sv, current.sv, 'undeclared section inherits');
         assert.equal(payload(output, lang, 'd/contract-override').sv, 'all');
         assert.equal(payload(output, lang, 'd/contract-override/child').sv, 'all', 'nearest declaration wins');
+        const assertUpdated = (list, href, text, key) => {
+            const row = payload(output, lang, list).rows.find(row => row.href === `${prefixes[index]}${href}`);
+            assert(row, `${list} contains ${href}`);
+            assert.equal(row.date_text, text, `${list}: display uses Lastmod`);
+            assert.equal(row.sort_date, key, `${list}: sorting uses the displayed time`);
+        };
+        for (const list of ['all', 'products/contract-dates', ...(view === 'products' ? [] : ['d'])]) {
+            assertUpdated(list, '/p/contract-priced/', '2026-08-01', '20260801000000');
+            assertUpdated(list, '/p/contract-missing/', '2026-08-02', '20260802000000');
+            const dated = payload(output, lang, list).rows.filter(row => /\/p\/contract-(priced|missing)\//.test(row.href));
+            assert.deepEqual(dated.map(row => row.date_text), ['2026-08-02', '2026-08-01'], 'default order uses Lastmod, not publication date or name');
+        }
+        assertUpdated('all', '/p/contract-no-offer/', '2026-01-01', '20260101000000'); // Hugo default falls back to date.
+        assertUpdated('all', '/p/contract-direct/', '2026-08-03', '20260803000000'); // No publication date.
+        assertUpdated('all', '/p/contract-child/', '—', ''); // No usable time at all.
+        if (view !== 'products') assertUpdated('d', '/d/contract-override/', '2026-08-03', '20260803000000');
+        assertUpdated('products', '/products/contract-dates/', '2026-08-02', '20260802000000');
+        assertUpdated('products', '/products/contract-empty/', '—', '');
+        assertUpdated('tags', '/tags/contract-dates/', '2026-08-02', '20260802000000');
+        assertUpdated('tags/contract-dates', '/tags/contract-dates/child/', '2026-08-02', '20260802000000');
+        assertUpdated('tags/contract-dates', '/p/contract-priced/', '2026-08-01', '20260801000000');
+        assertUpdated('tags/contract-dates/child', '/p/contract-missing/', '2026-08-02', '20260802000000');
         const iconFor = (list, href) => payload(output, lang, list).rows.find(row => row.href === `${prefixes[index]}${href}`)?.icon;
         assert.equal(iconFor('d', '/p/contract-empty/'), 'file', 'a parent icon is not inherited by its articles');
         assert.equal(iconFor('d', '/d/contract-override/'), 'info', 'a directory may declare its own icon');
@@ -116,7 +142,7 @@ for (const view of ['directory', 'all', 'products']) {
         const html = fs.readFileSync(path.join(output, prefixes[index].slice(1), 'p/contract-missing/index.html'), 'utf8');
         assert(!/data-sortable=(?:"true"|true)/.test(html), 'article remains an article despite inherited list');
     }
-    console.log(`PASS collection membership and inheritance: ${view}, all three languages`);
+    console.log(`PASS collection membership, inheritance and Lastmod dates: ${view}, all three languages`);
 }
 
 const browser = await chromium.launch({ headless: true });
@@ -133,6 +159,23 @@ try {
         assert.deepEqual(names, payload(builds.directory, lang, 'products').rows.map(row => row.text), 'default category order agrees before and after hydration');
         assert.equal(await page.locator(`[data-root-href="${prefixes[index]}/d/"] use`).getAttribute('href'), '#icon-info', 'root navigation honors the same own icon');
     }
+    for (const list of ['d', 'all', 'products/contract-dates']) {
+        for (const direction of ['asc', 'desc']) {
+            await gotoAndWait(page, `${baseUrl}/${list}/?sort=date-${direction}`);
+            const links = '.slot-main .collection-item-link[href*="/p/contract-"]';
+            const dates = await page.locator(links).evaluateAll(nodes => nodes
+                .filter(node => /\/p\/contract-(priced|missing)\//.test(node.href))
+                .map(node => node.closest('.cell-title').nextElementSibling.textContent.trim()));
+            assert.deepEqual(dates, direction === 'asc' ? ['2026-08-01', '2026-08-02'] : ['2026-08-02', '2026-08-01']);
+            assert.match(await page.locator('.slot-main [data-sort-field="date"]').textContent(), /Updated/);
+            const ordered = await page.locator(links).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
+            await page.locator(`${links}[href*="/p/contract-missing/?"]`).click();
+            await waitForBreadcrumbSettled(page);
+            const pathOrder = await page.locator('.slot-breadcrumb .collection-item-link[href*="/p/contract-"]').evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
+            assert.deepEqual(pathOrder, ordered, 'Lastmod sort survives entry into the article path column');
+        }
+    }
+    console.log('PASS Lastmod ascending/descending display and article path order');
     for (const direction of ['asc', 'desc']) {
         await gotoAndWait(page, `${baseUrl}/products/free/?sort=price-${direction}`);
         const ordered = await page.locator('.slot-main .grid-products .collection-item-link').evaluateAll(links => links.map(link => ({

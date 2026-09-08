@@ -9,13 +9,13 @@
   {{- end -}}
 {{- end -}}
 {{- $cnt := len $uniq -}}
-{{- $latestStr := "" -}}
+{{- $latestStr := "—" -}}
 {{- $latestKey := "" -}}
 {{- if gt $cnt 0 -}}
-  {{- $latest := index (sort $uniq "Date" "desc") 0 -}}
-  {{- $d := $latest.Date -}}
-  {{- $latestStr = $d.Format "2006-01-02" -}}
-  {{- $latestKey = $d.Format "20060102150405" -}}
+  {{- $latest := index (sort $uniq "Lastmod" "desc") 0 -}}
+  {{- $d := $latest.Lastmod -}}
+  {{- $latestStr = cond $d.IsZero "—" ($d.Format "2006-01-02") -}}
+  {{- $latestKey = cond $d.IsZero "" ($d.Format "20060102150405") -}}
 {{- end -}}
 {{- $result := dict "uniq" $uniq "cnt" $cnt "latest" $latestStr "latestKey" $latestKey -}}
 {{- return $result -}}

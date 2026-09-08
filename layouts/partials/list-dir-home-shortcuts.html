@@ -3,15 +3,15 @@
 {{ $iconDefaults := partial "list/icon-defaults.html" (dict "page" $ctx.Site.Home) }}
 
 {{ $siteLatest := "" }}
-{{ with first 1 ($ctx.Site.RegularPages.ByDate.Reverse) }}
-  {{ $siteLatest = (index . 0).Date }}
+{{ with first 1 ($ctx.Site.RegularPages.ByLastmod.Reverse) }}
+  {{ $siteLatest = (index . 0).Lastmod }}
 {{ end }}
 
-{{ $siteDateKey := "00010101000000" }}
-{{ $siteDateText := "--" }}
+{{ $siteDateKey := "" }}
+{{ $siteDateText := "—" }}
 {{ with $siteLatest }}
-  {{ $siteDateKey = .Format "20060102150405" }}
-  {{ $siteDateText = .Format "2006-01-02" }}
+  {{ $siteDateKey = cond .IsZero "" (.Format "20060102150405") }}
+  {{ $siteDateText = cond .IsZero "—" (.Format "2006-01-02") }}
 {{ end }}
 
 {{ $directoryPage := $ctx.Site.GetPage "section" "d" }}
@@ -31,9 +31,10 @@
   {{ $directoryHref = .RelPermalink }}
   {{ $directoryCount = len .RegularPagesRecursive }}
   {{ if gt $directoryCount 0 }}
-    {{ with first 1 (.RegularPagesRecursive.ByDate.Reverse) }}
-      {{ $directoryDateKey = (index . 0).Date.Format "20060102150405" }}
-      {{ $directoryDateText = (index . 0).Date.Format "2006-01-02" }}
+    {{ with first 1 (.RegularPagesRecursive.ByLastmod.Reverse) }}
+      {{ $lastmod := (index . 0).Lastmod }}
+      {{ $directoryDateKey = cond $lastmod.IsZero "" ($lastmod.Format "20060102150405") }}
+      {{ $directoryDateText = cond $lastmod.IsZero "—" ($lastmod.Format "2006-01-02") }}
     {{ end }}
   {{ end }}
 {{ end }}

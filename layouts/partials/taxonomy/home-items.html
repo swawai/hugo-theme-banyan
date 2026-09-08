@@ -2,14 +2,14 @@
 {{- $entries := slice -}}
 {{- $iconDefaults := partial "list/icon-defaults.html" (dict "page" $ctx.Site.Home) -}}
 {{- $siteLatest := "" -}}
-{{- with first 1 ($ctx.Site.RegularPages.ByDate.Reverse) -}}
-  {{- $siteLatest = (index . 0).Date -}}
+{{- with first 1 ($ctx.Site.RegularPages.ByLastmod.Reverse) -}}
+  {{- $siteLatest = (index . 0).Lastmod -}}
 {{- end -}}
-{{- $siteDateKey := "00010101000000" -}}
-{{- $siteDateText := "--" -}}
+{{- $siteDateKey := "" -}}
+{{- $siteDateText := "—" -}}
 {{- with $siteLatest -}}
-  {{- $siteDateKey = .Format "20060102150405" -}}
-  {{- $siteDateText = .Format "2006-01-02" -}}
+  {{- $siteDateKey = cond .IsZero "" (.Format "20060102150405") -}}
+  {{- $siteDateText = cond .IsZero "—" (.Format "2006-01-02") -}}
 {{- end -}}
 {{- $taxonomySpecs := partial "taxonomy/enabled.html" (dict "ctx" $ctx) -}}
 {{- range sort $taxonomySpecs "home_weight" "asc" -}}

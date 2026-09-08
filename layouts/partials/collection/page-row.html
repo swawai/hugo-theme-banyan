@@ -7,6 +7,6 @@
   "kind" "page" "href" $page.RelPermalink "schema_href" $page.RelPermalink
   "title" $page.Title "text" $text "prefetch_kind" "post"
   "sort_group" "1" "sort_name" $text
-  "sort_date" (cond $page.Date.IsZero "" ($page.Date.Format "20060102150405")) "date_text" (cond $page.Date.IsZero "—" ($page.Date.Format "2006-01-02"))
+  "sort_date" (cond $page.Lastmod.IsZero "" ($page.Lastmod.Format "20060102150405")) "date_text" (cond $page.Lastmod.IsZero "—" ($page.Lastmod.Format "2006-01-02"))
   "sort_count" (printf "%v" $bytes) "count_text" (printf "%v" (div (add $bytes 1023) 1024)) "count_unit" "&thinsp;KB"
 ) -}}

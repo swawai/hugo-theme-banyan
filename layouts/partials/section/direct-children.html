@@ -8,10 +8,10 @@
 {{- range $ctx.Sections -}}
   {{- $section := . -}}
   {{- $count := len $section.RegularPagesRecursive -}}
-  {{- $dateValue := $section.Date -}}
-  {{- with first 1 ($section.RegularPagesRecursive.ByDate.Reverse) -}}
+  {{- $dateValue := $section.Lastmod -}}
+  {{- with first 1 ($section.RegularPagesRecursive.ByLastmod.Reverse) -}}
     {{- $page := index . 0 -}}
-    {{- $dateValue = $page.Date -}}
+    {{- $dateValue = $page.Lastmod -}}
   {{- end -}}
   {{- $sectionEntriesRaw = $sectionEntriesRaw | append (dict
     "kind" "section"
@@ -33,7 +33,7 @@
   {{- $page := . -}}
   {{- $bytes := len $page.RawContent -}}
   {{- $kb := div (add $bytes 1023) 1024 -}}
-  {{- $dateValue := $page.Date -}}
+  {{- $dateValue := $page.Lastmod -}}
   {{- $pageEntriesRaw = $pageEntriesRaw | append (dict
     "kind" "page"
     "title" $page.Title

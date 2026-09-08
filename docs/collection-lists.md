@@ -23,7 +23,7 @@
 list: products
 ```
 
-原有 WSL 文章仍全部保留，只把列换成名称、价格、价值说明；没有 `offer` 的文章显示价格 `—`。改成 `list: all` 就使用名称、日期、大小、路径列；改成 `list: directory` 就使用名称、日期、数量／大小列。没有声明时，继承最近内容祖先的 `list`。普通文章仍使用 `article-page`，不会因祖先的列表声明变成列表。
+原有 WSL 文章仍全部保留，只把列换成名称、价格、价值说明；没有 `offer` 的文章显示价格 `—`。改成 `list: all` 就使用名称、更新时间、大小、路径列；改成 `list: directory` 就使用名称、更新时间、数量／大小列。没有声明时，继承最近内容祖先的 `list`。普通文章仍使用 `article-page`，不会因祖先的列表声明变成列表。
 
 新增普通列表目录时使用 `layout: article-list`、`list: directory` 和需要的 `slots.breadcrumb: true`；位于已有目录下时可继承布局和展示声明。正文只写介绍，表格自动在介绍后出现，旧的 `section-list`、`taxonomy-list`、`all-list`、`products-list` shortcode 已删除。
 
@@ -31,7 +31,15 @@ list: products
 
 站点目录与 `/d/` 一样声明 `layout: article-list`、`list: directory`，完整复用相同模板、集合来源、排序及路径列。`site-page.html` 已删除，列表及导航中不再另行识别站点布局。已有 `site_update` 声明负责附加版本检查和返回操作：全站骨架在 `main` 内容之后装配操作区，按需加载样式，并为该根入口标记更新状态。这些操作不属于内容子项，不进入集合或参与排序。
 
-站点根与既有子页通过 `slots.breadcrumb: true` 启用路径列，目录的 `cascade` 同时为未声明 `slots` 的新子页提供默认值。已有子页自行声明了 `slots`，需在原 map 内加入 `breadcrumb: true`，不能期待父级 cascade 自动补进该 map。未填写发布日期的目录子项显示“—”，不把 Hugo 的零时间显示为公元 1 年。
+站点根与既有子页通过 `slots.breadcrumb: true` 启用路径列，目录的 `cascade` 同时为未声明 `slots` 的新子页提供默认值。已有子页自行声明了 `slots`，需在原 map 内加入 `breadcrumb: true`，不能期待父级 cascade 自动补进该 map。
+
+## 统一更新时间
+
+目录、分类、全部文章和路径列的时间统一读取 Hugo `.Lastmod`，列名为“更新时间”。文件显示自身更新时间；非空目录／分类汇总其包含文章的最新更新时间，目录递归到后代文章，树形分类也包含下级分类。空目录使用自身 `.Lastmod`，空分类及其他没有有效时间的条目显示 `—`，排序值为空。
+
+项目 `hugo.toml` 已启用 `enableGitInfo = true`，并配置 `[frontmatter] lastmod = ["lastmod", ":git", ":default"]`：显式 `lastmod` 优先，其次由 Hugo 取 Git 提交时间，最后使用 Hugo 的默认日期来源。无需为了列表补造 `date`；需要手动控制更新时间时，在文章 front matter 写 `lastmod: 2026-09-08T18:00:00+08:00`。
+
+显示和排序取同一 `.Lastmod`；显示到日，排序保留到秒。既有 `sort=date-asc/desc` URL 键保持不变，含义统一为更新时间，产品表仍只有名称、价格、价值说明三列。正文中的发布日期继续使用 `.Date`，不改变其含义；站点表格下面的版本时间仍是构建时间。
 
 ## 怎样声明条目图标
 
@@ -103,7 +111,7 @@ weight: 30
 
 主表、路径列和来源 JSON 共用 `collection/rows.html`；一个列表页只注册一次 `collection` 来源。目录／分类关系适配分别在 `collection/rows-section.html`、`collection/rows-taxonomy.html`，展示在 `collection/render.html`。排序字段由 `collection/config.html` 解析 `list` 后给出，浏览器不按路径或 provider 猜表格种类。
 
-名称比较由 Hugo 执行一次，生成 `sort_name` 数值名次，显示文字仍保留在 `text`。这样首帧、主表与路径列使用同一名称顺序，不因浏览器语言或 ICU 实现不同而换位。日期降序的同日期条目也使用名称降序；升序相反。实现依据见 [Hugo 的稳定排序实现](https://github.com/gohugoio/hugo/blob/v0.157.0/tpl/collections/sort.go)。
+名称比较由 Hugo 执行一次，生成 `sort_name` 数值名次，显示文字仍保留在 `text`。这样首帧、主表与路径列使用同一名称顺序，不因浏览器语言或 ICU 实现不同而换位。更新时间降序中时间相同的条目也使用名称降序；升序相反。实现依据见 [Hugo 的稳定排序实现](https://github.com/gohugoio/hugo/blob/v0.157.0/tpl/collections/sort.go)。
 
 `/products/` 现在是分类根，产品全部是 `/all-products/`。项目 `data/redirects.toml` 将旧 `/product-categories/.../` 直接转到新地址，删除与新真实页面重叠的旧规则；`/products/` 本身不重定向。
 
@@ -113,4 +121,4 @@ weight: 30
 
 路径数据文件由各语言首页发布，直接使用当前语言来源模型的 `current_collection_items`，不在默认语言首页重新构建所有语言的数据。这样页面内嵌数据与后续请求的 `_items.json` 完全相同，避免中文主表使用中文排序、路径列却使用默认语言排序。浏览器回归 `system-site-directory` 覆盖三语言的列表几何、列排序、真实子项、进入后的路径顺序和刷新／历史恢复。
 
-在根项目执行 `node themes/banyan/scripts/checks/check-collections.mjs`。它只向 `temp_workspace/` 写临时内容覆盖层，基于根内容构建三种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。
+在根项目执行 `node themes/banyan/scripts/checks/check-collections.mjs`。它只向 `temp_workspace/` 写临时内容覆盖层，基于根内容构建三种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。时间用例覆盖发布日期与更新时间不同、只填更新时间、默认日期来源、完全无时间、目录／平面与树形分类汇总，以及升降序进入文章后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。

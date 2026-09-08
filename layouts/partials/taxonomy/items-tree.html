@@ -17,14 +17,14 @@
         {{- continue -}}
       {{- end -}}
       {{- $bytes := len $page.RawContent -}}
-      {{- $d := $page.Date -}}
+      {{- $d := $page.Lastmod -}}
       {{- $items = $items | append (dict
           "node" $page
           "kind" "page"
           "title" $page.Title
           "text" ($page.LinkTitle | default $page.Title)
-          "latest" ($d.Format $dateFmt)
-          "latestKey" ($d.Format "20060102150405")
+          "latest" (cond $d.IsZero "—" ($d.Format $dateFmt))
+          "latestKey" (cond $d.IsZero "" ($d.Format "20060102150405"))
           "cnt" $bytes
           "bytes" $bytes
           "url" $page.RelPermalink
@@ -85,15 +85,15 @@
         {{- continue -}}
       {{- end -}}
       {{- $bytes := len $page.RawContent -}}
-      {{- $d := $page.Date -}}
+      {{- $d := $page.Lastmod -}}
       {{- $items = $items | append (dict
           "node" $page
           "kind" "page"
           "title" $page.Title
           "text" ($page.LinkTitle | default $page.Title)
           "entry_key" (partial "taxonomy/page-entry-key.html" (dict "ctx" $page))
-          "latest" ($d.Format $dateFmt)
-          "latestKey" ($d.Format "20060102150405")
+          "latest" (cond $d.IsZero "—" ($d.Format $dateFmt))
+          "latestKey" (cond $d.IsZero "" ($d.Format "20060102150405"))
           "cnt" $bytes
           "bytes" $bytes
           "url" $page.RelPermalink

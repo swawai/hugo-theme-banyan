@@ -1,7 +1,7 @@
 [list_col_name]
 other = "Name"
 [list_col_date]
-other = "Date"
+other = "Updated"
 [list_col_count]
 other = "Count"
 [list_col_size]
@@ -13,9 +13,9 @@ other = "Sort by name ascending"
 [list_sort_name_desc]
 other = "Sort by name descending"
 [list_sort_date_asc]
-other = "Sort by date ascending"
+other = "Sort by update time ascending"
 [list_sort_date_desc]
-other = "Sort by date descending"
+other = "Sort by update time descending"
 [list_sort_count_asc]
 other = "Sort by count ascending"
 [list_sort_count_desc]
