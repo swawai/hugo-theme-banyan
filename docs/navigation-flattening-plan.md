@@ -21,6 +21,8 @@
 
 当前行动安排（2026-09-08，以下规则优先于后面的历史记录）：
 
+GitHub 账号与头像：项目三语言 GitHub 说明页以 SwawHQ 组织账号为主、bornwhy 个人账号为辅，使用普通 Markdown 表格展示头像、账号与用途。头像分别引用项目 `assets/site/brand/favicon.svg`、`bornwhy.svg`，通过现有 `asset` 短代码按原路径哈希发布，显示为 64×64，头像与账号名称均链接至对应 GitHub 主页；关于页同步更新两个账号。无新增模板、样式或运行时分支。生产构建 `temp_workspace/public/2609082256-github-accounts-avatars` 的 141 页 HTML 审计及 `system-site-directory` 浏览器回归通过（`temp_workspace/regression/260908225648-browser/report.json`），覆盖三语言头像解码、尺寸、哈希地址、链接与关于页；已查看 GitHub 页截图。
+
 联系与订阅入口：只将微信、GitHub、RSS 从 `content/site/` 提升到内容根层级，主题默认页与项目覆盖页同步迁移。三语言依次声明 `weight: 101/102/103`，沿用 `wechat/github/rss` SVG 图标；微信新增 `icon: wechat`。第一列仍按真实根页面生成，共 15 项，不修改导航模板或增加菜单声明。站点保留关于、更新记录、PWA 状态，Logo 与现有目录交互保持。微信继续 `/wechat/`，GitHub、RSS 改为 `/github/`、`/rss/`；sitemap 同步引用新内容路径，正文外部链接与当前语言 RSS 解析保持。
 
 联系与订阅入口验收：生产构建 `temp_workspace/public/2609082242-contact-root-entries` 的 141 页 HTML 审计及 4 项相关浏览器回归通过（`temp_workspace/regression/260908224256-browser/report.json`）。覆盖三语言 15 项根导航、微信 SVG 与二维码解码、GitHub 正文目标、RSS 实际地址及 XML、站点剩余三项排序和路径列，以及根入口选中、刷新、历史与设置返回。已查看站点和微信页截图；当前局域网预览服务未运行，本轮使用测试构建验证。
