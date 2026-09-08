@@ -1,13 +1,12 @@
 ---
-root_nav: true
-title: PWA Status
+title: Check for updates
 description: View the current site version and check for updates.
 type: page
 date: 2026-09-08
-slug: pwa
-layout: pwa-page
+slug: check
+layout: update-check
 icon: { text: "↻" }
-weight: 96
+weight: 10
 outputs:
   - HTML
 robots: noindex, follow
@@ -16,8 +15,8 @@ build:
 slots:
   breadcrumb: true
 site_update:
-  changelog_page: /site/changelog
   labels:
+    current_version: Current version
     check: Check for updates
     checking: Checking...
     check_failed: Check failed

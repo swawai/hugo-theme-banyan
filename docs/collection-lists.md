@@ -2,7 +2,7 @@
 
 页面的 `list` 只声明子项怎么展示。文章集合的成员来自页面本身的目录或 Hugo 分类关系；选择页的选项由对应布局提供。入口归属继续由真实根页面及有效 `from` 决定，不在文章 front matter 中写菜单。
 
-第一列名称使用页面的 `linkTitle`，未声明时使用 `title`。语言、外观、我的、站点的三语言主题页面已声明简称，例如 `title: 系统－语言`、`linkTitle: 语言`；入口显示“语言”，页面自身标题仍来自 `title`。
+第一列名称使用页面的 `linkTitle`，未声明时使用 `title`。语言、外观、我的的三语言主题页面已声明简称，例如 `title: 系统－语言`、`linkTitle: 语言`；入口显示“语言”，页面自身标题仍来自 `title`。
 
 第一列采用显式加入：只有根页面顶层声明布尔值 `root_nav: true` 才显示；未声明、`false` 或字符串 `"true"` 均不显示。首页自身也遵守该规则。此字段只对首页及其直接子页／分类根生效，不能把深层文章提升成根入口；不要放入 `cascade`。项目覆盖主题页面时，每种语言各自保留该声明。
 
@@ -21,7 +21,7 @@
 | 上述文件的 `cascade`，目标 `kind: term` | `list: products` | 每个分类的 `.Pages`，无需逐类写来源 |
 | 主题 `content/all/index.zh.md` | `list: all`、`aggregate: /d` | `/d/` 下全部文章 |
 | 主题 `content/all-products/_index.zh.md` | `list: products`、`aggregate: /products` | 产品分类成员的去重并集 |
-| 主题 `content/site/_index.zh.md` | `list: directory` | 站点目录的直接子项：更新记录 |
+| 主题 `content/updates/_index.zh.md` | `list: name` | 更新目录的两个真实子项：检查更新、更新记录 |
 | 主题 `content/language/index.zh.md` | `list: choice` | `hugo.toml` 已启用的语言 |
 | 主题 `content/appearance/index.zh.md` | `list: choice` | 跟随系统、浅色、深色 |
 
@@ -37,11 +37,13 @@ list: products
 
 `aggregate` 只用于汇总入口，指向一个 section 或 taxonomy 根。它不从父目录继承。普通目录和分类页无需写 `aggregate`，也不写 `list_source` 或 `product_filter`。主题默认页面的站点专用修改可通过项目同路径文件覆盖；三种语言各自保留完整 front matter。
 
-站点目录与 `/d/` 一样声明 `layout: article-list`、`list: directory`，完整复用相同模板、集合来源、排序及路径列。目录中只有真实子项，没有追加的版本、检查、状态或返回按钮；全站骨架、公共样式装配和根导航均不再识别 `site_update`。
+更新目录声明 `layout: article-list`、`list: name`，与 `/d/` 复用相同模板、集合来源、排序及路径列。目录中只有真实子项，没有追加的版本、检查、状态或返回按钮；全站骨架、公共样式装配和根导航不识别 `site_update`。`root_nav: true`、`weight: 96`、`icon: { text: "↻" }` 将它作为普通“更新”入口列在第一列。
 
-PWA 状态是主题 `content/pwa/index*.md` 的真实根页面，声明 `layout: pwa-page`、`weight: 96` 和 `icon: { text: "↻" }`，自动成为第一列普通入口，网址为 `/pwa/`（各语言加对应前缀）。该页的布局直接装配更新操作并加载所需样式，`site_update` 文案与更新记录引用也由该页提供；更新引擎保持独立，更新记录仍引用 `/site/changelog`。图片资源目录 `assets/site/pwa/` 与内容路径无关，保持原位置。语言、外观页的返回按钮分别由各自布局明确调用，不由全站骨架追加。
+检查更新是主题 `content/updates/check/index*.md` 的真实子页面，声明 `layout: update-check` 和 `icon: { text: "↻" }`，网址为 `/updates/check/`（各语言加对应前缀）。其布局装配当前构建版本、检查按钮及状态，`site_update.labels` 仍是静态界面与运行时文案的单一事实源。版本时间显示为普通文本，不再链接到更新记录；更新记录通过同级列表访问，因此移除了 `site_update.changelog_page`。这里只检查和应用站点版本，不同步用户数据，也不把版本时间伪装成内容更新时间。
 
-站点根与既有子页通过 `slots.breadcrumb: true` 启用路径列，目录的 `cascade` 同时为未声明 `slots` 的新子页提供默认值。已有子页自行声明了 `slots`，需在原 map 内加入 `breadcrumb: true`，不能期待父级 cascade 自动补进该 map。
+项目与主题的更新记录都位于 `content/updates/changelog/index*.md`，保留 `url: changelog/`，因此公开网址仍是 `/changelog/`。来源和第一列归属来自真实内容父目录 `/updates/`，不依赖公开网址前缀。原 `content/pwa/`、`content/site/` 及 `pwa-page` 布局已移除；根 `data/redirects.toml` 将旧 `/pwa/` 转到 `/updates/check/`、旧 `/site/` 转到 `/updates/`，覆盖三语言及有无尾斜杠。图片资源目录 `assets/site/pwa/` 与内容路径无关，保持原位置。语言、外观页的返回按钮分别由各自布局调用。
+
+更新根与两个子页通过 `slots.breadcrumb: true` 启用路径列，目录的 `cascade` 同时为未声明 `slots` 的新子页提供默认值。已有子页自行声明了 `slots`，需在原 map 内加入 `breadcrumb: true`，不能期待父级 cascade 自动补进该 map。
 
 ## 名称列表与公共样式
 
@@ -78,14 +80,14 @@ slots:
 | 项目 `content/wechat/index*.md` | 微信二维码页面；`icon: wechat`、`weight: 101` |
 | 主题 `content/rss/index*.md` | RSS 订阅说明，正文调用 `{{< rss-link >}}`；`icon: rss`、`weight: 103` |
 | 主题 `content/github/index*.md` | 默认的 Banyan 仓库说明；`icon: github`、`weight: 102`，项目可同路径覆盖 |
-| 项目 `content/github/index*.md` | 仅展示 SwawHQ 组织账号的头像与普通链接，保留完整入口声明；头像通过现有 `asset` 短代码引用项目 `assets/site/pwa/favicon.svg`，与站点入口和浏览器图标共用哈希资源，不使用表格 |
+| 项目 `content/github/index*.md` | 仅展示 SwawHQ 组织账号的头像与普通链接，保留完整入口声明；头像通过现有 `asset` 短代码引用项目 `assets/site/pwa/favicon.svg`，与浏览器图标共用哈希资源，不使用表格 |
 | 项目 `content/icp/index*.md` | 本站备案说明及工信部查询链接；作为普通根入口，`linkTitle: "粤ICP备2024338434号"`、`icon: { image: "0.webp" }`、`weight: 105`，排在首页入口之前；正文备案号本身链接到工信部查询网站；主题不存放业务备案信息 |
 
 `layouts/shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址，并在新标签打开。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。
 
 GitHub 和备案页的目标链接使用 `{{< new-tab href="https://example.com/" >}}链接文字{{< /new-tab >}}`，头像可在其中嵌套 `asset` 短代码；加粗可在短代码外侧使用 Markdown `**`。该短代码复用 `link.html` 输出 `target="_blank"`、`rel="noopener noreferrer"`，不需要 JavaScript，也无需开启 Markdown 原始 HTML。第一列入口仍使用当前标签打开说明页。
 
-关于（`95`）、PWA 状态（`96`）排在我的（`90`）之后、站点（`100`）之前；微信、GitHub、RSS 三个入口依次排在站点之后、备案（`105`）和首页版权（`110`）之前。微信保持 `/wechat/`，GitHub、RSS 分别使用 `/github/`、`/rss/`，各语言沿用原语言前缀。第一列共 15 项，站点中只保留更新记录；旧页脚及其片段配置已移除。
+关于（`95`）、更新（`96`）排在我的（`90`）之后；微信、GitHub、RSS 三个入口依次排在更新之后、备案（`105`）和首页版权（`110`）之前。微信保持 `/wechat/`，GitHub、RSS 分别使用 `/github/`、`/rss/`，各语言沿用原语言前缀。第一列共 14 项；原 PWA 状态和站点合并为更新，旧页脚及其片段配置已移除。
 
 ## 统一更新时间
 
@@ -93,11 +95,11 @@ GitHub 和备案页的目标链接使用 `{{< new-tab href="https://example.com/
 
 项目 `hugo.toml` 已启用 `enableGitInfo = true`，并配置 `[frontmatter] lastmod = ["lastmod", ":git", ":default"]`：显式 `lastmod` 优先，其次由 Hugo 取 Git 提交时间，最后使用 Hugo 的默认日期来源。无需为了列表补造 `date`；需要手动控制更新时间时，在文章 front matter 写 `lastmod: 2026-09-08T18:00:00+08:00`。
 
-显示和排序取同一 `.Lastmod`；显示到日，排序保留到秒。既有 `sort=date-asc/desc` URL 键保持不变，含义统一为更新时间，产品表仍只有名称、价格、价值说明三列。正文中的发布日期继续使用 `.Date`，不改变其含义；PWA 状态页中的版本时间仍是构建时间。
+显示和排序取同一 `.Lastmod`；显示到日，排序保留到秒。既有 `sort=date-asc/desc` URL 键保持不变，含义统一为更新时间，产品表仍只有名称、价格、价值说明三列。正文中的发布日期继续使用 `.Date`，不改变其含义；检查更新页中的版本时间仍是构建时间。
 
 ## 怎样声明条目图标
 
-字符图标继承条目字号（当前为 15px），不再缩小到 `0.75em`。文字和 SVG 共用 `1.5rem` 宽的居中占位，容纳 `EN` 等短标记并保持名称起点一致；SVG 图形本身仍为 `1rem`。PWA 状态页在三语言 front matter 声明 `icon: { text: "↻" }`，表示查看版本与检查更新，无需调整公共字号或占位。字符的具体字形由字体决定，需要严格一致的几何外观时使用 SVG。
+字符图标继承条目字号（当前为 15px），不再缩小到 `0.75em`。文字和 SVG 共用 `1.5rem` 宽的居中占位，容纳 `EN` 等短标记并保持名称起点一致；SVG 图形本身仍为 `1rem`。更新入口和检查更新页在三语言 front matter 声明 `icon: { text: "↻" }`，表示查看版本与检查更新，无需调整公共字号或占位。字符的具体字形由字体决定，需要严格一致的几何外观时使用 SVG。
 
 SVG 名称来自 `data/icons.toml`，字符使用 `icon: { text: "©" }`，页面图片使用 `icon: { image: "0.webp" }`；三者都使用同一个 `icon` 值，不根据引号或是否命中图标库猜测类型。内容支持三个字段：`icon` 指定自己被列出时的图标，`list_icon_folder`／`list_icon_file` 分别指定本列表中的目录或分类／文章的默认图标。例如主题 `content/products/_index.zh.md` 可以声明：
 
@@ -110,7 +112,7 @@ list_icon_file: product
 
 `icon` 只描述该入口本身，不按同名字段继承。条目未声明 `icon` 时，由列出它的列表提供默认值；两个 `list_icon_*` 字段分别沿当前列表的真实祖先取最近的非空声明，最终默认为 `folder`／`file`。省略或空白表示继承，明确写 `folder`／`file` 可以覆盖祖先设置。条目自己的非空 `icon` 始终优先，SVG 名称去除首尾空白并统一为小写；对象只允许一个非空字符串字段 `text` 或 `image`，保留大小写。`list_icon_folder` 与 `list_icon_file` 同样接受文字、图片对象，继承时整体替换。
 
-图片统一调用现有 `asset/publish.html`：先查声明页面的 bundle，再查全站 `assets/`。例如 `content/icp/index.zh.md` 写 `icon: { image: "0.webp" }`，读取 `content/icp/0.webp`，发布为 `/media/content/icp/0.<sha256>.webp`。站点三语言入口声明 `icon: { image: "site/pwa/favicon.svg" }`，读取 `assets/site/pwa/favicon.svg`，发布为 `/site/pwa/favicon.<sha256>.svg`，与浏览器标签图标共用同一资源和 URL。全站资源路径不带 `assets/` 前缀；`./0.webp` 则明确只从声明页面的 bundle 查找，缺失时不转查 assets。
+图片统一调用现有 `asset/publish.html`：先查声明页面的 bundle，再查全站 `assets/`。例如 `content/icp/index.zh.md` 写 `icon: { image: "0.webp" }`，读取 `content/icp/0.webp`，发布为 `/media/content/icp/0.<sha256>.webp`。页面也可声明 `icon: { image: "site/pwa/favicon.svg" }`，读取 `assets/site/pwa/favicon.svg`，发布为 `/site/pwa/favicon.<sha256>.svg`，与浏览器标签图标共用同一资源和 URL。全站资源路径不带 `assets/` 前缀；`./0.webp` 则明确只从声明页面的 bundle 查找，缺失时不转查 assets。
 
 图片默认值在声明目录解析后才继承，不会改成从子目录寻找同名文件。图片按 `1rem` 显示、保持比例，使用共用图标占位，无灯箱或正文图片的响应式变体。缺失资源、静态／远程 URL 和非图片文件会使构建失败。若页面自行声明 `build`，需同时保留 `publishResources: false`，避免覆盖全局 cascade 后又发布无哈希原图。语言配置中的图片以对应语言首页作为 bundle 上下文，同样支持全站 assets。
 
@@ -179,6 +181,6 @@ weight: 30
 
 ## 验证
 
-路径数据文件由各语言首页发布，直接使用当前语言来源模型的 `current_collection_items`，不在默认语言首页重新构建所有语言的数据。这样页面内嵌数据与后续请求的 `_items.json` 完全相同，避免中文主表使用中文排序、路径列却使用默认语言排序。浏览器回归 `system-site-directory` 覆盖站点仅保留更新记录、三语言列表几何、排序、进入后的路径顺序和刷新／历史恢复，同时验证关于、PWA、微信、GitHub、RSS 五个普通根入口的图标、选中、内容与历史，以及首页入口、备案、无页脚、RSS 地址及 XML 内容。PWA 升级回归覆盖从第一列进入、离线／重试、更新应用后保留根入口选中、清理旧导航缓存。
+路径数据文件由各语言首页发布，直接使用当前语言来源模型的 `current_collection_items`，不在默认语言首页重新构建所有语言的数据。这样页面内嵌数据与后续请求的 `_items.json` 完全相同，避免中文主表使用中文排序、路径列却使用默认语言排序。浏览器回归 `updates-name-list` 覆盖三语言名称列表、两个真实子项、进入后的选中和排序、刷新／历史恢复，同时验证关于、微信、GitHub、RSS 等普通根入口及其实际内容。升级回归从首页／文章列表经过更新目录进入检查页，验证离线／重试、新版本应用后保留更新路径列、清理旧导航缓存。
 
 在根项目执行 `node themes/banyan/scripts/checks/check-collections.mjs`。它只向 `temp_workspace/` 写临时内容覆盖层，基于根内容构建 directory／all／products／name 四种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。name 用例同时覆盖目录、子目录继承、分类、聚合入口，检查首帧仅名称列、名称升降序、进入文章后的路径列、刷新及历史恢复。时间用例覆盖发布日期与更新时间不同、只填更新时间、默认日期来源、完全无时间、目录／平面与树形分类汇总，以及升降序进入文章后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。

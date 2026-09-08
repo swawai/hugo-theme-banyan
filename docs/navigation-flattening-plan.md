@@ -1,15 +1,17 @@
 # 导航入口展平纲要
 
-2026-09-09｜分支：`codex/flatten-navigation`｜状态：第 5 步持续收敛；本轮接入名称列表与公共单列样式；第 6 步尚未开始
+2026-09-09｜分支：`codex/flatten-navigation`｜状态：第 5 步持续收敛；名称列表已验收；本轮迁移更新入口；第 6 步尚未开始
 
 ## 当前增量：名称列表与更新入口
 
-用户已确认以 `/updates/` 收纳“检查更新”和“更新记录”，采用真实内容子页。本轮先完成列表基础，交用户确认后再迁移内容和更新入口，不在中间增加临时专用列表。
+用户已确认以 `/updates/` 收纳“检查更新”和“更新记录”，采用真实内容子页。列表基础已获用户确认，本轮迁移内容和更新入口，不在中间增加临时专用列表。
 
-1. **名称列表与样式拆分（已实施，待用户确认）**：增加 `list: name`，仅显示图标和名称，默认名称升序，完整复用集合来源、继承、排序、路径列和历史。`grid-list.css` 改名为 `grid-base.css` 并成为单列基底；目录三列配置移到 `grid-directory.css`，all／products 只叠加各自列布局。choice 共用基底，保留原生链接／按钮及各自功能逻辑，不增加排序。不引入 `list: base`、`list_columns` 或 `grid-name.css`。
-2. **更新入口迁移（待本轮确认）**：主题 `content/updates/_index*.md` 使用 `layout: article-list`、`list: name`、`root_nav: true`；`updates/check/index*.md` 承载现有检查操作，`updates/changelog/index*.md` 承载更新记录，项目同路径内容同步迁移。检查页内显示实际版本／状态，名称列表不伪造运行时更新时间。删除旧 `pwa/`、`site/` 内容入口，更新模型、引用、导航及对应测试；`assets/site/pwa/` 资源路径不变。核对历史更新记录网址与新目录的关系后，保留已有公开链接。
+1. **名称列表与样式拆分（已验收）**：增加 `list: name`，仅显示图标和名称，默认名称升序，完整复用集合来源、继承、排序、路径列和历史。`grid-list.css` 改名为 `grid-base.css` 并成为单列基底；目录三列配置移到 `grid-directory.css`，all／products 只叠加各自列布局。choice 共用基底，保留原生链接／按钮及各自功能逻辑，不增加排序。不引入 `list: base`、`list_columns` 或 `grid-name.css`。
+2. **更新入口迁移（已实施，待用户确认）**：主题 `content/updates/_index*.md` 使用 `layout: article-list`、`list: name`、`root_nav: true`；`updates/check/index*.md` 使用 `update-check` 布局承载现有检查操作，`updates/changelog/index*.md` 承载更新记录，项目同路径内容同步迁移。检查页内显示实际版本／状态，版本为普通文本，不再嵌套更新记录链接；相关 `changelog_page` 字段和模板耦合已删除。名称列表不伪造运行时更新时间。旧 `pwa/`、`site/` 内容入口及 `pwa-page` 布局已删除，第一列合并为“更新”，共 14 项；模型、引用、sitemap、导航及对应测试已迁移。`assets/site/pwa/` 资源路径不变。更新记录保留 `/changelog/`，旧 `/pwa/`、`/site/` 通过根部署规则分别永久跳转到检查页和更新列表，覆盖三语言与有无尾斜杠。
 
-本轮验证：生产构建 `temp_workspace/public/2609090126-name-list-base` 的 141 页 HTML 审计通过；10 项浏览器回归通过，报告为 `temp_workspace/regression/260909012714-browser/report.json`，覆盖画幅宽度、系统页面、入口、产品路径、排序隔离与视觉对齐。四种列表 × 三语言集合契约及 name 的目录／分类／汇总、升降序、进入文章、刷新、前进后退验证通过，产物为 `temp_workspace/collection-contract-umloRE`。已查看名称主列、文章路径列、目录及语言页截图。本轮不迁移业务内容，PWA 和站点仍保持原入口。
+列表基础验收：生产构建 `temp_workspace/public/2609090126-name-list-base` 的 141 页 HTML 审计通过；10 项浏览器回归通过，报告为 `temp_workspace/regression/260909012714-browser/report.json`，覆盖画幅宽度、系统页面、入口、产品路径、排序隔离与视觉对齐。四种列表 × 三语言集合契约及 name 的目录／分类／汇总、升降序、进入文章、刷新、前进后退验证通过，产物为 `temp_workspace/collection-contract-umloRE`。已查看名称主列、文章路径列、目录及语言页截图。该阶段仅交付列表基础，未迁移业务内容。
+
+更新入口验收：生产构建 `temp_workspace/public/2609090141-updates-entry-final` 的 141 页 HTML 审计通过。完整 39 项浏览器回归中 38 项直接通过（`temp_workspace/regression/260909014134-browser/report.json`）；一项仍点击旧 site 入口的测试已改为 updates，单独复测通过（`temp_workspace/regression/260909014352-browser/report.json`）。覆盖三语言双子项列表、排序、直接／来源进入、刷新／历史恢复、首列 14 项、离线检查及重试、ready 时应用更新和重载、保留路径列与选中项、旧导航缓存清理和 sw.js 响应头。另验证三语言无 JavaScript 的原生子页导航、12 条生成的永久跳转、旧页面产物删除及更新记录 URL 保留。截图在 `temp_workspace/updates-preview/`，已查看列表、检查页及回归生成的新版本就绪状态截图。
 
 干净效果图为 `temp_workspace/name-list-preview/directory-as-name.png`：仅在临时覆盖层将真实 `/d/` 改成 `list: name`，没有加入测试文章，也未改动正式目录声明。
 
@@ -19,7 +21,7 @@
 
 第一列复用第二、三列的 `grid-title-cell.html`、`collection/item-content.html` 和 `collection-list.css`，沿用行结构、图标、间距、悬停及 `.is-current` 选中态；适配容器与断点限制。统一入口列表保持完整，来源变化只更新选中项，避免原根菜单渲染函数把它替换成局部菜单。
 
-目标入口：文章 - 全部、文章 - 分类、产品 - 全部、产品 - 分类、语言、外观、我的、关于、PWA 状态、站点、微信、GitHub、RSS 订阅、备案（图片图标＋粤ICP备2024338434号）、首页（© 2026 Swaw）。
+目标入口：文章 - 全部、文章 - 分类、产品 - 全部、产品 - 分类、语言、外观、我的、关于、更新、微信、GitHub、RSS 订阅、备案（图片图标＋粤ICP备2024338434号）、首页（© 2026 Swaw）。
 
 实施顺序：
 

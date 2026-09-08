@@ -240,7 +240,7 @@ export const canvasScenarios = [
             }
             const roots = await readCanvas(page);
             assert.equal(roots.canvasOffsetX, 0, 'Dragging right on prose and the adjacent list reveals the canvas start.');
-            assert.ok(roots.nav.x >= 0 && roots.nav.right <= 390 && roots.rootCount === 15);
+            assert.ok(roots.nav.x >= 0 && roots.nav.right <= 390 && roots.rootCount === 14);
             await page.screenshot({ path: path.join(artifactDir, 'mobile-root-entries.png') });
 
             await swipe(210, -180);
@@ -286,14 +286,14 @@ export const canvasScenarios = [
             for (const viewport of viewports) {
                 await page.setViewportSize(viewport);
                 for (const [name, target] of [
-                    ['article', articlePath], ['collection', '/zh/all/'], ['system', '/zh/site/']
+                    ['article', articlePath], ['collection', '/zh/all/'], ['system', '/zh/updates/']
                 ]) {
                     await gotoAndWait(page, baseUrl + target);
                     await waitForBreadcrumbSettled(page);
                     await nextPaint(page);
                     const state = await readCanvas(page);
                     const detail = JSON.stringify({ viewport, name, state });
-                    assert.equal(state.rootCount, 15, detail);
+                    assert.equal(state.rootCount, 14, detail);
                     assert.equal(state.obsoleteControls, 0, detail);
                     assert.equal(state.plainColumns, true, detail);
                     assert.ok(Math.abs(state.nav.width - 225) <= 1, detail);
@@ -402,7 +402,7 @@ export const canvasScenarios = [
                 'Skip to content must bring the actual main column into view.');
 
             // Keyboard traversal leaves the complete root list for the next column.
-            await gotoAndWait(page, `${baseUrl}/zh/site/`);
+            await gotoAndWait(page, `${baseUrl}/zh/updates/`);
             const order = await page.evaluate(() => {
                 const rail = document.querySelector('.page-rail');
                 const nav = rail.querySelector('[data-root-navigation]');

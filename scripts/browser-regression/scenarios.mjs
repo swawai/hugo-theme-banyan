@@ -691,7 +691,7 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
             const rootPaths = ['all', 'tags', 'all-products', 'products',
-                'language', 'appearance', 'my', 'about', 'pwa', 'site', 'wechat', 'github', 'rss', 'icp', ''];
+                'language', 'appearance', 'my', 'about', 'updates', 'wechat', 'github', 'rss', 'icp', ''];
             await gotoAndWait(page, `${baseUrl}/zh/all/`);
             const staticRoots = await page.evaluate(async (paths) => {
                 const results = [];
@@ -710,7 +710,7 @@ export const scenarios = [
                             .map((link) => link.dataset.rootHref),
                         home: nav?.querySelector(`[data-root-href="${prefix}"]`)?.getAttribute('href'),
                         homeIcon: nav?.querySelector(`[data-root-href="${prefix}"] .icon--text`)?.textContent,
-                        siteIcon: nav?.querySelector(`[data-root-href="${prefix}site/"] img.icon--image`)?.getAttribute('src'),
+                        updatesIcon: nav?.querySelector(`[data-root-href="${prefix}updates/"] .icon--text`)?.textContent,
                         favicon: doc.querySelector('link[rel="icon"][type="image/svg+xml"]')?.getAttribute('href'),
                         footerCount: doc.querySelectorAll('footer, .slot-footer').length,
                         settings: [...doc.querySelectorAll('[data-root-href][data-settings-link]')]
@@ -742,7 +742,7 @@ export const scenarios = [
                     || state.icons.wechat !== '#icon-wechat'
                     || state.icons.github !== '#icon-github'
                     || state.icons.rss !== '#icon-rss'
-                    || !state.favicon || state.siteIcon !== state.favicon) {
+                    || !state.favicon || state.updatesIcon !== '↻') {
                     fail('Every locale must SSR one weighted root list with ordinary URLs, declared icons and no settings-link rewriting markers.', state);
                 }
             }
@@ -779,7 +779,7 @@ export const scenarios = [
         timeoutMs: 60000,
         async run({ page, baseUrl }) {
             const expectedRoots = ['all', 'tags', 'all-products', 'products',
-                'language', 'appearance', 'my', 'about', 'pwa', 'site', 'wechat', 'github', 'rss', 'icp', ''].map((root) => `/zh/${root ? root + '/' : ''}`);
+                'language', 'appearance', 'my', 'about', 'updates', 'wechat', 'github', 'rss', 'icp', ''].map((root) => `/zh/${root ? root + '/' : ''}`);
             const assertSelection = async (expected) => {
                 await waitForBreadcrumbSettled(page);
                 const state = await page.evaluate(() => ({
@@ -803,8 +803,8 @@ export const scenarios = [
                 ['/zh/d/', null],
                 ['/zh/intent/', null],
                 ['/zh/about/', '/zh/about/'],
-                ['/zh/pwa/', '/zh/pwa/'],
-                ['/zh/changelog/', '/zh/site/'],
+                ['/zh/updates/check/', '/zh/updates/'],
+                ['/zh/changelog/', '/zh/updates/'],
                 ['/zh/wechat/', '/zh/wechat/'],
                 ['/zh/github/', '/zh/github/'],
                 ['/zh/rss/', '/zh/rss/'],
@@ -812,7 +812,7 @@ export const scenarios = [
                 ['/zh/language/?return=%2Fzh%2Fall%2F', '/zh/language/'],
                 ['/zh/appearance/?return=%2Fzh%2Fall%2F', '/zh/appearance/'],
                 ['/zh/my/?return=%2Fzh%2Fall%2F', '/zh/my/'],
-                ['/zh/site/?return=%2Fzh%2Fall%2F', '/zh/site/'],
+                ['/zh/updates/?return=%2Fzh%2Fall%2F', '/zh/updates/'],
                 ['/zh/', '/zh/']
             ];
             for (const [target, root] of directCases) {
@@ -892,7 +892,7 @@ export const scenarios = [
             const readPaths = selector => page.locator(selector).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
             const assertHiddenPath = async () => {
                 const state = { count: await page.locator(roots).count(), selected: await readPaths(`${roots}.is-current`) };
-                if (state.count !== 15 || state.selected.length) fail('Hidden paths preserve the visible root list without a misleading selected entry.', state);
+                if (state.count !== 14 || state.selected.length) fail('Hidden paths preserve the visible root list without a misleading selected entry.', state);
             };
             for (const prefix of ['', '/zh', '/zh-tw']) {
                 for (const [root, collection] of [['d', '/d/products/'], ['intent', '/intent/decide/']]) {

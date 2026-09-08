@@ -8,7 +8,7 @@
 
 当前语言的根页面集合包含首页自身及直接子页 `Home.Pages`，再合并父页面为首页的 taxonomy 根页；这份结构集合完整保留，用于路径归属。第一列只显示其中顶层声明布尔值 `root_nav: true` 的页面，默认不显示。名称取 `LinkTitle`／`Title`，网址取 `RelPermalink`，顺序取页面 `weight`。来源变化只更新选中项，不替换可见入口列表。
 
-入口可在自己的 front matter 中用 `icon: folder` 声明 SVG，或用 `icon: { text: "©" }` 声明字符图标；省略时使用 `folder`，不存在的图标会让构建失败。当前语言、外观、我的入口分别声明 `language`、`theme`、`my`，站点入口继续使用默认文件夹。
+入口可在自己的 front matter 中用 `icon: folder` 声明 SVG，或用 `icon: { text: "©" }` 声明字符图标；省略时使用 `folder`，不存在的图标会让构建失败。当前语言、外观、我的入口分别声明 `language`、`theme`、`my`，更新入口声明 `icon: { text: "↻" }`。
 
 - 不能只取 `Home.Sections`，因为语言、外观、我的和全部文章包含普通页面。
 - 不能只取 `Site.Pages`，因为 `build.list: local` 的系统页只列在其父页集合中。
@@ -16,7 +16,7 @@
 - `build.list: never` 的内部节点不作为入口。内部 fragment 同时设置 `build.render: never`，避免生成独立页面。
 - `weight` 只需在入口本身定义，不应 cascade 到所有文章。
 
-当前项目显示文章 - 全部、文章 - 分类、产品 - 全部、产品 - 分类及语言、外观、我的、关于、PWA 状态、站点、微信、GitHub、RSS、备案、首页共 15 项，来自根页面声明而非模板白名单。首页在 `content/_index*.md` 声明 `root_nav: true`、`linkTitle`、`icon` 和 `weight`，使用普通条目组件，正文继续使用 `home-brand`。
+当前项目显示文章 - 全部、文章 - 分类、产品 - 全部、产品 - 分类及语言、外观、我的、关于、更新、微信、GitHub、RSS、备案、首页共 14 项，来自根页面声明而非模板白名单。首页在 `content/_index*.md` 声明 `root_nav: true`、`linkTitle`、`icon` 和 `weight`，使用普通条目组件，正文继续使用 `home-brand`。
 
 `nav_primary`、`slots.primary_nav`、`slots.utilities` 和 `slots.breadcrumb_root` 已移除，对应的主菜单、系统下拉及 breadcrumb model fragment 不再参与装配。新增入口应建立真实根页面或 taxonomy 根，声明 `root_nav: true` 并提供名称与顺序。
 
@@ -52,11 +52,11 @@ slots:
 
 语言、外观页面用顶层 `list: choice` 声明选择行，并分别由 `language-page`、`appearance-page` 布局提供选项，由语言、外观脚本处理操作；我的等系统页无需列表声明。它们都无需为了显示第一列设置 `slots`。布局、集合 provider 和产品属性仍是各自独立的配置。
 
-站点目录使用与普通目录相同的 `layout: article-list`、`list: directory`，只列出真实子页，目前仅保留更新记录。`site-page` 已删除，`baseof.html` 不追加站点操作，根导航也不承担更新标记。`content/pwa/index*.md` 是第一列中的普通 PWA 状态根页面，`pwa-page` 布局明确调用更新面板与系统样式；页面的 `site_update` 只提供功能文案与更新记录引用，不是全站装配开关。语言和外观布局分别明确调用 `system/return.html`。
+更新目录 `content/updates/_index*.md` 使用 `layout: article-list`、`list: name`，只列出检查更新与更新记录两个真实子页。`baseof.html` 不追加操作，根导航也不承担更新标记。`content/updates/check/index*.md` 使用 `update-check` 布局明确调用更新面板与系统样式；`site_update.labels` 只提供功能文案，不是全站装配开关。版本为普通状态文本，记录通过同级列表访问。两个子页均保留更新路径列。语言和外观布局分别明确调用 `system/return.html`。
 
 保留的 fragment 按内容语义命名，例如 `site-meta`；不要用最终容器位置命名。`site-meta` 提供站点品牌与 SEO 元数据，`slots.meta` 则控制当前页面的日期、taxonomy 等元信息，两者职责不同。
 
-首页链接已统一到普通入口。关于、PWA、微信、RSS、GitHub、备案等信息通过各自真实根页面访问，站点目录仅保留更新记录；SEO 元数据仍由独立的 head 模板输出。
+首页链接已统一到普通入口。关于、微信、RSS、GitHub、备案等信息通过各自真实根页面访问，更新入口列出检查更新和更新记录；SEO 元数据仍由独立的 head 模板输出。
 
 ## 与导航状态和布局的边界
 

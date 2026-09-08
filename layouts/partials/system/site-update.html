@@ -2,15 +2,12 @@
 {{ $labels := $model.labels }}
 {{ $buildVersion := partial "build-version.html" . }}
 <div class="system-page-section" data-site-update-panel>
+  <p>{{ $labels.current_version }}: <span data-site-update-version title="{{ $buildVersion }}">{{ partial "build-time-display.html" . | default $buildVersion }}</span></p>
   <div class="grid-list collection-list--grid">
-    {{ partial "grid-title-cell.html" (dict "ctx" . "href" $model.changelog_href
-      "text" (partial "build-time-display.html" . | default $buildVersion)
-      "title" $buildVersion "icon" "file" "linkSlot" "nav"
-      "linkDataAttrs" (dict "site-update-version" "true")) }}
     {{ if eq (lower (.Site.Params.service_worker.mode | default "off")) "enable" }}
     <span class="cell-title">
       <button type="button" class="collection-item-link" data-site-update-action="check">
-        {{ partial "collection/item-content.html" (dict "icon" "info" "text" $labels.check) }}
+        {{ partial "collection/item-content.html" (dict "icon" (dict "text" "↻") "text" $labels.check) }}
       </button>
     </span>
     {{ end }}

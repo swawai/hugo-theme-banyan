@@ -47,18 +47,18 @@
 
 ### 更新提示界面
 
-- PWA 状态根页面 `/pwa/` 使用 `data-site-update-panel` 显示版本、检查按钮和状态；共用更新引擎
-- 站点目录只显示真实子项，第一列没有 `data-site-update-link` 或专用更新标记
-- 第一列通过普通入口直接进入 PWA 状态页；点击入口不会检查或应用更新
+- 检查更新子页面 `/updates/check/` 使用 `data-site-update-panel` 显示版本、检查按钮和状态；共用更新引擎
+- 更新目录 `/updates/` 使用名称列表显示两个真实子项，第一列没有 `data-site-update-link` 或专用更新标记
+- 第一列通过普通更新入口进入名称列表，再进入检查更新页；点击入口不会检查或应用更新
 - 旧 Ver 下拉菜单及脚本已移除
 - 当前逻辑应当：
   - 当前页存在可见更新按钮时，在页面内显示状态；没有可见按钮时沿用原生确认提示
-  - 拒绝确认后仍能通过第一列进入 PWA 状态页，worker 仍处于 waiting
-  - PWA 页按钮检查更新，ready 时显示“立即更新”并负责应用更新；目录和路径列不承担更新动作
+  - 拒绝确认后仍能通过更新入口及其子项进入检查更新页，worker 仍处于 waiting
+  - 检查页按钮检查更新，ready 时显示“立即更新”并负责应用更新；目录和路径列不承担更新动作
 
 ### 语言文案
 
-- 更新确认文案来自 runtime i18n JSON；版本界面文案的事实源为 `content/pwa/index*.md` 的 `site_update.labels`，由同一 partial 提供给静态界面和 runtime JSON
+- 更新确认文案来自 runtime i18n JSON；版本界面文案的事实源为 `content/updates/check/index*.md` 的 `site_update.labels`，由同一 partial 提供给静态界面和 runtime JSON
 - 语言 fallback 依赖 `runtime/asset-manifest.json` 内的 `i18nFallbacks`
 - `sw-manager` 使用 `runtime-manifest.js`；语言偏好独立使用页面内静态译文关系，不再依赖版本菜单或 runtime JSON
 
@@ -168,7 +168,7 @@ bun run build:browser:temp -- sw-upgrade-after
 - 新 build 已部署，但浏览器长时间没有 waiting worker
 - `registration.update()` 后仍停留旧 worker 且无错误线索
 
-### 4. 第一列站点入口的更新提示
+### 4. 通过更新入口检查和应用新版本
 
 建议页面：
 
@@ -180,21 +180,21 @@ bun run build:browser:temp -- sw-upgrade-after
 操作：
 
 1. 让页面进入 update ready 状态
-2. 点击第一列「系统－站点」
+2. 点击第一列「更新」，再点击「检查更新」子项
 
 预期：
 
-- 第一列只出现一个更新标记，有本地化状态说明
-- 点击链接进入站点页，保留来源 URL 的查询参数和片段
-- 到达站点页后 worker 仍然 waiting，直到点击站点页的更新按钮
-- 不会错误退化为 `window.confirm`
+- 普通页面没有可见检查按钮时，沿用本地化的原生更新确认；拒绝后仍可正常浏览
+- 第一列是普通更新入口，无特殊更新标记；名称列表仅含两个真实子项
+- 进入检查页后保留更新列表列及其选中项，worker 仍然 waiting，直到点击「立即更新」
+- 可见检查按钮所在页面直接呈现状态，应用后重载并保留当前页和路径列
 
 失败信号：
 
-- 有 waiting worker，第一列站点入口却没有更新标记
-- 点击普通链接就应用更新或弹出旧 dropdown
-- breadcrumb 当前项仍带有更新提示入口数据属性
-- 可见入口存在，但仍直接弹 `confirm`
+- 点击普通入口或子项就应用更新
+- 检查页丢失更新路径列或正确选中项
+- breadcrumb 当前项带有更新动作
+- 检查按钮可见时仍重复弹 `confirm`
 
 ### 5. 无可用更新入口时的兜底 fallback
 
@@ -390,7 +390,7 @@ bun run build:browser:temp -- sw-upgrade-after
 
 ### 更新入口与操作分开
 
-第一列「系统－站点」与其他目录入口相同，不承担更新标记。检查、应用更新由真实子页「PWA 状态」中的按钮执行；其他 breadcrumb 列和当前菜单选项不带更新动作。没有可见更新按钮的页面继续使用既有原生确认提示。
+第一列「更新」与其他目录入口相同，不承担更新标记。检查、应用更新由真实子页「检查更新」中的按钮执行；其他 breadcrumb 列和当前菜单选项不带更新动作。没有可见更新按钮的页面继续使用既有原生确认提示。
 
 ### 4 秒激活超时
 

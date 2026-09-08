@@ -1,13 +1,12 @@
 ---
-root_nav: true
-title: PWA 状态
+title: 检查更新
 description: 查看当前站点版本并检查更新。
 type: page
 date: 2026-09-08
-slug: pwa
-layout: pwa-page
+slug: check
+layout: update-check
 icon: { text: "↻" }
-weight: 96
+weight: 10
 outputs:
   - HTML
 robots: noindex, follow
@@ -16,8 +15,8 @@ build:
 slots:
   breadcrumb: true
 site_update:
-  changelog_page: /site/changelog
   labels:
+    current_version: 当前版本
     check: 检查更新
     checking: 检查中...
     check_failed: 检查失败

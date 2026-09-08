@@ -107,10 +107,11 @@ export async function renderUpdateUi(status, latencyMs) {
     const statusValue = getVersionStatusValue(copy, status, latencyMs);
     panels.forEach((panel) => {
         panel.dataset.siteUpdateState = status;
-        const versionLink = panel.querySelector('[data-site-update-version]');
-        const versionText = versionLink?.querySelector('.collection-item-title');
-        if (versionText) versionText.textContent = versionLabel;
-        if (versionLink) versionLink.title = version;
+        const versionNode = panel.querySelector('[data-site-update-version]');
+        if (versionNode) {
+            versionNode.textContent = versionLabel;
+            versionNode.title = version;
+        }
         const action = panel.querySelector('[data-site-update-action]');
         const label = action?.querySelector('.collection-item-title');
         if (action) action.disabled = status === 'checking' || status === 'unavailable';
