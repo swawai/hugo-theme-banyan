@@ -2,14 +2,7 @@
 {{- $page := .page -}}
 {{- $view := "" -}}
 {{- if eq $page.Layout "article-list" -}}
-  {{- $candidates := slice $page -}}
-  {{- range $page.Ancestors -}}{{- $candidates = $candidates | append . -}}{{- end -}}
-  {{- range $candidates -}}
-    {{- if isset .Params "list" -}}
-      {{- $view = printf "%v" .Params.list -}}
-      {{- break -}}
-    {{- end -}}
-  {{- end -}}
+  {{- $view = partial "list/view.html" (dict "page" $page) -}}
   {{- if not (in (slice "directory" "all" "products") $view) -}}
     {{- errorf "List page %s needs list: directory, all or products (own declaration or nearest ancestor)." $page.RelPermalink -}}
   {{- end -}}

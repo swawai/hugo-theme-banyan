@@ -1,7 +1,7 @@
 {{- $text := .text | default "" -}}
 {{- $icon := .icon | default "file" -}}
 {{- $iconText := .iconText | default "" -}}
-<span class="collection-item-icon{{ if $iconText }} collection-item-icon--text{{ end }}">
+<span class="collection-item-icon{{ if $iconText }} collection-item-icon--text{{ end }}"{{ if $iconText }} aria-hidden="true"{{ end }}>
   {{- if $iconText -}}
     {{- $iconText -}}
   {{- else -}}

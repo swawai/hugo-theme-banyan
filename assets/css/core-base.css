@@ -153,6 +153,16 @@ a:focus-visible {
     vertical-align: 0;
 }
 
+.icon-language,
+.icon-theme,
+.icon-my {
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.5;
+}
+
 .icon-sprite-root {
     position: absolute;
     width: 0;

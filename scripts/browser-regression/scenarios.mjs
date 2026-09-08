@@ -288,6 +288,8 @@ async function readLanguageSettingsState(page) {
         const context = JSON.parse(document.body?.dataset.languageContext || 'null');
         return {
             state: picker?.dataset.languageState || '',
+            listView: picker?.querySelector('[data-list-view]')?.dataset.listView || '',
+            sortable: Boolean(picker?.querySelector('[data-sortable]')),
             noTranslationMessage: context?.missing || '',
             languageSuggestionMessage: context?.suggestion || '',
             options: Array.from(picker?.querySelectorAll('[data-language-choice]') || [])
@@ -296,8 +298,9 @@ async function readLanguageSettingsState(page) {
                     disabled: option.getAttribute('aria-disabled') === 'true',
                     hasTranslation: option.dataset.hasTrans !== 'false',
                     href: option.getAttribute('href') || '',
+                    iconText: option.querySelector('.collection-item-icon--text')?.textContent?.trim() || '',
                     tagName: option.tagName,
-                    text: option.textContent?.trim() || '',
+                    text: option.querySelector('.collection-item-title')?.textContent?.trim() || '',
                     value: option.dataset.languageChoice || ''
                 }))
         };
@@ -707,6 +710,10 @@ export const scenarios = [
                         home: nav?.querySelector('.collection-list-header a')?.getAttribute('href'),
                         settings: [...doc.querySelectorAll('[data-root-href][data-settings-link]')]
                             .map((link) => link.dataset.rootHref),
+                        icons: Object.fromEntries(paths.map((path) => [
+                            path,
+                            nav?.querySelector(`[data-root-href="${prefix}${path}/"] use`)?.getAttribute('href') || ''
+                        ])),
                         rowContentCount: nav?.querySelectorAll('.cell-title > .collection-item-link > .collection-item-title').length,
                         oldControls: doc.querySelectorAll('[data-nav-utility-kind], [data-site-version-menu], [data-slot="primary_nav"]').length
                     });
@@ -717,8 +724,12 @@ export const scenarios = [
                 if (state.count !== 1 || JSON.stringify(state.hrefs) !== JSON.stringify(state.expected)
                     || JSON.stringify(state.selected) !== JSON.stringify([state.prefix + 'all/'])
                     || state.home !== state.prefix || state.rowContentCount !== 10 || state.oldControls !== 0
-                    || state.settings.length !== 0) {
-                    fail('Every locale must SSR one weighted root list with ordinary URLs and no settings-link rewriting markers.', state);
+                    || state.settings.length !== 0
+                    || state.icons.language !== '#icon-language'
+                    || state.icons.appearance !== '#icon-theme'
+                    || state.icons.my !== '#icon-my'
+                    || state.icons.site !== '#icon-folder') {
+                    fail('Every locale must SSR one weighted root list with ordinary URLs, declared icons and no settings-link rewriting markers.', state);
                 }
             }
             const layouts = [];
@@ -2101,6 +2112,8 @@ export const scenarios = [
             await page.waitForSelector('[data-language-settings] .is-current');
             const initialState = await readLanguageSettingsState(page);
             if (initialState.options.length !== 3
+                || initialState.listView !== 'choice' || initialState.sortable
+                || JSON.stringify(initialState.options.map((option) => option.iconText)) !== JSON.stringify(['EN', '简', '繁'])
                 || initialState.options.some((option) => option.tagName !== 'A' || !option.href || option.disabled)) {
                 fail('Language settings must expose usable static links when runtime JSON is unavailable.', initialState);
             }

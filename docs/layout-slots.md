@@ -8,6 +8,8 @@
 
 当前语言的入口集合来自首页直接子页 `Home.Pages`，再合并父页面为首页的 taxonomy 根页。名称取 `LinkTitle`／`Title`，网址取 `RelPermalink`，顺序取页面 `weight`。这是一个完整列表，来源变化只更新选中项。
 
+入口可在自己的 front matter 中用 `icon` 声明主题图标；省略时使用 `folder`，不存在的图标会让构建失败。当前语言、外观、我的入口分别声明 `language`、`theme`、`my`，站点入口继续使用默认文件夹。
+
 - 不能只取 `Home.Sections`，因为语言、外观、我的和全部文章包含普通页面。
 - 不能只取 `Site.Pages`，因为 `build.list: local` 的系统页只列在其父页集合中。
 - taxonomy 根需要单独合并，不能假定它们都在 `Home.Pages` 中。
@@ -56,7 +58,7 @@ slots:
   footer: /fragments/home-footer-shortcuts
 ```
 
-语言、外观、我的等系统页无需为了显示第一列设置 `slots`。布局、集合 provider、产品属性及页脚内容仍是各自独立的配置。
+语言、外观页面用顶层 `list: choice` 声明选择行，并分别由 `language-page`、`appearance-page` 布局提供选项，由语言、外观脚本处理操作；我的等系统页无需列表声明。它们都无需为了显示第一列设置 `slots`。布局、集合 provider、产品属性及页脚内容仍是各自独立的配置。
 
 保留的 fragment 按内容语义命名，例如 `home-footer-shortcuts` 和 `site-meta`；不要用最终容器位置命名。`site-meta` 提供站点品牌与 SEO 元数据，`slots.meta` 则控制当前页面的日期、taxonomy 等元信息，两者职责不同。
 

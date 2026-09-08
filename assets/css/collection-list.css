@@ -33,9 +33,16 @@
     position: relative;
     z-index: 1;
     display: inline-flex;
+    inline-size: 1rem;
     flex: none;
     align-items: center;
     justify-content: center;
+}
+
+.collection-item-icon--text {
+    font-size: 0.75em;
+    line-height: 1;
+    text-decoration: none;
 }
 
 .collection-item-icon-svg {

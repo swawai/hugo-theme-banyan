@@ -25,6 +25,8 @@
 
 语言页历史修正：语言选择改用 `location.replace()`，替换当前语言设置记录；一次设置访问无论切换几次语言，返回按钮与浏览器后退均一次回到进入设置前的页面。不同系统页面之间的正常访问仍逐页后退，不新增地址参数、来源存储或历史搜索机制。生产构建 `temp_workspace/public/2609081052-language-history`、HTML 审计及 3 项关联浏览器回归通过，覆盖三语言反复切换、刷新、按钮／浏览器后退、前进到最终语言、文章来源与排序恢复，以及新标签页切换后返回当前语言首页。
 
+选择入口微调：根页面可用顶层 `icon` 声明第一列图标，语言、外观、我的恢复各自已有的 `language`、`theme`、`my` 图标，未声明入口继续使用文件夹。语言和外观页均显式声明 `list: choice`；共享选择模板只负责链接／按钮的原生语义、图标槽、选中样式和 `data-*` 输出，选项来源与操作仍由各自布局和脚本负责。语言选项来自 Hugo `[languages]`，站点在各语言 `params.icon_text` 中声明 `EN`、`简`、`繁`。不建立内容子页、脚本注册器或通用事件总线，也不把选择页并入可排序文章 collection。最终构建为 `temp_workspace/public/2609081501-choice-list-final`；129 页 HTML 审计、导航状态、集合契约、完整 34 项功能回归和 3 项安全回归通过，完整报告分别为 `temp_workspace/regression/260908145441-browser/report.json`、`temp_workspace/regression/260908145659-browser-security/report.json`。将通用图标样式归入基础图标层后，4 项直接关联回归再次通过，报告为 `temp_workspace/regression/260908150234-browser/report.json`。首页只在实际需要时输出排序文案，最终为 19,941 字节、gzip 6,843 字节，原体积门槛未放宽。
+
 5A 实施结果：`assets/js/canvas-position.js` 已改为只传递同标签页的一次列表导航横向位置；记录来源、目标与视觉视口坐标，目标页读取后立即清除，只有来源／目标相符的新访问才使用。普通直接访问不再自动显示主列，刷新与历史恢复继续由浏览器处理。沿用现有 main 列作为原生滚动目标，通过临时滚动留白还原坐标，兼顾桌面布局视口和手机视觉视口，不增加滚动容器或设备模式。用户输入／锚点优先。`grid-products.css` 的名称列已改用共享 `--navigation-column-inline`（15rem）。
 
 5A 验证结果：根内容生产构建及 129 个 HTML 审计通过，现有首屏体积预算未放宽；导航状态检查、34 项功能回归和 3 项 CSP／缓存相关检查通过。新增的桌面／真实触摸回归覆盖产品分类与全部入口、先排序再进入文章、首帧及慢脚本、刷新和前进后退。桌面手动横移 310px、手机触摸横移 305px 后进入 Xvenv，原有列和名称位置保持，正文向右新增；零偏移场景也保持原位。已核对桌面与手机截图，另验证新标签页从画幅起点开始、取消点击不记录位置、存储不可用时正常导航。最终产物为 `temp_workspace/public/2609080057-canvas-stable-final`；功能与安全报告分别位于 `temp_workspace/regression/260908005738-browser/report.json`、`temp_workspace/regression/260908005819-browser-security/report.json`。此后用户已确认并授权 5B／5C；产品结构迁移结果见下文。

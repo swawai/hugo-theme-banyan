@@ -1,6 +1,6 @@
 # 列表与产品声明
 
-列表页的 `list` 只决定怎么展示，成员来自页面本身的目录或 Hugo 分类关系。入口归属继续由真实根页面及有效 `from` 决定，不在文章 front matter 中写菜单。
+页面的 `list` 只声明子项怎么展示。文章集合的成员来自页面本身的目录或 Hugo 分类关系；选择页的选项由对应布局提供。入口归属继续由真实根页面及有效 `from` 决定，不在文章 front matter 中写菜单。
 
 ## 在哪里改表格
 
@@ -13,6 +13,8 @@
 | 上述文件的 `cascade`，目标 `kind: term` | `list: products` | 每个分类的 `.Pages`，无需逐类写来源 |
 | 主题 `content/all/index.zh.md` | `list: all`、`aggregate: /d` | `/d/` 下全部文章 |
 | 主题 `content/all-products/_index.zh.md` | `list: products`、`aggregate: /products` | 产品分类成员的去重并集 |
+| 主题 `content/language/index.zh.md` | `list: choice` | `hugo.toml` 已启用的语言 |
+| 主题 `content/appearance/index.zh.md` | `list: choice` | 跟随系统、浅色、深色 |
 
 比如要让 WSL 目录使用产品表，在项目 `content/d/wsl/_index.zh.md` 原有 front matter 内加一行：
 
@@ -25,6 +27,22 @@ list: products
 新增普通列表目录时使用 `layout: article-list`、`list: directory` 和需要的 `slots.breadcrumb: true`；位于已有目录下时可继承布局和展示声明。正文只写介绍，表格自动在介绍后出现，旧的 `section-list`、`taxonomy-list`、`all-list`、`products-list` shortcode 已删除。
 
 `aggregate` 只用于汇总入口，指向一个 section 或 taxonomy 根。它不从父目录继承。普通目录和分类页无需写 `aggregate`，也不写 `list_source` 或 `product_filter`。主题默认页面的站点专用修改可通过项目同路径文件覆盖；三种语言各自保留完整 front matter。
+
+## 怎样声明选择列表
+
+语言和外观页面在顶层 front matter 声明 `list: choice`，与 `build.list: local` 是两件事：前者选择行的呈现协议，后者控制 Hugo 是否把页面列入父页面集合。`choice` 使用与其他列表相同的行、图标槽和 `.is-current` 状态，但不排序、不注册 collection 来源，也不参与文章路径。
+
+选择列表只接受两种原生控件：链接或按钮。共享模板负责文字、图标、选中样式、可访问状态和 `data-*` 输出；页面布局负责提供选项，功能脚本只响应自己的标记。语言项保留真实 `href` 和 `data-language-choice`，无 JavaScript 时仍可切换；外观项使用按钮和 `data-theme-choice`。模板不认识语言代码或主题值，front matter 也不声明脚本文件。
+
+语言名称、顺序和启用状态仍以根项目 `hugo.toml` 的 `[languages]` 为事实源。可在对应语言参数中设置短文字图标：
+
+```toml
+[languages.en.params]
+locale = "en_US"
+icon_text = "EN"
+```
+
+当前站点分别使用 `EN`、`简`、`繁`。未设置 `icon_text` 时回退到主题的语言 SVG；不根据 `en`、`zh-CN` 或 `zh-TW` 猜测国旗或字符。
 
 ## 怎样收录产品
 

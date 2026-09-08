@@ -1,0 +1,10 @@
+{{- $ctx := . -}}
+{{- $iconTexts := dict -}}
+{{- range $ctx.Sites -}}
+  {{- $iconTexts = merge $iconTexts (dict .Language.Lang (.Params.icon_text | default "")) -}}
+{{- end -}}
+{{- $options := slice -}}
+{{- range (partial "preferences/language-context.html" $ctx).options -}}
+  {{- $options = $options | append (merge . (dict "icon_text" (index $iconTexts .code | default ""))) -}}
+{{- end -}}
+{{- return $options -}}

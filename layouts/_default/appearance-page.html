@@ -10,13 +10,14 @@
 <article class="article system-page" data-system-page>
   <div class="collection-list collection-list--index">
     <h1 class="collection-list-header">{{ .Title }}</h1>
-    <div class="grid-list grid-list--single collection-list--grid">
-      {{ range slice "auto" "light" "dark" }}
-      <span class="cell-title"><button type="button" class="collection-item-link" data-theme-choice="{{ . }}" aria-pressed="false">
-        {{ partial "collection/item-content.html" (dict "icon" "theme" "text" (i18n (printf "appearance_%s" .))) }}
-      </button></span>
-      {{ end }}
-    </div>
+    {{- $items := slice -}}
+    {{- range slice "auto" "light" "dark" -}}
+      {{- $items = $items | append (dict
+        "control" "button" "text" (i18n (printf "appearance_%s" .)) "icon" "theme"
+        "dataAttrs" (dict "theme-choice" .)
+      ) -}}
+    {{- end -}}
+    {{ partial "choice/render.html" (dict "page" . "items" $items) }}
     {{ partial "system/return.html" . }}
   </div>
 </article>

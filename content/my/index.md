@@ -4,6 +4,7 @@ title: System - My
 slug: my
 type: my
 layout: my-page
+icon: my
 robots: noindex, follow
 build:
   list: local

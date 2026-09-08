@@ -8,12 +8,13 @@
   <div class="grid-list grid-list--single collection-list collection-list--grid">
     {{- range $roots -}}
       {{- $attrs := dict "root-href" .RelPermalink -}}
+      {{- $icon := .Params.icon | default "folder" -}}
       {{- if eq .Layout "site-page" -}}
         {{- $attrs = merge $attrs (dict "site-update-link" "true") -}}
       {{- end -}}
       {{- partial "grid-title-cell.html" (dict
         "ctx" $ctx "href" .RelPermalink "text" (.LinkTitle | default .Title)
-        "title" .Title "icon" "folder" "linkSlot" "nav" "linkDataAttrs" $attrs
+        "icon" $icon "linkSlot" "nav" "linkDataAttrs" $attrs
         "isCurrent" (eq .RelPermalink $defaultHref)
       ) -}}
     {{- end -}}

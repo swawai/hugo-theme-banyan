@@ -91,6 +91,39 @@ export const systemPageScenarios = [
             const article = page.url();
             await page.locator('[data-root-href="/zh/language/"]').click();
             const historyLength = await page.evaluate(() => history.length);
+            const assertChoiceContract = async (selectedCode) => {
+                const state = await page.evaluate(() => {
+                    const list = document.querySelector('.system-page [data-list-view]');
+                    return {
+                        view: list?.dataset.listView || '',
+                        sortable: Boolean(list?.hasAttribute('data-sortable') || list?.querySelector('[data-sortable]')),
+                        options: [...(list?.querySelectorAll('[data-language-choice]') || [])].map((option) => ({
+                            code: option.dataset.languageChoice,
+                            current: option.getAttribute('aria-current') || '',
+                            iconHidden: option.querySelector('.collection-item-icon')?.getAttribute('aria-hidden') || '',
+                            iconText: option.querySelector('.collection-item-icon--text')?.textContent?.trim() || '',
+                            label: option.querySelector('.collection-item-title')?.textContent?.trim() || '',
+                            left: option.querySelector('.collection-item-title')?.getBoundingClientRect().left || 0,
+                            tagName: option.tagName
+                        }))
+                    };
+                });
+                assert.equal(state.view, 'choice');
+                assert.equal(state.sortable, false);
+                assert.deepEqual(state.options.map(({code, iconText}) => [code, iconText]), [
+                    ['en', 'EN'], ['zh', '简'], ['zh-tw', '繁']
+                ]);
+                assert(state.options.every((option) => option.tagName === 'A' && option.iconHidden === 'true' && option.label));
+                assert.equal(state.options.find((option) => option.code === selectedCode)?.current, 'page');
+                for (const option of state.options) {
+                    assert.equal(await page.getByRole('link', {name: option.label, exact: true}).count(), 1,
+                        `Decorative marker must not change the accessible name for ${option.code}.`);
+                }
+                const titlePositions = state.options.map((option) => option.left);
+                assert(Math.max(...titlePositions) - Math.min(...titlePositions) <= 1,
+                    'Text and Unicode icon choices keep one aligned title column.');
+            };
+            await assertChoiceContract('zh');
             for (const [code, pathname] of [['en', '/language/'], ['zh-tw', '/zh-tw/language/'], ['zh', '/zh/language/']]) {
                 const choice = page.locator('[data-language-choice="' + code + '"]');
                 assert.equal(await choice.getAttribute('href'), pathname);
@@ -99,6 +132,7 @@ export const systemPageScenarios = [
                 assert.equal(await page.evaluate(() => localStorage.getItem('preferred_lang')), code);
                 assert.equal(await page.locator('[data-language-choice="' + code + '"]').getAttribute('aria-current'), 'page');
                 assert.equal(await page.evaluate(() => history.length), historyLength, 'Choosing a language replaces the current settings entry.');
+                await assertChoiceContract(code);
             }
             await page.reload();
             await page.locator('[data-page-action="back"]').click();
@@ -136,6 +170,22 @@ export const systemPageScenarios = [
             await gotoAndWait(page, baseUrl + '/zh/all/?sort=name-asc');
             await page.locator('[data-root-href="/zh/appearance/"]').click();
             await page.waitForURL(baseUrl + '/zh/appearance/');
+            const choiceContract = await page.evaluate(() => {
+                const list = document.querySelector('.system-page [data-list-view]');
+                return {
+                    view: list?.dataset.listView || '',
+                    sortable: Boolean(list?.hasAttribute('data-sortable') || list?.querySelector('[data-sortable]')),
+                    options: [...(list?.querySelectorAll('[data-theme-choice]') || [])].map((option) => ({
+                        choice: option.dataset.themeChoice,
+                        pressed: option.getAttribute('aria-pressed'),
+                        tagName: option.tagName
+                    }))
+                };
+            });
+            assert.equal(choiceContract.view, 'choice');
+            assert.equal(choiceContract.sortable, false);
+            assert.deepEqual(choiceContract.options.map((option) => option.choice), ['auto', 'light', 'dark']);
+            assert(choiceContract.options.every((option) => option.tagName === 'BUTTON' && option.pressed !== null));
             await page.locator(`${system} [data-theme-choice="dark"]`).click();
             await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
             assert.equal(await page.evaluate(() => localStorage.getItem('theme-preference')), 'dark');

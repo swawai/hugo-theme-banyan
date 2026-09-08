@@ -10,13 +10,15 @@
 <article class="article system-page" data-system-page>
   <div class="collection-list collection-list--index" data-language-settings>
     <h1 class="collection-list-header">{{ .Title }}</h1>
-    <div class="grid-list grid-list--single collection-list--grid">
-      {{ range (partial "preferences/language-context.html" .).options }}
-        {{ partial "grid-title-cell.html" (dict "ctx" $ "href" .href "title" .name "text" .name "icon" "language"
-          "isCurrent" (eq .code $.Language.Lang) "linkSlot" "nav"
-          "linkDataAttrs" (dict "language-choice" .code "has-trans" (printf "%v" .translated))) }}
-      {{ end }}
-    </div>
+    {{- $items := slice -}}
+    {{- range partial "preferences/language-choice-options.html" . -}}
+      {{- $items = $items | append (dict
+        "control" "link" "href" .href "title" .name "text" .name
+        "icon" "language" "iconText" .icon_text "isCurrent" (eq .code $.Language.Lang)
+        "linkSlot" "nav" "dataAttrs" (dict "language-choice" .code "has-trans" (printf "%v" .translated))
+      ) -}}
+    {{- end -}}
+    {{ partial "choice/render.html" (dict "page" . "items" $items) }}
     {{ partial "system/return.html" . }}
   </div>
 </article>
