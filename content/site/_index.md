@@ -1,7 +1,7 @@
 ---
 title: System - Site
 description: Site information, release notes, and contact pages.
-layout: site-page
+layout: article-list
 list: directory
 weight: 100
 outputs:

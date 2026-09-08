@@ -15,12 +15,12 @@
           "node" . "href" .RelPermalink "text" .LinkTitle "title" .Title "kind" .Kind
         ) -}}
       {{- end -}}
-    {{- else if in (slice "article-list" "site-page") $owner.Layout -}}
+    {{- else if eq $owner.Layout "article-list" -}}
       {{- $entries = partial "collection/rows.html" (dict "page" $owner) -}}
     {{- else -}}
       {{- $entries = partial "section/direct-children.html" (dict "ctx" $owner) -}}
     {{- end -}}
-    {{- if not (in (slice "article-list" "site-page") $owner.Layout) -}}
+    {{- if ne $owner.Layout "article-list" -}}
       {{- $iconDefaults := partial "list/icon-defaults.html" (dict "page" $owner) -}}
       {{- $decorated := slice -}}
       {{- range $entry := $entries -}}

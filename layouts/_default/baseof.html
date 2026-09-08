@@ -381,6 +381,12 @@
             {{- end -}}
             <main id="main" class="slot slot-main" data-slot="main" tabindex="-1">
                 {{- block "main" . -}}{{- end -}}
+                {{- if .Params.site_update -}}
+                <div class="system-page collection-list collection-list--index" data-system-page>
+                    {{- partial "system/site-update.html" . -}}
+                    {{- partial "system/return.html" . -}}
+                </div>
+                {{- end -}}
             </main>
             {{- with index $slotSources "meta" -}}
             <div class="slot slot-meta" data-slot="meta">

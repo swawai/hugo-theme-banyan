@@ -1,7 +1,7 @@
 {{- /* Presentation inherits; membership declarations belong only to their host. */ -}}
 {{- $page := .page -}}
 {{- $view := "" -}}
-{{- if in (slice "article-list" "site-page") $page.Layout -}}
+{{- if eq $page.Layout "article-list" -}}
   {{- $view = partial "list/view.html" (dict "page" $page) -}}
   {{- if not (in (slice "directory" "all" "products") $view) -}}
     {{- errorf "List page %s needs list: directory, all or products (own declaration or nearest ancestor)." $page.RelPermalink -}}

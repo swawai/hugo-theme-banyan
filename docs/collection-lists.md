@@ -29,7 +29,7 @@ list: products
 
 `aggregate` 只用于汇总入口，指向一个 section 或 taxonomy 根。它不从父目录继承。普通目录和分类页无需写 `aggregate`，也不写 `list_source` 或 `product_filter`。主题默认页面的站点专用修改可通过项目同路径文件覆盖；三种语言各自保留完整 front matter。
 
-站点目录保留 `layout: site-page`，用于在列表之后承载版本检查和返回操作；子项完整使用共享 `collection/render.html`，由 `list: directory` 指定名称、日期、数量／大小列和排序。它和 `article-list` 一样注册集合来源，主表及进入子页后的路径列共用成员、图标与排序，不再单独按 `weight` 渲染站点列表。更新操作不属于内容子项，不参与表格排序。
+站点目录与 `/d/` 一样声明 `layout: article-list`、`list: directory`，完整复用相同模板、集合来源、排序及路径列。`site-page.html` 已删除，列表及导航中不再另行识别站点布局。已有 `site_update` 声明负责附加版本检查和返回操作：全站骨架在 `main` 内容之后装配操作区，按需加载样式，并为该根入口标记更新状态。这些操作不属于内容子项，不进入集合或参与排序。
 
 站点根与既有子页通过 `slots.breadcrumb: true` 启用路径列，目录的 `cascade` 同时为未声明 `slots` 的新子页提供默认值。已有子页自行声明了 `slots`，需在原 map 内加入 `breadcrumb: true`，不能期待父级 cascade 自动补进该 map。未填写发布日期的目录子项显示“—”，不把 Hugo 的零时间显示为公元 1 年。
 

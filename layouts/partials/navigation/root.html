@@ -10,7 +10,7 @@
     {{- range $roots -}}
       {{- $attrs := dict "root-href" .RelPermalink -}}
       {{- $icon := partial "list/item-icon.html" (dict "page" . "defaults" $iconDefaults "kind" "folder") -}}
-      {{- if eq .Layout "site-page" -}}
+      {{- if .Params.site_update -}}
         {{- $attrs = merge $attrs (dict "site-update-link" "true") -}}
       {{- end -}}
       {{- partial "grid-title-cell.html" (dict

@@ -38,6 +38,24 @@ export const systemPageScenarios = [
                 assert.equal(await page.locator(`${grid} [data-site-update-action]`).count(), 0, 'Update actions stay outside sortable content.');
                 assert.equal(await page.locator('[data-site-update-action="check"]').count(), 1);
                 assert.equal(await page.locator('[data-page-action="back"]').count(), 1);
+                assert.equal(await page.locator('.slot-main > article > [data-sortable="true"]').count(), 1, 'The ordinary article-list renders the directory.');
+                assert.equal(await page.locator('.slot-main > article [data-site-update-panel]').count(), 0, 'Site tools are attached outside the list layout.');
+
+                const assertArticle = async (name, expectedPaths) => {
+                    assert.equal(await page.locator(`[data-root-href="${prefix}/site/"].is-current`).count(), 1);
+                    assert.deepEqual(await rowPaths('.slot-breadcrumb .collection-item-link'), expectedPaths);
+                    assert.equal(await page.locator(`.slot-breadcrumb .is-current[href*="/${name}/"]`).count(), 1);
+                };
+                const defaultPaths = await rowPaths(links);
+                for (const name of ['wechat', 'about', 'changelog']) {
+                    await page.locator(`${links}[href*="/${name}/"]`).click();
+                    await waitForBreadcrumbSettled(page);
+                    await assertArticle(name, defaultPaths);
+                    if (prefix === '/zh') await page.screenshot({ path: path.join(artifactDir, `site-${name}-default.png`) });
+                    await page.goBack();
+                    await page.waitForURL(`${baseUrl}${prefix}/site/`);
+                    await waitForBreadcrumbSettled(page);
+                }
 
                 for (const [field, firstOrder] of [['count', 'desc'], ['date', 'desc'], ['name', 'asc']]) {
                     await page.locator(`${grid} [data-sort-field="${field}"]`).click();
@@ -53,30 +71,29 @@ export const systemPageScenarios = [
                 assert.deepEqual(await rowPaths(links), sortedPaths);
                 await page.screenshot({ path: path.join(artifactDir, `site-${prefix.slice(1) || 'en'}.png`) });
 
-                await page.locator(`${links}[href*="/about/"]`).click();
-                await waitForBreadcrumbSettled(page);
-                assert.equal(new URL(page.url()).searchParams.get('from'), 'site');
-                const articleUrl = page.url();
-                const assertArticle = async () => {
-                    assert.equal(await page.locator(`[data-root-href="${prefix}/site/"].is-current`).count(), 1);
-                    assert.deepEqual(await rowPaths('.slot-breadcrumb .collection-item-link'), sortedPaths);
-                    assert.equal(await page.locator(`.slot-breadcrumb .is-current[href*="/about/"]`).count(), 1);
-                };
-                await assertArticle();
-                await page.reload();
-                await waitForBreadcrumbSettled(page);
-                await assertArticle();
-                await page.goBack();
-                await page.waitForURL(sortedUrl);
-                await waitForBreadcrumbSettled(page);
-                assert.deepEqual(await rowPaths(links), sortedPaths);
-                await page.goForward();
-                await page.waitForURL(articleUrl);
-                await waitForBreadcrumbSettled(page);
-                await assertArticle();
-                if (prefix === '/zh') await page.screenshot({ path: path.join(artifactDir, 'site-about.png') });
+                for (const name of ['wechat', 'about', 'changelog']) {
+                    await page.locator(`${links}[href*="/${name}/"]`).click();
+                    await waitForBreadcrumbSettled(page);
+                    assert.equal(new URL(page.url()).searchParams.get('from'), 'site');
+                    const articleUrl = page.url();
+                    await assertArticle(name, sortedPaths);
+                    await page.reload();
+                    await waitForBreadcrumbSettled(page);
+                    await assertArticle(name, sortedPaths);
+                    await page.goBack();
+                    await page.waitForURL(sortedUrl);
+                    await waitForBreadcrumbSettled(page);
+                    assert.deepEqual(await rowPaths(links), sortedPaths);
+                    await page.goForward();
+                    await page.waitForURL(articleUrl);
+                    await waitForBreadcrumbSettled(page);
+                    await assertArticle(name, sortedPaths);
+                    await page.goBack();
+                    await page.waitForURL(sortedUrl);
+                    await waitForBreadcrumbSettled(page);
+                }
             }
-            return { message: 'Three languages share directory geometry, all column sorts, real children, article selection and reload/back/forward order; update and back controls remain separate.' };
+            return { message: 'The ordinary list layout and every site child retain the directory column in three languages, with default/sorted entry, selection, reload/back/forward; site tools stay outside the list.' };
         }
     },
     {

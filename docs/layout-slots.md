@@ -60,6 +60,8 @@ slots:
 
 语言、外观页面用顶层 `list: choice` 声明选择行，并分别由 `language-page`、`appearance-page` 布局提供选项，由语言、外观脚本处理操作；我的等系统页无需列表声明。它们都无需为了显示第一列设置 `slots`。布局、集合 provider、产品属性及页脚内容仍是各自独立的配置。
 
+站点目录使用与普通目录相同的 `layout: article-list`、`list: directory`，没有专用的 `site-page` 布局。其 `site_update` 声明由全站骨架用于附加版本检查、返回操作及入口更新标记，与列表的成员、排序和路径导航分开处理。
+
 保留的 fragment 按内容语义命名，例如 `home-footer-shortcuts` 和 `site-meta`；不要用最终容器位置命名。`site-meta` 提供站点品牌与 SEO 元数据，`slots.meta` 则控制当前页面的日期、taxonomy 等元信息，两者职责不同。
 
 ## 与导航状态和布局的边界
