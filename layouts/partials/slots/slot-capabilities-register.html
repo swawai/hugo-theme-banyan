@@ -1,7 +1,0 @@
-{{- $ctx := .ctx -}}
-{{- if not $ctx -}}{{- return -}}{{- end -}}
-{{- $slot := lower (trim (printf "%v" (.slot | default "")) " \r\n\t") -}}
-{{- $sourceRef := trim (printf "%v" (.source_ref | default "")) " \r\n\t" -}}
-{{- if and (eq $slot "footer") (eq $sourceRef "/fragments/home-footer-shortcuts") -}}
-  {{- $ctx.Scratch.Set "footer_variant" "shortcuts" -}}
-{{- end -}}

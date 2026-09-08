@@ -68,7 +68,6 @@ Keep as site-owned:
 - `content/site/about/index.*.md` (moved under `site/` on 2026-09-07)
 - `content/d/products/*`
 - `content/fragments/site-meta/*`
-- `content/fragments/home-footer-shortcuts/*`
 - `assets/site/brand/*`
 - `assets/site/pwa/*`
 - `static/favicon.*`

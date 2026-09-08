@@ -32,7 +32,7 @@ Customize site-level SEO descriptions by overriding
 `content/fragments/site-meta/index.<lang>.md` in your site root.
 Keep each language's social locale in `languages.<lang>.params.locale`; Banyan
 uses it for Open Graph locale tags.
-An optional `languages.<lang>.params.icon_text` supplies the short marker shown
+An optional `languages.<lang>.params.icon = { text = "EN" }` supplies the short marker shown
 by the language choice list; when absent, Banyan uses its language icon.
 
 If you need to customize cache routes, SW cache behavior, or deployment metadata,

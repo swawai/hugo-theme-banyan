@@ -9,20 +9,19 @@
     {{- $control := printf "%v" (.control | default "") -}}
     {{- $text := .text | default "" -}}
     {{- $icon := .icon | default "file" -}}
-    {{- $iconText := .iconText | default "" -}}
     {{- $dataAttrs := .dataAttrs | default dict -}}
     {{- $isCurrent := eq (.isCurrent | default false) true -}}
     {{- if eq $control "link" -}}
       {{- partial "grid-title-cell.html" (dict
         "ctx" $page "href" .href "title" (.title | default $text) "text" $text
-        "icon" $icon "iconText" $iconText "isCurrent" $isCurrent
+        "icon" $icon "isCurrent" $isCurrent
         "linkSlot" (.linkSlot | default "") "linkDataAttrs" $dataAttrs
       ) -}}
     {{- else if eq $control "button" -}}
       {{- $class := "collection-item-link" -}}
       {{- if $isCurrent }}{{- $class = printf "%s is-current" $class -}}{{- end -}}
       <span class="cell-title"><button type="button" class="{{ $class }}" aria-pressed="{{ cond $isCurrent "true" "false" }}"{{ with .title }} title="{{ . }}"{{ end }}{{ with .label }} aria-label="{{ . }}"{{ end }}{{ with $dataAttrs }}{{ range $name, $value := . }} {{ printf "data-%s=%q" $name $value | safeHTMLAttr }}{{ end }}{{ end }}>
-        {{- partial "collection/item-content.html" (dict "text" $text "icon" $icon "iconText" $iconText) -}}
+        {{- partial "collection/item-content.html" (dict "text" $text "icon" $icon) -}}
       </button></span>
     {{- else -}}
       {{- errorf "Choice page %s has an item with unsupported control %q; use link or button." $page.RelPermalink $control -}}

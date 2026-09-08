@@ -1,4 +1,8 @@
-{{- $name := .name -}}
+{{- $value := partial "icon/resolve.html" (dict "value" .name) -}}
+{{- if reflect.IsMap $value -}}
+<span class="icon icon--text{{ with .class }} {{ . }}{{ end }}"{{ if .label }} role="img" aria-label="{{ .label }}"{{ else }} aria-hidden="true"{{ end }}>{{ $value.text }}</span>
+{{- else -}}
+{{- $name := $value -}}
 {{- $iconData := index site.Data.icons $name -}}
 {{- if not $iconData -}}
   {{- errorf "Build failed: undefined icon %q." $name -}}
@@ -12,3 +16,4 @@
 <svg class="{{ delimit $classes " " }}"{{ if $label }} role="img" aria-label="{{ $label }}"{{ else }} aria-hidden="true"{{ end }} focusable="false">
   <use href="#icon-{{ $name }}"></use>
 </svg>
+{{- end -}}

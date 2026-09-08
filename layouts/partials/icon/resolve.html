@@ -1,0 +1,23 @@
+{{- /* A named SVG or { text: "…" }; preserve character case and escape at rendering. */ -}}
+{{- $value := .value -}}
+{{- $context := .context | default "icon" -}}
+{{- $resolved := "" -}}
+{{- if reflect.IsMap $value -}}
+  {{- if or (ne (len $value) 1) (not (isset $value "text")) -}}
+    {{- errorf "Build failed: %s must be an SVG name or an object containing only text." $context -}}
+  {{- else if ne (printf "%T" $value.text) "string" -}}
+    {{- errorf "Build failed: %s.text must be a non-empty string." $context -}}
+  {{- else -}}
+    {{- $text := trim $value.text " \r\n\t" -}}
+    {{- if not $text -}}{{- errorf "Build failed: %s.text must be a non-empty string." $context -}}{{- end -}}
+    {{- $resolved = dict "text" $text -}}
+  {{- end -}}
+{{- else if eq (printf "%T" $value) "string" -}}
+  {{- $resolved = lower (trim $value " \r\n\t") -}}
+  {{- if and $resolved (not (index site.Data.icons $resolved)) -}}
+    {{- errorf "Build failed: %s declares undefined icon %q; define it in data/icons.toml." $context $resolved -}}
+  {{- end -}}
+{{- else -}}
+  {{- errorf "Build failed: %s must be an SVG name or an object containing only text." $context -}}
+{{- end -}}
+{{- return $resolved -}}

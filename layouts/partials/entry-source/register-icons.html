@@ -9,13 +9,13 @@
     {{- $items = $items | append (.item | default dict) -}}
   {{- end -}}
   {{- range $payloads -}}
-    {{- with .c.icon -}}{{- $page.Store.SetInMap "used_icons" . true -}}{{- end -}}
+    {{- with .c.icon -}}{{- if not (reflect.IsMap .) -}}{{- $page.Store.SetInMap "used_icons" . true -}}{{- end -}}{{- end -}}
     {{- $fields := .f | default slice -}}
     {{- $values := .rv | default slice -}}
     {{- range $column, $field := $fields -}}
       {{- if eq $field "icon" -}}
         {{- range $offset, $value := $values -}}
-          {{- if and (eq (mod $offset (len $fields)) $column) $value -}}
+          {{- if and (eq (mod $offset (len $fields)) $column) $value (not (reflect.IsMap $value)) -}}
             {{- $page.Store.SetInMap "used_icons" $value true -}}
           {{- end -}}
         {{- end -}}
@@ -23,9 +23,9 @@
     {{- end -}}
   {{- end -}}
   {{- range $items -}}
-    {{- with .icon -}}{{- $page.Store.SetInMap "used_icons" . true -}}{{- end -}}
+    {{- with .icon -}}{{- if not (reflect.IsMap .) -}}{{- $page.Store.SetInMap "used_icons" . true -}}{{- end -}}{{- end -}}
     {{- range .menu | default slice -}}
-      {{- with .icon -}}{{- $page.Store.SetInMap "used_icons" . true -}}{{- end -}}
+      {{- with .icon -}}{{- if not (reflect.IsMap .) -}}{{- $page.Store.SetInMap "used_icons" . true -}}{{- end -}}{{- end -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}

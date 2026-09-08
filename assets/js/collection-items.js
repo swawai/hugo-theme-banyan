@@ -63,7 +63,7 @@ export function decodeItemsPayload(payload) {
         for (let fieldIndex = 0; fieldIndex < fields.length; fieldIndex += 1) {
             const field = fields[fieldIndex];
             const rawValue = rowVector[offset + fieldIndex];
-            row[field] = typeof rawValue === 'string' ? rawValue : `${rawValue ?? ''}`;
+            row[field] = field === 'icon' ? rawValue : (typeof rawValue === 'string' ? rawValue : `${rawValue ?? ''}`);
         }
         rows.push(row);
     }

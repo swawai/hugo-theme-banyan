@@ -5,8 +5,9 @@
 {{- range $candidate := $candidates -}}
   {{- range $kind := slice "folder" "file" -}}
     {{- if not (isset $defaults $kind) -}}
-      {{- with index $candidate.Params (printf "list_icon_%s" $kind) -}}
-        {{- $icon := lower (trim (printf "%v" .) " \r\n\t") -}}
+      {{- $field := printf "list_icon_%s" $kind -}}
+      {{- if isset $candidate.Params $field -}}
+        {{- $icon := partial "icon/resolve.html" (dict "value" (index $candidate.Params $field)) -}}
         {{- if $icon -}}{{- $defaults = merge $defaults (dict $kind $icon) -}}{{- end -}}
       {{- end -}}
     {{- end -}}

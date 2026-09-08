@@ -1,11 +1,6 @@
 {{- $text := .text | default "" -}}
 {{- $icon := .icon | default "file" -}}
-{{- $iconText := .iconText | default "" -}}
-<span class="collection-item-icon{{ if $iconText }} collection-item-icon--text{{ end }}"{{ if $iconText }} aria-hidden="true"{{ end }}>
-  {{- if $iconText -}}
-    {{- $iconText -}}
-  {{- else -}}
-    {{- partial "icon" (dict "name" $icon "class" "collection-item-icon-svg") -}}
-  {{- end -}}
+<span class="collection-item-icon{{ if reflect.IsMap $icon }} collection-item-icon--text{{ end }}"{{ if reflect.IsMap $icon }} aria-hidden="true"{{ end }}>
+  {{- partial "icon" (dict "name" $icon "class" (cond (reflect.IsMap $icon) "" "collection-item-icon-svg")) -}}
 </span>
 <span class="collection-item-title">{{ $text }}</span>

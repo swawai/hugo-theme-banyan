@@ -29,9 +29,12 @@ export const systemPageScenarios = [
             for (const prefix of ['', '/zh', '/zh-tw']) {
                 await gotoAndWait(page, `${baseUrl}${prefix}/`);
                 const feedHref = await page.locator('head link[rel="alternate"][type="application/rss+xml"]').getAttribute('href');
-                const brand = await page.locator('.footer-shortcuts .footer-shortcut-text').textContent();
-                assert.equal(await page.locator('.footer-shortcuts a').count(), 1, 'The homepage footer retains only its brand link.');
-                assert.equal(await page.locator('.footer-shortcuts a').getAttribute('href'), `${prefix}/`);
+                const homeEntry = `[data-root-href="${prefix}/"]`;
+                const brand = await page.locator(`${homeEntry} .collection-item-title`).textContent();
+                assert.equal(await page.locator('footer, .slot-footer').count(), 0);
+                assert.equal(await page.locator(`${homeEntry}.is-current`).count(), 1);
+                assert.equal(await page.locator(`${homeEntry} .icon--text`).textContent(), '©');
+                assert.equal(await page.locator(homeEntry).getAttribute('href'), `${prefix}/`);
                 await gotoAndWait(page, `${baseUrl}${prefix}/d/`);
                 const directoryGeometry = await geometry();
                 await gotoAndWait(page, `${baseUrl}${prefix}/site/`);
@@ -46,9 +49,10 @@ export const systemPageScenarios = [
                 assert.equal(await page.locator('[data-site-update-link]').count(), 0, 'Root navigation does not specialize the site entry.');
                 assert.equal(await page.locator('.slot-main > article > [data-sortable="true"]').count(), 1, 'The ordinary article-list renders the directory.');
                 assert.equal(await page.locator('.slot-main > article [data-site-update-panel]').count(), 0, 'Site tools are attached outside the list layout.');
-                assert.equal(await page.locator('.footer-shortcuts a').count(), 1, 'WeChat, RSS, GitHub and ICP no longer appear in the directory footer.');
-                assert.equal(await page.locator('.footer-shortcuts .footer-shortcut-text').textContent(), brand);
-                assert.equal(await page.locator('.footer-shortcuts a').getAttribute('href'), `${prefix}/`);
+                assert.equal(await page.locator('footer, .slot-footer').count(), 0, 'The homepage entry replaces the footer.');
+                assert.equal(await page.locator(`${homeEntry} .collection-item-title`).textContent(), brand);
+                assert.equal(await page.locator(`${homeEntry}.is-current`).count(), 0);
+                assert.equal(await page.locator(homeEntry).getAttribute('href'), `${prefix}/`);
                 for (const [name, icon] of [['rss', 'rss'], ['github', 'github'], ['icp', 'info']]) {
                     assert.equal(await page.locator(`${links}[href*="/site/${name}/"] use`).getAttribute('href'), `#icon-${icon}`);
                 }
@@ -123,7 +127,7 @@ export const systemPageScenarios = [
                     await waitForBreadcrumbSettled(page);
                 }
             }
-            return { message: 'Seven real site children retain their columns and selection in three languages across sort/reload/history; only the brand remains in the footer, information links stay in their pages, and RSS resolves to the actual language feed.' };
+            return { message: 'Seven real site children retain their columns and selection in three languages across sort/reload/history; the homepage is an ordinary root entry without a footer, information links stay in their pages, and RSS resolves to the actual language feed.' };
         }
     },
     {
@@ -140,7 +144,7 @@ export const systemPageScenarios = [
                     href: new URL(link.href).pathname + new URL(link.href).search + new URL(link.href).hash,
                     root: link.dataset.rootHref
                 })));
-                assert.equal(links.length, 10);
+                assert.equal(links.length, 11);
                 assert(links.every(link => link.href === link.root), 'All root entries retain their ordinary page URLs.');
             };
             await gotoAndWait(page, baseUrl + '/zh/all/');

@@ -4,19 +4,10 @@
     {{- $used = merge $used (dict $name true) -}}
   {{- end -}}
 {{- end -}}
-{{- /* slot fragment 中的 shortcode icon 会记到 fragment 自己的 page.Store；这里补扫主页面与各 slot 页面的最终 HTML。 */ -}}
+{{- /* Include shortcode SVG references in the page's rendered content. */ -}}
 {{- $contents := slice -}}
 {{- with .Content -}}
   {{- $contents = $contents | append . -}}
-{{- end -}}
-{{- with .Scratch.Get "slot_sources" -}}
-  {{- range $slot, $source := . -}}
-    {{- if not $source -}}{{- continue -}}{{- end -}}
-    {{- if or (eq $slot "meta") (eq $slot "breadcrumb") -}}{{- continue -}}{{- end -}}
-    {{- with $source.Content -}}
-      {{- $contents = $contents | append . -}}
-    {{- end -}}
-  {{- end -}}
 {{- end -}}
 {{- range $content := $contents -}}
   {{- $content = replaceRE `(?s)<!--.*?-->` "" $content -}}

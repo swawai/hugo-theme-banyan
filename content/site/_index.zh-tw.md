@@ -8,7 +8,6 @@ outputs:
   - HTML
 slots:
   breadcrumb: true
-  footer: /fragments/home-footer-shortcuts
 cascade:
   slots:
     breadcrumb: true

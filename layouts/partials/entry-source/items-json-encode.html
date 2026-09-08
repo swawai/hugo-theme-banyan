@@ -22,7 +22,7 @@
   {{- range $field := $fields -}}
     {{- $value := "" -}}
     {{- with index $row $field -}}
-      {{- $value = printf "%v" . -}}
+      {{- if eq $field "icon" -}}{{- $value = . -}}{{- else -}}{{- $value = printf "%v" . -}}{{- end -}}
     {{- end -}}
     {{- $rowVector = $rowVector | append $value -}}
   {{- end -}}

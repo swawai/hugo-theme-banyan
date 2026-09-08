@@ -240,7 +240,7 @@ export const canvasScenarios = [
             }
             const roots = await readCanvas(page);
             assert.equal(roots.canvasOffsetX, 0, 'Dragging right on prose and the adjacent list reveals the canvas start.');
-            assert.ok(roots.nav.x >= 0 && roots.nav.right <= 390 && roots.rootCount === 10);
+            assert.ok(roots.nav.x >= 0 && roots.nav.right <= 390 && roots.rootCount === 11);
             await page.screenshot({ path: path.join(artifactDir, 'mobile-root-entries.png') });
 
             await swipe(210, -180);
@@ -293,7 +293,7 @@ export const canvasScenarios = [
                     await nextPaint(page);
                     const state = await readCanvas(page);
                     const detail = JSON.stringify({ viewport, name, state });
-                    assert.equal(state.rootCount, 10, detail);
+                    assert.equal(state.rootCount, 11, detail);
                     assert.equal(state.obsoleteControls, 0, detail);
                     assert.equal(state.plainColumns, true, detail);
                     assert.ok(Math.abs(state.nav.width - 225) <= 1, detail);
@@ -401,24 +401,24 @@ export const canvasScenarios = [
             assert.ok(main.x >= -1 && main.x < 390 && main.y >= -1 && main.y < 900,
                 'Skip to content must bring the actual main column into view.');
 
-            // Site pages intentionally include the footer; ordinary articles do not.
+            // Keyboard traversal leaves the complete root list for the next column.
             await gotoAndWait(page, `${baseUrl}/zh/site/`);
             const order = await page.evaluate(() => {
                 const rail = document.querySelector('.page-rail');
-                const footer = rail.querySelector('.slot-footer');
+                const nav = rail.querySelector('[data-root-navigation]');
                 const nextColumn = document.querySelector('.slot-breadcrumb') || document.querySelector('#main');
-                const footerLinks = [...footer.querySelectorAll('a[href], button:not([disabled])')];
-                footerLinks.at(-1).focus();
+                const links = [...nav.querySelectorAll('a[href]')];
+                links.at(-1).focus();
                 return {
-                    count: footerLinks.length,
-                    before: !!(footer.compareDocumentPosition(nextColumn) & Node.DOCUMENT_POSITION_FOLLOWING),
-                    focused: footer.contains(document.activeElement)
+                    count: links.length,
+                    before: !!(nav.compareDocumentPosition(nextColumn) & Node.DOCUMENT_POSITION_FOLLOWING),
+                    focused: nav.contains(document.activeElement)
                 };
             });
-            assert.ok(order.count && order.before && order.focused, 'Footer stays in the first column in both DOM and visual order.');
+            assert.ok(order.count && order.before && order.focused, 'Root navigation stays in the first column in both DOM and visual order.');
             await page.keyboard.press('Tab');
             assert.equal(await page.evaluate(() => !!document.activeElement.closest('.slot-breadcrumb, #main')), true,
-                'Tab after the final footer link proceeds to the next visible column.');
+                'Tab after the final root link proceeds to the next visible column.');
             return { headingId, heading, order };
         }
     },

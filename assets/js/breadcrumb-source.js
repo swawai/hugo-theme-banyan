@@ -1,5 +1,6 @@
 import { normalizeBreadcrumbCollectionSource } from './breadcrumb-items.js';
 import { normalizeFromPath, normalizePathname } from './nav-state.js';
+import { normalizeIcon } from './icon-value.js';
 
 function normalizeItemsPayload(payload) {
     if (!payload || typeof payload !== 'object') {
@@ -41,7 +42,9 @@ function normalizeLinkItem(item) {
     if (typeof item.highlighted === 'boolean') {
         normalized.highlighted = item.highlighted;
     }
-    for (const field of ['kind', 'icon', 'collection_href', 'collection_label']) {
+    const icon = normalizeIcon(item.icon);
+    if (icon) normalized.icon = icon;
+    for (const field of ['kind', 'collection_href', 'collection_label']) {
         if (typeof item[field] === 'string' && item[field].trim() !== '') {
             normalized[field] = item[field].trim();
         }

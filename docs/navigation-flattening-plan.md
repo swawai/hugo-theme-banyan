@@ -6,7 +6,7 @@
 
 第一列复用第二、三列的 `grid-title-cell.html`、`collection/item-content.html` 和 `collection-list.css`，沿用行结构、图标、间距、悬停及 `.is-current` 选中态；适配容器与断点限制。统一入口列表保持完整，来源变化只更新选中项，避免原根菜单渲染函数把它替换成局部菜单。
 
-目标入口：目录、阅读目的、标签、全部文章、产品－分类、产品－全部、系统－语言、系统－外观、系统－我的、系统－站点。
+目标入口：首页（© 2026 Swaw）、目录、阅读目的、标签、全部文章、产品－分类、产品－全部、系统－语言、系统－外观、系统－我的、系统－站点。
 
 实施顺序：
 
@@ -20,6 +20,10 @@
 每步保持可运行并独立提交，用户确认后再进入下一步。复用现有回归，验证多语言、进入路径、排序、前进后退和系统操作；补充新入口及各宽度下的视觉核对。主题能力在本目录所属主题实现，业务内容在项目根目录同步；使用根目录内容测试，忽略 `exampleSite`。
 
 当前行动安排（2026-09-08，以下规则优先于后面的历史记录）：
+
+本步验收记录：最终生产构建 `temp_workspace/public/2609082014-home-entry-reviewed` 的 141 页 HTML 审计和导航检查通过；集合契约 `temp_workspace/collection-contract-GLRG0o` 覆盖三语言／三种列表、字符继承与 SVG 覆盖、纯文本转义、来源 JSON、静态路径列、刷新和历史，以及非法声明。完整 38 项浏览器回归先通过 37 项，发现语言图标槽缺少原有装饰性辅助标记；补齐后包含该失败项的 4 项相关回归全部通过（`temp_workspace/regression/260908201303-browser/report.json`），另有 3 项安全检查通过（`temp_workspace/regression/260908201304-browser-security/report.json`）。实际局域网预览验证 15 个路由、9 个禁用 JS 页面、切换语言后的返回，并核对浅色／深色／窄屏截图，产物在 `temp_workspace/unified-icons-live/`。等待用户复测后再推进后续设计。
+
+统一字符图标与首页入口：`icon`、`list_icon_folder`、`list_icon_file` 同时支持 SVG 名称和 `{ text: "©" }`。语言配置迁移到相同的 `params.icon`，移除专用 `icon_text`／`iconText` 数据通道；共享渲染与浏览器路径列保留字符大小写、按纯文本输出，SVG 继续按需打包。首页自身加入第一列，用根 `content/_index*.md` 的 `linkTitle`、`icon`、`weight` 排在第一项；首页只在访问自身时选中，其他入口及有效 `from` 保持原规则。移除重复列头首页链接、版权页脚、`slots.footer` 及其专用片段／模板／样式。首页动画布局与后续配色计划保持原范围。
 
 页脚信息收纳：共用页脚保留现有品牌主页链接及其年份，移除微信、RSS、GitHub、备案等快捷链接的配置与渲染分支。微信继续使用既有子页；RSS、GitHub、备案新增为站点目录的真实文章页，统一 `layout: article-page`、`build.list: local`、`slots.breadcrumb: true`，目录进入时先显示说明，再由用户点击正文链接。RSS 页使用 `rss-link` shortcode 读取当前语言首页真实 RSS 输出，未增加专用列表或跳转布局。主题提供 RSS 与默认 GitHub 页，Swaw GitHub 内容与备案信息在项目根目录；根项目 sitemap 声明同步加入三个公开信息页。现在站点目录共有七个子项，首页和站点页共享的页脚均只保留品牌行。
 

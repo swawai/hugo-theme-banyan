@@ -5,7 +5,6 @@
 {{- $defaultHref := "" -}}
 {{- with $selected -}}{{- $defaultHref = .RelPermalink -}}{{- end -}}
 <nav class="root-navigation collection-list--index" data-root-navigation data-default-root-href="{{ $defaultHref }}" aria-label="{{ $ctx.Site.Title }}">
-  <div class="collection-list-header"><a href="{{ $ctx.Site.Home.RelPermalink }}" data-prefetch-slot="nav">{{ $ctx.Site.Title }}</a></div>
   <div class="grid-list grid-list--single collection-list collection-list--grid">
     {{- range $roots -}}
       {{- $attrs := dict "root-href" .RelPermalink -}}

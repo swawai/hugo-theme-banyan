@@ -18,7 +18,6 @@ changelog:
   release_notes_fallback: "Curated release notes are not maintained here yet. For now, this page confirms the deployed build and the source information available at build time."
 slots:
   breadcrumb: true
-  footer: /fragments/home-footer-shortcuts
 build:
   list: local
 ---

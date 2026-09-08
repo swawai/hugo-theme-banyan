@@ -2,14 +2,9 @@
 {{- $slot := printf "%v" .slot -}}
 {{- $sources := $ctx.Scratch.Get "slot_sources" | default dict -}}
 {{- with index $sources $slot -}}
-  {{- $source := . -}}
   {{- if eq $slot "breadcrumb" -}}
     {{- partial "breadcrumb/entry.html" (dict "ctx" $ctx) -}}
   {{- else if eq $slot "meta" -}}
     {{- partial "article/meta.html" (dict "ctx" $ctx) -}}
-  {{- else if eq $slot "footer" -}}
-    {{- partial "fragments/footer.html" (dict "ctx" $ctx "source" $source) -}}
-  {{- else -}}
-    {{- $source.Content -}}
   {{- end -}}
 {{- end -}}

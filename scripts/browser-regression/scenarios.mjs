@@ -690,7 +690,7 @@ export const scenarios = [
         serviceWorkers: 'block',
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
-            const rootPaths = ['d', 'intent', 'tags', 'all', 'products', 'all-products',
+            const rootPaths = ['', 'd', 'intent', 'tags', 'all', 'products', 'all-products',
                 'language', 'appearance', 'my', 'site'];
             await gotoAndWait(page, `${baseUrl}/zh/all/`);
             const staticRoots = await page.evaluate(async (paths) => {
@@ -703,11 +703,13 @@ export const scenarios = [
                     results.push({
                         prefix,
                         count: navs.length,
-                        expected: paths.map((path) => prefix + path + '/'),
+                        expected: paths.map((path) => prefix + (path ? path + '/' : '')),
                         hrefs: [...doc.querySelectorAll('[data-root-href]')].map((link) => link.dataset.rootHref),
                         selected: [...doc.querySelectorAll('[data-root-href][aria-current="page"]')]
                             .map((link) => link.dataset.rootHref),
-                        home: nav?.querySelector('.collection-list-header a')?.getAttribute('href'),
+                        home: nav?.querySelector(`[data-root-href="${prefix}"]`)?.getAttribute('href'),
+                        homeIcon: nav?.querySelector(`[data-root-href="${prefix}"] .icon--text`)?.textContent,
+                        footerCount: doc.querySelectorAll('footer, .slot-footer').length,
                         settings: [...doc.querySelectorAll('[data-root-href][data-settings-link]')]
                             .map((link) => link.dataset.rootHref),
                         icons: Object.fromEntries(paths.map((path) => [
@@ -723,7 +725,7 @@ export const scenarios = [
             for (const state of staticRoots) {
                 if (state.count !== 1 || JSON.stringify(state.hrefs) !== JSON.stringify(state.expected)
                     || JSON.stringify(state.selected) !== JSON.stringify([state.prefix + 'all/'])
-                    || state.home !== state.prefix || state.rowContentCount !== 10 || state.oldControls !== 0
+                    || state.home !== state.prefix || state.rowContentCount !== 11 || state.homeIcon !== '©' || state.footerCount !== 0 || state.oldControls !== 0
                     || state.settings.length !== 0
                     || state.icons.language !== '#icon-language'
                     || state.icons.appearance !== '#icon-theme'
@@ -747,7 +749,7 @@ export const scenarios = [
                         footerTop: footer?.getClientRects().length ? footer.getBoundingClientRect().top : null
                     };
                 });
-                if (state.count !== 1 || state.links !== 10 || !state.visible
+                if (state.count !== 1 || state.links !== 11 || !state.visible
                     || (state.footerTop !== null && state.footerTop < state.navBottom - 1)) {
                     fail('The complete root list must remain available without overlapping the footer.', { viewport, ...state });
                 }
@@ -764,8 +766,8 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         timeoutMs: 60000,
         async run({ page, baseUrl }) {
-            const expectedRoots = ['d', 'intent', 'tags', 'all', 'products', 'all-products',
-                'language', 'appearance', 'my', 'site'].map((root) => `/zh/${root}/`);
+            const expectedRoots = ['', 'd', 'intent', 'tags', 'all', 'products', 'all-products',
+                'language', 'appearance', 'my', 'site'].map((root) => `/zh/${root ? root + '/' : ''}`);
             const assertSelection = async (expected) => {
                 await waitForBreadcrumbSettled(page);
                 const state = await page.evaluate(() => ({
@@ -793,7 +795,7 @@ export const scenarios = [
                 ['/zh/appearance/?return=%2Fzh%2Fall%2F', '/zh/appearance/'],
                 ['/zh/my/?return=%2Fzh%2Fall%2F', '/zh/my/'],
                 ['/zh/site/?return=%2Fzh%2Fall%2F', '/zh/site/'],
-                ['/zh/', '']
+                ['/zh/', '/zh/']
             ];
             for (const [target, root] of directCases) {
                 await gotoAndWait(page, baseUrl + target);
@@ -847,7 +849,7 @@ export const scenarios = [
                     selected: [...document.querySelectorAll('[data-root-href].is-current')].map((link) => link.dataset.rootHref),
                     rootCount: document.querySelectorAll('[data-root-href]').length
                 }));
-                if (firstPaint.domContentLoaded || firstPaint.rootCount !== 10
+                if (firstPaint.domContentLoaded || firstPaint.rootCount !== 11
                     || JSON.stringify(firstPaint.selected) !== JSON.stringify([expectedRoot])) {
                     fail('The complete root list and source selection must be correct before deferred scripts load.',
                         { target, expectedRoot, ...firstPaint });

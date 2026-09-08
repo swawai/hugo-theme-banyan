@@ -1,5 +1,5 @@
 {{- $ctx := .ctx | default . -}}
-{{- /* Navigation is built from real root pages. Slots only configure path, metadata and footer rendering. */ -}}
+{{- /* Navigation comes from real pages; slots enable path and article metadata. */ -}}
 {{- $slotConfig := dict -}}
 {{- with index $ctx.Params "slots" -}}
   {{- if not (reflect.IsMap .) -}}
@@ -7,7 +7,7 @@
   {{- end -}}
   {{- $slotConfig = . -}}
 {{- end -}}
-{{- $supportedSlots := slice "breadcrumb" "meta" "footer" -}}
+{{- $supportedSlots := slice "breadcrumb" "meta" -}}
 {{- $supportedLookup := dict -}}
 {{- range $slot := $supportedSlots -}}
   {{- $supportedLookup = merge $supportedLookup (dict $slot true) -}}
@@ -23,29 +23,11 @@
   {{- $sources = merge $sources (dict $slot false) -}}
   {{- if not (isset $slotConfig $slot) -}}{{- continue -}}{{- end -}}
   {{- $raw := index $slotConfig $slot -}}
-  {{- if eq $raw false -}}{{- continue -}}{{- end -}}
-  {{- if eq $slot "breadcrumb" -}}
-    {{- if eq $raw true -}}
-      {{- $sources = merge $sources (dict $slot true) -}}
-      {{- continue -}}
-    {{- end -}}
-    {{- errorf "Build failed: page %q only supports true/false for slots.breadcrumb." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}
+  {{- if ne (printf "%T" $raw) "bool" -}}
+    {{- errorf "Build failed: page %q only supports true/false for slots.%s." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) $slot -}}
+  {{- else -}}
+    {{- $sources = merge $sources (dict $slot $raw) -}}
   {{- end -}}
-  {{- if eq $slot "meta" -}}
-    {{- if eq $raw true -}}
-      {{- $sources = merge $sources (dict $slot true) -}}
-      {{- continue -}}
-    {{- end -}}
-    {{- errorf "Build failed: page %q only supports true/false for slots.meta." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}
-  {{- end -}}
-  {{- $src := trim (printf "%v" $raw) " \r\n\t" -}}
-  {{- if eq $src "" -}}{{- continue -}}{{- end -}}
-  {{- $source := $ctx.Site.GetPage $src -}}
-  {{- if not $source -}}
-    {{- errorf "Build failed: page %q cannot resolve slots.%s=%q to a page." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) $slot $src -}}
-  {{- end -}}
-  {{- $sources = merge $sources (dict $slot $source) -}}
-  {{- partial "slots/slot-capabilities-register.html" (dict "ctx" $ctx "slot" $slot "source_ref" $src) -}}
 {{- end -}}
 {{- $ctx.Scratch.Set "slot_sources" $sources -}}
 {{- return $sources -}}

@@ -5,11 +5,8 @@
       {{- if and (ne $field "icon") (isset $page.Params $field) (not $isList) -}}
         {{- errorf "Build failed: %s declares %s, which is only supported on list pages; articles may declare icon." $page.RelPermalink $field -}}
       {{- end -}}
-      {{- with index $page.Params $field -}}
-        {{- $name := lower (trim (printf "%v" .) " \r\n\t") -}}
-        {{- if and $name (not (index $page.Site.Data.icons $name)) -}}
-          {{- errorf "Build failed: %s declares undefined icon %q in %s; define it in data/icons.toml." $page.RelPermalink $name $field -}}
-        {{- end -}}
+      {{- if isset $page.Params $field -}}
+        {{- $validated := partial "icon/resolve.html" (dict "value" (index $page.Params $field) "context" (printf "%s %s" $page.RelPermalink $field)) -}}
       {{- end -}}
     {{- end -}}
   {{- end -}}

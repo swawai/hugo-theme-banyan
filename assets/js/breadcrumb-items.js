@@ -1,3 +1,4 @@
+import { normalizeIcon } from './icon-value.js';
 import {
     SORT_VARIANTS,
     applySortTokenToUrl,
@@ -289,9 +290,8 @@ export function buildBreadcrumbMenuItemsFromDecodedRows(decoded, collectionSourc
                 href,
                 current,
             };
-            if (typeof row.icon === 'string' && row.icon.trim() !== '') {
-                item.icon = row.icon.trim().toLowerCase();
-            }
+            const icon = normalizeIcon(row.icon);
+            if (icon) item.icon = icon;
             const kind = normalizeBreadcrumbItemKind(row.kind);
             if (kind) {
                 item.kind = kind;
@@ -384,9 +384,8 @@ export async function buildSelectedBreadcrumbItem(fragmentRoot, source, selected
         menu,
         collection_source: collectionSource,
     };
-    if (typeof selectedRow.icon === 'string' && selectedRow.icon.trim() !== '') {
-        item.icon = selectedRow.icon.trim().toLowerCase();
-    }
+    const icon = normalizeIcon(selectedRow.icon);
+    if (icon) item.icon = icon;
     if (normalizedSelectedTitle) {
         item.title = normalizedSelectedTitle;
     }

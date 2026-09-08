@@ -216,7 +216,6 @@
     {{- block "styles" . -}}{{ partial "head-styles.html" (dict "ctx" .) }}{{- end -}}
     {{- printf "<script>%s</script>" (index (index $inlineScripts "canvas_position") "content") | safeHTML -}}
     {{- block "head-extra" . -}}{{- end -}}
-    {{- partial "component-assets-head.html" . -}}
     {{- with site.Params.link_prefetch -}}
       {{- errorf "Build failed: params.link_prefetch has been split into params.prefetch_runtime and params.speculation_rules; update your site config instead of keeping the old unified stack." -}}
     {{- end -}}
@@ -357,17 +356,11 @@
         {{- $hasBreadcrumbTail := and $hasBreadcrumbCapability (gt (len (index $breadcrumbModel "tail_items")) 0) -}}
         {{- $pageShellClasses := slice "page-shell" "page-shell--has-rail" -}}
         {{- if $hasBreadcrumbTail -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-breadcrumb-tail" -}}{{- else -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--no-breadcrumb-tail" -}}{{- end -}}
-        {{- with index $slotSources "footer" -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-footer" -}}{{- else -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--no-footer" -}}{{- end -}}
         {{- with index $slotSources "meta" -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-meta" -}}{{- else -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--no-meta" -}}{{- end -}}
         <div class="{{ delimit $pageShellClasses " " }}">
             <div class="page-rail">
                 {{- partial "navigation/root.html" . -}}
                 {{- printf "<script>%s</script>" (index (index $inlineScripts "root_navigation") "content") | safeHTML -}}
-                {{- with index $slotSources "footer" -}}
-                <div class="slot slot-footer" data-slot="footer">
-                    {{- partial "slots/render.html" (dict "ctx" $ "slot" "footer") -}}
-                </div>
-                {{- end -}}
             </div>
             <div class="page-stage">
             {{- if $hasBreadcrumbTail -}}

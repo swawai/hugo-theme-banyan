@@ -4,6 +4,7 @@ import {
     getCollectionSortState,
     normalizeBreadcrumbCollectionSource,
 } from './breadcrumb-items.js';
+import { normalizeIcon } from './icon-value.js';
 
 const BREADCRUMB_PREFETCH_SLOT = 'crumb';
 
@@ -32,21 +33,30 @@ function applyBreadcrumbPrefetchSlot(element) {
 function buildCollectionItemContent(item) {
     const fragment = document.createDocumentFragment();
     const kind = normalizeBreadcrumbItemKind(item);
-    const iconName = typeof item?.icon === 'string' && item.icon.trim() !== ''
-        ? item.icon.trim().toLowerCase()
-        : (kind === 'page' ? 'file' : 'folder');
+    const value = normalizeIcon(item?.icon) || (kind === 'page' ? 'file' : 'folder');
     const icon = document.createElement('span');
     icon.className = 'collection-item-icon';
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.classList.add('icon', `icon-${iconName}`, 'collection-item-icon-svg');
-    svg.setAttribute('width', '1em');
-    svg.setAttribute('height', '1em');
-    svg.setAttribute('aria-hidden', 'true');
-    svg.setAttribute('focusable', 'false');
-    const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
-    use.setAttribute('href', `#icon-${iconName}`);
-    svg.appendChild(use);
-    icon.appendChild(svg);
+    if (typeof value === 'object') {
+        icon.classList.add('collection-item-icon--text');
+        icon.setAttribute('aria-hidden', 'true');
+        const text = document.createElement('span');
+        text.className = 'icon icon--text';
+        text.setAttribute('aria-hidden', 'true');
+        text.textContent = value.text;
+        icon.appendChild(text);
+    } else {
+        const iconName = value;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.classList.add('icon', `icon-${iconName}`, 'collection-item-icon-svg');
+        svg.setAttribute('width', '1em');
+        svg.setAttribute('height', '1em');
+        svg.setAttribute('aria-hidden', 'true');
+        svg.setAttribute('focusable', 'false');
+        const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+        use.setAttribute('href', `#icon-${iconName}`);
+        svg.appendChild(use);
+        icon.appendChild(svg);
+    }
 
     const title = document.createElement('span');
     title.className = 'collection-item-title';

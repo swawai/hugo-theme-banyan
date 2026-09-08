@@ -2,10 +2,6 @@
     --page-edge-block-end: 1.5rem;
 }
 
-.page-shell {
-    --page-footer-tail-space: 3rem;
-}
-
 .home-brand {
     --home-brand-anchor-color: var(--link-visited);
     --home-brand-horizon-color: currentColor;

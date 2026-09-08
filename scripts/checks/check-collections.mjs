@@ -19,7 +19,7 @@ const prefixes = ['', '/zh', '/zh-tw'];
 const cases = [
     ['priced', 'icon: appearance-dark\nlastmod: 2026-08-01\ntags: [contract-dates]\nproducts: [free, paid, "Special Tools", "$5~$50", contract-dates]\noffer: {amount: 25, currency: "$", value: "Paid and free are opaque labels"}'],
     ['missing', 'lastmod: 2026-08-02\ntags: [contract-dates/child]\nproducts: [free, paid, "Special Tools", contract-dates]\noffer: {value: "Value without a price"}'],
-    ['zero', 'products: [free]\noffer: {amount: 0, currency: "$"}'],
+    ['zero', 'icon: {text: "<b>EN</b>"}\nproducts: [free]\noffer: {amount: 0, currency: "$"}'],
     ['no-offer', 'products: [free]'],
     ['unclassified', 'offer: {amount: 99, currency: "$", value: "Not a product"}'],
     ['empty', 'products: []'],
@@ -41,6 +41,10 @@ for (const lang of langs) {
     write(path.join(overlay, `d/contract-override/direct${lang}.md`), '---\ntitle: Direct item\nslug: contract-direct\nlastmod: 2026-08-03\n---\nDirect.\n');
     write(path.join(overlay, `d/contract-override/child/nested/_index${lang}.md`), '---\ntitle: Nested\nlist_icon_file: ""\n---\n');
     write(path.join(overlay, `d/contract-override/child/nested/item${lang}.md`), '---\ntitle: Nested item\nslug: contract-nested\n---\nNested.\n');
+    write(path.join(overlay, `d/contract-text/_index${lang}.md`), '---\ntitle: Text icons\nicon: {text: "©"}\nlist_icon_folder: {text: "Dir"}\nlist_icon_file: {text: "EN"}\n---\n');
+    write(path.join(overlay, `d/contract-text/child/_index${lang}.md`), '---\ntitle: Child text icons\nlist_icon_file: product\n---\n');
+    write(path.join(overlay, `d/contract-text/item${lang}.md`), '---\ntitle: Text item\nslug: contract-text\n---\nText.\n');
+    write(path.join(overlay, `d/contract-text/child/item${lang}.md`), '---\ntitle: Text child\nslug: contract-text-child\n---\nText child.\n');
 }
 const config = path.join(work, 'overlay.toml');
 write(config, `[[module.mounts]]\nsource = "${rel(overlay)}"\ntarget = "content"\n[[module.mounts]]\nsource = "content"\ntarget = "content"\n`);
@@ -105,6 +109,13 @@ for (const view of ['directory', 'all', 'products']) {
         assertUpdated('tags/contract-dates', '/p/contract-priced/', '2026-08-01', '20260801000000');
         assertUpdated('tags/contract-dates/child', '/p/contract-missing/', '2026-08-02', '20260802000000');
         const iconFor = (list, href) => payload(output, lang, list).rows.find(row => row.href === `${prefixes[index]}${href}`)?.icon;
+        assert.deepEqual(iconFor('d', '/d/contract-text/'), {text: '©'});
+        assert.deepEqual(iconFor('d/contract-text', '/d/contract-text/child/'), {text: 'Dir'});
+        assert.deepEqual(iconFor('d/contract-text', '/p/contract-text/'), {text: 'EN'});
+        assert.equal(iconFor('d/contract-text/child', '/p/contract-text-child/'), 'product', 'SVG overrides inherited text atomically');
+        for (const list of ['d', 'all', 'products/free', 'all-products']) {
+            assert.deepEqual(iconFor(list, '/p/contract-zero/'), {text: '<b>EN</b>'}, 'text icon case and literal markup survive the payload');
+        }
         assert.equal(iconFor('d', '/p/contract-empty/'), 'file', 'a parent icon is not inherited by its articles');
         assert.equal(iconFor('d', '/d/contract-override/'), 'info', 'a directory may declare its own icon');
         assert.equal(iconFor('d/contract-override', '/d/contract-override/child/'), 'rss');
@@ -214,6 +225,11 @@ try {
     assert.equal(await staticPage.locator('symbol#icon-appearance-light').count(), 1, 'source-only SVG is packed without relying on SSR rows');
     await staticPage.goto(`${baseUrl}/d/contract-override/child/`);
     assert.equal(await staticPage.locator('.slot-breadcrumb a[href*="/d/contract-override/child/"] use').getAttribute('href'), '#icon-rss', 'SSR menu projection preserves inherited icons');
+    await staticPage.goto(`${baseUrl}/p/contract-text/`);
+    assert.equal(await staticPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
+    await staticPage.goto(`${baseUrl}/products/free/`);
+    assert.equal(await staticPage.locator('.slot-main a[href*="/p/contract-zero/"] .icon--text').textContent(), '<b>EN</b>');
+    assert.equal(await staticPage.locator('.icon--text b').count(), 0, 'text icons are escaped during SSR');
     await noJs.close();
 
     const iconsContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1440, height: 960 } });
@@ -235,6 +251,26 @@ try {
     await iconsPage.goForward();
     await waitForBreadcrumbSettled(iconsPage);
     assert.equal(await selectedIcon(), '#icon-appearance-light');
+    for (const prefix of prefixes) {
+        await gotoAndWait(iconsPage, `${baseUrl}${prefix}/products/free/?sort=name-asc`);
+        await iconsPage.locator('.slot-main a[href*="/p/contract-zero/?"]').click();
+        const selectedText = () => iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-zero/"] .icon--text').textContent();
+        await waitForBreadcrumbSettled(iconsPage);
+        assert.equal(await selectedText(), '<b>EN</b>');
+        assert.equal(await iconsPage.locator('.icon--text b').count(), 0, 'runtime icons use textContent');
+        await iconsPage.reload();
+        await waitForBreadcrumbSettled(iconsPage);
+        assert.equal(await selectedText(), '<b>EN</b>');
+        await iconsPage.goBack();
+        await waitForBreadcrumbSettled(iconsPage);
+        await iconsPage.goForward();
+        await waitForBreadcrumbSettled(iconsPage);
+        assert.equal(await selectedText(), '<b>EN</b>');
+        await gotoAndWait(iconsPage, `${baseUrl}${prefix}/d/contract-text/`);
+        await iconsPage.locator('.slot-main a[href*="/p/contract-text/?"]').click();
+        await waitForBreadcrumbSettled(iconsPage);
+        assert.equal(await iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
+    }
     await iconsContext.close();
     console.log('PASS inherited/own icons, source-only SVGs, SSR menus, reload and history');
 } finally {
@@ -248,7 +284,11 @@ for (const [name, content, message] of [
     ['currency', validContent.replace('currency: "$", ', ''), 'requires offer.currency'],
     ['amount', validContent.replace('amount: 25', 'amount: -1'), 'Invalid offer.amount'],
     ['icon', validContent.replace('icon: appearance-dark', 'icon: no-such-icon'), 'undefined icon'],
-    ['article-default', validContent.replace('icon: appearance-dark', 'icon: appearance-dark\nlist_icon_file: product'), 'only supported on list pages']
+    ['article-default', validContent.replace('icon: appearance-dark', 'icon: appearance-dark\nlist_icon_file: product'), 'only supported on list pages'],
+    ['text-empty', validContent.replace('icon: appearance-dark', 'icon: {text: " "}'), 'text must be a non-empty string'],
+    ['text-number', validContent.replace('icon: appearance-dark', 'icon: {text: 12}'), 'text must be a non-empty string'],
+    ['text-keys', validContent.replace('icon: appearance-dark', 'icon: {text: "©", svg: folder}'), 'object containing only text'],
+    ['text-bare', validContent.replace('icon: appearance-dark', 'icon: "©"'), 'undefined icon']
 ]) {
     write(invalidFile, content);
     const result = spawnSync(hugo, ['--config', `hugo.toml,${rel(config)}`, '--destination', rel(path.join(work, `invalid-${name}`))],

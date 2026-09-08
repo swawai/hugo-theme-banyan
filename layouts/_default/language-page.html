@@ -13,7 +13,7 @@
     {{- range partial "preferences/language-choice-options.html" . -}}
       {{- $items = $items | append (dict
         "control" "link" "href" .href "title" .name "text" .name
-        "icon" "language" "iconText" .icon_text "isCurrent" (eq .code $.Language.Lang)
+        "icon" .icon "isCurrent" (eq .code $.Language.Lang)
         "linkSlot" "nav" "dataAttrs" (dict "language-choice" .code "has-trans" (printf "%v" .translated))
       ) -}}
     {{- end -}}

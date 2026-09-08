@@ -18,7 +18,6 @@ changelog:
   release_notes_fallback: "这里暂不维护人工发布说明；当前页面先用于确认已部署构建，以及构建时可取得的来源信息。"
 slots:
   breadcrumb: true
-  footer: /fragments/home-footer-shortcuts
 build:
   list: local
 ---

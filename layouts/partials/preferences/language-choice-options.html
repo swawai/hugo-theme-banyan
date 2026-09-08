@@ -1,10 +1,13 @@
 {{- $ctx := . -}}
-{{- $iconTexts := dict -}}
+{{- $icons := dict -}}
 {{- range $ctx.Sites -}}
-  {{- $iconTexts = merge $iconTexts (dict .Language.Lang (.Params.icon_text | default "")) -}}
+  {{- $value := "language" -}}
+  {{- if isset .Params "icon" -}}{{- $value = .Params.icon -}}{{- end -}}
+  {{- $icon := partial "icon/resolve.html" (dict "value" $value "context" (printf "languages.%s.params.icon" .Language.Lang)) | default "language" -}}
+  {{- $icons = merge $icons (dict .Language.Lang $icon) -}}
 {{- end -}}
 {{- $options := slice -}}
 {{- range (partial "preferences/language-context.html" $ctx).options -}}
-  {{- $options = $options | append (merge . (dict "icon_text" (index $iconTexts .code | default ""))) -}}
+  {{- $options = $options | append (merge . (dict "icon" (index $icons .code))) -}}
 {{- end -}}
 {{- return $options -}}

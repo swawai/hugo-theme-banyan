@@ -60,7 +60,7 @@ RSS、GitHub 和备案信息都使用普通 `article-page`，不新增外链条�
 
 ## 怎样声明条目图标
 
-图形名称来自 `data/icons.toml`。内容支持三个字段：`icon` 指定自己被列出时的图标，`list_icon_folder`／`list_icon_file` 分别指定本列表中的目录或分类／文章的默认图标。例如主题 `content/products/_index.zh.md` 可以声明：
+SVG 名称来自 `data/icons.toml`，字符使用 `icon: { text: "©" }`；两者都使用同一个 `icon` 值，不根据引号或是否命中图标库猜测类型。内容支持三个字段：`icon` 指定自己被列出时的图标，`list_icon_folder`／`list_icon_file` 分别指定本列表中的目录或分类／文章的默认图标。例如主题 `content/products/_index.zh.md` 可以声明：
 
 ```yaml
 icon: product
@@ -69,13 +69,13 @@ list_icon_folder: folder
 list_icon_file: product
 ```
 
-`icon` 只描述该入口本身，不按同名字段继承。条目未声明 `icon` 时，由列出它的列表提供默认值；两个 `list_icon_*` 字段分别沿当前列表的真实祖先取最近的非空声明，最终默认为 `folder`／`file`。省略或空白表示继承，明确写 `folder`／`file` 可以覆盖祖先设置。条目自己的非空 `icon` 始终优先，名称去除首尾空白并统一为小写。
+`icon` 只描述该入口本身，不按同名字段继承。条目未声明 `icon` 时，由列出它的列表提供默认值；两个 `list_icon_*` 字段分别沿当前列表的真实祖先取最近的非空声明，最终默认为 `folder`／`file`。省略或空白表示继承，明确写 `folder`／`file` 可以覆盖祖先设置。条目自己的非空 `icon` 始终优先，SVG 名称去除首尾空白并统一为小写；字符对象只允许一个非空字符串 `text`，保留大小写，按纯文本输出。`list_icon_folder` 与 `list_icon_file` 同样接受 `{ text: "…" }`，继承时整体替换，不把文字与 SVG 合并。
 
 主题现在在 `content/products/_index*.md` 和 `content/all-products/_index*.md` 各声明 `list_icon_file: product`，产品分类子页继承分类根的设置，不需要逐篇给产品文章写图标。Xvenv 未写 `icon`，因此在产品分类和产品全部中显示包裹，在目录、标签和全部文章中仍显示文件；如果希望所有入口一致，在 Xvenv 各语言文件中声明 `icon: product` 即可。
 
-`aggregate` 只提供集合成员，不参与默认图标继承；`/all-products/` 与 `/products/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `index.md` 实现的 `/all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将根入口作为目录条目，使用首页的目录默认值或入口自身的 `icon`。
+`aggregate` 只提供集合成员，不参与默认图标继承；`/all-products/` 与 `/products/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `index.md` 实现的 `/all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将首页自身与直属入口一起渲染，使用首页的目录默认值或条目自身的 `icon`。根项目 `content/_index*.md` 声明 `linkTitle: "2026 Swaw"`、`icon: { text: "©" }`、`weight: 5`；访问首页只选中首页，其他页面仍按真实入口或有效来源选中。旧版权页脚、顶部重复首页链接及 `slots.footer` 已移除。
 
-实现集中在 `list/icon-defaults.html`（解析列表默认值）和 `list/item-icon.html`（自身声明优先）。`collection/rows.html` 为每行写入最终 `icon`，主表、来源 JSON 和路径列共用；站点列表、第一列及首页快捷列表也调用相同规则。`entry-source/register-icons.html` 只收集本页可用来源和祖先列依赖的图标，连同实际静态渲染的图标按需打包，不在每页固定预装一组图标。CSS、浏览器选择／排序逻辑和现有列表数据协议不变。
+图标值由 `icon/resolve.html` 校验，`icon.html` 统一输出文字或 SVG；浏览器用 `icon-value.js` 保留同样的值结构，JSON 编解码不得把字符对象转成字符串。默认值实现集中在 `list/icon-defaults.html`（解析列表默认值）和 `list/item-icon.html`（自身声明优先）。`collection/rows.html` 为每行写入最终 `icon`，主表、来源 JSON 和路径列共用；站点列表、第一列及首页快捷列表也调用相同规则。`entry-source/register-icons.html` 只收集本页可用来源和祖先列依赖的图标，连同实际静态渲染的图标按需打包，不在每页固定预装一组图标。CSS、浏览器选择／排序逻辑和现有列表数据协议不变。
 
 ## 怎样声明选择列表
 
@@ -85,17 +85,17 @@ list_icon_file: product
 
 选择列表只接受两种原生控件：链接或按钮。共享模板负责文字、图标、选中样式、可访问状态和 `data-*` 输出；页面布局负责提供选项，功能脚本只响应自己的标记。语言项保留真实 `href` 和 `data-language-choice`，无 JavaScript 时仍可切换；外观项使用按钮和 `data-theme-choice`。模板不认识语言代码或主题值，front matter 也不声明脚本文件。
 
-外观的三个子项在 `layouts/_default/appearance-page.html` 中通过 `icon` 分别引用 `appearance-auto`、`appearance-light`、`appearance-dark`，图形定义在 `data/icons.toml`。三个 SVG 使用相同的 `16×16` 画布、圆心、半径和描边，分别呈半实心、空心、实心，避免 Unicode 字体回退造成尺寸不一致。颜色继承 `currentColor`，复用现有 `1rem` 图标槽及按需 sprite；图标不参与按钮的可访问名称。第一列入口继续使用页面声明的 `icon: theme` 云月图标，语言项仍使用 `iconText`。
+外观的三个子项在 `layouts/_default/appearance-page.html` 中通过 `icon` 分别引用 `appearance-auto`、`appearance-light`、`appearance-dark`，图形定义在 `data/icons.toml`。三个 SVG 使用相同的 `16×16` 画布、圆心、半径和描边，分别呈半实心、空心、实心，避免 Unicode 字体回退造成尺寸不一致。颜色继承 `currentColor`，复用现有 `1rem` 图标槽及按需 sprite；图标不参与按钮的可访问名称。第一列入口继续使用页面声明的 `icon: theme` 云月图标，语言项使用相同的 `icon: { text: "…" }`，不再传递 `iconText`。
 
 语言名称、顺序和启用状态仍以根项目 `hugo.toml` 的 `[languages]` 为事实源。可在对应语言参数中设置短文字图标：
 
 ```toml
 [languages.en.params]
 locale = "en_US"
-icon_text = "EN"
+icon = { text = "EN" }
 ```
 
-当前站点分别使用 `EN`、`简`、`繁`。未设置 `icon_text` 时回退到主题的语言 SVG；不根据 `en`、`zh-CN` 或 `zh-TW` 猜测国旗或字符。
+当前站点分别使用 `EN`、`简`、`繁`。未设置 `icon` 时回退到主题的语言 SVG；不根据 `en`、`zh-CN` 或 `zh-TW` 猜测国旗或字符。
 
 语言页的选择仍留在设置页；返回原内容时优先打开刚选语言的真实译文。此行为由语言脚本处理，不属于 `choice` 渲染协议，具体规则见 [系统页面与返回](navigation-state.md#系统页面与返回)。
 
@@ -136,6 +136,6 @@ weight: 30
 
 ## 验证
 
-路径数据文件由各语言首页发布，直接使用当前语言来源模型的 `current_collection_items`，不在默认语言首页重新构建所有语言的数据。这样页面内嵌数据与后续请求的 `_items.json` 完全相同，避免中文主表使用中文排序、路径列却使用默认语言排序。浏览器回归 `system-site-directory` 覆盖根项目的七个真实子项、三语言列表几何、排序、进入后的路径顺序和刷新／历史恢复，同时验证页脚只剩品牌链接、信息页停留与目标链接、RSS 地址及 XML 内容。
+路径数据文件由各语言首页发布，直接使用当前语言来源模型的 `current_collection_items`，不在默认语言首页重新构建所有语言的数据。这样页面内嵌数据与后续请求的 `_items.json` 完全相同，避免中文主表使用中文排序、路径列却使用默认语言排序。浏览器回归 `system-site-directory` 覆盖根项目的七个真实子项、三语言列表几何、排序、进入后的路径顺序和刷新／历史恢复，同时验证首页普通入口、无页脚、信息页停留与目标链接、RSS 地址及 XML 内容。
 
 在根项目执行 `node themes/banyan/scripts/checks/check-collections.mjs`。它只向 `temp_workspace/` 写临时内容覆盖层，基于根内容构建三种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。时间用例覆盖发布日期与更新时间不同、只填更新时间、默认日期来源、完全无时间、目录／平面与树形分类汇总，以及升降序进入文章后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。

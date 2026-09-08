@@ -106,10 +106,6 @@ body {
     overscroll-behavior-y: contain;
 }
 
-.page-rail > .slot-footer {
-    padding-block-start: 1.25rem;
-}
-
 .slot-main,
 .slot-meta {
     inline-size: var(--breadcrumb-main-inline);
@@ -118,10 +114,6 @@ body {
 .slot-main {
     scroll-margin-block-start: var(--page-edge-block-start);
     scroll-margin-inline-start: var(--page-edge-inline);
-}
-
-.slot-footer {
-    display: flow-root;
 }
 
 
@@ -151,6 +143,12 @@ a:focus-visible {
     height: 1rem;
     flex: none;
     vertical-align: 0;
+}
+
+.icon--text {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .icon-language,
