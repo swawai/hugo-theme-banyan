@@ -271,7 +271,7 @@ try {
     assert.equal(await staticPage.locator('use[href="#icon-appearance-light"]').count(), 0);
     assert.equal(await staticPage.locator('symbol#icon-appearance-light').count(), 1, 'source-only SVG is packed without relying on SSR rows');
     await staticPage.goto(`${baseUrl}/d/contract-override/child/`);
-    assert.equal(await staticPage.locator('.slot-breadcrumb a[href*="/d/contract-override/child/"] use').getAttribute('href'), '#icon-rss', 'SSR menu projection preserves inherited icons');
+    assert.equal(await staticPage.locator('.slot-breadcrumb a[href*="/d/contract-override/child/"] use').getAttribute('href'), '#icon-rss', 'SSR column projection preserves inherited icons');
     await staticPage.goto(`${baseUrl}/p/contract-text/`);
     assert.equal(await staticPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
     await staticPage.goto(`${baseUrl}/products/free/`);
@@ -357,7 +357,7 @@ try {
         assert.equal(await iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
     }
     await iconsContext.close();
-    console.log('PASS inherited/own icons, source-only SVGs, SSR menus, reload and history');
+    console.log('PASS inherited/own icons, source-only SVGs, SSR columns, reload and history');
 
     server.setRoot(builds.name);
     const namesContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1024, height: 700 } });

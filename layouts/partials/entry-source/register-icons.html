@@ -24,7 +24,7 @@
   {{- end -}}
   {{- range $items -}}
     {{- with .icon -}}{{- if not (reflect.IsMap .) -}}{{- $page.Store.SetInMap "used_icons" . true -}}{{- end -}}{{- end -}}
-    {{- range .menu | default slice -}}
+    {{- range .column_items | default slice -}}
       {{- with .icon -}}{{- if not (reflect.IsMap .) -}}{{- $page.Store.SetInMap "used_icons" . true -}}{{- end -}}{{- end -}}
     {{- end -}}
   {{- end -}}

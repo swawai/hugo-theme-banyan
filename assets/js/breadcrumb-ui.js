@@ -202,7 +202,7 @@ export function renderBreadcrumbColumn(
 }
 
 function buildBreadcrumbColumn(item) {
-    const menuItems = Array.isArray(item.menu) ? item.menu.filter(Boolean) : [];
+    const columnItems = Array.isArray(item.column_items) ? item.column_items.filter(Boolean) : [];
     const collectionSource = item.collection_source || item.collectionSource || {
         href: item.collection_href || '',
         label: item.collection_label || '',
@@ -214,7 +214,7 @@ function buildBreadcrumbColumn(item) {
     if (collectionHref) {
         column.dataset.breadcrumbCollectionHref = collectionHref;
     }
-    renderBreadcrumbColumn(column, menuItems.length > 0 ? menuItems : [item], collectionSource);
+    renderBreadcrumbColumn(column, columnItems.length > 0 ? columnItems : [item], collectionSource);
     return column;
 }
 

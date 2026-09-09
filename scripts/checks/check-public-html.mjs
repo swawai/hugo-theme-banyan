@@ -800,7 +800,7 @@ async function inspectBuildVersionContract(rootDir, rows) {
         issues.push(`HTML must not inline versioned data-fragment-root; derive it from runtime asset manifest:\n  ${inlineFragmentRoots.slice(0, 10).join('\n  ')}`);
     }
     if (staticVersionDataAttrs.length > 0) {
-        issues.push(`Version menu should not duplicate buildVersion in data-site-build-version:\n  ${staticVersionDataAttrs.slice(0, 10).join('\n  ')}`);
+        issues.push(`Update UI should not duplicate buildVersion in data-site-build-version:\n  ${staticVersionDataAttrs.slice(0, 10).join('\n  ')}`);
     }
 
     if (buildVersion) {

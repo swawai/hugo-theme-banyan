@@ -10,7 +10,7 @@
 
 {{- /* Keep the server-side default projection aligned with tree/date-desc:
       pages before categories, newest first inside each group.
-      Lists, breadcrumb menus, and fragment payloads all consume this model. */ -}}
+      Lists, breadcrumb columns, and fragment payloads all consume this model. */ -}}
 {{- $ordered := slice -}}
 {{- range sort (where $result "kind" "==" "page") "latestKey" "desc" -}}
   {{- $ordered = $ordered | append . -}}

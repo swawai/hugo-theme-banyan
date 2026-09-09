@@ -1,15 +1,13 @@
 {{- $entries := .entries | default slice -}}
 {{- $selectedHref := printf "%v" (.selected_href | default "") -}}
-{{- $textKey := printf "%v" (.text_key | default "text") -}}
-{{- $hrefKey := printf "%v" (.href_key | default "href") -}}
 {{- $items := slice -}}
 {{- range $entry := $entries -}}
   {{- $text := "" -}}
-  {{- with index $entry $textKey -}}
+  {{- with index $entry "text" -}}
     {{- $text = printf "%v" . -}}
   {{- end -}}
   {{- $href := "" -}}
-  {{- with index $entry $hrefKey -}}
+  {{- with index $entry "href" -}}
     {{- $href = printf "%v" . -}}
   {{- end -}}
   {{- if or (eq $text "") (eq $href "") -}}

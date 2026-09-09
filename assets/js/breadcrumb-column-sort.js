@@ -1,5 +1,5 @@
 import {
-    buildBreadcrumbMenuItems,
+    buildBreadcrumbColumnItems,
     buildCollectionSortToggleHref,
     normalizeBreadcrumbCollectionSource,
 } from './breadcrumb-items.js';
@@ -114,22 +114,22 @@ export async function refreshBreadcrumbCollectionColumns() {
         const selectedPathname = normalizePathname(
             new URL(link.href, window.location.origin).pathname
         );
-        const menuItems = await buildBreadcrumbMenuItems(
+        const columnItems = await buildBreadcrumbColumnItems(
             fragmentRoot,
             collectionSource,
             { selectedPathname }
         );
-        if (currentRenderId !== renderId || menuItems.length === 0) {
+        if (currentRenderId !== renderId || columnItems.length === 0) {
             return;
         }
 
-        if (!menuItems.some((menuItem) => menuItem.current)) {
+        if (!columnItems.some((columnItem) => columnItem.current)) {
             return;
         }
 
         renderBreadcrumbColumn(
             wrapper,
-            menuItems,
+            columnItems,
             collectionSource,
             { lineageLogicalPath }
         );

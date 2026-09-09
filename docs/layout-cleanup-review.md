@@ -29,7 +29,7 @@
 
 ### 1. 删除退役渲染链
 
-删除旧 `section-index` 布局、旧首页快捷集合、旧 breadcrumb 包装、旧 taxonomy 逻辑路径、旧资源包装和调试模板，共 13 个经实验确认未执行的布局／partial；同步删除 `breadcrumb/page-item-menu.html` 中唯一服务 `section-index` 的分支。样式按需装配后再删除仍在执行但只返回一个字段的 `page-style-flags.html`，合计退役 14 个模板入口。
+删除旧 `section-index` 布局、旧首页快捷集合、旧 breadcrumb 包装、旧 taxonomy 逻辑路径、旧资源包装和调试模板，共 13 个经实验确认未执行的布局／partial；同步删除 `breadcrumb/page-column-items.html`（当时名为 `page-item-menu.html`）中唯一服务 `section-index` 的分支。样式按需装配后再删除仍在执行但只返回一个字段的 `page-style-flags.html`，合计退役 14 个模板入口。
 
 删除只有注释的 `assets/css/site-header.css`，并从样式装配中移除该空位置。
 
@@ -73,3 +73,17 @@ README、taxonomy、列表、slots、发布迁移及导航计划已改为当前�
 集合契约通过 directory、all、products、name 四种列表的三语言成员、继承、Lastmod、排序、图标、SSR、刷新、前进后退及非法声明校验；报告目录为 `temp_workspace/collection-contract-z9fgI6`。
 
 完整浏览器回归 39/39 通过，报告为 `temp_workspace/regression/260909111538-browser/report.json`。覆盖桌面／窄屏／触摸画幅、首帧、横向位置、语言返回、外观同步、根入口、隐藏探索路径、产品来源、组合排序、更新入口及 Service Worker。浅色、深色和语言页截图确认图标描边与对齐保持一致。
+
+## 面包屑协议收尾（2026-09-09）
+
+进一步核对发现，旧下拉控件已移除，但模型仍返回无消费者的样式标签，并沿用 `menu` 作为兄弟条目名称。本次将内部协议与当前横向列结构对齐：
+
+- 删除三个路径生成器中的 `variant: trail` 和 `strategy` 返回字段，以及 canonical 模型中无消费者的 `strategy` 字段。按 Hugo 页面种类选择生成器的内部逻辑继续有效。
+- `page-item-menu.html`、`taxonomy-item-menu.html`、`menu-items-from-entries.html` 分别更名为 `page-column-items.html`、`taxonomy-column-items.html`、`column-items-from-entries.html`；两个调用方都提供固定 `text`、`href`，不再传 `text_key`、`href_key`。删除分类转换中的未使用局部变量。
+- 路径数据的 `menu` 统一为 `column_items`，JavaScript 函数改为 `buildBreadcrumbColumnItems` 等名称。静态渲染、图标注册、浏览器来源精简、预览、重绘、排序和测试同步切换，没有增加旧字段兼容读取。
+- 删除 `link.html` 无调用方的 `ariaHaspopup`、`ariaExpanded` 参数；保留用于验证下拉控件不会重新出现的浏览器断言。预取配置中的 `menu` 和微信的 `menu:setfont` 是独立有效接口，不属于本次列数据更名。
+- 更新 [面包屑模型](breadcrumb-models.md) 与 [导航状态](navigation-state.md)，移除对旧站点页、页脚和宽度模式的现状描述。
+
+清理前后生产构建分别为 `temp_workspace/public/2609091142-breadcrumb-before-cleanup` 和 `temp_workspace/public/2609091143-breadcrumb-column-cleanup`。只归一化实际构建时间、版本、资源哈希与相应的 runtime 完整性校验值后，141 个 HTML、22 个 CSS、60 份 `_items.json` 均一致，结果为 `temp_workspace/breadcrumb-cleanup-comparison.json`。141 页 HTML、agent readiness 和导航状态检查通过；四种列表三语言集合契约通过，目录为 `temp_workspace/collection-contract-MCmzyI`。
+
+完整浏览器回归 39/39 通过，无跳过项；报告为 `temp_workspace/regression/260909114322-browser/report.json`。覆盖 SSR／预览／重绘、列排序隔离、目录／标签／产品来源、刷新和前进后退、三种宽度、真实触摸事件，以及清理前版本升级到新版本。实际布局和样式保持一致，`exampleSite` 未修改。

@@ -54,11 +54,11 @@
 
 ### 系统页面与返回
 
-语言、外观、我的、站点使用普通页面链接，不携带 `return`，也不另行存储原阅读地址。
+语言、外观、我的、更新使用普通页面链接，不携带 `return`，也不另行存储原阅读地址。
 语言切换留在对应语言的设置页；系统页面始终选中自身入口。
 
 `assets/js/back-links.js` 为 `data-page-action="back"` 提供原生历史后退行为。
-“返回上一页”每次后退一条记录；连续访问多个设置页时也逐页返回。
+“返回”每次后退一条记录；连续访问多个设置页时也逐页返回。
 语言页内切换语言使用 `location.replace()`，替换当前设置页的历史记录。
 例如“文章 → 中文语言页 → 英文语言页 → 中文语言页”只保留“文章 → 中文语言页”，
 返回按钮与浏览器后退均一次回到进入语言设置前的页面，不逐个经过语言选择。
@@ -135,8 +135,8 @@ breadcrumb 分栏不读取或改写 `sort`。
 它不承担：
 
 - 多层排序状态
-- 当前页面是否打开了某个 dropdown
-- 当前页面是否处于 wide browser mode
+- 页面列的显示或隐藏状态
+- 页面画幅的滚动位置
 
 也就是说：
 
@@ -152,7 +152,7 @@ breadcrumb 中每一层 item，都应该能追溯到它所属的 collection sour
 - `item.href`
   - 点这个 crumb 自己会去哪
 - `collection_source.logical_path`
-  - 这个 crumb 的兄弟菜单应从哪一层 collection 取
+  - 这个 crumb 的兄弟条目应从哪一层 collection 取
 
 这两个不是一回事。
 
@@ -160,9 +160,9 @@ breadcrumb 中每一层 item，都应该能追溯到它所属的 collection sour
 
 - crumb `Products`
   - `item.href = /d/products/`
-  - 但它的菜单来自 `/d/`
+  - 但它所在列的兄弟条目来自 `/d/`
 
-这就是为什么不能仅从最终 breadcrumb HTML 反推菜单语义。
+`item.column_items` 是按上述来源生成的可见列条目；不能仅从当前项目的链接反推整列来源。
 
 ## 当前主路径
 
@@ -170,28 +170,21 @@ breadcrumb 中每一层 item，都应该能追溯到它所属的 collection sour
 
 1. 真实根页面列表提供第一列；canonical breadcrumb/source model 提供 root item、levels 与 collection source
 2. fragment 发布只产 `_items.json`
-3. runtime 通过 `_items.json + from/sort/sorts` 组装 breadcrumb menus
+3. runtime 通过 `_items.json + from/sort/sorts` 组装路径列的 `column_items`
 
 entry 页与 collection 页虽然仍有不同的 orchestration，但它们共享：
 
 - items payload 解码
 - sort token 解释
 - row -> href 生成
-- breadcrumb menu item 组装
+- breadcrumb column item 组装
 
 ## 布局边界
 
-调整宽屏分栏或后续统一横向画幅时，继续沿用当前边界：
+当前所有宽度共用横向画幅，布局调整继续沿用以下边界：
 
 - `_items.json` 仍是单层 collection 数据源
 - `from/sorts` 仍是当前页面路径状态
 - slots 不负责承载 browser 状态
 
-也就是说，wide browser mode 应是：
-
-- 现有导航语义和运行时状态的一个新视图
-
-而不是：
-
-- 再发明一套新的 collection 协议
-- 或把状态塞进 `slots`
+路径列只有一种呈现方式，不再按宽度或 `variant` 选择不同菜单。`column_items` 的同一协议贯穿 Hugo 静态输出、同步预览和异步重绘；没有保留旧 `menu` 字段兼容读取。预取配置中的 `menu` 是独立的入口预取类别，继续有效。

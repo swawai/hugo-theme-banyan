@@ -22,7 +22,6 @@
     {{- $collectionLabel = index $item "text" -}}
   {{- end -}}
   {{- $canonical = dict
-    "strategy" $strategy
     "schema_items" (index $base "schema_items")
     "root_item" $rootItem
     "tail_items" $tailItems

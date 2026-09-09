@@ -1,6 +1,6 @@
 import { renderRootSelection } from './root-navigation.js';
 import {
-    buildBreadcrumbMenuItemsFromDecodedRows,
+    buildBreadcrumbColumnItemsFromDecodedRows,
     normalizeBreadcrumbCollectionSource,
 } from './breadcrumb-items.js';
 import { decodeItemsPayload } from './collection-items.js';
@@ -25,13 +25,13 @@ function clearPreviewPending(previewPending, sortPending) {
     }
 }
 
-function buildMenuItemsFromPayload(payload, collectionSource, selection = {}) {
+function buildColumnItemsFromPayload(payload, collectionSource, selection = {}) {
     const decoded = decodeItemsPayload(payload);
     if (!decoded || !collectionSource?.logicalPath) {
         return [];
     }
 
-    return buildBreadcrumbMenuItemsFromDecodedRows(decoded, collectionSource, selection);
+    return buildBreadcrumbColumnItemsFromDecodedRows(decoded, collectionSource, selection);
 }
 
 function buildPreviewLevelItems(source) {
@@ -56,11 +56,11 @@ function buildPreviewLevelItems(source) {
                     selectedPathname = '';
                 }
 
-                const menu = buildMenuItemsFromPayload(level.collectionItems, level.collectionSource, {
+                const columnItems = buildColumnItemsFromPayload(level.collectionItems, level.collectionSource, {
                     selectedPathname,
                 });
-                if (menu.length > 0) {
-                    item.menu = menu;
+                if (columnItems.length > 0) {
+                    item.column_items = columnItems;
                 }
             }
 
@@ -81,11 +81,11 @@ export function buildPreviewCurrentItem(source, currentText, currentTitle, curre
     }
 
     if (currentCollectionSource && currentCollectionItems && selectedPathname) {
-        const menu = buildMenuItemsFromPayload(currentCollectionItems, currentCollectionSource, {
+        const columnItems = buildColumnItemsFromPayload(currentCollectionItems, currentCollectionSource, {
             selectedPathname,
         });
-        if (menu.length > 0) {
-            const selectedItem = menu.find((item) => item.current === true) || null;
+        if (columnItems.length > 0) {
+            const selectedItem = columnItems.find((item) => item.current === true) || null;
             if (selectedItem) {
                 if (currentTitle) {
                     selectedItem.title = currentTitle;
@@ -95,7 +95,7 @@ export function buildPreviewCurrentItem(source, currentText, currentTitle, curre
                     title: currentTitle,
                     href: currentHref,
                     current: true,
-                    menu,
+                    column_items: columnItems,
                     collection_source: currentCollectionSource,
                     collection_href: currentCollectionSource.href || currentHref,
                 };

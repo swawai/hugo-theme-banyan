@@ -3,7 +3,7 @@
 {{- $ownerKind := lower (printf "%v" (.owner_kind | default "")) -}}
 {{- $ownerValue := printf "%v" (.owner_value | default "") -}}
 {{- $selectedHref := printf "%v" (.selected_href | default "") -}}
-{{- $menu := slice -}}
+{{- $columnItems := slice -}}
 {{- if $ctx -}}
   {{- $ownerCtx := $ctx -}}
   {{- if eq $ownerKind "root" -}}
@@ -12,14 +12,11 @@
     {{- $ownerCtx = partial "taxonomy/term-page-get.html" (dict "ctx" $ctx "spec" $spec "value" $ownerValue) -}}
   {{- end -}}
   {{- if $ownerCtx -}}
-    {{- $kind := cond (eq $ownerKind "term") "term" "root" -}}
     {{- $entries := partial "collection/rows.html" (dict "page" $ownerCtx) -}}
-    {{- $menu = partial "breadcrumb/menu-items-from-entries.html" (dict
+    {{- $columnItems = partial "breadcrumb/column-items-from-entries.html" (dict
       "entries" $entries
       "selected_href" $selectedHref
-      "text_key" "text"
-      "href_key" "href"
     ) -}}
   {{- end -}}
 {{- end -}}
-{{- return $menu -}}
+{{- return $columnItems -}}

@@ -27,7 +27,7 @@
       {{- with partial "taxonomy/term-page-get.html" (dict "ctx" $ctx "spec" $spec "value" $fullValue) -}}
         {{- $itemTitle = .Title -}}
       {{- end -}}
-      {{- $itemMenu := partial "breadcrumb/taxonomy-item-menu.html" (dict
+      {{- $columnItems := partial "breadcrumb/taxonomy-column-items.html" (dict
         "ctx" $ctx
         "spec" $spec
         "owner_kind" $ownerKind
@@ -39,11 +39,11 @@
         "title" $itemTitle
         "href" $itemHref
         "current" (eq $i $lastIndex)
-        "menu" $itemMenu
+        "column_items" $columnItems
       ) -}}
     {{- end -}}
   {{- else -}}
-    {{- $itemMenu := partial "breadcrumb/taxonomy-item-menu.html" (dict
+    {{- $columnItems := partial "breadcrumb/taxonomy-column-items.html" (dict
       "ctx" $ctx
       "spec" $spec
       "owner_kind" "root"
@@ -55,13 +55,11 @@
       "title" $ctx.Title
       "href" $ctx.RelPermalink
       "current" true
-      "menu" $itemMenu
+      "column_items" $columnItems
     ) -}}
   {{- end -}}
 {{- end -}}
 {{- $result := dict
-  "variant" "trail"
-  "strategy" "taxonomy-auto"
   "items" $items
   "schema_items" $items
 -}}

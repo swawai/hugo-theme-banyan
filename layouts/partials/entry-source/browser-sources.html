@@ -35,10 +35,10 @@
   {{- end -}}
 
   {{- /* 浏览器首帧只需要 breadcrumb source 的最小骨架。
-        但 wide 布局防闪仍依赖：
+        横向列首帧稳定依赖：
         1. current_collection_items：稳定“当前列 + 兄弟项”
         2. levels[].collection_items：稳定祖先列排序结果
-        因此保留首帧所需集合数据，移除可由它们重建的冗余 item.menu。 */ -}}
+        因此保留首帧所需集合数据，移除可由它们重建的冗余 item.column_items。 */ -}}
   {{- $levels := slice -}}
   {{- range $level := index $source "levels" | default slice -}}
     {{- $item := index $level "item" | default dict -}}
@@ -49,7 +49,7 @@
       {{- if and (gt (len $collectionSource) 0) (gt (len $collectionItems) 0) -}}
         {{- $rebuiltItem := dict -}}
         {{- range $itemKey, $itemValue := $item -}}
-          {{- if ne $itemKey "menu" -}}
+          {{- if ne $itemKey "column_items" -}}
             {{- $rebuiltItem = merge $rebuiltItem (dict $itemKey $itemValue) -}}
           {{- end -}}
         {{- end -}}
@@ -69,7 +69,7 @@
   {{- $tailItems := index $source "tail_items" | default slice -}}
   {{- if gt (len $levels) 0 -}}
     {{- /* levels 非空时，preview/runtime 都优先消费 levels；
-          tail_items 只会重复同一路径与菜单，不再输出到浏览器。 */ -}}
+          tail_items 只会重复同一路径与列条目，不再输出到浏览器。 */ -}}
     {{- $tailItems = slice -}}
   {{- end -}}
 

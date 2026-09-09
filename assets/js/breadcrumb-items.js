@@ -252,7 +252,7 @@ export function buildBreadcrumbRowHref(row, collectionSource, sortState) {
     );
 }
 
-export function buildBreadcrumbMenuItemsFromDecodedRows(decoded, collectionSource, { selectedKey = '', selectedPathname = '' } = {}) {
+export function buildBreadcrumbColumnItemsFromDecodedRows(decoded, collectionSource, { selectedKey = '', selectedPathname = '' } = {}) {
     if (!decoded || !collectionSource?.logicalPath) {
         return [];
     }
@@ -302,14 +302,14 @@ export function buildBreadcrumbMenuItemsFromDecodedRows(decoded, collectionSourc
         .filter(Boolean);
 }
 
-export async function buildBreadcrumbMenuItems(fragmentRoot, collectionSource, selection = {}) {
+export async function buildBreadcrumbColumnItems(fragmentRoot, collectionSource, selection = {}) {
     if (!fragmentRoot || !collectionSource?.logicalPath || !supportsItemsPayloadProvider(collectionSource.provider)) {
         return [];
     }
 
     const payload = await getItemsPayload(fragmentRoot, collectionSource.logicalPath);
     const decoded = decodeItemsPayload(payload);
-    return buildBreadcrumbMenuItemsFromDecodedRows(decoded, collectionSource, selection);
+    return buildBreadcrumbColumnItemsFromDecodedRows(decoded, collectionSource, selection);
 }
 
 function findSelectedRow(rows, selectedPathname = '') {
@@ -361,14 +361,14 @@ export async function buildSelectedBreadcrumbItem(fragmentRoot, source, selected
     }
 
     const selectedKey = selectedRow.key || '';
-    const menu = buildBreadcrumbMenuItemsFromDecodedRows(decoded, collectionSource, {
+    const columnItems = buildBreadcrumbColumnItemsFromDecodedRows(decoded, collectionSource, {
         selectedKey,
         selectedPathname: normalizedSelectedPathname,
     });
     if (normalizedSelectedTitle) {
-        const selectedMenuItem = menu.find((menuItem) => menuItem.current === true);
-        if (selectedMenuItem) {
-            selectedMenuItem.title = normalizedSelectedTitle;
+        const selectedColumnItem = columnItems.find((columnItem) => columnItem.current === true);
+        if (selectedColumnItem) {
+            selectedColumnItem.title = normalizedSelectedTitle;
         }
     }
     const sortState = readRequestedSortState(collectionSource, decoded.sortVariant, decoded.defaultSort);
@@ -381,7 +381,7 @@ export async function buildSelectedBreadcrumbItem(fragmentRoot, source, selected
         text: typeof selectedRow.text === 'string' && selectedRow.text !== '' ? selectedRow.text : selectedKey,
         href,
         current: true,
-        menu,
+        column_items: columnItems,
         collection_source: collectionSource,
     };
     const icon = normalizeIcon(selectedRow.icon);

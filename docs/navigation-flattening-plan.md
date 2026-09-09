@@ -4,6 +4,8 @@
 
 ## 当前增量：布局深度清理
 
+面包屑协议收尾：路径列的兄弟数据由 `menu` 改为 `column_items`，三个菜单命名 partial 改为列条目命名，模板／JS／测试同步迁移；删除未被读取的 `variant`、`strategy` 返回标签和链接的弹出／展开参数。首页、真实目录、taxonomy 继续负责各自路径来源，共用唯一的普通列渲染器。验证记录见 [清理报告](layout-cleanup-review.md#面包屑协议收尾2026-09-09)。
+
 展平入口和统一列表稳定后，已按 [布局深度清理报告](layout-cleanup-review.md) 收掉旧主路径，而不是继续保留兼容层：删除未执行的 `section-index`、旧首页快捷列表及 11 个无调用 partial，移除空样式文件；分类根不再填写无消费者的 `show_in_home`／`home_weight`；显式 `layout` 已承担渲染选择的内容不再重复声明 `type`。
 
 仍在工作的实现只做职责收敛：页面先确定当前 CSS variant，再只拼接这一份资源；语言、外观、我的图标的 SVG 几何统一由 `data/icons.toml` 声明；页面 shell 只保留实际被 CSS 使用的状态类；JS 模块不再导出仅供自身调用的符号。活跃模板与内容同步迁移到 Hugo 当前的 `hugo.Sites`、`hugo.Data`、`cascade.target` API；构建版本改为最后写入的就绪标记，并新增构建时间完整性检查，消除并发渲染偶发生成空时间的竞态。动态 breadcrumb、来源恢复、横向画幅位置、排序、SW 停用路径、迁移跳转和内容作者 shortcodes 均保留。

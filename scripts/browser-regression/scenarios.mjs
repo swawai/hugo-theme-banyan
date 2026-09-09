@@ -157,8 +157,8 @@ async function runBreadcrumbSortInPlace(page, {
     };
 }
 
-function recordFirstBreadcrumbMenuStateScript(targetCollectionHref) {
-    window.__banyanFirstBreadcrumbMenuOrder = null;
+function recordFirstBreadcrumbColumnStateScript(targetCollectionHref) {
+    window.__banyanFirstBreadcrumbColumnOrder = null;
     window.__banyanFirstBreadcrumbHeaderSpacing = null;
 
     const findTarget = () => {
@@ -208,12 +208,12 @@ function recordFirstBreadcrumbMenuStateScript(targetCollectionHref) {
         };
     };
 
-    window.__banyanReadBreadcrumbMenuOrder = readOrder;
+    window.__banyanReadBreadcrumbColumnOrder = readOrder;
     window.__banyanReadBreadcrumbHeaderSpacing = readHeaderSpacing;
     const observer = new MutationObserver(() => {
         const order = readOrder();
-        if (window.__banyanFirstBreadcrumbMenuOrder === null && order.length > 0) {
-            window.__banyanFirstBreadcrumbMenuOrder = order;
+        if (window.__banyanFirstBreadcrumbColumnOrder === null && order.length > 0) {
+            window.__banyanFirstBreadcrumbColumnOrder = order;
         }
 
         const headerSpacing = readHeaderSpacing();
@@ -221,7 +221,7 @@ function recordFirstBreadcrumbMenuStateScript(targetCollectionHref) {
             window.__banyanFirstBreadcrumbHeaderSpacing = headerSpacing;
         }
 
-        if (window.__banyanFirstBreadcrumbMenuOrder !== null
+        if (window.__banyanFirstBreadcrumbColumnOrder !== null
             && window.__banyanFirstBreadcrumbHeaderSpacing !== null) {
             observer.disconnect();
         }
@@ -651,7 +651,7 @@ async function readBreadcrumbPrefetchSlotContract(page) {
             '.slot-breadcrumb a.breadcrumb-column-link[href]'
         ));
         const slotRowAnchors = Array.from(document.querySelectorAll('.slot-row-breadcrumb a[href]'));
-        const slotRowBreadcrumbMenuOptions = Array.from(document.querySelectorAll(
+        const slotRowBreadcrumbColumnOptions = Array.from(document.querySelectorAll(
             '.slot-row-breadcrumb a.breadcrumb-column-link[href]'
         ));
 
@@ -661,7 +661,7 @@ async function readBreadcrumbPrefetchSlotContract(page) {
         const slotRowNavAnchors = slotRowAnchors
             .filter((anchor) => anchor.getAttribute('data-prefetch-slot') === 'nav')
             .map(describeAnchor);
-        const slotRowBreadcrumbMenuOptionsWithoutCrumb = slotRowBreadcrumbMenuOptions
+        const slotRowBreadcrumbColumnOptionsWithoutCrumb = slotRowBreadcrumbColumnOptions
             .filter((anchor) => anchor.getAttribute('data-prefetch-slot') !== 'crumb')
             .map(describeAnchor);
 
@@ -672,8 +672,8 @@ async function readBreadcrumbPrefetchSlotContract(page) {
             )).length,
             breadcrumbInvalidAnchors,
             slotRowAnchorCount: slotRowAnchors.length,
-            slotRowBreadcrumbMenuOptionCount: slotRowBreadcrumbMenuOptions.length,
-            slotRowBreadcrumbMenuOptionsWithoutCrumb,
+            slotRowBreadcrumbColumnOptionCount: slotRowBreadcrumbColumnOptions.length,
+            slotRowBreadcrumbColumnOptionsWithoutCrumb,
             slotRowNavAnchors
         };
     });
@@ -2084,11 +2084,11 @@ export const scenarios = [
             if (state.slotRowNavAnchors.length > 0) {
                 fail('slot-row-breadcrumb must not contain nav prefetch anchors.', state);
             }
-            if (state.slotRowBreadcrumbMenuOptionCount === 0) {
-                fail('Sorted breadcrumb page did not expose rebuilt breadcrumb menu options.', state);
+            if (state.slotRowBreadcrumbColumnOptionCount === 0) {
+                fail('Sorted breadcrumb page did not expose rebuilt breadcrumb column items.', state);
             }
-            if (state.slotRowBreadcrumbMenuOptionsWithoutCrumb.length > 0) {
-                fail('Runtime rebuilt breadcrumb menu options must keep data-prefetch-slot="crumb".', state);
+            if (state.slotRowBreadcrumbColumnOptionsWithoutCrumb.length > 0) {
+                fail('Runtime rebuilt breadcrumb column items must keep data-prefetch-slot="crumb".', state);
             }
 
             return state;
@@ -2101,7 +2101,7 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
             await page.addInitScript(
-                recordFirstBreadcrumbMenuStateScript,
+                recordFirstBreadcrumbColumnStateScript,
                 BREADCRUMB_TAGS_COLLECTION_HREF
             );
 
@@ -2109,15 +2109,15 @@ export const scenarios = [
             await page.waitForSelector('.slot-row-breadcrumb');
             await waitForBreadcrumbSettled(page);
             const firstAndFinalState = await page.evaluate(() => ({
-                firstOrder: window.__banyanFirstBreadcrumbMenuOrder,
-                finalOrder: window.__banyanReadBreadcrumbMenuOrder?.() || [],
+                firstOrder: window.__banyanFirstBreadcrumbColumnOrder,
+                finalOrder: window.__banyanReadBreadcrumbColumnOrder?.() || [],
                 firstHeaderSpacing: window.__banyanFirstBreadcrumbHeaderSpacing,
                 finalHeaderSpacing: window.__banyanReadBreadcrumbHeaderSpacing?.() || null
             }));
             if (!Array.isArray(firstAndFinalState.firstOrder)
                 || firstAndFinalState.firstOrder.length === 0
                 || firstAndFinalState.finalOrder.length === 0) {
-                fail('Tags breadcrumb scenario did not capture both menu states.', {
+                fail('Tags breadcrumb scenario did not capture both column states.', {
                     path: BREADCRUMB_TAGS_PATH,
                     targetCollectionHref: BREADCRUMB_TAGS_COLLECTION_HREF,
                     ...firstAndFinalState
@@ -2125,7 +2125,7 @@ export const scenarios = [
             }
             if (JSON.stringify(firstAndFinalState.firstOrder)
                 !== JSON.stringify(firstAndFinalState.finalOrder)) {
-                fail('Tags breadcrumb menu reordered after the client runtime settled.', {
+                fail('Tags breadcrumb column reordered after the client runtime settled.', {
                     path: BREADCRUMB_TAGS_PATH,
                     targetCollectionHref: BREADCRUMB_TAGS_COLLECTION_HREF,
                     ...firstAndFinalState

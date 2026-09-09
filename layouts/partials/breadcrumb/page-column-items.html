@@ -1,5 +1,5 @@
 {{- $node := .node -}}
-{{- $menu := slice -}}
+{{- $columnItems := slice -}}
 {{- if $node -}}
   {{- $owner := "" -}}
   {{- with $node.Parent -}}
@@ -23,12 +23,10 @@
       {{- end -}}
       {{- $entries = $decorated -}}
     {{- end -}}
-    {{- $menu = partial "breadcrumb/menu-items-from-entries.html" (dict
+    {{- $columnItems = partial "breadcrumb/column-items-from-entries.html" (dict
       "entries" $entries
       "selected_href" $node.RelPermalink
-      "text_key" "text"
-      "href_key" "href"
     ) -}}
   {{- end -}}
 {{- end -}}
-{{- return $menu -}}
+{{- return $columnItems -}}

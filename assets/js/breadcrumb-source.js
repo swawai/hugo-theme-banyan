@@ -49,10 +49,10 @@ function normalizeLinkItem(item) {
             normalized[field] = item[field].trim();
         }
     }
-    if (Array.isArray(item.menu)) {
-        const menuItems = item.menu.map(normalizeLinkItem).filter(Boolean);
-        if (menuItems.length > 0) {
-            normalized.menu = menuItems;
+    if (Array.isArray(item.column_items)) {
+        const columnItems = item.column_items.map(normalizeLinkItem).filter(Boolean);
+        if (columnItems.length > 0) {
+            normalized.column_items = columnItems;
         }
     }
 

@@ -410,7 +410,7 @@ assert.deepEqual(
     'entry preview should keep compact visible text and the full title as separate fields'
 );
 
-const previewMenuCurrentItem = breadcrumbPreview.buildPreviewCurrentItem(
+const previewColumnCurrentItem = breadcrumbPreview.buildPreviewCurrentItem(
     {
         currentCollectionSource: {
             logical_path: '/intent/decide/',
@@ -436,9 +436,9 @@ const previewMenuCurrentItem = breadcrumbPreview.buildPreviewCurrentItem(
 );
 
 assert.equal(
-    previewMenuCurrentItem?.menu?.find((item) => item.current === true)?.title,
+    previewColumnCurrentItem?.column_items?.find((item) => item.current === true)?.title,
     'WSL automation management script',
-    'entry preview should attach the full title to the visible current menu option'
+    'entry preview should attach the full title to the visible current column item'
 );
 
 const sourcePayload = JSON.stringify([{
@@ -615,14 +615,14 @@ assert.equal(
     'selected current item should preserve the full page title without expanding the compact collection payload'
 );
 assert.equal(
-    selectedItem?.menu?.find((item) => item.text === 'WSL Toolkit')?.current,
+    selectedItem?.column_items?.find((item) => item.text === 'WSL Toolkit')?.current,
     true,
-    'current breadcrumb menu item should be highlighted when selected by pathname'
+    'current breadcrumb column item should be highlighted when selected by pathname'
 );
 assert.equal(
-    selectedItem?.menu?.find((item) => item.current === true)?.title,
+    selectedItem?.column_items?.find((item) => item.current === true)?.title,
     'WSL automation management script',
-    'settled entry state should attach the full title to the visible current menu option'
+    'settled entry state should attach the full title to the visible current column item'
 );
 
 console.log('Entry from checks passed.');

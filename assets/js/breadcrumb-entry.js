@@ -1,6 +1,6 @@
 import { renderRootSelection } from './root-navigation.js';
 import {
-    buildBreadcrumbMenuItems,
+    buildBreadcrumbColumnItems,
     buildCollectionPageHref,
     buildSelectedBreadcrumbItem,
     getSourceSortVariant,
@@ -68,17 +68,17 @@ async function buildPrefixLevelItem(fragmentRoot, source, level) {
     if (collectionSource) {
         result.collection_source = collectionSource;
         result.collection_href = collectionSource.href || baseItem.href;
-        const menu = await buildBreadcrumbMenuItems(fragmentRoot, collectionSource, {
+        const columnItems = await buildBreadcrumbColumnItems(fragmentRoot, collectionSource, {
             selectedPathname: targetPathname,
         });
-        if (menu.length > 0) {
-            result.menu = menu;
+        if (columnItems.length > 0) {
+            result.column_items = columnItems;
         }
         return result;
     }
 
-    if (Array.isArray(baseItem.menu) && baseItem.menu.length > 0) {
-        result.menu = baseItem.menu;
+    if (Array.isArray(baseItem.column_items) && baseItem.column_items.length > 0) {
+        result.column_items = baseItem.column_items;
     }
 
     return result;

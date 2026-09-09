@@ -1,6 +1,6 @@
 {{- $ctx := .ctx | default . -}}
 {{- $item := .item | default dict -}}
-{{- $items := index $item "menu" | default slice -}}
+{{- $items := index $item "column_items" | default slice -}}
 {{- if eq (len $items) 0 -}}{{- $items = slice $item -}}{{- end -}}
 {{- $collectionHref := index $item "collection_href" | default "" -}}
 {{- $collectionSource := index $item "collection_source" | default dict -}}
