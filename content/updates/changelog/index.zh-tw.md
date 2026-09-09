@@ -3,7 +3,7 @@ title: "更新記錄"
 slug: "changelog"
 url: changelog/
 weight: 20
-layout: "article-page"
+layout: "page-article"
 changelog:
   intro: "這是主題生成的預設更新記錄占位頁。需要維護正式發布說明時，可在站點內容中用同路徑頁面覆蓋它。"
   current_build: "目前構建"

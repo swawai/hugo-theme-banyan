@@ -3,7 +3,7 @@ root_nav: true
 title: Updates
 icon: { text: "↻" }
 description: Check for site updates and read the changelog.
-layout: collection-page
+layout: page-collection
 list: name
 weight: 96
 outputs:

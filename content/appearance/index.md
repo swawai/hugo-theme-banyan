@@ -3,7 +3,7 @@ root_nav: true
 title: System - Appearance
 linkTitle: Appearance
 slug: appearance
-layout: appearance-page
+layout: page-appearance
 list: choice
 icon: theme
 weight: 80

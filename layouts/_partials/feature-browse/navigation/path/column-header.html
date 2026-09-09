@@ -1,0 +1,29 @@
+{{- $ctx := .ctx -}}
+{{- $source := .source | default dict -}}
+{{- $label := trim (printf "%v" (index $source "label" | default "")) " " -}}
+{{- $href := trim (printf "%v" (index $source "href" | default "")) " " -}}
+{{- $sortVariant := trim (printf "%v" (index $source "sort_variant" | default "")) " " -}}
+{{- $currentSort := trim (printf "%v" (index $source "default_sort" | default "")) " " -}}
+{{- $parts := split $currentSort "-" -}}
+{{- $field := index $parts 0 | default "" -}}
+{{- $order := "" -}}
+{{- if gt (len $parts) 1 -}}{{- $order = index $parts 1 -}}{{- end -}}
+{{- if and $label $href -}}
+<span class="cell-title header collection-column-header collection-list-header">
+  <a class="collection-column-label" href="{{ $href }}" title="{{ $label }}" data-prefetch-slot="crumb">{{ $label }}</a>
+{{- if and $sortVariant $field $order -}}
+  {{- $sortCopy := partial "feature-browse/collection/sort/copy.html" $ctx -}}
+  {{- $fieldLabels := index $sortCopy "fields" -}}
+  {{- $actionLabels := index $sortCopy "actions" -}}
+  {{- $nextOrder := cond (eq $order "asc") "desc" "asc" -}}
+  {{- $nextSort := printf "%s-%s" $field $nextOrder -}}
+  {{- $fieldLabel := index $fieldLabels $field | default (index $fieldLabels "name") -}}
+  {{- $actionLabel := index $actionLabels $nextSort | default (index $actionLabels "name-asc") -}}
+  {{- $toggleHref := partial "feature-browse/navigation/path/column-sort-url.html" (dict "ctx" $ctx "source" $source "current_sort" $currentSort) -}}
+  <span class="collection-column-separator" aria-hidden="true">·</span>
+  <a class="collection-column-sort" href="{{ $toggleHref }}" title="{{ $actionLabel }}" aria-label="{{ $actionLabel }}" data-prefetch-slot="crumb" data-collection-sort-toggle="true">
+    <span class="collection-sort-label">{{ $fieldLabel }}</span><span class="collection-sort-indicator" aria-hidden="true">{{ cond (eq $order "asc") "↑" "↓" }}</span>
+  </a>
+{{- end -}}
+</span>
+{{- end -}}

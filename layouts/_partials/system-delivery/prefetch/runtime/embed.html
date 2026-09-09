@@ -1,0 +1,80 @@
+{{- $speculationRuntimeCoordination := lower (printf "%v" .speculation_runtime_coordination) -}}
+{{- $envConfigMap := .env_config_map -}}
+{{- $speculationRuntimeMeta := .speculation_runtime_meta -}}
+{{- $buildParams := .js_build_params | default dict -}}
+{{- $slotSpecs := partial "system-delivery/prefetch/targets.html" . -}}
+{{- $configPayloadByEnv := dict -}}
+{{- $canonicalEnvByFingerprint := dict -}}
+{{- $hasGlobalGate := false -}}
+{{- $hasLinkModule := false -}}
+{{- $hasInteractionModule := false -}}
+{{- $hasConservativeModule := false -}}
+{{- $hasModerateModule := false -}}
+{{- $hasSwModule := false -}}
+
+{{- range $envKey := (slice "TT" "TF" "FT" "FF") -}}
+  {{- $envConfig := index $envConfigMap $envKey | default dict -}}
+  {{- $slotModes := dict -}}
+  {{- range $slotSpec := $slotSpecs -}}
+    {{- $configKey := index $slotSpec "config_key" -}}
+    {{- $slot := index $slotSpec "slot" -}}
+    {{- $parsedMode := partial "system-delivery/prefetch/runtime/mode.html" (index $envConfig $configKey) -}}
+    {{- if eq (index $parsedMode "kind") "prefetch" -}}
+      {{- $slotModes = merge $slotModes (dict $slot (index $parsedMode "value")) -}}
+      {{- $hasGlobalGate = or $hasGlobalGate (index $parsedMode "global_gate") -}}
+      {{- $hasLinkModule = or $hasLinkModule (eq (index $parsedMode "transport") "link") -}}
+      {{- $hasSwModule = or $hasSwModule (eq (index $parsedMode "transport") "sw") -}}
+      {{- $hasInteractionModule = or $hasInteractionModule (in (slice "conservative" "moderate") (index $parsedMode "eagerness")) -}}
+      {{- $hasConservativeModule = or $hasConservativeModule (eq (index $parsedMode "eagerness") "conservative") -}}
+      {{- $hasModerateModule = or $hasModerateModule (eq (index $parsedMode "eagerness") "moderate") -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if gt (len $slotModes) 0 -}}
+    {{- $configFingerprint := printf "%s" ($slotModes | jsonify) -}}
+    {{- $canonicalEnvKey := index $canonicalEnvByFingerprint $configFingerprint | default "" -}}
+    {{- if $canonicalEnvKey -}}
+      {{- $configPayloadByEnv = merge $configPayloadByEnv (dict $envKey $canonicalEnvKey) -}}
+    {{- else -}}
+      {{- $configPayloadByEnv = merge $configPayloadByEnv (dict $envKey $slotModes) -}}
+      {{- $canonicalEnvByFingerprint = merge $canonicalEnvByFingerprint (dict $configFingerprint $envKey) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if gt (len $configPayloadByEnv) 0 -}}
+  {{- $isServer := hugo.IsServer -}}
+  {{- $runtimeTemplatePath := "js/prefetch.runtime.entry.js.tmpl" -}}
+  {{- $runtimeTemplate := resources.Get $runtimeTemplatePath -}}
+  {{- if not $runtimeTemplate -}}
+    {{- errorf "Build failed: missing resource %q." $runtimeTemplatePath -}}
+  {{- else -}}
+    {{- $featureLetters := slice -}}
+    {{- if $hasLinkModule }}{{- $featureLetters = $featureLetters | append "l" -}}{{- end -}}
+    {{- if $hasInteractionModule }}{{- $featureLetters = $featureLetters | append "i" -}}{{- end -}}
+    {{- if $hasConservativeModule }}{{- $featureLetters = $featureLetters | append "t" -}}{{- end -}}
+    {{- if $hasModerateModule }}{{- $featureLetters = $featureLetters | append "v" -}}{{- end -}}
+    {{- if $hasSwModule }}{{- $featureLetters = $featureLetters | append "w" -}}{{- end -}}
+    {{- $featureVariant := delimit $featureLetters "" -}}
+    {{- if $hasGlobalGate }}{{- $featureVariant = printf "g%s" $featureVariant -}}{{- end -}}
+    {{- $runtimeVariant := $featureVariant -}}
+    {{- $runtimeEntry := $runtimeTemplate | resources.ExecuteAsTemplate (printf "js/prefetch.runtime.%s.entry.js" $runtimeVariant) (dict
+      "has_global_gate" $hasGlobalGate
+      "has_link_module" $hasLinkModule
+      "has_interaction_module" $hasInteractionModule
+      "has_conservative_module" $hasConservativeModule
+      "has_moderate_module" $hasModerateModule
+      "has_sw_module" $hasSwModule
+    ) -}}
+    {{- $runtimeBundle := $runtimeEntry | js.Build (dict
+      "targetPath" (printf "js/prefetch.runtime.%s.bundle.js" $runtimeVariant)
+      "params" $buildParams
+    ) -}}
+    {{- if not $isServer }}{{ $runtimeBundle = $runtimeBundle | minify }}{{ end -}}
+    {{- $runtimeBundle = $runtimeBundle | fingerprint -}}
+<script id="site-prefetch-data" type="application/json">{{ $configPayloadByEnv | jsonify | safeJS }}</script>
+    {{- if and (eq $speculationRuntimeCoordination "preempt_runtime_when_supported") (gt (len $speculationRuntimeMeta) 0) -}}
+<script id="site-prefetch-runtime-meta" type="application/json">{{ $speculationRuntimeMeta | jsonify | safeJS }}</script>
+    {{- end -}}
+<script src="{{ $runtimeBundle.RelPermalink }}" integrity="{{ $runtimeBundle.Data.Integrity }}" defer></script>
+  {{- end -}}
+{{- end -}}

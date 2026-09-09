@@ -3,7 +3,7 @@ root_nav: true
 title: 更新
 icon: { text: "↻" }
 description: 检查站点更新与查看更新记录。
-layout: collection-page
+layout: page-collection
 list: name
 weight: 96
 outputs:

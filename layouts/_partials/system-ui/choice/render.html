@@ -1,0 +1,30 @@
+{{- $page := .page -}}
+{{- $view := partial "system-ui/list/resolve-view.html" (dict "page" $page) -}}
+{{- if ne $view "choice" -}}
+  {{- errorf "Choice page %s needs list: choice (own declaration or nearest ancestor)." $page.RelPermalink -}}
+{{- end -}}
+<div class="grid-list grid-list--headed collection-list--grid" data-list-view="{{ $view }}">
+  <h1 class="cell-title header collection-list-header">{{ .title }}</h1>
+  {{- range .items -}}
+    {{- $control := printf "%v" (.control | default "") -}}
+    {{- $text := .text | default "" -}}
+    {{- $icon := .icon | default "file" -}}
+    {{- $dataAttrs := .dataAttrs | default dict -}}
+    {{- $isCurrent := eq (.isCurrent | default false) true -}}
+    {{- if eq $control "link" -}}
+      {{- partial "system-ui/list/link-cell.html" (dict
+        "href" .href "title" (.title | default $text) "text" $text
+        "icon" $icon "isCurrent" $isCurrent
+        "prefetchSlot" (.prefetchSlot | default "") "linkDataAttrs" $dataAttrs
+      ) -}}
+    {{- else if eq $control "button" -}}
+      {{- $class := "collection-item-link" -}}
+      {{- if $isCurrent }}{{- $class = printf "%s is-current" $class -}}{{- end -}}
+      <span class="cell-title"><button type="button" class="{{ $class }}" aria-pressed="{{ cond $isCurrent "true" "false" }}"{{ with .title }} title="{{ . }}"{{ end }}{{ with .label }} aria-label="{{ . }}"{{ end }}{{ with $dataAttrs }}{{ range $name, $value := . }} {{ printf "data-%s=%q" $name $value | safeHTMLAttr }}{{ end }}{{ end }}>
+        {{- partial "system-ui/list/item-content.html" (dict "text" $text "icon" $icon) -}}
+      </button></span>
+    {{- else -}}
+      {{- errorf "Choice page %s has an item with unsupported control %q; use link or button." $page.RelPermalink $control -}}
+    {{- end -}}
+  {{- end -}}
+</div>

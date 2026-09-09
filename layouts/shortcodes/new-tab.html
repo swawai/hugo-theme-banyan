@@ -1,3 +1,0 @@
-{{- $href := .Get "href" -}}
-{{- if not $href -}}{{- errorf "Page %s uses new-tab without href." .Page.RelPermalink -}}{{- end -}}
-{{- partial "html/link.html" (dict "href" $href "text" (trim .Inner " \r\n\t") "safeHTML" true "target" "_blank" "rel" "noopener noreferrer") -}}

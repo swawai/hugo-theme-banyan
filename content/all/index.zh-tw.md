@@ -6,7 +6,7 @@ weight: 10
 browser_title: "全部文章與技術指南"
 description: "集中瀏覽全部已發布文章與技術指南。"
 slug: "all"
-layout: collection-page
+layout: page-collection
 slots:
   breadcrumb: true
 list: all

@@ -1,0 +1,22 @@
+{{- $ctx := .ctx -}}
+{{- $spec := .spec | default dict -}}
+{{- $ownerKind := lower (printf "%v" (.owner_kind | default "")) -}}
+{{- $ownerValue := printf "%v" (.owner_value | default "") -}}
+{{- $selectedHref := printf "%v" (.selected_href | default "") -}}
+{{- $columnItems := slice -}}
+{{- if $ctx -}}
+  {{- $ownerCtx := $ctx -}}
+  {{- if eq $ownerKind "root" -}}
+    {{- $ownerCtx = partial "feature-browse/taxonomy/root-page.html" (dict "ctx" $ctx "plural" (index $spec "plural")) -}}
+  {{- else if eq $ownerKind "term" -}}
+    {{- $ownerCtx = partial "feature-browse/taxonomy/term-page.html" (dict "ctx" $ctx "spec" $spec "value" $ownerValue) -}}
+  {{- end -}}
+  {{- if $ownerCtx -}}
+    {{- $entries := partial "feature-browse/collection/rows.html" (dict "page" $ownerCtx) -}}
+    {{- $columnItems = partial "feature-browse/navigation/path/items-from-rows.html" (dict
+      "entries" $entries
+      "selected_href" $selectedHref
+    ) -}}
+  {{- end -}}
+{{- end -}}
+{{- return $columnItems -}}

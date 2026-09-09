@@ -1,0 +1,13 @@
+{{- $ctx := . -}}
+{{- $icons := dict -}}
+{{- range hugo.Sites -}}
+  {{- $value := "language" -}}
+  {{- if isset .Params "icon" -}}{{- $value = .Params.icon -}}{{- end -}}
+  {{- $icon := partial "system-ui/icon/page-value.html" (dict "value" $value "page" .Home "context" (printf "languages.%s.params.icon" .Language.Lang)) | default "language" -}}
+  {{- $icons = merge $icons (dict .Language.Lang $icon) -}}
+{{- end -}}
+{{- $options := slice -}}
+{{- range (partial "feature-preferences/language-context.html" $ctx).options -}}
+  {{- $options = $options | append (merge . (dict "icon" (index $icons .code))) -}}
+{{- end -}}
+{{- return $options -}}

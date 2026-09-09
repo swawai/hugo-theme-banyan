@@ -1,0 +1,29 @@
+{{- $ctx := .ctx | default . -}}
+{{- $fallbackConfig := $ctx.Site.Params.runtime_i18n | default dict -}}
+{{- $fallbacks := dict -}}
+{{- with index $fallbackConfig "fallbacks" -}}
+  {{- range $from, $to := . -}}
+    {{- $fromLang := lower (printf "%v" $from) -}}
+    {{- $toLang := lower (printf "%v" $to) -}}
+    {{- if and $fromLang $toLang -}}
+      {{- $fallbacks = merge $fallbacks (dict $fromLang $toLang) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $runtimeCopyByLanguage := dict -}}
+{{- range sort hugo.Sites "Language.Weight" -}}
+  {{- $langCode := .Language.Lang -}}
+  {{- $runtimeCopy := partial "feature-updates/runtime-copy.json" . -}}
+  {{- $resource := resources.FromString (printf "runtime/i18n.%s.json" $langCode) $runtimeCopy | fingerprint -}}
+  {{- $runtimeCopyByLanguage = merge $runtimeCopyByLanguage (dict $langCode $resource.RelPermalink) -}}
+{{- end -}}
+
+{{- $body := dict
+  "buildTime" .build_time
+  "buildTimeISO" .build_time_iso
+  "buildVersion" .build_version
+  "i18n" $runtimeCopyByLanguage
+  "i18nFallbacks" $fallbacks
+| jsonify -}}
+{{- return (resources.FromString "runtime/asset-manifest.json" $body | fingerprint) -}}

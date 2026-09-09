@@ -36,12 +36,12 @@ const cases = [
 ];
 for (const lang of langs) {
     for (const [name, field] of [['enabled', 'root_nav: true'], ['disabled', 'root_nav: false'], ['omitted', ''], ['string', 'root_nav: "true"']]) {
-        write(path.join(overlay, `contract-nav-${name}/index${lang}.md`), `---\ntitle: Navigation ${name}\nslug: contract-nav-${name}\nlayout: article-page\nbuild: {list: local}\n${field}\n---\nDirectly accessible information page.\n`);
+        write(path.join(overlay, `contract-nav-${name}/index${lang}.md`), `---\ntitle: Navigation ${name}\nslug: contract-nav-${name}\nlayout: page-article\nbuild: {list: local}\n${field}\n---\nDirectly accessible information page.\n`);
     }
     write(path.join(overlay, `products/contract-empty/_index${lang}.md`), '---\ntitle: Contract empty category\nicon: rss\n---\n');
     write(path.join(overlay, `products/contract-dates/_index${lang}.md`), '---\ntitle: Contract dates\nlist: directory\n---\n');
     write(path.join(overlay, `products/contract-name/_index${lang}.md`), '---\ntitle: Names only\nlist: name\n---\n');
-    write(path.join(overlay, `contract-name-all/index${lang}.md`), '---\ntitle: All names\nslug: contract-name-all\nroot_nav: true\nlayout: collection-page\nlist: name\naggregate: /d\nslots: {breadcrumb: true}\n---\n');
+    write(path.join(overlay, `contract-name-all/index${lang}.md`), '---\ntitle: All names\nslug: contract-name-all\nroot_nav: true\nlayout: page-collection\nlist: name\naggregate: /d\nslots: {breadcrumb: true}\n---\n');
     for (const term of ['contract-dates', 'contract-dates/child']) {
         write(path.join(overlay, `tags/${term}/_index${lang}.md`), `---\ntitle: ${term}\n---\n`);
     }

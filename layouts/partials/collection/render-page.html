@@ -1,5 +1,0 @@
-{{- $content := trim (printf "%s" .Content) " \r\n\t" -}}
-<article class="article">
-  {{- with $content -}}<div class="prose">{{ . | safeHTML }}</div>{{- end -}}
-  {{- partial "collection/render.html" (dict "page" .) -}}
-</article>

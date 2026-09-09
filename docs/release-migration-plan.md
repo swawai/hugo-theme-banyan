@@ -97,7 +97,7 @@ Navigation contract after the 2026-09-07 flattening step:
   Root navigation visibility and ordering belong to page `root_nav` and `weight`.
 - Language, appearance, my, and updates are real root pages. The updates directory
   uses `list: name` and lists its real check/changelog children without appended controls.
-  `content/updates/check/index*.md` owns update copy and actions through `update-check`;
+  `content/updates/check/index*.md` owns update copy and actions through `page-update-check`;
   the ordinary navigation retains the updates column while the child handles actions.
   Other pages use the existing update confirmation when no control is visible.
 - The current page shell uses one horizontal canvas at every viewport width.

@@ -1,59 +1,114 @@
-# Partial 架构
+# Layout 与 partial 架构
 
-`layouts/partials` 按职责组织，而不是按页面名称或历史实现组织。目标是让维护者从调用路径就能判断数据从哪里来、在哪一层变形，以及哪一层允许输出 HTML。
+Banyan 使用 Hugo 0.146 之后的模板目录结构。主题要求 Hugo 0.157.0 或更高版本：页面入口直接放在 `layouts/`，可复用模板放在 `layouts/_partials/`，短代码放在 `layouts/_shortcodes/`，Markdown render hooks 放在 `layouts/_markup/`。不再保留 `_default/`、`partials/`、`shortcodes/` 的旧兼容目录。
 
-## 数据流与允许调用方向
+## 页面入口
+
+`layouts/` 根目录只有 Hugo 自动选择的入口和 front matter 显式选择的页面布局：
 
 ```text
-Hugo section ─────────────→ collection rows
-Hugo taxonomy → taxonomy ─→ collection rows
-collection rows → navigation/path → navigation/source → layouts/baseof
-                  navigation/path → seo/breadcrumb → layouts
-routing → collection + navigation/path（只提供 URL 状态协议）
+layouts/
+├─ baseof.html
+├─ page-home.html
+├─ page-article.html
+├─ page-collection.html
+├─ page-language.html
+├─ page-appearance.html
+├─ page-my.html
+├─ page-offline.html
+├─ page-prefetch-debug.html
+├─ page-update-check.html
+├─ home.llms.txt
+├─ robots.txt
+├─ sitemap.xml
+├─ 404.html
+├─ _markup/
+├─ _partials/
+└─ _shortcodes/
 ```
 
-上图箭头表示事实如何流向消费者，不表示 partial 的调用方向。允许调用方向与它相反且保持单向：布局可调用 `navigation/source`、`navigation/path`、`collection` 和 `seo`；`seo/breadcrumb` 调用 `navigation/path`；`navigation/source` 调用 `navigation/path` 与 `collection`；`navigation/path` 调用 `collection`、`taxonomy` 与 `routing`；`collection` 调用 `taxonomy` 与 `routing`。`taxonomy` 和 `routing` 不反向调用这些消费者。
+内容通过 `layout: page-article`、`layout: page-collection` 等名称选择入口。`page-*` 是本项目为自定义 layout 采用的命名前缀，不表示 Hugo 的 `page` Kind；例如 `page-collection` 同时供 section、taxonomy 和其他需要集合呈现的页面使用。入口负责装配，不重新实现集合、导航、文章或发布算法。只有入口确实拥有私有 helper 时才建立 `entry-*` partial 目录；不能为了目录对称增加单行转发层。
 
-`collection` 只读取 `routing` 来生成 URL，不据此决定成员；`navigation/source` 不重新实现 section 或 taxonomy 的成员发现；SEO 只消费结构路径，不参与可见导航渲染。
+当前只有三个入口私有目录：
 
-## 目录职责
+- `entry-baseof/`：全站骨架独有的内联脚本、runtime manifest 装配和内容图标声明审计。`entry-baseof/audit-content-icons.html` 依赖入口对可列出页面的精确判断，不属于通用构建审计。
+- `entry-page-home/`：首页品牌场景模型。
+- `entry-page-prefetch-debug/`：prefetch 调试页的可见内容。
 
-- `asset/`：Hugo Pipes、页面资源发布与 CSS 构建。`publish-local` 可查页面包和全局 assets；`publish-page` 只查页面包，两者契约不同。
-- `build/`：一次构建的版本与时间事实源。
-- `cache-policy/`：合并主题默认值与站点覆盖，返回共享路由和 Service Worker 投影；不生成托管平台文件。
-- `collection/`：集合声明、成员、统一 row、排序、集合 HTML 与 `_items.json` 协议。taxonomy 提供的页面节点和分类成员事实也在这里转换成显示字段。
-- `content/`：通用正文外壳、正文样式与标题契约。文章元信息和 BlogPosting schema 仍归 `article/`。
-- `list/`：多个领域共用的单行呈现组件，不拥有集合成员或点击行为。
-- `navigation/root/`：固定的第一列入口；隐藏结构根也可参与选中推导。
-- `navigation/path/`：当前页面的结构路径与可见列。
-- `navigation/source/`：可序列化的浏览来源模型和来源载荷发布。
-- `routing/`：`from`、排序 lineage 等跨集合与导航共用的 URL 状态协议。
-- `taxonomy/`：Hugo taxonomy 配置、值解析和成员发现。它返回页面节点，或分类的 term、数量与 Lastmod 等原始事实；不格式化列表日期、大小或排序键。`collection` 消费其成员，`navigation/path` 消费其层级与 URL；它不反向依赖二者。
-- `seo/`：head 元数据、分享图和 JSON-LD；不输出可见导航。
-- `prefetch/runtime/` 与 `prefetch/speculation/`：两套独立传输机制，共存不等于共享实现；跨机制的槽位所有权与冲突检测只归 `prefetch/coordination.html`。
-- `pwa/`：规范化 PWA 配置，发布站点图标、`sw.js` 与浏览器端 Service Worker manager；缓存路由事实仍来自 `cache-policy/`。
-- `runtime/`：跨页面脚本共用的 Hugo JS 构建参数、内联脚本构建与运行时数据资源。`asset-manifest.html` 负责发布语言运行时文案和最终 manifest，页面骨架只引用返回的资源；实际 CSP hash 仍由生产构建后处理从最终 HTML 计算。
-- `updates/`：更新面板、操作与运行时文案。静态页面和浏览器 JSON 都从 `/updates/check` 的 `site_update.labels` 读取同一份作者文案。
-- `deployment/`：把共享缓存策略投影为托管平台路由，并生成发布文件。
+## Partial 所有权
 
-## 必须保留的边界
+`layouts/_partials/` 使用两个开放家族。`feature-*` 表示用户能够识别的站点能力；`system-*` 表示实现这些能力所需的技术机制。未来出现账号、搜索、收藏等真实能力时，可以增加新的 `feature-*`，不把它们塞进既有目录。
 
-相似代码不代表相同契约：
+```text
+_partials/
+├─ entry-baseof/
+├─ entry-page-home/
+├─ entry-page-prefetch-debug/
+│
+├─ feature-browse/
+├─ feature-document/
+├─ feature-preferences/
+├─ feature-updates/
+│
+├─ system-ui/
+├─ system-assets/
+├─ system-metadata/
+├─ system-delivery/
+└─ system-build/
+```
+
+- `feature-browse/`：集合成员、统一 row、排序、第一列入口、路径列、浏览来源、taxonomy、URL 状态和集合内部的产品展示适配。
+- `feature-document/`：正文外壳、标题契约、文章元信息、文章 schema、正文样式和 Markdown 图片渲染。
+- `feature-preferences/`：语言上下文、语言选项模型，以及语言页与外观页共用的返回操作。外观固定为 auto、light、dark 三项，由 `page-appearance.html` 就地装配，不单独建立选项模型；它不负责账号、会话或权限。
+- `feature-updates/`：检查更新页面、状态文案和浏览器运行时文案。
+- `system-ui/`：列表行、图标、选择控件、链接、页面 slot 与公共页面样式装配。
+- `system-assets/`：Hugo Pipes、CSS/JS 构建、页面及全局资源发布、图片处理原语。
+- `system-metadata/`：站点元信息、SEO、分享图和 agent/llms 输出。
+- `system-delivery/`：Service Worker、prefetch、缓存策略及部署平台投影。
+- `system-build/`：构建版本、时间和跨入口构建审计。只属于 `baseof.html` 入口契约的内容图标审计留在 `entry-baseof/`。
+
+`feature-browse/collection/`、`feature-browse/navigation/`、`feature-browse/taxonomy/` 等目录仍按一个功能内部的稳定子领域组织。家族前缀只表达所有权，不算一层算法包装；功能内部最多再使用两层确有意义的子领域。
+
+## 依赖方向
+
+```text
+Hugo entry  ──→ entry-* / feature-* / system-*
+entry-*     ──→ feature-* / system-*
+feature-*   ──→ system-*
+feature-*   ──→ 少量明确、单向的其他 feature-*
+system-*    ──X feature-*
+```
+
+当前唯一的跨功能依赖是 `feature-document → feature-browse`：文章元信息读取 taxonomy 的配置、值和 URL。它表达真实领域关系，保持单向即可。不要为了让依赖图看起来分层而把 taxonomy 降成通用工具。
+
+`system-*` 不得反向取得 Feature 状态。具体规则如下：
+
+- `baseof.html` 取得浏览端 JS 构建参数，再显式传给内联脚本、prefetch runtime 和 Service Worker。
+- `system-assets/script.html` 只消费调用者传入的可选 `params`，不自行读取浏览路由。
+- `system-metadata/seo/breadcrumb.html` 只消费入口传入的路径模型，不自行构建导航。
+- `entry-baseof/runtime-manifest.html` 是跨更新文案、构建事实和语言 fallback 的最终装配点。
+
+目录表达“谁拥有这段代码、它为什么变化”；调用图表达“谁依赖谁”。不要根据偶然的调用顺序创造 `site → explorer → ui → assets` 之类伪层级，也不要建立 `common`、`utils`、`platform`、`runtime` 等没有明确收口条件的目录。
+
+## 功能内部边界
+
+以下边界仍然成立：
 
 1. 普通 section 与 taxonomy 都能产出 row，但成员发现规则不同。
-2. 结构路径用于静态 HTML 和 SEO；进入来源可受 `from` 改变，不能作为 canonical 事实。
-3. 服务端来源模型含 Hugo Page；浏览器投影必须可序列化并控制体积。
+2. 结构路径用于静态 HTML 和 SEO；用户进入来源可由 `from` 改变，不能作为 canonical 事实。
+3. 服务端来源模型可以包含 Hugo Page；浏览器投影必须可序列化并控制体积。
 4. collection source 是小型描述；`_items.json` 是可能很大的行载荷。
-5. Markdown 响应式图片与社交分享图具有不同尺寸和继承规则。
-6. 根入口列与路径列可以共享行组件，不能共享“如何找到条目”的渲染器。
+5. Markdown 响应式图片与社交分享图具有不同尺寸和继承规则，但共用底层资源处理原语。
+6. 第一列、路径列和主列表可以共用行组件，不能共享“如何发现条目”的逻辑。
+7. 更新面板是用户功能；Service Worker、缓存和预取是 delivery 机制。
 
 ## 新增与修改规则
 
-- 调用者知道意图时，直接调用具体 partial；不要新增 `mode`/`type` 字符串分发层。
-- partial 调用写完整 `.html` 路径，避免依赖 Hugo 的隐式扩展名解析。
-- 单行转发只有在它代表稳定契约或 Hugo 必需入口时才保留。迁移完成后不保留旧路径兼容壳。
-- 目录最多使用两层职责分组。只有 `navigation`、`collection/items`、`collection/rows`、`collection/sort`、`taxonomy/children`、`seo/share-image` 和 `prefetch` 这类确有子领域的模块才继续分层。`collection/rows.html` 保留为稳定公共入口，`collection/rows/` 只放页面种类适配器。
-- 数据 partial 返回模型；可见 HTML partial 以 `render`、`column`、`cell` 等名字明确表达输出。
+- 调用者知道意图时，直接调用具名 partial；不增加 `mode`、`type`、`op` 字符串分发器。
+- partial 调用写完整 `.html`、`.json` 或 `.txt` 路径。
+- 单行转发只有代表稳定契约或 Hugo 必需入口时才保留；迁移完成后不保留旧路径兼容壳。
+- 数据 partial 返回模型；输出 HTML 的 partial 使用 `render`、`panel`、`column`、`cell` 等名字表达副作用。
 - 修改成员发现或 row 字段时，同时验证主列表、路径列、`_items.json`、排序和进入来源恢复。
+- 新 Feature 先留在唯一入口附近；出现多个协作模块或跨入口复用后再提取，避免预建空目录。
 
-`baseof.html` 是最终装配点。它可以显式组合领域模块，但不应重新实现领域算法；复杂的构建或部署数据准备应先收敛成返回纯数据的 partial，再由 `baseof` 触发发布。
+`baseof.html` 是最终 composition root。它可以显式组合功能和系统模块，但复杂算法必须留在所属模块中。

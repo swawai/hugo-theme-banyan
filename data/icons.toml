@@ -10,7 +10,7 @@
 #    可以带参数：{{< icon "folder" class="my-class" label="我的文件夹" >}}
 #
 # 2. 在 Layouts 模板区域 (.html) 中，请统一调用 partial：
-#    {{ partial "icon" (dict "name" "folder") }}
+#    {{ partial "system-ui/icon/render.html" (dict "name" "folder") }}
 #
 # 【运行原理 (JIT 按需 Sprite)】
 # 无论是在哪一种场景引入，系统底层都只会输出一个指向对应 ID 的极简 `<use href="#icon-xxx">`。

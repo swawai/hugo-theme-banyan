@@ -4,7 +4,7 @@ title: GitHub
 description: Browse the Banyan theme source code.
 date: 2026-09-08
 slug: github
-layout: article-page
+layout: page-article
 icon: github
 weight: 102
 outputs:

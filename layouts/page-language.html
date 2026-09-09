@@ -1,0 +1,23 @@
+{{ define "styles" }}
+{{ partial "system-ui/page-styles.html" (dict "ctx" . "view" "choice") }}
+{{ end }}
+{{ define "head-extra" }}
+{{ partial "feature-document/styles.html" (dict "ctx" .) }}
+{{ end }}
+
+{{ define "main" }}
+<article class="article" data-retire-return-param>
+  <div class="collection-list collection-list--index" data-language-settings>
+    {{- $items := slice -}}
+    {{- range partial "feature-preferences/language-choice-options.html" . -}}
+      {{- $items = $items | append (dict
+        "control" "link" "href" .href "title" .name "text" .name
+        "icon" .icon "isCurrent" (eq .code $.Language.Lang)
+        "prefetchSlot" "nav" "dataAttrs" (dict "language-choice" .code "has-trans" (printf "%v" .translated))
+      ) -}}
+    {{- end -}}
+    {{ partial "system-ui/choice/render.html" (dict "page" . "title" .Title "items" $items) }}
+    {{ partial "feature-preferences/back-link.html" . }}
+  </div>
+</article>
+{{ end }}

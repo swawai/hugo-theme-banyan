@@ -1,0 +1,13 @@
+{{ define "styles" }}
+{{ $config := partial "feature-browse/collection/config.html" (dict "page" .) }}
+{{ partial "system-ui/page-styles.html" (dict "ctx" . "view" $config.view) }}
+{{ end }}
+{{ define "head-extra" }}
+{{ partial "feature-document/styles.html" (dict "ctx" .) }}
+{{ end }}
+{{ define "main" }}
+{{ partial "feature-browse/collection/render-page.html" . }}
+{{ end }}
+{{ define "body-extra" }}
+{{ partial "feature-browse/collection/sort/script.html" . }}
+{{ end }}

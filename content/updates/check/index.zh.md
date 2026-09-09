@@ -3,7 +3,7 @@ title: 检查更新
 description: 查看当前站点版本并检查更新。
 date: 2026-09-08
 slug: check
-layout: update-check
+layout: page-update-check
 icon: { text: "↻" }
 weight: 10
 outputs:

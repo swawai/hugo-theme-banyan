@@ -33,7 +33,7 @@
 - `themes/banyan/assets/js/updates/ui.js`
 - `themes/banyan/assets/js/sw-manager.disable.js`
 - `themes/banyan/assets/js/runtime-manifest.js`
-- `themes/banyan/layouts/_default/baseof.html`
+- `themes/banyan/layouts/baseof.html`
 
 ## 当前实现的关键约定
 

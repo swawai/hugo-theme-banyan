@@ -1,0 +1,69 @@
+{{- $swMode := lower (printf "%v" (.sw_mode | default "off")) -}}
+{{- with site.Params.link_prefetch -}}
+  {{- errorf "Build failed: params.link_prefetch has been split into params.prefetch_runtime and params.speculation_rules; update your site config instead of keeping the old unified stack." -}}
+{{- end -}}
+{{- $runtimeConfig := site.Params.prefetch_runtime | default dict -}}
+{{- $runtimeModeRaw := index $runtimeConfig "mode" | default "off" -}}
+{{- $runtimeMode := lower (printf "%v" $runtimeModeRaw) -}}
+{{- $speculationConfig := site.Params.speculation_rules | default dict -}}
+{{- $speculationModeRaw := index $speculationConfig "mode" | default "off" -}}
+{{- $speculationMode := lower (printf "%v" $speculationModeRaw) -}}
+{{- $coordinationRaw := index $speculationConfig "runtime_coordination" | default "independent" -}}
+{{- $coordination := lower (printf "%v" $coordinationRaw) -}}
+{{- $labels := slice -}}
+{{- range partial "system-delivery/prefetch/targets.html" . -}}
+  {{- $labels = $labels | append (index . "config_key") -}}
+{{- end -}}
+{{- if not (in (slice "off" "enable") $runtimeMode) -}}
+  {{- errorf "Build failed: params.prefetch_runtime.mode only supports off/enable; got %q." $runtimeModeRaw -}}
+{{- end -}}
+{{- range $label := $labels -}}
+  {{- if isset $runtimeConfig $label -}}
+    {{- errorf "Build failed: params.prefetch_runtime.%s global defaults have been removed. Use explicit runtime environment tables such as params.prefetch_runtime.env.TT.%s or params.prefetch_runtime.env.FT.%s instead." $label $label $label -}}
+  {{- end -}}
+  {{- if isset $speculationConfig $label -}}
+    {{- $parsed := partial "system-delivery/prefetch/speculation/mode.html" (index $speculationConfig $label) -}}
+    {{- if eq (index $parsed "kind") "invalid" -}}
+      {{- errorf "Build failed: params.speculation_rules.%s only supports empty/off or direct modes such as prefetch_moderate or prerender_eager; got %q." $label (index $parsed "value") -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if isset $speculationConfig "env" -}}
+  {{- errorf "Build failed: params.speculation_rules.env is not supported. Speculation Rules is now a direct page-level header stack, not a browser-capability env matrix." -}}
+{{- end -}}
+{{- if not (in (slice "off" "header") $speculationMode) -}}
+  {{- errorf "Build failed: params.speculation_rules.mode only supports off/header; got %q." $speculationModeRaw -}}
+{{- end -}}
+{{- if not (in (slice "independent" "preempt_runtime_when_supported") $coordination) -}}
+  {{- errorf "Build failed: params.speculation_rules.runtime_coordination only supports independent/preempt_runtime_when_supported; got %q." $coordinationRaw -}}
+{{- end -}}
+{{- $runtimeEnvConfig := dict -}}
+{{- if eq $runtimeMode "enable" -}}
+  {{- $runtimeEnvConfig = partial "system-delivery/prefetch/runtime/env-map.html" (dict "prefetch_config" $runtimeConfig "prefetch_labels" $labels) -}}
+  {{- range $envKey, $envConfig := $runtimeEnvConfig -}}
+    {{- range $label := $labels -}}
+      {{- if isset $envConfig $label -}}
+        {{- $parsed := partial "system-delivery/prefetch/runtime/mode.html" (index $envConfig $label) -}}
+        {{- if eq (index $parsed "kind") "invalid" -}}
+          {{- errorf "Build failed: params.prefetch_runtime.env.%s.%s only supports empty/off or runtime short codes (for example link_mf, link_xf, sw_sf, sw_xf_g); got %q." $envKey $label (index $parsed "value") -}}
+        {{- end -}}
+        {{- if and (eq (index $parsed "transport") "link") (eq (substr $envKey 0 1) "F") -}}
+          {{- errorf "Build failed: params.prefetch_runtime.env.%s.%s=%q requires link transport, but the first flag of runtime environment key %s is F." $envKey $label (index $parsed "value") $envKey -}}
+        {{- end -}}
+        {{- if and (eq (index $parsed "transport") "sw") (eq (substr $envKey 1 1) "F") -}}
+          {{- errorf "Build failed: params.prefetch_runtime.env.%s.%s=%q requires SW transport, but the second flag of runtime environment key %s is F." $envKey $label (index $parsed "value") $envKey -}}
+        {{- end -}}
+        {{- if and (eq (index $parsed "transport") "sw") (ne $swMode "enable") -}}
+          {{- errorf "Build failed: params.prefetch_runtime.env.%s.%s=%q requires SW transport, but params.service_worker.mode=%q." $envKey $label (index $parsed "value") $swMode -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return (dict
+  "runtime_mode" $runtimeMode
+  "runtime_env" $runtimeEnvConfig
+  "speculation_mode" $speculationMode
+  "speculation_config" $speculationConfig
+  "coordination" $coordination
+) -}}

@@ -19,7 +19,7 @@
 用户已确认以 `/updates/` 收纳“检查更新”和“更新记录”，采用真实内容子页。列表基础已获用户确认，本轮迁移内容和更新入口，不在中间增加临时专用列表。
 
 1. **名称列表与样式拆分（已验收）**：增加 `list: name`，仅显示图标和名称，默认名称升序，完整复用集合来源、继承、排序、路径列和历史。`grid-list.css` 改名为 `grid-base.css` 并成为单列基底；目录三列配置移到 `grid-directory.css`，all／products 只叠加各自列布局。choice 共用基底，保留原生链接／按钮及各自功能逻辑，不增加排序。不引入 `list: base`、`list_columns` 或 `grid-name.css`。
-2. **更新入口迁移（已实施，待用户确认）**：主题 `content/updates/_index*.md` 使用 `layout: collection-page`、`list: name`、`root_nav: true`；`updates/check/index*.md` 使用 `update-check` 布局承载现有检查操作，`updates/changelog/index*.md` 承载更新记录，项目同路径内容同步迁移。检查页内显示实际版本／状态，版本为普通文本，不再嵌套更新记录链接；相关 `changelog_page` 字段和模板耦合已删除。名称列表不伪造运行时更新时间。旧 `pwa/`、`site/` 内容入口及 `pwa-page` 布局已删除，第一列合并为“更新”，共 14 项；模型、引用、sitemap、导航及对应测试已迁移。`assets/site/pwa/` 资源路径不变。更新记录保留 `/changelog/`，旧 `/pwa/`、`/site/` 通过根部署规则分别永久跳转到检查页和更新列表，覆盖三语言与有无尾斜杠。
+2. **更新入口迁移（已实施，待用户确认）**：主题 `content/updates/_index*.md` 使用 `layout: page-collection`、`list: name`、`root_nav: true`；`updates/check/index*.md` 使用 `page-update-check` 布局承载现有检查操作，`updates/changelog/index*.md` 承载更新记录，项目同路径内容同步迁移。检查页内显示实际版本／状态，版本为普通文本，不再嵌套更新记录链接；相关 `changelog_page` 字段和模板耦合已删除。名称列表不伪造运行时更新时间。旧 `pwa/`、`site/` 内容入口及 `pwa-page` 布局已删除，第一列合并为“更新”，共 14 项；模型、引用、sitemap、导航及对应测试已迁移。`assets/site/pwa/` 资源路径不变。更新记录保留 `/changelog/`，旧 `/pwa/`、`/site/` 通过根部署规则分别永久跳转到检查页和更新列表，覆盖三语言与有无尾斜杠。
 
 列表基础验收：生产构建 `temp_workspace/public/2609090126-name-list-base` 的 141 页 HTML 审计通过；10 项浏览器回归通过，报告为 `temp_workspace/regression/260909012714-browser/report.json`，覆盖画幅宽度、系统页面、入口、产品路径、排序隔离与视觉对齐。四种列表 × 三语言集合契约及 name 的目录／分类／汇总、升降序、进入文章、刷新、前进后退验证通过，产物为 `temp_workspace/collection-contract-umloRE`。已查看名称主列、文章路径列、目录及语言页截图。该阶段仅交付列表基础，未迁移业务内容。
 
@@ -31,7 +31,7 @@
 
 已确认：现有面包屑通过 `from` 保存进入路径，结合 `sort/sorts` 恢复排序，并已有根入口及各列选中逻辑。本次复用该机制，将结果接到统一第一列，清除主菜单另用 `nav_primary` 判断归属的分支。
 
-第一列复用第二、三列的 `list/link-cell.html`、`list/item-content.html` 和 `collection-list.css`，沿用行结构、图标、间距、悬停及 `.is-current` 选中态；适配容器与断点限制。统一入口列表保持完整，来源变化只更新选中项，避免原根菜单渲染函数把它替换成局部菜单。
+第一列复用第二、三列的 `system-ui/list/link-cell.html`、`system-ui/list/item-content.html` 和 `collection-list.css`，沿用行结构、图标、间距、悬停及 `.is-current` 选中态；适配容器与断点限制。统一入口列表保持完整，来源变化只更新选中项，避免原根菜单渲染函数把它替换成局部菜单。
 
 目标入口：文章 - 全部、文章 - 分类、产品 - 全部、产品 - 分类、语言、外观、我的、关于、更新、RSS 订阅、微信、GitHub、备案（图片图标＋粤ICP备2024338434号）、首页（© 2026 Swaw）。
 
@@ -48,7 +48,7 @@
 
 当前行动安排（2026-09-09，以下规则优先于后面的历史记录）：
 
-入口显式声明：根页面只有顶层 `root_nav: true` 才显示，未声明默认隐藏。三语言可见根页面及首页已补齐声明，前四项采用“文章 - 全部、文章 - 分类、产品 - 全部、产品 - 分类”，权重依次 10、20、30、40。目录与阅读目的保留真实页面、集合数据和文章底部链接，第一列隐藏后共 15 项。隐藏来源及直接访问目录下文章时，第一列无选中项，右侧仍显示真实路径；不新增菜单归属映射。仅在 `navigation/root/render.html` 过滤展示，完整根模型不变，无新增 JS 或样式分支。下面 17 项入口等记录描述此前步骤。
+入口显式声明：根页面只有顶层 `root_nav: true` 才显示，未声明默认隐藏。三语言可见根页面及首页已补齐声明，前四项采用“文章 - 全部、文章 - 分类、产品 - 全部、产品 - 分类”，权重依次 10、20、30、40。目录与阅读目的保留真实页面、集合数据和文章底部链接，第一列隐藏后共 15 项。隐藏来源及直接访问目录下文章时，第一列无选中项，右侧仍显示真实路径；不新增菜单归属映射。仅在 `feature-browse/navigation/root/render.html` 过滤展示，完整根模型不变，无新增 JS 或样式分支。下面 17 项入口等记录描述此前步骤。
 
 显式入口验收：生产构建 `temp_workspace/public/2609090047-explicit-root-navigation-fixed` 的 141 页 HTML 审计通过，6 项相关浏览器回归通过（`temp_workspace/regression/260909004745-browser/report.json`），覆盖三语言显示名称与顺序、隐藏来源首帧／运行时选中、底部元信息进入分类、排序／刷新／历史，以及三种宽度下的统一布局。集合契约检查通过（`temp_workspace/collection-contract-Ho6B9d`），验证 `true`、`false`、缺省、字符串声明、普通子项不被提升、隐藏页面仍输出及目录主动加入入口。已查看文章全部、文章分类和隐藏阅读目的路径截图。
 
@@ -60,7 +60,7 @@
 
 PWA 条目图标：主题三语言 `content/site/pwa/index*.md` 声明 `icon: { text: "↻" }`，沿用当前 15px 字号和 1.5rem 图标占位；目录主表、文章路径列及运行时数据使用相同字符，不增加特殊样式。生产构建 `temp_workspace/public/2609090012-pwa-update-icon` 的 141 页 HTML 审计及 `system-site-directory` 回归通过（`temp_workspace/regression/260909001233-browser/report.json`），验证三语言目录、路径列及排序／刷新／历史中的字符图标。
 
-说明页目标链接：RSS 订阅地址、备案页两个查询链接、GitHub 头像和文字链接均使用原生新标签打开，第一列入口仍在当前标签打开说明页。RSS 短代码为既有 `html/link.html` 传入 `target="_blank"` 和 `rel="noopener noreferrer"`；GitHub／备案正文使用小型 `new-tab` 短代码复用同一渲染器，主题 GitHub 默认页同步采用。保留 `unsafe: false`，不增加 JS 或全站链接重写。生产构建 `temp_workspace/public/2609082309-info-links-new-tab` 的 141 页 HTML 审计及 `system-site-directory` 回归通过（`temp_workspace/regression/260908231037-browser/report.json`）；三语言共 15 次实际点击验证新标签 URL、`window.opener` 为空、原页面 URL 保持，以及根入口仍在当前标签打开。测试拦截目标响应以排除外站和 XML 查看器差异，RSS 实际 XML 仍独立读取校验。
+说明页目标链接：RSS 订阅地址、备案页两个查询链接、GitHub 头像和文字链接均使用原生新标签打开，第一列入口仍在当前标签打开说明页。RSS 短代码为既有 `system-ui/link.html` 传入 `target="_blank"` 和 `rel="noopener noreferrer"`；GitHub／备案正文使用小型 `new-tab` 短代码复用同一渲染器，主题 GitHub 默认页同步采用。保留 `unsafe: false`，不增加 JS 或全站链接重写。生产构建 `temp_workspace/public/2609082309-info-links-new-tab` 的 141 页 HTML 审计及 `system-site-directory` 回归通过（`temp_workspace/regression/260908231037-browser/report.json`）；三语言共 15 次实际点击验证新标签 URL、`window.opener` 为空、原页面 URL 保持，以及根入口仍在当前标签打开。测试拦截目标响应以排除外站和 XML 查看器差异，RSS 实际 XML 仍独立读取校验。
 
 GitHub 账号与头像：项目三语言 GitHub 说明页仅展示 SwawHQ 组织账号，撤掉表格、个人账号与介绍文案，正文只保留可点击的头像及 `github.com/SwawHQ` 链接。清理重复资源后，头像统一引用项目 `assets/site/pwa/favicon.svg`，通过现有 `asset` 短代码与站点入口、浏览器图标共用哈希资源；尺寸声明为 64×48，保持 SVG 的 4:3 图形比例。关于页同步只保留 SwawHQ。无新增模板、样式或运行时分支。
 
@@ -72,7 +72,7 @@ GitHub 简化验收：生产构建 `temp_workspace/public/2609082304-github-simp
 
 联系与订阅入口验收：生产构建 `temp_workspace/public/2609082242-contact-root-entries` 的 141 页 HTML 审计及 4 项相关浏览器回归通过（`temp_workspace/regression/260908224256-browser/report.json`）。覆盖三语言 15 项根导航、微信 SVG 与二维码解码、GitHub 正文目标、RSS 实际地址及 XML、站点剩余三项排序和路径列，以及根入口选中、刷新、历史与设置返回。已查看站点和微信页截图；当前局域网预览服务未运行，本轮使用测试构建验证。
 
-站点 Logo：三语言站点入口声明 `icon: { image: "site/pwa/favicon.svg" }`，通用图片图标改为调用现有 `asset/publish-local.html`，复用页面 bundle／全站 assets 的既有解析和哈希发布规则。入口 Logo 与 HTML 的 favicon 共用 `/site/pwa/favicon.<sha256>.svg`；不复制 Logo、不增加发布器或 JS 分支。图片目录默认值和自身声明均支持 assets，既有 ICP bundle 图片继续使用原哈希路径。
+站点 Logo：三语言站点入口声明 `icon: { image: "site/pwa/favicon.svg" }`，通用图片图标改为调用现有 `system-assets/publish-local.html`，复用页面 bundle／全站 assets 的既有解析和哈希发布规则。入口 Logo 与 HTML 的 favicon 共用 `/site/pwa/favicon.<sha256>.svg`；不复制 Logo、不增加发布器或 JS 分支。图片目录默认值和自身声明均支持 assets，既有 ICP bundle 图片继续使用原哈希路径。
 
 站点 Logo 验收：集合契约 `temp_workspace/collection-contract-BeFSY5` 覆盖 assets 自身／默认图标、三语言 SSR／运行时、刷新和历史，以及显式 bundle、静态／远程 URL、缺失及非图片资源校验；确认全站 Logo 只生成一份哈希资源。生产构建 `temp_workspace/public/2609082213-site-logo-assets` 的 141 页 HTML 审计、图片发布检查和 2 项相关浏览器回归通过（`temp_workspace/regression/260908221328-browser/report.json`）。局域网预览核对三语言同一 favicon URL、15px 图标尺寸、文章进入后的选中态及浅色／深色截图，产物在 `temp_workspace/site-logo-live/`。
 
@@ -80,7 +80,7 @@ GitHub 简化验收：生产构建 `temp_workspace/public/2609082304-github-simp
 
 备案名称与链接补齐：三语言入口显示完整 `粤ICP备2024338434号`；正文备案号自身加粗并链接至 `https://beian.miit.gov.cn/`，原有查询网站说明链接继续保留。
 
-图片图标与入口排序：备案入口改为 `weight: 105`，排在版权入口 `110` 前面；三语言声明 `icon: { image: "0.webp" }`，资源来自项目 `content/icp/0.webp`。通用图标增加图片值，声明时以所属页面解析，再复用现有 `asset/publish-page.html` 发布到 `/media/content/icp/0.<sha256>.webp`；主表、路径列、图标默认值继承与 JSON 均保留同一地址。图片使用共用占位及 `1rem` 图形尺寸，保持比例；备案页保留 `build.publishResources: false`，只发布哈希资源。不改变缓存策略或新增图片发布链。
+图片图标与入口排序：备案入口改为 `weight: 105`，排在版权入口 `110` 前面；三语言声明 `icon: { image: "0.webp" }`，资源来自项目 `content/icp/0.webp`。通用图标增加图片值，声明时以所属页面解析，再复用现有 `system-assets/publish-page.html` 发布到 `/media/content/icp/0.<sha256>.webp`；主表、路径列、图标默认值继承与 JSON 均保留同一地址。图片使用共用占位及 `1rem` 图形尺寸，保持比例；备案页保留 `build.publishResources: false`，只发布哈希资源。不改变缓存策略或新增图片发布链。
 
 图片图标验收：集合契约 `temp_workspace/collection-contract-vNQ8sR` 覆盖三种列表、三语言、自身与目录继承图片、资源哈希及原始字节、SSR／运行时、刷新和历史，并验证空值、缺失、远程及非图片声明构建失败。生产构建 `temp_workspace/public/2609082140-image-icons-final` 的 141 页 HTML 审计、图片发布检查及 5 项相关浏览器回归通过（`temp_workspace/regression/260908214029-browser/report.json`）。局域网预览完整重建后核对三语言顺序、图片解码、15px 尺寸及截图，产物在 `temp_workspace/image-icons-live/`。
 
@@ -94,7 +94,7 @@ GitHub 简化验收：生产构建 `temp_workspace/public/2609082304-github-simp
 
 统一字符图标与首页入口：`icon`、`list_icon_folder`、`list_icon_file` 同时支持 SVG 名称和 `{ text: "©" }`。语言配置迁移到相同的 `params.icon`，移除专用 `icon_text`／`iconText` 数据通道；共享渲染与浏览器路径列保留字符大小写、按纯文本输出，SVG 继续按需打包。首页自身加入第一列，用根 `content/_index*.md` 的 `linkTitle`、`icon`、`weight` 排在第一项；首页只在访问自身时选中，其他入口及有效 `from` 保持原规则。移除重复列头首页链接、版权页脚、`slots.footer` 及其专用片段／模板／样式。首页动画布局与后续配色计划保持原范围。
 
-页脚信息收纳：共用页脚保留现有品牌主页链接及其年份，移除微信、RSS、GitHub、备案等快捷链接的配置与渲染分支。微信继续使用既有子页；RSS、GitHub、备案新增为站点目录的真实文章页，统一 `layout: article-page`、`build.list: local`、`slots.breadcrumb: true`，目录进入时先显示说明，再由用户点击正文链接。RSS 页使用 `rss-link` shortcode 读取当前语言首页真实 RSS 输出，未增加专用列表或跳转布局。主题提供 RSS 与默认 GitHub 页，Swaw GitHub 内容与备案信息在项目根目录；根项目 sitemap 声明同步加入三个公开信息页。现在站点目录共有七个子项，首页和站点页共享的页脚均只保留品牌行。
+页脚信息收纳：共用页脚保留现有品牌主页链接及其年份，移除微信、RSS、GitHub、备案等快捷链接的配置与渲染分支。微信继续使用既有子页；RSS、GitHub、备案新增为站点目录的真实文章页，统一 `layout: page-article`、`build.list: local`、`slots.breadcrumb: true`，目录进入时先显示说明，再由用户点击正文链接。RSS 页使用 `rss-link` shortcode 读取当前语言首页真实 RSS 输出，未增加专用列表或跳转布局。主题提供 RSS 与默认 GitHub 页，Swaw GitHub 内容与备案信息在项目根目录；根项目 sitemap 声明同步加入三个公开信息页。现在站点目录共有七个子项，首页和站点页共享的页脚均只保留品牌行。
 
 本步验证：生产构建 `temp_workspace/public/2609081902-site-info-final` 的 141 页 HTML 审计、导航状态检查通过；4 项相关浏览器回归通过（`temp_workspace/regression/260908190154-browser/report.json`）。扩展 `system-site-directory` 覆盖三语言七个子项的默认与排序进入、刷新／前进后退、图标、品牌页脚、信息页目标链接，以及当前语言 RSS 地址与 XML 内容。实际 `192.168.1.114:5120` 预览运行相同场景并验证禁用 JS 的 21 个页面／语言组合；截图和报告位于 `temp_workspace/site-info-live/`。本步等待用户复测，品牌主页链接的后续设计暂不变。
 
@@ -108,7 +108,7 @@ GitHub 简化验收：生产构建 `temp_workspace/public/2609082304-github-simp
 
 本步验证：集合契约 `temp_workspace/collection-contract-YZQQJy` 覆盖三语言、三种列表、显式更新时间／默认日期／无时间、目录和平面／树形分类汇总、升降序进入路径列；生产构建 `temp_workspace/public/2609081815-list-lastmod` 的 HTML 与导航检查、5 项相关浏览器回归通过（`temp_workspace/regression/260908181601-browser/report.json`）。实际 `192.168.1.114:5120` 预览检查五个列表根的三语言列名，站点三个子项显示日期及排序值与 Git 一致，进入子页、排序、刷新和历史保留第二列；截图与报告位于 `temp_workspace/list-lastmod-live/`。本步等待用户复测，不推进后续布局整理。
 
-站点目录再次收敛：按用户要求删除 `site-page.html`，三语言站点根统一声明 `layout: collection-page`、`list: directory`。撤销集合配置、来源注册、路径菜单及图标审计中的站点布局分支；既有 `site_update` 声明仅负责由全站骨架附加操作区、样式和入口更新标记。下述保留专用布局的方案已被替代。验收覆盖三语言全部三个子页（微信、关于、更新记录）的默认／排序进入、第二列及选中保留、刷新与前进后退，并直接检查用户使用的局域网预览，不能只凭临时生产构建通过就交付。
+站点目录再次收敛：按用户要求删除 `site-page.html`，三语言站点根统一声明 `layout: page-collection`、`list: directory`。撤销集合配置、来源注册、路径菜单及图标审计中的站点布局分支；既有 `site_update` 声明仅负责由全站骨架附加操作区、样式和入口更新标记。下述保留专用布局的方案已被替代。验收覆盖三语言全部三个子页（微信、关于、更新记录）的默认／排序进入、第二列及选中保留、刷新与前进后退，并直接检查用户使用的局域网预览，不能只凭临时生产构建通过就交付。
 
 本次直接请求 `192.168.1.114:5120` 复现了缺失路径栏：开发进程返回的三个子页都没有路径栏及脚本，虽内容文件已显式开启。触发 Hugo 配置完整重建（仅更新文件时间，配置字节未修改）后恢复。原地址的浏览器验证已覆盖全部九个语言／子页组合、默认及排序进入、刷新和历史；另验证禁用 JavaScript 的九页，以及 770px 微信截图，产物位于 `temp_workspace/site-shared-layout-live/`。生产构建 `temp_workspace/public/2609081800-site-shared-layout` 的 HTML、导航、集合契约和 9 项相关浏览器回归、3 项安全检查通过。验收以用户实际预览地址的最新输出为准。
 
@@ -116,7 +116,7 @@ GitHub 简化验收：生产构建 `temp_workspace/public/2609082304-github-simp
 
 站点子页显式启用 `slots.breadcrumb`；目录子项缺失发布日期时显示“—”。路径一致性测试发现旧 `_items.json` 发布会在默认语言首页重新排序其他语言的数据，修订为各语言首页直接发布本语言已有来源模型，避免主表与路径列切换顺序。生产构建 `temp_workspace/public/2609081747-site-directory-verified` 的 129 页审计、导航检查、集合契约检查通过；完整 38 项浏览器回归和 3 项安全检查通过（`temp_workspace/regression/260908174738-browser/report.json`、`temp_workspace/regression/260908174841-browser-security/report.json`）。明暗主题及窄屏截图位于 `temp_workspace/site-directory-review/`。本步等待用户验收，后续整理继续逐项确认。
 
-内容图标声明与继承：新增 `icon`、`list_icon_folder`、`list_icon_file` 的统一处理。`list/icon-defaults.html` 为列表分别查找最近祖先的两种默认值；`list/item-icon.html` 优先选择条目自身的非空 `icon`，否则使用当前列表默认值，最终为 `folder`／`file`。不按同名字段继承 `icon`，不沿 `aggregate` 继承；普通文章误写子项默认字段或使用未定义的图标时构建报错。共享列表行、第一列、站点列表及首页快捷列表采用相同规则，路径菜单转换保留 `icon`。产品分类根与产品全部的三语言内容各声明 `list_icon_file: product`，分类子页自动继承，Xvenv 无需逐篇声明。
+内容图标声明与继承：新增 `icon`、`list_icon_folder`、`list_icon_file` 的统一处理。`system-ui/list/icon-defaults.html` 为列表分别查找最近祖先的两种默认值；`system-ui/list/item-icon.html` 优先选择条目自身的非空 `icon`，否则使用当前列表默认值，最终为 `folder`／`file`。不按同名字段继承 `icon`，不沿 `aggregate` 继承；普通文章误写子项默认字段或使用未定义的图标时构建报错。共享列表行、第一列、站点列表及首页快捷列表采用相同规则，路径菜单转换保留 `icon`。产品分类根与产品全部的三语言内容各声明 `list_icon_file: product`，分类子页自动继承，Xvenv 无需逐篇声明。
 
 图标依赖由实际静态渲染及本页可用来源收集，删除每页固定预装 `file`／`folder`／`product`；缓存的来源模型保持为纯数据，依赖注册在页面渲染阶段执行。生产构建 `temp_workspace/public/2609081654-list-icons-final` 的 129 页 HTML 审计、导航状态检查通过，预算未放宽。扩展集合契约覆盖三语言、三种列表样式、独立继承与覆盖、自身图标、汇总隔离、SSR 菜单、仅另一来源需要的 SVG、刷新和历史，以及非法声明；最终验证目录为 `temp_workspace/collection-contract-kHiNG7`。完整 37 项浏览器回归通过（`temp_workspace/regression/260908165048-browser/report.json`）；最终将依赖注册移到明确的页面调用处后，4 项相关回归及 3 项安全检查再次通过（`temp_workspace/regression/260908165426-browser/report.json`、`temp_workspace/regression/260908165426-browser-security/report.json`）。三语言 15 种真实列表及进入文章后的图标已核对，截图与测量位于 `temp_workspace/list-icons-review/`。第 6 步配色仍未开始。
 
@@ -182,7 +182,7 @@ offer:
   value: "项目级免安装开发环境"
 ```
 
-具体实现：`collection/config.html` 解析本页或最近祖先的 `list`；`collection/rows.html` 使用目录／分类原生成员或入口的 `aggregate`，主表、路径菜单、来源 JSON 共用结果。`collection/render.html` 按声明绘制三种表格，`products/offer.html` 只读可选展示信息。旧产品筛选器、provider 与路径猜样式、旧 shortcode 及重复渲染器已删除。Xvenv 的三语言标注与四个可选分类内容文件在根项目；主题只保留分类根和汇总入口。
+具体实现：`feature-browse/collection/config.html` 解析本页或最近祖先的 `list`；`feature-browse/collection/rows.html` 使用目录／分类原生成员或入口的 `aggregate`，主表、路径菜单、来源 JSON 共用结果。`feature-browse/collection/render.html` 按声明绘制三种表格，`feature-browse/collection/products/offer.html` 只读可选展示信息。旧产品筛选器、provider 与路径猜样式、旧 shortcode 及重复渲染器已删除。Xvenv 的三语言标注与四个可选分类内容文件在根项目；主题只保留分类根和汇总入口。
 
 迁移同时更新根项目 `data/redirects.toml`，旧 `/product-categories/.../` 如需保留，应直接转往新 `/products/.../`，避免重定向链。现有规则中 `/products/first-party/`、`/products/third-party/` 及各语言／无尾斜杠变体会与新的真实分类页面重叠，必须按新页面地址删除或重新确定规则，不能机械替换目标造成自跳转。原 `/products/` 改为分类根后不能再重定向到全部入口；原来指向产品全部的站内链接、关于页与测试要明确改为 `/all-products/`。不保留两份内容树或两套分类逻辑，同步核对 canonical、三语言入口、首帧及运行时选中状态。5B 的 `list` 字段和 5C 的原生产品分类均已接入，实体修改说明见 [collection-lists.md](collection-lists.md)。
 
@@ -244,7 +244,7 @@ offer:
 | 打开语言、外观、我的或站点页，携带 `return` | 当前系统页，`return` 不参与菜单归属 |
 | 首页或没有可列出根祖先的内部页 | 不强行选中某一入口 |
 
-第 4 步结构：`navigation/root/pages.html` 合并首页直接子页与真实分类法根，按页面 weight 排序；第一列只输出一份共享列表，站点名列头返回首页。内容祖先决定直接访问的归属，有效 `from` 决定来源归属；完整入口表不再复制进每份集合数据。同步内联初始化、首帧预览和运行时共用选中函数，慢速外部 JS 加载也不会先高亮默认目录。第一列与路径列使用同一行组件、225px 列宽及选中／悬停样式。页脚随导航自然排列，窄屏仍保持当前上下布局。
+第 4 步结构：`feature-browse/navigation/root/pages.html` 合并首页直接子页与真实分类法根，按页面 weight 排序；第一列只输出一份共享列表，站点名列头返回首页。内容祖先决定直接访问的归属，有效 `from` 决定来源归属；完整入口表不再复制进每份集合数据。同步内联初始化、首帧预览和运行时共用选中函数，慢速外部 JS 加载也不会先高亮默认目录。第一列与路径列使用同一行组件、225px 列宽及选中／悬停样式。页脚随导航自然排列，窄屏仍保持当前上下布局。
 
 第 4 步清理：根项目与主题中的 `nav_primary`、三个旧导航 slot、导航和面包屑覆盖片段、旧控件模板／脚本／样式均已删除。保留 `breadcrumb`、`meta`、`footer` 及业务集合配置；正文目录元信息仍使用完整的真实内容路径。系统链接携带独立 `return`；新版本以站点入口的箭头及本地化说明提示，点击先进入站点页，再由页内按钮检查或应用。
 

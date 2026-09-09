@@ -4,7 +4,7 @@ title: Products - All
 description: All products, across prices and origins.
 linkTitle: Products - All
 weight: 30
-layout: collection-page
+layout: page-collection
 outputs:
   - HTML
 slots:

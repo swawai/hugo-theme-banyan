@@ -3,7 +3,7 @@ title: "更新记录"
 slug: "changelog"
 url: changelog/
 weight: 20
-layout: "article-page"
+layout: "page-article"
 changelog:
   intro: "这是主题生成的默认更新记录占位页。需要维护正式发布说明时，可在站点内容中用同路径页面覆盖它。"
   current_build: "当前构建"

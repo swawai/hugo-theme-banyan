@@ -4,7 +4,7 @@ title: 产品－分类
 description: 按价格或来源浏览产品。
 linkTitle: 产品 - 分类
 weight: 40
-layout: collection-page
+layout: page-collection
 list: directory
 list_icon_file: product
 outputs:
@@ -14,7 +14,7 @@ slots:
 cascade:
   - target:
       kind: term
-    layout: collection-page
+    layout: page-collection
     list: products
     slots:
       breadcrumb: true

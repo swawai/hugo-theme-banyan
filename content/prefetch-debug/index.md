@@ -4,7 +4,7 @@ draft: false
 title: "Prefetch Debug"
 slug: "prefetchdebug"
 url: "prefetchdebug"
-layout: "prefetch-debug-page"
+layout: "page-prefetch-debug"
 robots: "noindex, follow"
 build:
   list: "never"

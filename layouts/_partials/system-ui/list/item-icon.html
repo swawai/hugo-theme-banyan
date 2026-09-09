@@ -1,0 +1,8 @@
+{{- $icon := index .defaults .kind -}}
+{{- with .page -}}
+  {{- if isset .Params "icon" -}}
+    {{- $own := partial "system-ui/icon/page-value.html" (dict "value" .Params.icon "page" .) -}}
+    {{- if $own -}}{{- $icon = $own -}}{{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $icon -}}

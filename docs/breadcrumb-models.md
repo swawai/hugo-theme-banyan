@@ -2,7 +2,7 @@
 
 ## 第一列与进入路径
 
-第一列是当前语言站点的真实根页面列表，由 `navigation/root/pages.html` 构建：
+第一列是当前语言站点的真实根页面列表，由 `feature-browse/navigation/root/pages.html` 构建：
 `Home.Pages` 与直接属于 Home 的 taxonomy 根页面取并集，再按页面 `weight` 排序。
 名称取 `LinkTitle` / `Title`，地址取 `RelPermalink`。只有显式声明 `root_nav: true` 的根页面才显示，`build.list: local` 的系统页面也可以参与。
 
@@ -11,7 +11,7 @@
 
 ## 选中规则
 
-`navigation/root/selected.html` 从当前页面及真实内容祖先中找根入口，提供静态 HTML 的默认选中项。
+`feature-browse/navigation/root/selected.html` 从当前页面及真实内容祖先中找根入口，提供静态 HTML 的默认选中项。
 公开 URL 可以与内容路径不同，因此不能根据 URL 前缀猜所属入口。例如 `content/d/products/xvenv/` 发布在 `/p/xvenv/`，仍属于真实目录；目录隐藏时第一列不选中。`content/updates/changelog/` 保留 `/changelog/` 地址，同时归属“更新”并显示其路径列。
 
 有效的 `from` 指向当前页面已发布的来源集合。预览与运行时根据该来源的 `root_item` 调整第一列选中项，完整入口列表始终保留。
@@ -20,7 +20,7 @@
 
 ## 路径模型
 
-`navigation/path/model.html` 根据普通页面、首页或 taxonomy 的真实结构构建模型：
+`feature-browse/navigation/path/model.html` 根据普通页面、首页或 taxonomy 的真实结构构建模型：
 
 - `root_item`：第一列应选中的根页面。
 - `tail_items`：根页面之后的路径项目。
@@ -32,17 +32,17 @@
 
 可见路径列由 `path-navigation-ui.js`／`path-navigation.css` 实现，使用 `renderPathColumns()` 与 `renderPathColumn()`；结构模型和 SEO BreadcrumbList 仍属于 breadcrumb。行选中状态统一使用 `current`，不再接受 `highlighted` 或 `selected` 别名。完整命名约定见 [UI 命名与职责](ui-naming.md)。
 
-`navigation/path/section-items.html` 和 `navigation/path/taxonomy-items.html` 分别查找真实父目录与分类父级，通过 `navigation/path/items-from-rows.html` 把条目转换成统一的 `text`、`href`、`current`、`title`、`kind`、`icon` 字段。调用方已经提供统一行结构，不再另传字段名称。
+`feature-browse/navigation/path/section-items.html` 和 `feature-browse/navigation/path/taxonomy-items.html` 分别查找真实父目录与分类父级，通过 `feature-browse/navigation/path/items-from-rows.html` 把条目转换成统一的 `text`、`href`、`current`、`title`、`kind`、`icon` 字段。调用方已经提供统一行结构，不再另传字段名称。
 
-`navigation/source/page-model.html` 将这些层级映射到集合 provider 与 `_items.json`。所有列表页统一使用 collection 来源，排序字段由 `list` 声明决定。主列表、路径列与来源 JSON 共用 `collection/rows.html`。若浏览器来源已携带 `collection_items`，便省略可由它重建的 `column_items`，避免重复发布兄弟条目。
+`feature-browse/navigation/source/page-model.html` 将这些层级映射到集合 provider 与 `_items.json`。所有列表页统一使用 collection 来源，排序字段由 `list` 声明决定。主列表、路径列与来源 JSON 共用 `feature-browse/collection/rows.html`。若浏览器来源已携带 `collection_items`，便省略可由它重建的 `column_items`，避免重复发布兄弟条目。
 
-首页、普通页面和 taxonomy 的模型生成器负责不同的路径来源，最终共用一个列渲染器。`navigation/path/model.html` 直接按 Hugo 页面种类调用相应生成器；模型不返回 `variant` 或 `strategy` 标签，也没有额外的字符串分发层。
+首页、普通页面和 taxonomy 的模型生成器负责不同的路径来源，最终共用一个列渲染器。`feature-browse/navigation/path/model.html` 直接按 Hugo 页面种类调用相应生成器；模型不返回 `variant` 或 `strategy` 标签，也没有额外的字符串分发层。
 
 第一列只渲染一次，来源模型不携带完整根菜单，也不根据“第一列已覆盖”删除路径集合。分类根的子项可作为第二列出现，分类数量由内容决定。
 
 ## 布局与维护边界
 
-第一列、路径列和内容列表共用 `list/link-cell.html` / `list/item-content.html`、选中状态与导航列宽。版权、备案等信息使用普通根入口，已无独立页脚。
+第一列、路径列和内容列表共用 `system-ui/list/link-cell.html` / `system-ui/list/item-content.html`、选中状态与导航列宽。版权、备案等信息使用普通根入口，已无独立页脚。
 `slots.breadcrumb` 仅控制路径栏是否显示；它不控制全站入口初始化，也不存放进入路径状态。
 
 各宽度采用同一横向列结构：每个尾部路径项目是一列普通列表，直接展示兄弟项目；没有兄弟列表时仍显示该项目的一行链接。SSR 与客户端重绘使用相同的列头、图标与选中规则，不再存在下拉菜单触发器、隐藏面板或宽度模式。

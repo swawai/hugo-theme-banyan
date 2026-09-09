@@ -4,7 +4,7 @@ draft: false
 title: System - My
 linkTitle: My
 slug: my
-layout: my-page
+layout: page-my
 icon: my
 robots: noindex, follow
 build:

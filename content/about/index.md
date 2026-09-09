@@ -6,7 +6,7 @@ title: "About"
 slug: "about"
 url: about/
 weight: 95
-layout: "article-page"
+layout: "page-article"
 slots:
   breadcrumb: true
 build:

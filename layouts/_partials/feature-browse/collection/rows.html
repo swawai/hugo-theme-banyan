@@ -1,0 +1,66 @@
+{{- $page := .page -}}
+{{- $config := partial "feature-browse/collection/config.html" (dict "page" $page) -}}
+{{- $rows := slice -}}
+{{- with $page.Params.aggregate -}}
+  {{- $target := $page.Site.GetPage . -}}
+  {{- if not $target -}}{{- errorf "List page %s cannot resolve aggregate: %s." $page.RelPermalink . -}}{{- end -}}
+  {{- $members := slice -}}
+  {{- if eq $target.Kind "section" -}}
+    {{- $members = $target.RegularPagesRecursive -}}
+  {{- else if eq $target.Kind "taxonomy" -}}
+    {{- range $target.Pages -}}
+      {{- if ne (trim (printf "%v" .Data.Term) " \r\n\t") "" -}}
+        {{- range .Pages -}}{{- $members = $members | append . -}}{{- end -}}
+      {{- end -}}
+    {{- end -}}
+    {{- $members = uniq $members -}}
+  {{- else -}}
+    {{- errorf "aggregate on %s must reference a section or taxonomy root." $page.RelPermalink -}}
+  {{- end -}}
+  {{- range $members -}}{{- $rows = $rows | append (partial "feature-browse/collection/rows/page.html" (dict "page" .)) -}}{{- end -}}
+{{- else -}}
+  {{- if in (slice "taxonomy" "term") $page.Kind -}}
+    {{- $rows = partial "feature-browse/collection/rows/taxonomy.html" (dict "page" $page) -}}
+  {{- else if eq $page.Kind "section" -}}
+    {{- $rows = partial "feature-browse/collection/rows/section.html" (dict "page" $page) -}}
+  {{- else -}}
+    {{- errorf "List page %s has no native children; declare aggregate with its section or taxonomy root." $page.RelPermalink -}}
+  {{- end -}}
+{{- end -}}
+{{- $decorated := slice -}}
+{{- $iconDefaults := partial "system-ui/list/icon-defaults.html" (dict "page" $page) -}}
+{{- range $row := $rows -}}
+  {{- $node := $row.node -}}
+  {{- $icon := partial "system-ui/list/item-icon.html" (dict "page" $node "defaults" $iconDefaults "kind" (cond (eq $row.kind "page") "file" "folder")) -}}
+  {{- $row = merge $row (dict "icon" $icon) -}}
+  {{- if eq $config.view "products" -}}
+    {{- $offer := partial "feature-browse/collection/products/offer.html" (dict "page" $node) -}}
+    {{- $row = merge $row $offer -}}
+  {{- else if eq $config.view "all" -}}
+    {{- $pathText := "/" -}}
+    {{- $pathHref := $node.Site.Home.RelPermalink -}}
+    {{- with $node.Parent -}}
+      {{- $pathText = partial "feature-browse/collection/logical-path.html" (dict "ctx" $node "href" .RelPermalink) -}}
+      {{- $pathHref = .RelPermalink -}}
+    {{- end -}}
+    {{- $bytes := len $node.RawContent -}}
+    {{- $row = merge $row (dict "sort_size" (printf "%v" $bytes) "size_text" (printf "%v" (div (add $bytes 1023) 1024)) "size_unit" "&thinsp;KB" "sort_path" (trim $pathText "/") "path_text" $pathText "path_href" $pathHref) -}}
+  {{- end -}}
+  {{- $decorated = $decorated | append $row -}}
+{{- end -}}
+{{- /* Hugo owns name collation. Ship its rank so browser locale/ICU cannot
+      reorder the same names during hydration (including mixed scripts). */ -}}
+{{- $byName := slice -}}
+{{- range $index, $row := sort $decorated "sort_name" "asc" -}}
+  {{- $byName = $byName | append (merge $row (dict "sort_name" (printf "%d" (add $index 1)))) -}}
+{{- end -}}
+{{- $ordered := $byName -}}
+{{- if eq $config.view "all" -}}
+  {{- $ordered = sort (collections.Reverse $byName) "sort_date" "desc" -}}
+{{- else if eq $config.view "directory" -}}
+  {{- $byName = collections.Reverse $byName -}}
+  {{- $ordered = slice -}}
+  {{- range sort (where $byName "kind" "page") "sort_date" "desc" -}}{{- $ordered = $ordered | append . -}}{{- end -}}
+  {{- range sort (where $byName "kind" "ne" "page") "sort_date" "desc" -}}{{- $ordered = $ordered | append . -}}{{- end -}}
+{{- end -}}
+{{- return $ordered -}}

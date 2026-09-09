@@ -8,7 +8,7 @@
 
 当前前四项依次为：主题 `content/all/index*.md` 的“文章 - 全部”（`weight: 10`）、项目 `content/tags/_index*.md` 的“文章 - 分类”（`20`）、主题 `content/all-products/_index*.md` 的“产品 - 全部”（`30`）、主题 `content/products/_index*.md` 的“产品 - 分类”（`40`），均使用 `linkTitle` 指定入口文字。
 
-`/d/` 和 `/intent/` 不声明 `root_nav`。它们继续渲染目录／分类页，文章底部目录和阅读目的链接、集合成员、排序、`from` 及路径列均保留。隐藏来源没有对应的第一列选中项；直接访问正文时若实际根为隐藏的 `/d/`，同样不选中第一列。可见入口过滤仅发生在 `navigation/root/render.html`，`navigation/root/pages.html` 保留完整结构供归属与来源模型使用。
+`/d/` 和 `/intent/` 不声明 `root_nav`。它们继续渲染目录／分类页，文章底部目录和阅读目的链接、集合成员、排序、`from` 及路径列均保留。隐藏来源没有对应的第一列选中项；直接访问正文时若实际根为隐藏的 `/d/`，同样不选中第一列。可见入口过滤仅发生在 `feature-browse/navigation/root/render.html`，`feature-browse/navigation/root/pages.html` 保留完整结构供归属与来源模型使用。
 
 ## 在哪里改表格
 
@@ -31,15 +31,15 @@
 list: products
 ```
 
-原有 WSL 文章仍全部保留，只把列换成名称、价格、价值说明；没有 `offer` 的文章显示价格 `—`。改成 `list: all` 就使用名称、更新时间、大小、路径列；改成 `list: directory` 就使用名称、更新时间、数量／大小列；改成 `list: name` 就只显示带图标的名称列。没有声明时，继承最近内容祖先的 `list`。普通文章仍使用 `article-page`，不会因祖先的列表声明变成列表。
+原有 WSL 文章仍全部保留，只把列换成名称、价格、价值说明；没有 `offer` 的文章显示价格 `—`。改成 `list: all` 就使用名称、更新时间、大小、路径列；改成 `list: directory` 就使用名称、更新时间、数量／大小列；改成 `list: name` 就只显示带图标的名称列。没有声明时，继承最近内容祖先的 `list`。普通文章仍使用 `page-article`，不会因祖先的列表声明变成列表。
 
-新增普通列表目录时使用 `layout: collection-page`、`list: directory` 和需要的 `slots.breadcrumb: true`；位于已有目录下时可继承布局和展示声明。正文只写介绍，表格自动在介绍后出现，旧的 `section-list`、`taxonomy-list`、`all-list`、`products-list` shortcode 已删除。
+新增普通列表目录时使用 `layout: page-collection`、`list: directory` 和需要的 `slots.breadcrumb: true`；位于已有目录下时可继承布局和展示声明。正文只写介绍，表格自动在介绍后出现，旧的 `section-list`、`taxonomy-list`、`all-list`、`products-list` shortcode 已删除。
 
 `aggregate` 只用于汇总入口，指向一个 section 或 taxonomy 根。它不从父目录继承。普通目录和分类页无需写 `aggregate`，也不写 `list_source` 或 `product_filter`。主题默认页面的站点专用修改可通过项目同路径文件覆盖；三种语言各自保留完整 front matter。
 
-更新目录声明 `layout: collection-page`、`list: name`，与 `/d/` 复用相同模板、集合来源、排序及路径列。目录中只有真实子项，没有追加的版本、检查、状态或返回按钮；全站骨架、公共样式装配和根导航不识别 `site_update`。`root_nav: true`、`weight: 96`、`icon: { text: "↻" }` 将它作为普通“更新”入口列在第一列。
+更新目录声明 `layout: page-collection`、`list: name`，与 `/d/` 复用相同模板、集合来源、排序及路径列。目录中只有真实子项，没有追加的版本、检查、状态或返回按钮；全站骨架、公共样式装配和根导航不识别 `site_update`。`root_nav: true`、`weight: 96`、`icon: { text: "↻" }` 将它作为普通“更新”入口列在第一列。
 
-检查更新是主题 `content/updates/check/index*.md` 的真实子页面，声明 `layout: update-check` 和 `icon: { text: "↻" }`，网址为 `/updates/check/`（各语言加对应前缀）。其布局装配当前构建版本、检查按钮及状态，`site_update.labels` 仍是静态界面与运行时文案的单一事实源。版本时间显示为普通文本，不再链接到更新记录；更新记录通过同级列表访问，因此移除了 `site_update.changelog_page`。这里只检查和应用站点版本，不同步用户数据，也不把版本时间伪装成内容更新时间。
+检查更新是主题 `content/updates/check/index*.md` 的真实子页面，声明 `layout: page-update-check` 和 `icon: { text: "↻" }`，网址为 `/updates/check/`（各语言加对应前缀）。其布局装配当前构建版本、检查按钮及状态，`site_update.labels` 仍是静态界面与运行时文案的单一事实源。版本时间显示为普通文本，不再链接到更新记录；更新记录通过同级列表访问，因此移除了 `site_update.changelog_page`。这里只检查和应用站点版本，不同步用户数据，也不把版本时间伪装成内容更新时间。
 
 项目与主题的更新记录都位于 `content/updates/changelog/index*.md`，保留 `url: changelog/`，因此公开网址仍是 `/changelog/`。来源和第一列归属来自真实内容父目录 `/updates/`，不依赖公开网址前缀。原 `content/pwa/`、`content/site/` 及 `pwa-page` 布局已移除；根 `data/redirects.toml` 将旧 `/pwa/` 转到 `/updates/check/`、旧 `/site/` 转到 `/updates/`，覆盖三语言及有无尾斜杠。图片资源目录 `assets/site/pwa/` 与内容路径无关，保持原位置。语言、外观页的返回按钮分别由各自布局调用。
 
@@ -52,7 +52,7 @@ list: products
 例如将已有 WSL 目录改成名称列表，只需在 `content/d/wsl/_index.zh.md` 增加 `list: name`。新建独立目录时可声明：
 
 ```yaml
-layout: collection-page
+layout: page-collection
 list: name
 slots:
   breadcrumb: true
@@ -68,11 +68,11 @@ slots:
 | `assets/css/grid-products.css` | 产品的三列布局与价格／说明单元格 |
 | `assets/css/collection-list.css` | 共用条目行、图标占位、悬停及选中状态 |
 
-`asset/head-styles.html` 分别读取列表视图与 `slots.breadcrumb`：视图决定是否叠加 directory、products、all 的列定义，slot 决定是否加入路径导航样式。`name`、`choice` 与普通页面共用基础包，选择页不会因为使用单列而加载路径样式。公共单列无需 `grid-name.css`，旧 `grid-list.css` 和 `grid-list--single` 已移除；带列头的网格显式使用 `grid-list--headed`，多列表格使用 `grid-list--table`。
+`system-ui/page-styles.html` 分别读取列表视图与 `slots.breadcrumb`：视图决定是否叠加 directory、products、all 的列定义，slot 决定是否加入路径导航样式。`name`、`choice` 与普通页面共用基础包，选择页不会因为使用单列而加载路径样式。公共单列无需 `grid-name.css`，旧 `grid-list.css` 和 `grid-list--single` 已移除；带列头的网格显式使用 `grid-list--headed`，多列表格使用 `grid-list--table`。
 
 ## 站点信息与 RSS
 
-关于、微信、GitHub、RSS 和备案信息都使用普通 `article-page`，声明 `build.list: local`、`slots.breadcrumb: true`。它们位于内容根层级，自动成为第一列普通入口，不进入全站文章 RSS；点击入口先打开说明页面，外部目标仍由正文链接提供。
+关于、微信、GitHub、RSS 和备案信息都使用普通 `page-article`，声明 `build.list: local`、`slots.breadcrumb: true`。它们位于内容根层级，自动成为第一列普通入口，不进入全站文章 RSS；点击入口先打开说明页面，外部目标仍由正文链接提供。
 
 | 实体文件（三语言） | 内容职责 |
 | --- | --- |
@@ -83,9 +83,9 @@ slots:
 | 项目 `content/github/index*.md` | 仅展示 SwawHQ 组织账号的头像与普通链接，保留完整入口声明；头像通过现有 `asset` 短代码引用项目 `assets/site/pwa/favicon.svg`，与浏览器图标共用哈希资源，不使用表格 |
 | 项目 `content/icp/index*.md` | 本站备案说明及工信部查询链接；作为普通根入口，`linkTitle: "粤ICP备2024338434号"`、`icon: { image: "0.webp" }`、`weight: 105`，排在首页入口之前；正文备案号本身链接到工信部查询网站；主题不存放业务备案信息 |
 
-`layouts/shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址，并在新标签打开。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。
+`layouts/_shortcodes/rss-link.html` 直接读取当前语言 `Site.Home.OutputFormats.Get "RSS"`，输出可点击的相对地址和可复制的绝对订阅地址，并在新标签打开。地址来自 Hugo 实际输出，不手写 `/zh/index.xml`，不复制 RSS 数据；使用该 shortcode 时首页需在 `[outputs].home` 启用 RSS。
 
-GitHub 和备案页的目标链接使用 `{{< new-tab href="https://example.com/" >}}链接文字{{< /new-tab >}}`，头像可在其中嵌套 `asset` 短代码；加粗可在短代码外侧使用 Markdown `**`。该短代码复用 `html/link.html` 输出 `target="_blank"`、`rel="noopener noreferrer"`，不需要 JavaScript，也无需开启 Markdown 原始 HTML。第一列入口仍使用当前标签打开说明页。
+GitHub 和备案页的目标链接使用 `{{< new-tab href="https://example.com/" >}}链接文字{{< /new-tab >}}`，头像可在其中嵌套 `asset` 短代码；加粗可在短代码外侧使用 Markdown `**`。该短代码复用 `system-ui/link.html` 输出 `target="_blank"`、`rel="noopener noreferrer"`，不需要 JavaScript，也无需开启 Markdown 原始 HTML。第一列入口仍使用当前标签打开说明页。
 
 关于（`95`）、更新（`96`）排在我的（`90`）之后；RSS（`100`）、微信（`101`）、GitHub（`102`）依次排在更新之后、备案（`105`）和首页版权（`110`）之前。微信保持 `/wechat/`，GitHub、RSS 分别使用 `/github/`、`/rss/`，各语言沿用原语言前缀。第一列共 14 项；原 PWA 状态和站点合并为更新，旧页脚及其片段配置已移除。
 
@@ -112,7 +112,7 @@ list_icon_file: product
 
 `icon` 只描述该入口本身，不按同名字段继承。条目未声明 `icon` 时，由列出它的列表提供默认值；两个 `list_icon_*` 字段分别沿当前列表的真实祖先取最近的非空声明，最终默认为 `folder`／`file`。省略或空白表示继承，明确写 `folder`／`file` 可以覆盖祖先设置。条目自己的非空 `icon` 始终优先，SVG 名称去除首尾空白并统一为小写；对象必须包含一个非空字符串字段 `text` 或 `image`，保留大小写，仅图片对象允许额外声明布尔值 `monochrome`。`list_icon_folder` 与 `list_icon_file` 同样接受文字、图片对象，继承时整体替换。
 
-图片统一调用现有 `asset/publish-local.html`：先查声明页面的 bundle，再查全站 `assets/`。例如 `content/icp/index.zh.md` 写 `icon: { image: "0.webp" }`，读取 `content/icp/0.webp`，发布为 `/media/content/icp/0.<sha256>.webp`。页面也可声明 `icon: { image: "site/pwa/favicon.svg" }`，读取 `assets/site/pwa/favicon.svg`，发布为 `/site/pwa/favicon.<sha256>.svg`，与浏览器标签图标共用同一资源和 URL。全站资源路径不带 `assets/` 前缀；`./0.webp` 则明确只从声明页面的 bundle 查找，缺失时不转查 assets。
+图片统一调用现有 `system-assets/publish-local.html`：先查声明页面的 bundle，再查全站 `assets/`。例如 `content/icp/index.zh.md` 写 `icon: { image: "0.webp" }`，读取 `content/icp/0.webp`，发布为 `/media/content/icp/0.<sha256>.webp`。页面也可声明 `icon: { image: "site/pwa/favicon.svg" }`，读取 `assets/site/pwa/favicon.svg`，发布为 `/site/pwa/favicon.<sha256>.svg`，与浏览器标签图标共用同一资源和 URL。全站资源路径不带 `assets/` 前缀；`./0.webp` 则明确只从声明页面的 bundle 查找，缺失时不转查 assets。
 
 图片默认值在声明目录解析后才继承，不会改成从子目录寻找同名文件。图片按 `1rem` 显示、保持比例，使用共用图标占位，无灯箱或正文图片的响应式变体。缺失资源、静态／远程 URL 和非图片文件会使构建失败。若页面自行声明 `build`，需同时保留 `publishResources: false`，避免覆盖全局 cascade 后又发布无哈希原图。语言配置中的图片以对应语言首页作为 bundle 上下文，同样支持全站 assets。
 
@@ -122,7 +122,7 @@ list_icon_file: product
 
 `aggregate` 只提供集合成员，不参与默认图标继承；`/all-products/` 与 `/products/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `index.md` 实现的 `/all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将首页自身与直属入口一起渲染，使用首页的目录默认值或条目自身的 `icon`。根项目 `content/_index*.md` 声明 `linkTitle: "2026 Swaw"`、`icon: { text: "©" }`、`weight: 110`；访问首页只选中首页，其他页面仍按真实入口或有效来源选中。旧版权页脚、顶部重复首页链接及 `slots.footer` 已移除。
 
-图标值由 `icon/resolve.html` 校验，`icon/page-value.html` 在读取页面声明时解析并发布图片，`icon/render.html` 接收解析后的值统一输出文字、SVG 或图片。浏览器用 `icon-value.js` 保留同样的值结构，JSON 编解码不得把对象转成字符串。默认值实现集中在 `list/icon-defaults.html`（解析列表默认值）和 `list/item-icon.html`（自身声明优先）。`collection/rows.html` 为每行写入最终 `icon`，主表、来源 JSON 和路径列共用；站点列表、第一列及首页快捷列表也调用相同规则。`navigation/source/register-icons.html` 只为命名 SVG 收集依赖，文字、图片不加入 sprite。浏览器选择／排序逻辑和现有列表数据协议不变。
+图标值由 `system-ui/icon/resolve.html` 校验，`system-ui/icon/page-value.html` 在读取页面声明时解析并发布图片，`system-ui/icon/render.html` 接收解析后的值统一输出文字、SVG 或图片。浏览器用 `icon-value.js` 保留同样的值结构，JSON 编解码不得把对象转成字符串。默认值实现集中在 `system-ui/list/icon-defaults.html`（解析列表默认值）和 `system-ui/list/item-icon.html`（自身声明优先）。`feature-browse/collection/rows.html` 为每行写入最终 `icon`，主表、来源 JSON 和路径列共用；站点列表、第一列及首页快捷列表也调用相同规则。`feature-browse/navigation/source/register-icons.html` 只为命名 SVG 收集依赖，文字、图片不加入 sprite。浏览器选择／排序逻辑和现有列表数据协议不变。
 
 ## 怎样声明选择列表
 
@@ -132,7 +132,7 @@ list_icon_file: product
 
 选择列表只接受两种原生控件：链接或按钮。共享模板负责文字、图标、选中样式、可访问状态和 `data-*` 输出；页面布局负责提供选项，功能脚本只响应自己的标记。语言项保留真实 `href` 和 `data-language-choice`，无 JavaScript 时仍可切换；外观项使用按钮和 `data-theme-choice`。模板不认识语言代码或主题值，front matter 也不声明脚本文件。
 
-外观的三个子项在 `layouts/_default/appearance-page.html` 中通过 `icon` 分别引用 `appearance-auto`、`appearance-light`、`appearance-dark`，图形定义在 `data/icons.toml`。三个 SVG 使用相同的 `16×16` 画布、圆心、半径和描边，分别呈半实心、空心、实心，避免 Unicode 字体回退造成尺寸不一致。颜色继承 `currentColor`，图形为 `1rem`，复用共享占位及按需 sprite；图标不参与按钮的可访问名称。第一列入口继续使用页面声明的 `icon: theme` 云月图标，语言项使用相同的 `icon: { text: "…" }`，不再传递 `iconText`。
+外观的三个子项在 `layouts/page-appearance.html` 中通过 `icon` 分别引用 `appearance-auto`、`appearance-light`、`appearance-dark`，图形定义在 `data/icons.toml`。三个 SVG 使用相同的 `16×16` 画布、圆心、半径和描边，分别呈半实心、空心、实心，避免 Unicode 字体回退造成尺寸不一致。颜色继承 `currentColor`，图形为 `1rem`，复用共享占位及按需 sprite；图标不参与按钮的可访问名称。第一列入口继续使用页面声明的 `icon: theme` 云月图标，语言项使用相同的 `icon: { text: "…" }`，不再传递 `iconText`。
 
 语言名称、顺序和启用状态仍以根项目 `hugo.toml` 的 `[languages]` 为事实源。可在对应语言参数中设置短文字图标：
 
@@ -173,7 +173,7 @@ weight: 30
 
 ## 来源与旧链接
 
-主表、路径列和来源 JSON 共用 `collection/rows.html`；一个列表页只注册一次 `collection` 来源。目录／分类关系适配分别在 `collection/rows/section.html`、`collection/rows/taxonomy.html`，展示在 `collection/render.html`。排序字段由 `collection/config.html` 解析 `list` 后给出，浏览器不按路径或 provider 猜表格种类。
+主表、路径列和来源 JSON 共用 `feature-browse/collection/rows.html`；一个列表页只注册一次 `collection` 来源。目录／分类关系适配分别在 `feature-browse/collection/rows/section.html`、`feature-browse/collection/rows/taxonomy.html`，展示在 `feature-browse/collection/render.html`。排序字段由 `feature-browse/collection/config.html` 解析 `list` 后给出，浏览器不按路径或 provider 猜表格种类。
 
 名称比较由 Hugo 执行一次，生成 `sort_name` 数值名次，显示文字仍保留在 `text`。这样首帧、主表与路径列使用同一名称顺序，不因浏览器语言或 ICU 实现不同而换位。更新时间降序中时间相同的条目也使用名称降序；升序相反。实现依据见 [Hugo 的稳定排序实现](https://github.com/gohugoio/hugo/blob/v0.157.0/tpl/collections/sort.go)。
 

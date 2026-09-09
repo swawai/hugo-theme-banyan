@@ -1,0 +1,30 @@
+{{ $ctx := . }}
+{{ with .ctx }}{{ $ctx = . }}{{ end }}
+{{ $view := .view | default "page" }}
+{{ if not (in (slice "page" "name" "choice" "directory" "products" "all") $view) }}
+{{ errorf "Build failed: unsupported page style view %q." $view }}
+{{ end }}
+{{ $slotFlags := partial "system-ui/page-slots.html" (dict "ctx" $ctx) }}
+{{ $withPath := eq (index $slotFlags "breadcrumb") true }}
+{{ $coreA11y := resources.Get "css/core-a11y.css" }}
+{{ $coreBase := resources.Get "css/core-base.css" }}
+{{ $coreMotion := resources.Get "css/core-motion.css" }}
+{{ $collectionList := resources.Get "css/collection-list.css" }}
+{{ $gridBase := resources.Get "css/grid-base.css" }}
+{{ $parts := slice $coreBase $collectionList $gridBase $coreA11y $coreMotion }}
+{{ if $withPath }}
+{{ $parts = $parts | append (resources.Get "css/path-navigation.css") }}
+{{ end }}
+{{ if eq $view "directory" }}
+{{ $parts = $parts | append (resources.Get "css/grid-directory.css") }}
+{{ else if eq $view "products" }}
+{{ $parts = $parts | append (resources.Get "css/grid-products.css") }}
+{{ else if eq $view "all" }}
+{{ $parts = $parts | append (resources.Get "css/grid-all.css") }}
+{{ end }}
+{{ $targetKey := cond (in (slice "page" "name" "choice") $view) "base" $view }}
+{{ if $withPath }}{{ $targetKey = printf "%s-path" $targetKey }}{{ end }}
+{{ $target := printf "css/bundle-%s.css" $targetKey }}
+{{ $bundle := $parts | resources.Concat $target }}
+{{ $bundle = partial "system-assets/process-css.html" (dict "resource" $bundle) }}
+<link rel="stylesheet" href="{{ $bundle.RelPermalink }}">

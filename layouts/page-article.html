@@ -1,0 +1,11 @@
+{{ define "styles" }}
+{{ partial "system-ui/page-styles.html" (dict "ctx" .) }}
+{{ end }}
+
+{{ define "head-extra" }}
+{{ partial "feature-document/styles.html" (dict "ctx" .) }}
+{{ end }}
+
+{{ define "main" }}
+{{ partial "feature-document/render-page.html" . }}
+{{ end }}
