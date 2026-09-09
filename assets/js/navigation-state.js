@@ -7,9 +7,6 @@ import {
     readFieldValue,
 } from './navigation-state.contract.js';
 
-export const FROM_PARAM_KEY = ENTRY_LINEAGE_FIELD.name;
-export const SORT_PARAM_KEY = ACTIVE_SORT_FIELD.name;
-export const SORTS_PARAM_KEY = LINEAGE_SORTS_FIELD.name;
 export { SORTS_PLACEHOLDER };
 
 function parseRawSearchEntries(search) {

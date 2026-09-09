@@ -39,7 +39,7 @@
   {{- else -}}
     {{- errorf "Build failed: taxonomy/children/pages-for-value.html does not support mode=%q." $mode -}}
   {{- end -}}
-  {{- $uniq = index (partial "taxonomy/pages-summary.html" (dict "pages" $pagesAll)) "uniq" -}}
+  {{- $uniq = index (partial "taxonomy/pages-summary.html" (dict "pages" $pagesAll)) "pages" -}}
   {{- $scr.Set $key $uniq -}}
 {{- end -}}
 {{- return $uniq -}}

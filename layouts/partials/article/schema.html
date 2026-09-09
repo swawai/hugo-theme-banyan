@@ -1,5 +1,5 @@
 {{- $desc := partial "seo/description.html" . -}}
-{{- $author := or site.Params.author "ipzu" -}}
+{{- $author := trim (printf "%v" (site.Params.author | default "")) " \r\n\t" -}}
 {{- $published := .PublishDate -}}
 {{- if le $published.Unix 0 -}}
   {{- $published = .Date -}}
@@ -15,10 +15,12 @@
   "@type" "BlogPosting"
   "headline" .Title
   "description" $desc
-  "author" (dict "@type" "Person" "name" $author)
   "inLanguage" .Language.Lang
   "mainEntityOfPage" .Permalink
 -}}
+{{- with $author -}}
+  {{- $payload = merge $payload (dict "author" (dict "@type" "Person" "name" .)) -}}
+{{- end -}}
 {{- with $imageURL -}}
   {{- $payload = merge $payload (dict "image" .) -}}
 {{- end -}}

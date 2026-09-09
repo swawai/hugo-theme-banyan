@@ -3,7 +3,6 @@
 {{- $spec := .spec -}}
 {{- $plural := printf "%v" (index $spec "plural") -}}
 {{- $separator := printf "%v" (index $spec "separator" | default "/") -}}
-{{- $dateFmt := "2006-01-02" -}}
 {{- $items := slice -}}
 {{- if eq $kind "term" -}}
   {{- $term := printf "%v" $ctx.Data.Term -}}
@@ -16,19 +15,7 @@
       {{- if gt (len $values) 0 -}}
         {{- continue -}}
       {{- end -}}
-      {{- $bytes := len $page.RawContent -}}
-      {{- $d := $page.Lastmod -}}
-      {{- $items = $items | append (dict
-          "node" $page
-          "kind" "page"
-          "title" $page.Title
-          "text" ($page.LinkTitle | default $page.Title)
-          "latest" (cond $d.IsZero "—" ($d.Format $dateFmt))
-          "latestKey" (cond $d.IsZero "" ($d.Format "20060102150405"))
-          "cnt" $bytes
-          "bytes" $bytes
-          "url" $page.RelPermalink
-      ) -}}
+      {{- $items = $items | append (dict "node" $page "kind" "page") -}}
     {{- end -}}
   {{- else -}}
     {{- $termParts := split $term $separator -}}
@@ -51,21 +38,15 @@
     {{- range $children -}}
       {{- $full := printf "%s%s%s" $term $separator . -}}
       {{- $termPage := partial "taxonomy/term-page.html" (dict "ctx" $ctx "spec" $spec "plural" $plural "value" $full) -}}
-      {{- $title := . -}}
-      {{- with $termPage -}}{{- $title = .Title -}}{{- end -}}
-      {{- $text := partial "taxonomy/value-label.html" (dict "ctx" $ctx "spec" $spec "value" $full "fallback" .) -}}
       {{- $pagesAll := partial "taxonomy/children/pages-for-value.html" (dict "ctx" $ctx "spec" $spec "prefix" $full "mode" "subtree") -}}
-      {{- $agg := partial "taxonomy/pages-summary.html" (dict "pages" $pagesAll) -}}
+      {{- $summary := partial "taxonomy/pages-summary.html" (dict "pages" $pagesAll) -}}
       {{- $items = $items | append (dict
           "node" $termPage
-          "kind" "cat"
-          "title" $title
-          "text" $text
-          "term_key" (urlize .)
-          "latest" (index $agg "latest")
-          "latestKey" (index $agg "latestKey")
-          "cnt" (index $agg "cnt")
-          "url" (partial "taxonomy/url.html" (dict "ctx" $ctx "spec" $spec "value" $full))
+          "kind" "category"
+          "term" $full
+          "count" (index $summary "count")
+          "lastmod" (index $summary "lastmod")
+          "href" (partial "taxonomy/url.html" (dict "ctx" $ctx "spec" $spec "value" $full))
       ) -}}
     {{- end -}}
     {{- $exactPages := partial "taxonomy/children/pages-for-value.html" (dict "ctx" $ctx "spec" $spec "prefix" $term "mode" "exact") -}}
@@ -84,19 +65,7 @@
       {{- if ne $branchMax $termDepth -}}
         {{- continue -}}
       {{- end -}}
-      {{- $bytes := len $page.RawContent -}}
-      {{- $d := $page.Lastmod -}}
-      {{- $items = $items | append (dict
-          "node" $page
-          "kind" "page"
-          "title" $page.Title
-          "text" ($page.LinkTitle | default $page.Title)
-          "latest" (cond $d.IsZero "—" ($d.Format $dateFmt))
-          "latestKey" (cond $d.IsZero "" ($d.Format "20060102150405"))
-          "cnt" $bytes
-          "bytes" $bytes
-          "url" $page.RelPermalink
-      ) -}}
+      {{- $items = $items | append (dict "node" $page "kind" "page") -}}
     {{- end -}}
   {{- end -}}
 {{- else if eq $kind "root" -}}
@@ -110,21 +79,15 @@
   {{- $roots = sort $roots -}}
   {{- range $root := $roots -}}
     {{- $termPage := partial "taxonomy/term-page.html" (dict "ctx" $ctx "spec" $spec "plural" $plural "value" $root) -}}
-    {{- $title := $root -}}
-    {{- with $termPage -}}{{- $title = .Title -}}{{- end -}}
-    {{- $text := partial "taxonomy/value-label.html" (dict "ctx" $ctx "spec" $spec "value" $root "fallback" $root) -}}
     {{- $pagesAll := partial "taxonomy/children/pages-for-value.html" (dict "ctx" $ctx "spec" $spec "prefix" $root "mode" "subtree") -}}
-    {{- $agg := partial "taxonomy/pages-summary.html" (dict "pages" $pagesAll) -}}
+    {{- $summary := partial "taxonomy/pages-summary.html" (dict "pages" $pagesAll) -}}
     {{- $items = $items | append (dict
         "node" $termPage
-          "kind" "cat"
-        "title" $title
-        "text" $text
-        "term_key" (urlize $root)
-        "latest" (index $agg "latest")
-        "latestKey" (index $agg "latestKey")
-        "cnt" (index $agg "cnt")
-        "url" (partial "taxonomy/url.html" (dict "ctx" $ctx "spec" $spec "value" $root))
+        "kind" "category"
+        "term" $root
+        "count" (index $summary "count")
+        "lastmod" (index $summary "lastmod")
+        "href" (partial "taxonomy/url.html" (dict "ctx" $ctx "spec" $spec "value" $root))
     ) -}}
   {{- end -}}
 {{- else -}}
@@ -133,7 +96,8 @@
 {{- $seen := dict -}}
 {{- $dedup := slice -}}
 {{- range $items -}}
-  {{- $key := printf "%s" .url -}}
+  {{- $key := .href -}}
+  {{- if eq .kind "page" -}}{{- $key = .node.RelPermalink -}}{{- end -}}
   {{- if not (isset $seen $key) -}}
     {{- $seen = merge $seen (dict $key true) -}}
     {{- $dedup = $dedup | append . -}}

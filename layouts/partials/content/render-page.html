@@ -9,3 +9,4 @@
     {{- end -}}
   </div>
 </article>
+{{- if and .IsPage (eq .Section "d") -}}{{- partial "article/schema.html" . -}}{{- end -}}

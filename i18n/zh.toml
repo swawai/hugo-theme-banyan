@@ -73,9 +73,6 @@ other = "为您推荐本页的 [{target}] 版本，确认前往吗？"
 [language_return_missing]
 other = "本页尚无{lang}版本，继续显示原内容。"
 
-[site_update_prompt]
-other = "已有新版本可用，立即刷新？"
-
 [notFoundTitle]
 other = "页面不存在"
 

@@ -10,6 +10,7 @@ const breadcrumbItemsEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadc
 const breadcrumbPreviewEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-preview.js');
 const breadcrumbSourceEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-source.js');
 const collectionItemsEntry = path.join(siteRoot, 'themes/banyan/assets/js/collection-items.js');
+const sortableGridsEntry = path.join(siteRoot, 'themes/banyan/assets/js/sortable-grids.js');
 const tempRoot = path.join(siteRoot, 'temp_workspace', 'check-navigation-state');
 
 const navigationStateStub = `
@@ -21,6 +22,22 @@ export const navigationState = {
   }
 };
 `;
+
+function navigationStateParamsPlugin() {
+    return {
+        name: 'navigation-state-params',
+        setup(build) {
+            build.onResolve({ filter: /^@params$/ }, () => ({
+                path: 'navigation-state-params',
+                namespace: 'navigation-state-params'
+            }));
+            build.onLoad({ filter: /.*/, namespace: 'navigation-state-params' }, () => ({
+                contents: navigationStateStub,
+                loader: 'js'
+            }));
+        }
+    };
+}
 
 async function importBrowserModule(entrypoint, outputName) {
     await fs.mkdir(tempRoot, { recursive: true });
@@ -34,22 +51,25 @@ async function importBrowserModule(entrypoint, outputName) {
         platform: 'browser',
         target: 'es2022',
         format: 'esm',
-        plugins: [{
-            name: 'navigation-state-params',
-            setup(build) {
-                build.onResolve({ filter: /^@params$/ }, () => ({
-                    path: 'navigation-state-params',
-                    namespace: 'navigation-state-params'
-                }));
-                build.onLoad({ filter: /.*/, namespace: 'navigation-state-params' }, () => ({
-                    contents: navigationStateStub,
-                    loader: 'js'
-                }));
-            }
-        }]
+        plugins: [navigationStateParamsPlugin()]
     });
 
     return import(pathToFileURL(outfile).href);
+}
+
+async function readBrowserBundleInputs(entrypoint) {
+    const result = await esbuild.build({
+        entryPoints: [entrypoint],
+        bundle: true,
+        write: false,
+        metafile: true,
+        platform: 'browser',
+        target: 'es2022',
+        format: 'esm',
+        plugins: [navigationStateParamsPlugin()]
+    });
+
+    return Object.keys(result.metafile.inputs).map((input) => input.replace(/\\/g, '/'));
 }
 
 function applySorts(module, inputUrl, tokens, defaultTokens = []) {
@@ -59,6 +79,22 @@ function applySorts(module, inputUrl, tokens, defaultTokens = []) {
 }
 
 const navState = await importBrowserModule(navStateEntry, 'navigation-state.js');
+
+const sortableGridInputs = await readBrowserBundleInputs(sortableGridsEntry);
+const pathRuntimeInputs = [
+    'breadcrumb-column-sort.js',
+    'breadcrumb-items.js',
+    'breadcrumb-source.js',
+    'path-navigation-ui.js',
+    'runtime-manifest.js',
+];
+assert.deepEqual(
+    sortableGridInputs.filter((input) => (
+        pathRuntimeInputs.some((pathRuntimeInput) => input.endsWith(`/assets/js/${pathRuntimeInput}`))
+    )),
+    [],
+    'sortable grid bundle must not include path navigation runtime modules'
+);
 
 assert.equal(
     applySorts(

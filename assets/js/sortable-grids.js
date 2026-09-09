@@ -15,20 +15,11 @@ import {
     readCurrentFromPath,
     readEffectiveSortsTokens,
 } from './navigation-state.js';
-import {
-    refreshBreadcrumbCollectionColumns,
-} from './breadcrumb-column-sort.js';
 import { NAVIGATION_STATE_CHANGE_EVENT } from './navigation-events.js';
 import {
     ENTRY_LINEAGE_FIELD,
     hasFieldValue,
 } from './navigation-state.contract.js';
-
-const BREADCRUMB_SORT_PENDING_ATTR = 'data-breadcrumb-sort-pending';
-
-function clearBreadcrumbSortPending() {
-    document.documentElement?.removeAttribute(BREADCRUMB_SORT_PENDING_ATTR);
-}
 
 function normalizePageCollectionSource(source) {
     if (!source || typeof source !== 'object') {
@@ -76,7 +67,6 @@ function writeSortToken(token, defaultToken) {
     const url = new URL(window.location.href);
     applySortTokenToUrl(url, token, defaultToken);
     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
-    document.dispatchEvent(new Event(NAVIGATION_STATE_CHANGE_EVENT));
 }
 
 function buildRelativeHref(url) {
@@ -273,35 +263,13 @@ function applySortableGrid(grid) {
     updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSource);
 }
 
-async function applySortableGrids() {
+function applySortableGrids() {
     const grids = Array.from(document.querySelectorAll('[data-sortable="true"][data-sort-variant]'));
-    if (grids.length === 0) {
-        clearBreadcrumbSortPending();
-        return;
-    }
-
     grids.forEach((grid) => applySortableGrid(grid));
-    await refreshBreadcrumbCollectionColumns();
-    clearBreadcrumbSortPending();
 }
 
-function refreshSortableGridNavigation() {
-    document.querySelectorAll('[data-sortable="true"][data-sort-variant]').forEach((grid) => {
-        const variantName = (grid.dataset.sortVariant || '').toLowerCase();
-        const variant = SORT_VARIANTS[variantName];
-        if (!variant) {
-            return;
-        }
-
-        const currentToken = readCurrentSortToken(variantName, variant.defaultToken);
-        const pageCollectionSource = readPageCollectionSource();
-        updateSortControls(grid, variantName, currentToken, pageCollectionSource);
-        updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSource);
-    });
-}
-
-async function initSortableGrids() {
-    await applySortableGrids();
+function initSortableGrids() {
+    applySortableGrids();
 
     document.addEventListener('click', (event) => {
         const control = event.target.closest('a[data-sort-control="true"]');
@@ -324,11 +292,11 @@ async function initSortableGrids() {
 
         event.preventDefault();
         writeSortToken(nextToken, variant.defaultToken);
-        void applySortableGrids();
+        document.dispatchEvent(new Event(NAVIGATION_STATE_CHANGE_EVENT));
     });
 }
 
-document.addEventListener(NAVIGATION_STATE_CHANGE_EVENT, refreshSortableGridNavigation);
+document.addEventListener(NAVIGATION_STATE_CHANGE_EVENT, applySortableGrids);
 document.addEventListener('DOMContentLoaded', () => {
-    void initSortableGrids();
+    initSortableGrids();
 });

@@ -20,7 +20,7 @@
   {{- $prefix = "products" -}}
 {{- end -}}
 {{- $default := split $config.default_sort "-" -}}
-<div class="grid-list {{ $gridClass }} grid-list--headed collection-list collection-list--grid" data-sortable="true" data-sort-variant="{{ $config.sort_variant }}" data-sort-columns="{{ len $fields }}" data-sort-default="{{ $config.default_sort }}">
+<div class="grid-list {{ $gridClass }} grid-list--headed collection-list collection-list--grid" data-sortable="true" data-sort-variant="{{ $config.sort_variant }}" data-sort-columns="{{ len $fields }}">
   {{- range $field := $fields -}}
     {{- partial "collection/sort/cell.html" (dict
       "class" (index $classes $field) "ctx" $page "baseHref" $page.RelPermalink

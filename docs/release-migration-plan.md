@@ -1,5 +1,7 @@
 # Banyan Theme Release Migration Plan
 
+> 历史迁移记录：本文保留发布拆分时的阶段与判断，不作为当前模板契约。当前导航、列表、slot 与 partial 边界分别以 `breadcrumb-models.md`、`collection-lists.md`、`layout-slots.md` 和 `partial-architecture.md` 为准。
+
 This plan tracks the move from "theme developed inside swaw.com" to a releasable
 Banyan theme. The goal is not to move every root file into the theme. The goal is
 to preserve the right owner for each fact.
@@ -88,8 +90,9 @@ Navigation contract after the 2026-09-07 flattening step:
 - Sites customize real root pages and taxonomy bundles instead of maintaining a
   separate menu whitelist. `nav_primary` and the `primary_nav`, `utilities`, and
   `breadcrumb_root` slots are removed, including their navigation fragments.
-- `slots` now supports only `breadcrumb`, `meta`, and `footer`. Collection
-  providers, product metadata, and footer content retain their existing owners.
+- `slots` now supports only `breadcrumb` and `meta`. Collection providers and
+  product metadata retain their existing owners; the dedicated footer slot has
+  been removed.
 - Taxonomy roots require only rendering metadata that affects taxonomy output.
   Root navigation visibility and ordering belong to page `root_nav` and `weight`.
 - Language, appearance, my, and updates are real root pages. The updates directory
@@ -98,7 +101,7 @@ Navigation contract after the 2026-09-07 flattening step:
   the ordinary navigation retains the updates column while the child handles actions.
   Other pages use the existing update confirmation when no control is visible.
 - The current page shell uses one horizontal canvas at every viewport width.
-  The later color simplification remains separate visual work.
+  The appearance page selects the system, light, or dark black-and-white theme.
   See [layout slots](layout-slots.md) and the
   [navigation flattening plan](navigation-flattening-plan.md).
 

@@ -21,18 +21,19 @@ routing → collection + navigation/path（只提供 URL 状态协议）
 - `asset/`：Hugo Pipes、页面资源发布与 CSS 构建。`publish-local` 可查页面包和全局 assets；`publish-page` 只查页面包，两者契约不同。
 - `build/`：一次构建的版本与时间事实源。
 - `cache-policy/`：合并主题默认值与站点覆盖，返回共享路由和 Service Worker 投影；不生成托管平台文件。
-- `collection/`：集合声明、成员、统一 row、排序、集合 HTML 与 `_items.json` 协议。
+- `collection/`：集合声明、成员、统一 row、排序、集合 HTML 与 `_items.json` 协议。taxonomy 提供的页面节点和分类成员事实也在这里转换成显示字段。
 - `content/`：通用正文外壳、正文样式与标题契约。文章元信息和 BlogPosting schema 仍归 `article/`。
 - `list/`：多个领域共用的单行呈现组件，不拥有集合成员或点击行为。
 - `navigation/root/`：固定的第一列入口；隐藏结构根也可参与选中推导。
 - `navigation/path/`：当前页面的结构路径与可见列。
 - `navigation/source/`：可序列化的浏览来源模型和来源载荷发布。
 - `routing/`：`from`、排序 lineage 等跨集合与导航共用的 URL 状态协议。
-- `taxonomy/`：Hugo taxonomy 配置、值解析和成员发现。`collection` 消费其成员，`navigation/path` 消费其层级与 URL；它不反向依赖二者。
+- `taxonomy/`：Hugo taxonomy 配置、值解析和成员发现。它返回页面节点，或分类的 term、数量与 Lastmod 等原始事实；不格式化列表日期、大小或排序键。`collection` 消费其成员，`navigation/path` 消费其层级与 URL；它不反向依赖二者。
 - `seo/`：head 元数据、分享图和 JSON-LD；不输出可见导航。
 - `prefetch/runtime/` 与 `prefetch/speculation/`：两套独立传输机制，共存不等于共享实现；跨机制的槽位所有权与冲突检测只归 `prefetch/coordination.html`。
-- `pwa/`：发布站点图标、`sw.js` 与浏览器端 Service Worker manager；缓存路由事实仍来自 `cache-policy/`。
-- `runtime/`：跨页面脚本共用的 Hugo JS 构建参数与运行时数据资源。
+- `pwa/`：规范化 PWA 配置，发布站点图标、`sw.js` 与浏览器端 Service Worker manager；缓存路由事实仍来自 `cache-policy/`。
+- `runtime/`：跨页面脚本共用的 Hugo JS 构建参数、内联脚本构建与运行时数据资源。`asset-manifest.html` 负责发布语言运行时文案和最终 manifest，页面骨架只引用返回的资源；实际 CSP hash 仍由生产构建后处理从最终 HTML 计算。
+- `updates/`：更新面板、操作与运行时文案。静态页面和浏览器 JSON 都从 `/updates/check` 的 `site_update.labels` 读取同一份作者文案。
 - `deployment/`：把共享缓存策略投影为托管平台路由，并生成发布文件。
 
 ## 必须保留的边界

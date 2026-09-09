@@ -1,5 +1,7 @@
 # 布局深度清理报告
 
+> 历史验证记录：文中的数量、文件名和“保留”判断对应各次实验当时的代码；当前契约以 [Partial 架构](partial-architecture.md) 及各领域规范为准。
+
 2026-09-09｜分支：`codex/flatten-navigation`｜状态：已实施并通过完整回归
 
 ## 结论
@@ -43,7 +45,7 @@ taxonomy 根不再要求或声明 `show_in_home`、`home_weight`。它们唯一�
 
 ### 3. 收拢仍在工作的实现
 
-`asset/head-styles.html` 先解析当前页面 variant，再只拼接这一份 CSS。目标文件名和列表职责不变：`grid-base` 仍是单列基底，directory、products、all 只追加各自列定义。
+`asset/head-styles.html` 当时先按页面类型拼接样式；后续已将列表 `view` 与路径 slot 分开。`grid-base` 仍是单列基底，directory、products、all 只追加各自列定义。
 
 页面 shell 只输出实际参与布局的 `page-shell--has-path-columns`；默认 rail 网格直接属于 `.page-shell`。语言和“我的”的 stroke、fill、线宽等属性移入 `data/icons.toml`，与外观图标使用同一事实源。
 

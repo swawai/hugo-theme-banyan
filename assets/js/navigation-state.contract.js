@@ -87,9 +87,6 @@ export const ENTRY_LINEAGE_FIELD = NAVIGATION_STATE_FIELDS.entry_lineage;
 export const ACTIVE_SORT_FIELD = NAVIGATION_STATE_FIELDS.active_sort;
 export const LINEAGE_SORTS_FIELD = NAVIGATION_STATE_FIELDS.lineage_sorts;
 
-export const FROM_PARAM_KEY = ENTRY_LINEAGE_FIELD.name;
-export const SORT_PARAM_KEY = ACTIVE_SORT_FIELD.name;
-export const SORTS_PARAM_KEY = LINEAGE_SORTS_FIELD.name;
 export const SORTS_PLACEHOLDER = LINEAGE_SORTS_FIELD.placeholder || '_';
 
 const CACHE_IGNORED_QUERY_KEYS = Object.freeze(

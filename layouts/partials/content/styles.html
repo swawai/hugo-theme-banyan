@@ -9,8 +9,8 @@
 {{ $articleTable := resources.Get "css/article-table.css" }}
 {{ $ctx := . }}
 {{ with .ctx }}{{ $ctx = . }}{{ end }}
-{{ $withMeta := false }}
-{{ with .with_meta }}{{ $withMeta = . }}{{ end }}
+{{ $slotFlags := partial "slots/resolve.html" (dict "ctx" $ctx) }}
+{{ $withMeta := eq (index $slotFlags "meta") true }}
 {{ $content := "" }}
 {{ with $ctx.Content }}{{ $content = . }}{{ end }}
 {{ $features := slice }}

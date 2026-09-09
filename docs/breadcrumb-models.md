@@ -36,7 +36,7 @@
 
 `navigation/source/page-model.html` 将这些层级映射到集合 provider 与 `_items.json`。所有列表页统一使用 collection 来源，排序字段由 `list` 声明决定。主列表、路径列与来源 JSON 共用 `collection/rows.html`。若浏览器来源已携带 `collection_items`，便省略可由它重建的 `column_items`，避免重复发布兄弟条目。
 
-首页、普通页面和 taxonomy 的模型生成器负责不同的路径来源，最终共用一个列渲染器。生成器不返回 `variant` 或 `strategy` 标签；模板选取由内部 `strategy-key.html` 按 Hugo 页面种类完成。
+首页、普通页面和 taxonomy 的模型生成器负责不同的路径来源，最终共用一个列渲染器。`navigation/path/model.html` 直接按 Hugo 页面种类调用相应生成器；模型不返回 `variant` 或 `strategy` 标签，也没有额外的字符串分发层。
 
 第一列只渲染一次，来源模型不携带完整根菜单，也不根据“第一列已覆盖”删除路径集合。分类根的子项可作为第二列出现，分类数量由内容决定。
 
@@ -51,4 +51,4 @@
 
 `canvas-position.js` 不再主动把新页面的主列移入视野。沿列表在同标签页打开页面时，只向下一文档传递来源、目标与横向视觉坐标；目标页读取后清除记录，来源与目标匹配的新访问才使用，已有列保持位置，新列向右扩展。内联入口位于头部样式之后，在解析到 `#main` 时通过临时 `scroll-margin` 和一次原生 `scrollIntoView` 还原坐标，随后清除临时样式。浏览器自行处理桌面文档滚动与手机视觉视口平移，不另建滚动容器或设备模式。主列宽度与前置骨架须提前确定；已有滚动位置、锚点或加载期间的输入优先。直接访问从画幅起点开始，历史返回、前进和刷新使用原生恢复，排序与异步重绘不重置画幅。
 
-修改路径排序协议参见 [navigation-state.md](navigation-state.md)。列表与产品声明见 [collection-lists.md](collection-lists.md)。后续黑白配色按 [行动计划](navigation-flattening-plan.md) 分步实施。
+修改路径排序协议参见 [navigation-state.md](navigation-state.md)。列表与产品声明见 [collection-lists.md](collection-lists.md)。主题配色由外观选择页与黑白色变量控制；历史实施过程见 [入口展平记录](navigation-flattening-plan.md)。

@@ -9,10 +9,6 @@
     margin: 0;
     font-size: small;
     color: var(--link-visited);
-}
-
-.article-meta .post-taxonomy,
-.article-meta .article-dates {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
@@ -21,7 +17,7 @@
 
 .article-meta .post-taxonomy .label,
 .article-meta .article-dates .label {
-    color: var(--text);
+    color: var(--fg);
 }
 
 .article-meta .post-taxonomy .sep {

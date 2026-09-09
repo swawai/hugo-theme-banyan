@@ -1,5 +1,5 @@
 {{ define "styles" }}
-{{ partial "asset/head-styles.html" (dict "ctx" . "variant" "name") }}
+{{ partial "asset/head-styles.html" (dict "ctx" . "view" "name") }}
 {{ end }}
 {{ define "head-extra" }}
 {{ partial "content/styles.html" (dict "ctx" .) }}
@@ -14,7 +14,4 @@
     {{ partial "updates/panel.html" . }}
   </div>
 </article>
-{{- with index (.Scratch.Get "slot_flags" | default dict) "breadcrumb" -}}
-  {{- partial "seo/breadcrumb.html" (dict "ctx" $) -}}
-{{- end -}}
 {{ end }}

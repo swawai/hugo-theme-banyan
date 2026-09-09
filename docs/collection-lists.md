@@ -58,7 +58,7 @@ slots:
   breadcrumb: true
 ```
 
-`name` 描述内容作者看到的列表类型，`base` 描述样式实现层，因此没有 `list: base` 或 `list_columns`。`choice` 同样使用单列基底，但仍由语言／外观布局提供选项和操作，不需要先转成 `name` 集合。
+`name` 描述内容作者看到的列表类型，`base` 描述样式实现层，因此没有 `list: base` 或 `list_columns`。`choice` 同样使用单列基底；语言／外观布局提供选项，语言与外观脚本分别处理操作，不需要先转成 `name` 集合。
 
 | 样式文件 | 职责 |
 | --- | --- |
@@ -68,7 +68,7 @@ slots:
 | `assets/css/grid-products.css` | 产品的三列布局与价格／说明单元格 |
 | `assets/css/collection-list.css` | 共用条目行、图标占位、悬停及选中状态 |
 
-`asset/head-styles.html` 按列表类型装配 CSS：`name`、`choice`、第一列和路径列无需目录三列样式，多列表格在基底上叠加自己的列定义。公共单列无需 `grid-name.css`，旧 `grid-list.css` 和 `grid-list--single` 已移除；带列头的网格显式使用 `grid-list--headed`，多列表格使用 `grid-list--table`。
+`asset/head-styles.html` 分别读取列表视图与 `slots.breadcrumb`：视图决定是否叠加 directory、products、all 的列定义，slot 决定是否加入路径导航样式。`name`、`choice` 与普通页面共用基础包，选择页不会因为使用单列而加载路径样式。公共单列无需 `grid-name.css`，旧 `grid-list.css` 和 `grid-list--single` 已移除；带列头的网格显式使用 `grid-list--headed`，多列表格使用 `grid-list--table`。
 
 ## 站点信息与 RSS
 

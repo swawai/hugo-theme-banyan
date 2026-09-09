@@ -1,35 +1,15 @@
-{{- $swConfig := site.Params.service_worker | default dict -}}
-{{- $swModeRaw := index $swConfig "mode" | default "off" -}}
-{{- $swMode := lower (printf "%v" $swModeRaw) -}}
-{{- $webAppManifestConfig := site.Params.web_app_manifest | default dict -}}
-{{- $webAppManifestModeRaw := index $webAppManifestConfig "mode" | default "link" -}}
-{{- $webAppManifestMode := lower (printf "%v" $webAppManifestModeRaw) -}}
-{{- $allowedWebAppManifestModes := slice "link" "defer" "off" -}}
-{{- if not (in $allowedWebAppManifestModes $webAppManifestMode) -}}
-{{- errorf "Build failed: params.web_app_manifest.mode only supports link/defer/off; got %q." $webAppManifestModeRaw -}}
-{{- end -}}
-{{- $offlineNoticePathRaw := printf "%v" (index $swConfig "offline_notice_path" | default "offline/") -}}
-{{- $offlineNoticePath := trim $offlineNoticePathRaw "/" -}}
-{{- if eq $offlineNoticePath "" -}}
-{{- errorf "Build failed: params.service_worker.offline_notice_path cannot be empty." -}}
-{{- end -}}
-{{- $offlineNoticeRelPermalinks := slice -}}
-{{- range sort hugo.Sites "Language.Weight" -}}
-    {{- $offlineNoticeRelPermalinks = $offlineNoticeRelPermalinks | append (lower (printf "%s%s/" .Home.RelPermalink $offlineNoticePath)) -}}
-{{- end -}}
-{{- $isOfflinePage := in $offlineNoticeRelPermalinks (lower .RelPermalink) -}}
-{{- .Scratch.Set "is_offline_page" $isOfflinePage -}}
-{{- $allowedSwModes := slice "enable" "disable" "off" -}}
-{{- if not (in $allowedSwModes $swMode) -}}
-{{- errorf "Build failed: params.service_worker.mode only supports enable/disable/off; got %q." $swModeRaw -}}
-{{- end -}}
+{{- $pwaConfig := partial "pwa/config.html" (dict "ctx" .) -}}
+{{- $swConfig := index $pwaConfig "sw_config" -}}
+{{- $swMode := index $pwaConfig "sw_mode" -}}
+{{- $webAppManifestMode := index $pwaConfig "manifest_mode" -}}
+{{- $offlineFallbacks := index $pwaConfig "offline_fallbacks" -}}
+{{- $isOfflinePage := index $pwaConfig "is_offline_page" -}}
 {{- partialCached "audit/permalink-collision.html" (dict "ctx" .) "audit-permalink-collision" -}}
 {{- partialCached "audit/content-icons.html" . "audit-content-icons" -}}
 {{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
 {{- $buildVersion := partial "build/version.html" $primarySite.Home -}}
 {{- $buildTimeISO := partial "build/time-iso.html" $primarySite.Home -}}
 {{- $buildTimeDisplay := partial "build/time-display.html" $primarySite.Home -}}
-{{- .Scratch.Set "build_version" $buildVersion -}}
 {{- $cachePolicy := partial "cache-policy/model.html" (dict
   "sw_config" $swConfig
 ) -}}
@@ -45,38 +25,19 @@
 {{- $entryLineageField := index $routingFields "entry_lineage" | default dict -}}
 {{- $activeSortField := index $routingFields "active_sort" | default dict -}}
 {{- $lineageSortsField := index $routingFields "lineage_sorts" | default dict -}}
-{{- $inlineScripts := partialCached "csp/inline-script-resources.html" site (printf "csp-inline-scripts:%t" hugo.IsServer) -}}
-{{- $themeBootInline := index $inlineScripts "theme_boot" | default dict -}}
-{{- $breadcrumbPendingInline := index $inlineScripts "breadcrumb_pending" | default dict -}}
-{{- $breadcrumbSkeletonInline := index $inlineScripts "breadcrumb_skeleton" | default dict -}}
-{{- $runtimeI18nConfig := site.Params.runtime_i18n | default dict -}}
-{{- $runtimeI18nFallbacks := dict -}}
-{{- with index $runtimeI18nConfig "fallbacks" -}}
-    {{- range $from, $to := . -}}
-        {{- $fromLang := lower (printf "%v" $from) -}}
-        {{- $toLang := lower (printf "%v" $to) -}}
-        {{- if and $fromLang $toLang -}}
-            {{- $runtimeI18nFallbacks = merge $runtimeI18nFallbacks (dict $fromLang $toLang) -}}
-        {{- end -}}
-    {{- end -}}
-{{- end -}}
-{{- $offlineFallbacks := slice -}}
-{{- range sort hugo.Sites "Language.Weight" -}}
-    {{- $offlineFallbacks = $offlineFallbacks | append (dict
-        "path_prefix" (lower (printf "%v" .Home.RelPermalink))
-        "url" (printf "%s%s/" .Home.RelPermalink $offlineNoticePath)
-    ) -}}
-{{- end -}}
+{{- $inlineScripts := partialCached "runtime/inline-scripts.html" site (printf "runtime-inline-scripts:%t" hugo.IsServer) -}}
+{{- $themeBootInline := index $inlineScripts "theme_boot" | default "" -}}
+{{- $breadcrumbPendingInline := index $inlineScripts "breadcrumb_pending" | default "" -}}
+{{- $breadcrumbSkeletonInline := index $inlineScripts "breadcrumb_skeleton" | default "" -}}
 {{- $slotFlags := partial "slots/resolve.html" (dict "ctx" .) -}}
-{{- .Scratch.Set "slot_flags" $slotFlags -}}
 {{- $hasBreadcrumbCapability := eq (index $slotFlags "breadcrumb") true -}}
-{{- .Scratch.Set "needs_breadcrumb_runtime" $hasBreadcrumbCapability -}}
+{{- $hasSortableCollection := eq .Layout "collection-page" -}}
 {{- /* Root selection consumes the same valid sources even when path columns are hidden. */ -}}
 {{- $navigationSources := partial "navigation/source/context.html" (dict "ctx" .) -}}
 {{- $pageCollectionSource := index $navigationSources "page_collection_source" -}}
 {{- $navigationSourceModels := index $navigationSources "source_models" -}}
 {{- $browserNavigationSources := index $navigationSources "browser_sources" -}}
-{{- .Scratch.Set "collection_sources_by_href" (index $navigationSources "collection_sources_by_href") -}}
+{{- $collectionSourcesByHref := index $navigationSources "collection_sources_by_href" -}}
 {{- partial "navigation/source/register-icons.html" (dict "page" . "sources" $browserNavigationSources) -}}
 {{- if .IsHome -}}
     {{- partialCached "navigation/source/publish-fragments.html" (dict "language" .Language.Lang "sources" $navigationSourceModels "build_version" $buildVersion) .Language.Lang $buildVersion -}}
@@ -116,21 +77,12 @@
 {{- errorf "Build failed: missing resource %q." "site/pwa/manifest.webmanifest.tmpl" -}}
         {{- end -}}
     {{- end -}}
-    {{- $runtimeI18n := dict -}}
-    {{- range sort hugo.Sites "Language.Weight" -}}
-        {{- $langCode := .Language.Lang -}}
-        {{- $i18nBody := partial "runtime/i18n-body.json" . -}}
-        {{- $i18nResource := resources.FromString (printf "runtime/i18n.%s.json" $langCode) $i18nBody | fingerprint -}}
-        {{- $runtimeI18n = merge $runtimeI18n (dict $langCode $i18nResource.RelPermalink) -}}
-    {{- end -}}
-    {{- $assetManifestBody := dict
-        "buildTime" $buildTimeDisplay
-        "buildTimeISO" $buildTimeISO
-        "buildVersion" $buildVersion
-        "i18n" $runtimeI18n
-        "i18nFallbacks" $runtimeI18nFallbacks
-      | jsonify -}}
-    {{- $assetManifest := resources.FromString "runtime/asset-manifest.json" $assetManifestBody | fingerprint -}}
+    {{- $assetManifest := partial "runtime/asset-manifest.html" (dict
+      "ctx" .
+      "build_time" $buildTimeDisplay
+      "build_time_iso" $buildTimeISO
+      "build_version" $buildVersion
+    ) -}}
     <meta charset="utf-8">
     {{- with $faviconSvg }}
     <link rel="icon" href="{{ .RelPermalink }}" type="image/svg+xml" fetchpriority="low">
@@ -154,14 +106,14 @@
     <meta name="robots" content="{{ . }}">
     {{- end }}
     {{/* 首屏阻塞性状态初始化：同步主题以防闪烁，并恢复 MPA 跨页导航进度条。 */}}
-    {{- printf "<script>%s</script>" (index $themeBootInline "content") | safeHTML -}}
+    <script>{{ $themeBootInline | safeJS }}</script>
     {{/* URL 带 from= 时先隐藏默认 breadcrumb，待运行时恢复来源路径；
          article meta 始终保留 Hugo 的静态输出。 */}}
     {{- if $hasBreadcrumbCapability }}
-    {{- printf "<script>%s</script>" (index $breadcrumbPendingInline "content") | safeHTML -}}
+    <script>{{ $breadcrumbPendingInline | safeJS }}</script>
     {{- end }}
     {{- block "styles" . -}}{{ partial "asset/head-styles.html" (dict "ctx" .) }}{{- end -}}
-    {{- printf "<script>%s</script>" (index (index $inlineScripts "canvas_position") "content") | safeHTML -}}
+    <script>{{ index $inlineScripts "canvas_position" | safeJS }}</script>
     {{- block "head-extra" . -}}{{- end -}}
     {{- $prefetch := partial "prefetch/config.html" (dict "sw_mode" $swMode) -}}
     {{- $prefetchRuntimeMode := index $prefetch "runtime_mode" -}}
@@ -177,7 +129,7 @@
     {{- if not hugo.IsServer -}}{{- $js = $js | minify -}}{{- end -}}
     {{- $js = $js | fingerprint -}}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
-    {{- if eq (.Scratch.Get "needs_breadcrumb_runtime") true -}}
+    {{- if $hasBreadcrumbCapability -}}
         {{- $breadcrumbRuntime := resources.Get "js/breadcrumb-runtime.js" | js.Build (dict "params" $jsBuildParams) -}}
         {{- if not hugo.IsServer -}}{{- $breadcrumbRuntime = $breadcrumbRuntime | minify -}}{{- end -}}
         {{- $breadcrumbRuntime = $breadcrumbRuntime | fingerprint -}}
@@ -196,46 +148,52 @@
     <link rel="manifest" href="{{ $manifest.RelPermalink }}" fetchpriority="low">
     {{- end }}
 </head>
-<body data-language-context="{{ partial "preferences/language-context.html" . | jsonify }}" data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $browserNavigationSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}"{{ if or $hasBreadcrumbCapability (eq (.Scratch.Get "needs_sortable_grids_runtime") true) }} data-collection-sort-copy="{{ partial "collection/sort/copy.html" . | jsonify }}"{{ end }} data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}" data-current-page-href="{{ .RelPermalink }}">
+<body data-language-context="{{ partial "preferences/language-context.html" . | jsonify }}" data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $browserNavigationSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}"{{ if or $hasBreadcrumbCapability $hasSortableCollection }} data-collection-sort-copy="{{ partial "collection/sort/copy.html" . | jsonify }}"{{ end }} data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}">
     {{- if and .IsPage (not .Params.slug) -}}
 {{- errorf "Build failed: page %q (title: %q) is missing the slug field." .File.Path .Title -}}
     {{- end -}}
     <div class="page">
         <a class="skip" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
-        {{- $breadcrumbModel := partial "navigation/path/model.html" (dict "ctx" $) -}}
-        {{- $hasPathColumns := and $hasBreadcrumbCapability (gt (len (index $breadcrumbModel "tail_items")) 0) -}}
+        {{- $breadcrumbModel := dict -}}
+        {{- $hasPathColumns := false -}}
+        {{- if $hasBreadcrumbCapability -}}
+          {{- $breadcrumbModel = partial "navigation/path/model.html" (dict "ctx" $) -}}
+          {{- $hasPathColumns = gt (len (index $breadcrumbModel "tail_items")) 0 -}}
+        {{- end -}}
         {{- $pageShellClasses := slice "page-shell" -}}
         {{- if $hasPathColumns -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-path-columns" -}}{{- end -}}
         <div class="{{ delimit $pageShellClasses " " }}">
             <div class="page-rail">
                 {{- partial "navigation/root/render.html" . -}}
-                {{- printf "<script>%s</script>" (index (index $inlineScripts "root_navigation") "content") | safeHTML -}}
+                {{- if gt (len $browserNavigationSources) 0 -}}
+                <script>{{ index $inlineScripts "root_navigation" | safeJS }}</script>
+                {{- end -}}
             </div>
             <div class="page-stage">
             {{- if $hasPathColumns -}}
             <div class="slot-row path-columns">
                 <div class="slot slot-breadcrumb" data-slot="breadcrumb">
-                    {{- partial "navigation/path/render-current.html" (dict "ctx" $) -}}
+                    {{- partial "navigation/path/render.html" (dict "ctx" $ "items" (index $breadcrumbModel "tail_items") "collection_sources_by_href" $collectionSourcesByHref) -}}
                 </div>
             </div>
             {{- /* Reserve source-dependent columns before parsing main to avoid a first-paint shift. */ -}}
-            {{- printf "<script>%s</script>" (index $breadcrumbSkeletonInline "content") | safeHTML -}}
+            <script>{{ $breadcrumbSkeletonInline | safeJS }}</script>
             {{- end -}}
             <main id="main" class="slot slot-main" data-slot="main" tabindex="-1">
                 {{- block "main" . -}}{{- end -}}
+                {{- if $hasBreadcrumbCapability -}}
+                  {{- partial "seo/breadcrumb.html" (dict "ctx" $ "model" $breadcrumbModel) -}}
+                {{- end -}}
             </main>
             {{- with index $slotFlags "meta" -}}
             <div class="slot slot-meta" data-slot="meta">
-                {{- partial "article/meta.html" (dict "ctx" $) -}}
+                {{- partial "article/meta.html" (dict "ctx" $ "slot_flags" $slotFlags "breadcrumb_model" $breadcrumbModel) -}}
             </div>
             {{- end -}}
             </div>
         </div>
     </div>
     {{- block "body-extra" . -}}{{- end -}}
-    {{- if eq (.Scratch.Get "needs_sortable_grids_runtime") true -}}
-    {{- partial "collection/sort/script.html" . -}}
-    {{- end -}}
     {{- if not $isOfflinePage -}}
     {{- $prefetchCoordination := partial "prefetch/coordination.html" (dict
       "speculation_mode" $speculationRulesMode

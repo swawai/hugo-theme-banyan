@@ -5,7 +5,7 @@
 {{- $collectionHref := index $item "collection_href" | default "" -}}
 {{- $collectionSource := index $item "collection_source" | default dict -}}
 {{- if and (eq (len $collectionSource) 0) $collectionHref -}}
-  {{- $collectionSource = index ($ctx.Scratch.Get "collection_sources_by_href" | default dict) $collectionHref | default dict -}}
+  {{- $collectionSource = index (.collection_sources_by_href | default dict) $collectionHref | default dict -}}
 {{- end -}}
 {{- if and (eq (len $collectionSource) 0) $collectionHref -}}
   {{- $collectionSource = dict "href" $collectionHref "label" (index $item "collection_label" | default "") -}}
@@ -17,15 +17,12 @@
     {{- range $row := $items -}}
       {{- $isCurrent := eq (index $row "current") true -}}
       {{- $kind := lower (trim (printf "%v" (index $row "kind" | default "")) " ") -}}
-      {{- $dataAttrs := dict -}}
-      {{- if $kind -}}{{- $dataAttrs = dict "breadcrumb-kind" $kind -}}{{- end -}}
       {{ partial "list/link-cell.html" (dict
         "href" (index $row "href")
         "text" (index $row "text")
         "icon" (index $row "icon" | default (cond (eq $kind "page") "file" "folder"))
         "title" (index $row "title")
         "linkClass" "path-column-link"
-        "linkDataAttrs" $dataAttrs
         "isCurrent" $isCurrent
         "prefetchSlot" "crumb"
       ) }}

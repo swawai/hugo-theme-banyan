@@ -5,35 +5,36 @@
 {{- $spec := partial "taxonomy/config.html" (dict "ctx" $page "plural" $page.Data.Plural) -}}
 {{- $rows := slice -}}
 {{- range $entry := partial "taxonomy/children/get.html" (dict "ctx" $page "spec" $spec) -}}
-  {{- $isCat := eq .kind "cat" -}}
-  {{- $key := .term_key -}}
-  {{- if not $isCat -}}
-    {{- $key = partial "collection/rows/page-key.html" (dict "ctx" .node) -}}
+  {{- if eq $entry.kind "page" -}}
+    {{- $rows = $rows | append (partial "collection/rows/page.html" (dict "page" $entry.node)) -}}
+    {{- continue -}}
   {{- end -}}
-  {{- $text := .text -}}
-  {{- $countText := printf "%v" .cnt -}}
-  {{- $countUnit := "" -}}
-  {{- if not $isCat -}}
-    {{- $bytes := .bytes | default .cnt | default 0 -}}
-    {{- $countText = printf "%v" (div (add $bytes 1023) 1024) -}}
-    {{- $countUnit = "&thinsp;KB" -}}
+  {{- if ne $entry.kind "category" -}}
+    {{- errorf "Build failed: taxonomy child kind=%q is neither page nor category." $entry.kind -}}
   {{- end -}}
+  {{- $term := printf "%v" $entry.term -}}
+  {{- $parts := split $term (printf "%v" (index $spec "separator" | default "/")) -}}
+  {{- $fallback := index $parts (sub (len $parts) 1) -}}
+  {{- $title := $fallback -}}
+  {{- with $entry.node -}}{{- $title = .Title -}}{{- end -}}
+  {{- $text := partial "taxonomy/value-label.html" (dict "ctx" $page "spec" $spec "value" $term "fallback" $fallback) -}}
+  {{- $dateValue := $entry.lastmod -}}
   {{- $rows = $rows | append (dict
-    "node" .node
-    "key" $key
-    "kind" .kind
-    "href" .url
-    "schema_href" .url
-    "title" .title
+    "node" $entry.node
+    "key" (urlize $fallback)
+    "kind" "cat"
+    "href" $entry.href
+    "schema_href" $entry.href
+    "title" $title
     "text" $text
-    "prefetch_kind" (cond $isCat "desc" "post")
-    "sort_group" (cond $isCat "0" "1")
+    "prefetch_kind" "desc"
+    "sort_group" "0"
     "sort_name" $text
-    "sort_date" (.latestKey | default "")
-    "date_text" (.latest | default ".")
-    "sort_count" (printf "%v" (.cnt | default 0))
-    "count_text" $countText
-    "count_unit" $countUnit
+    "sort_date" (cond $dateValue.IsZero "" ($dateValue.Format "20060102150405"))
+    "date_text" (cond $dateValue.IsZero "—" ($dateValue.Format "2006-01-02"))
+    "sort_count" (printf "%v" $entry.count)
+    "count_text" (printf "%v" $entry.count)
+    "count_unit" ""
   ) -}}
 {{- end -}}
 {{- return $rows -}}

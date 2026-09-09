@@ -1,5 +1,7 @@
 # 导航入口展平纲要
 
+> 历史实施记录：本文按时间保留曾经的方案、阶段复核和已退役名称，因此中间段落不代表当前代码契约。维护现有实现时请以 [面包屑模型](breadcrumb-models.md)、[列表声明](collection-lists.md)、[布局 slot](layout-slots.md) 与 [Partial 架构](partial-architecture.md) 为准。
+
 2026-09-09｜分支：`codex/flatten-navigation`｜状态：第 5 步及布局深度清理已完成；第 6 步配色收敛尚未开始
 
 ## 当前增量：布局深度清理

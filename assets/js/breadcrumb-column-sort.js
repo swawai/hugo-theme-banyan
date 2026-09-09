@@ -16,9 +16,12 @@ import {
 import { getRuntimeFragmentRoot } from './runtime-manifest.js';
 import { NAVIGATION_STATE_CHANGE_EVENT } from './navigation-events.js';
 
+const BREADCRUMB_SORT_PENDING_ATTR = 'data-breadcrumb-sort-pending';
+
 let collectionSourceIndex = null;
 let renderId = 0;
 let interactionId = 0;
+let focusRestoreRequest = null;
 
 function readPageCollectionSource() {
     const raw = document.body?.dataset.pageCollectionSource || '';
@@ -83,7 +86,7 @@ function isPlainPrimaryClick(event, link) {
         && (!link.target || link.target === '_self');
 }
 
-export async function refreshBreadcrumbCollectionColumns() {
+async function refreshBreadcrumbCollectionColumns() {
     const fragmentRoot = await getRuntimeFragmentRoot();
     if (!fragmentRoot) {
         return;
@@ -136,7 +139,43 @@ export async function refreshBreadcrumbCollectionColumns() {
     }));
 }
 
+function refreshBreadcrumbColumnsFromNavigationState() {
+    const request = focusRestoreRequest;
+    focusRestoreRequest = null;
+
+    void refreshBreadcrumbCollectionColumns().then(() => {
+        if (!request || request.interactionId !== interactionId) {
+            return;
+        }
+
+        const nextToggle = request.wrapper.querySelector(
+            'a[data-collection-sort-toggle="true"]'
+        );
+        if (nextToggle instanceof HTMLElement) {
+            nextToggle.focus({ preventScroll: true });
+        }
+    });
+}
+
+function refreshInitialBreadcrumbCollectionColumns() {
+    if (!readPageCollectionSource() || !readCurrentFromPath()) {
+        return;
+    }
+
+    const html = document.documentElement;
+    html?.setAttribute(BREADCRUMB_SORT_PENDING_ATTR, 'true');
+    void refreshBreadcrumbCollectionColumns().finally(() => {
+        html?.removeAttribute(BREADCRUMB_SORT_PENDING_ATTR);
+    });
+}
+
 export function initBreadcrumbColumnSort() {
+    document.addEventListener(
+        NAVIGATION_STATE_CHANGE_EVENT,
+        refreshBreadcrumbColumnsFromNavigationState
+    );
+    refreshInitialBreadcrumbCollectionColumns();
+
     document.addEventListener('click', (event) => {
         const toggle = event.target instanceof Element
             ? event.target.closest(
@@ -167,20 +206,10 @@ export function initBreadcrumbColumnSort() {
 
         event.preventDefault();
         const currentInteractionId = ++interactionId;
-        const shouldRestoreFocus = document.activeElement === toggle;
+        focusRestoreRequest = document.activeElement === toggle
+            ? { interactionId: currentInteractionId, wrapper }
+            : null;
         window.history.replaceState(window.history.state, '', nextHref);
         document.dispatchEvent(new Event(NAVIGATION_STATE_CHANGE_EVENT));
-        void refreshBreadcrumbCollectionColumns().then(() => {
-            if (!shouldRestoreFocus || currentInteractionId !== interactionId) {
-                return;
-            }
-
-            const nextToggle = wrapper.querySelector(
-                'a[data-collection-sort-toggle="true"]'
-            );
-            if (nextToggle instanceof HTMLElement) {
-                nextToggle.focus({ preventScroll: true });
-            }
-        });
     });
 }

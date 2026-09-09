@@ -22,7 +22,7 @@
 {{ end }}
 
 {{ define "main" }}
-{{- $homeBrandModel := .Scratch.Get "homeBrandModel" | default (partial "home-brand/model.html" .) -}}
+{{- $homeBrandModel := .Scratch.Get "homeBrandModel" -}}
 {{- $windsockPage := .Site.GetPage "/home_fragments" -}}
 {{- $windsock := "" -}}
 {{- if not $windsockPage -}}

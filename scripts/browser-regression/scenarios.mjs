@@ -1289,6 +1289,82 @@ export const scenarios = [
         }
     },
     {
+        id: 'breadcrumb-sort-preview-without-from',
+        kind: 'single',
+        title: 'Breadcrumb Sort Preview Without From',
+        viewport: { width: 1280, height: 960 },
+        async run({ page, baseUrl }) {
+            const readState = () => page.evaluate(() => {
+                const mainGrid = document.querySelector(
+                    '.slot-main [data-sortable="true"][data-sort-variant]'
+                );
+                const pathColumn = Array.from(document.querySelectorAll(
+                    '.path-columns .grid-list'
+                )).find((column) => column.querySelector('.collection-column-header'));
+                const readTitles = (root) => Array.from(
+                    root?.querySelectorAll('.cell-title:not(.header) .collection-item-title') || []
+                ).map((item) => item.textContent?.trim() || '').filter(Boolean);
+
+                return {
+                    from: new URL(window.location.href).searchParams.get('from'),
+                    mainIndicator: mainGrid
+                        ?.querySelector('[data-sort-field="date"] .collection-sort-indicator')
+                        ?.textContent
+                        ?.trim() || '',
+                    mainRows: readTitles(mainGrid),
+                    pathIndicator: pathColumn
+                        ?.querySelector('.collection-sort-indicator')
+                        ?.textContent
+                        ?.trim() || '',
+                    pathRows: readTitles(pathColumn),
+                };
+            });
+
+            const defaultUrl = new URL(BREADCRUMB_COLLECTION_SORT_PATH, `${baseUrl}/`);
+            await gotoAndWait(page, defaultUrl.href);
+            await page.waitForSelector('.slot-breadcrumb .collection-column-header');
+            await waitForBreadcrumbSettled(page);
+            const descending = await readState();
+            if (
+                descending.mainIndicator !== '↓'
+                || descending.pathIndicator !== '↓'
+                || descending.mainRows.length < 2
+                || descending.pathRows.length < 2
+            ) {
+                fail('Preview scenario requires descending main and path collections.', {
+                    descending,
+                    url: page.url(),
+                });
+            }
+
+            const ascendingUrl = new URL(defaultUrl);
+            ascendingUrl.searchParams.set('sort', 'date-asc');
+            ascendingUrl.searchParams.set('sorts', 'date-asc,date-asc');
+            await gotoAndWait(page, ascendingUrl.href);
+            await page.waitForSelector('.slot-breadcrumb .collection-column-header');
+            await waitForBreadcrumbSettled(page);
+            const ascending = await readState();
+
+            if (
+                ascending.from !== null
+                || ascending.mainIndicator !== '↑'
+                || ascending.pathIndicator !== '↑'
+                || JSON.stringify(ascending.mainRows)
+                    !== JSON.stringify(descending.mainRows.slice().reverse())
+                || JSON.stringify(ascending.pathRows)
+                    !== JSON.stringify(descending.pathRows.slice().reverse())
+            ) {
+                fail('Sort preview must hydrate main and path order without a from lineage.', {
+                    ascending,
+                    descending,
+                    url: page.url(),
+                });
+            }
+
+            return { ascending, descending, url: page.url() };
+        }
+    },
+    {
         id: 'breadcrumb-column-sort-toggle',
         kind: 'single',
         title: 'Breadcrumb Column Sort Toggle',

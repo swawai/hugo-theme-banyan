@@ -26,6 +26,7 @@ site_update:
     status_offline: Offline
     status_click_update: Update now
     status_click_retry: click retry
+    prompt: A new version is ready. Refresh now?
 ---
 
 Check for a newer site version. When an update is ready, choose **Update now** to apply it and reload this page.

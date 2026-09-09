@@ -1,9 +1,10 @@
 {{- $ctx := .ctx | default . -}}
 {{- $visibleItems := .items | default slice -}}
+{{- $collectionSourcesByHref := .collection_sources_by_href | default dict -}}
 {{- if gt (len $visibleItems) 0 -}}
 <nav class="path-navigation" aria-label="Breadcrumb">
   {{- range $item := $visibleItems -}}
-    {{ partial "navigation/path/column.html" (dict "ctx" $ctx "item" $item) }}
+    {{ partial "navigation/path/column.html" (dict "ctx" $ctx "item" $item "collection_sources_by_href" $collectionSourcesByHref) }}
   {{- end -}}
 </nav>
 {{- end -}}

@@ -13,17 +13,6 @@ function normalizeBreadcrumbItemKind(item) {
     return kind || '';
 }
 
-function applyBreadcrumbKind(element, item) {
-    if (!(element instanceof Element)) {
-        return;
-    }
-
-    const kind = normalizeBreadcrumbItemKind(item);
-    if (kind) {
-        element.dataset.breadcrumbKind = kind;
-    }
-}
-
 function applyBreadcrumbPrefetchSlot(element) {
     if (element instanceof Element) {
         element.dataset.prefetchSlot = BREADCRUMB_PREFETCH_SLOT;
@@ -161,7 +150,6 @@ function buildCollectionCell(item, current) {
         ? 'path-column-link collection-item-link is-current'
         : 'path-column-link collection-item-link';
     applyBreadcrumbPrefetchSlot(option);
-    applyBreadcrumbKind(option, item);
     if (current) {
         option.setAttribute('aria-current', 'page');
     }

@@ -1,8 +1,8 @@
 {{- $ctx := .ctx | default . -}}
-{{- $slotFlags := $ctx.Scratch.Get "slot_flags" | default dict -}}
+{{- $slotFlags := .slot_flags | default dict -}}
+{{- $breadcrumbModel := .breadcrumb_model | default dict -}}
 {{- $breadcrumbItems := slice -}}
 {{- with index $slotFlags "breadcrumb" -}}
-  {{- $breadcrumbModel := partial "navigation/path/model.html" (dict "ctx" $ctx) -}}
   {{- $breadcrumbItems = index $breadcrumbModel "schema_items" | default slice -}}
 {{- end -}}
 {{- $directoryItems := slice -}}
