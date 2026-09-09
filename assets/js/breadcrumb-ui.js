@@ -40,6 +40,7 @@ function buildCollectionItemContent(item) {
         icon.setAttribute('aria-hidden', 'true');
         const image = document.createElement('img');
         image.className = 'icon icon--image';
+        if (value.monochrome) image.classList.add('icon--monochrome');
         image.src = value.image;
         image.alt = '';
         image.width = 16;

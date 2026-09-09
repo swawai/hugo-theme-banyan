@@ -20,16 +20,17 @@ const prefixes = ['', '/zh', '/zh-tw'];
 const imageBytes = fs.readFileSync('content/icp/0.webp');
 const imageHash = createHash('sha256').update(imageBytes).digest('hex');
 const ownImage = {image: `/media/content/d/contract-no-offer/badge.${imageHash}.webp`};
-const inheritedImage = {image: `/media/content/d/contract-image/badge.${imageHash}.webp`};
+const inheritedImage = {image: `/media/content/d/contract-image/badge.${imageHash}.webp`, monochrome: true};
 const logoBytes = fs.readFileSync('assets/site/pwa/favicon.svg');
 const logoHash = createHash('sha256').update(logoBytes).digest('hex');
 const assetImage = {image: `/site/pwa/favicon.${logoHash}.svg`};
+const monochromeAsset = {...assetImage, monochrome: true};
 const cases = [
     ['priced', 'icon: appearance-dark\nlastmod: 2026-08-01\ntags: [contract-dates]\nproducts: [free, paid, "Special Tools", "$5~$50", contract-dates, contract-name]\noffer: {amount: 25, currency: "$", value: "Paid and free are opaque labels"}'],
     ['missing', 'lastmod: 2026-08-02\ntags: [contract-dates/child]\nproducts: [free, paid, "Special Tools", contract-dates, contract-name]\noffer: {value: "Value without a price"}'],
     ['zero', 'icon: {text: "<b>EN</b>"}\nproducts: [free]\noffer: {amount: 0, currency: "$"}'],
     ['no-offer', 'icon: {image: "badge.webp"}\nproducts: [free]'],
-    ['unclassified', 'icon: {image: "site/pwa/favicon.svg"}\noffer: {amount: 99, currency: "$", value: "Not a product"}'],
+    ['unclassified', 'icon: {image: "site/pwa/favicon.svg", monochrome: true}\noffer: {amount: 99, currency: "$", value: "Not a product"}'],
     ['empty', 'products: []'],
     ['blank', 'products: [""]']
 ];
@@ -58,7 +59,7 @@ for (const lang of langs) {
     write(path.join(overlay, `d/contract-text/child/_index${lang}.md`), '---\ntitle: Child text icons\nlist_icon_file: product\n---\n');
     write(path.join(overlay, `d/contract-text/item${lang}.md`), '---\ntitle: Text item\nslug: contract-text\n---\nText.\n');
     write(path.join(overlay, `d/contract-text/child/item${lang}.md`), '---\ntitle: Text child\nslug: contract-text-child\n---\nText child.\n');
-    write(path.join(overlay, `d/contract-image/_index${lang}.md`), '---\ntitle: Image icons\nlist_icon_file: {image: "badge.webp"}\nlist_icon_folder: {image: "site/pwa/favicon.svg"}\n---\n');
+    write(path.join(overlay, `d/contract-image/_index${lang}.md`), '---\ntitle: Image icons\nlist_icon_file: {image: "badge.webp", monochrome: true}\nlist_icon_folder: {image: "site/pwa/favicon.svg", monochrome: false}\n---\n');
     write(path.join(overlay, `d/contract-image/child/_index${lang}.md`), '---\ntitle: Inherited image\n---\n');
     write(path.join(overlay, `d/contract-image/child/item${lang}.md`), '---\ntitle: Inherited image article\nslug: contract-image-child\n---\nImage.\n');
 }
@@ -132,7 +133,7 @@ for (const view of ['directory', 'all', 'products', 'name']) {
         }
         assert.deepEqual(iconFor('d/contract-image', '/d/contract-image/child/'), assetImage, 'directory defaults support global assets');
         for (const list of ['d', 'all']) {
-            assert.deepEqual(iconFor(list, '/p/contract-unclassified/'), assetImage, 'own image can reuse a global asset');
+            assert.deepEqual(iconFor(list, '/p/contract-unclassified/'), monochromeAsset, 'own monochrome image reuses a global asset without changing its URL');
         }
         assert.deepEqual(fs.readFileSync(path.join(output, assetImage.image)), logoBytes);
         assert.deepEqual(fs.readdirSync(path.join(output, 'site/pwa')).filter(name => name.startsWith('favicon.')), [`favicon.${logoHash}.svg`], 'favicon and content icons publish one shared resource');
@@ -275,12 +276,15 @@ try {
     assert.equal(await staticPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-text/"] .icon--text').textContent(), 'EN');
     await staticPage.goto(`${baseUrl}/products/free/`);
     assert.equal(await staticPage.locator('.slot-main a[href*="/p/contract-no-offer/"] img.icon--image').getAttribute('src'), ownImage.image);
+    assert.equal(await staticPage.locator('.slot-main a[href*="/p/contract-no-offer/"] .icon--monochrome').count(), 0, 'ordinary images retain their colors');
     assert.equal(await staticPage.locator('.slot-main a[href*="/p/contract-zero/"] .icon--text').textContent(), '<b>EN</b>');
     assert.equal(await staticPage.locator('.icon--text b').count(), 0, 'text icons are escaped during SSR');
     await staticPage.goto(`${baseUrl}/p/contract-image-child/`);
     assert.equal(await staticPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-image-child/"] img.icon--image').getAttribute('src'), inheritedImage.image);
+    assert.equal(await staticPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-image-child/"] .icon--monochrome').count(), 1, 'SSR preserves inherited monochrome');
     await staticPage.goto(`${baseUrl}/p/contract-unclassified/`);
     assert.equal(await staticPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-unclassified/"] img.icon--image').getAttribute('src'), assetImage.image);
+    assert.equal(await staticPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-unclassified/"] .icon--monochrome').count(), 1, 'SSR preserves own monochrome');
     await noJs.close();
 
     const iconsContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1440, height: 960 } });
@@ -305,7 +309,7 @@ try {
     for (const prefix of prefixes) {
         await gotoAndWait(iconsPage, `${baseUrl}${prefix}/all/?sort=name-asc`);
         await iconsPage.locator('.slot-main a[href*="/p/contract-unclassified/?"]').click();
-        const selectedAsset = () => iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-unclassified/"] img.icon--image');
+        const selectedAsset = () => iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-unclassified/"] img.icon--image.icon--monochrome');
         await waitForBreadcrumbSettled(iconsPage);
         assert.equal(await selectedAsset().getAttribute('src'), assetImage.image);
         await selectedAsset().evaluate(image => image.decode());
@@ -332,7 +336,7 @@ try {
         await gotoAndWait(iconsPage, `${baseUrl}${prefix}/d/contract-image/child/`);
         await iconsPage.locator('.slot-main a[href*="/p/contract-image-child/?"]').click();
         await waitForBreadcrumbSettled(iconsPage);
-        assert.equal(await iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-image-child/"] img.icon--image').getAttribute('src'), inheritedImage.image);
+        assert.equal(await iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-image-child/"] img.icon--image.icon--monochrome').getAttribute('src'), inheritedImage.image);
         await gotoAndWait(iconsPage, `${baseUrl}${prefix}/products/free/?sort=name-asc`);
         await iconsPage.locator('.slot-main a[href*="/p/contract-zero/?"]').click();
         const selectedText = () => iconsPage.locator('.slot-breadcrumb .is-current[href*="/p/contract-zero/"] .icon--text').textContent();
@@ -434,6 +438,9 @@ for (const [name, content, message] of [
     ['text-number', validContent.replace('icon: appearance-dark', 'icon: {text: 12}'), 'text must be a non-empty string'],
     ['text-keys', validContent.replace('icon: appearance-dark', 'icon: {text: "©", svg: folder}'), 'object containing only text'],
     ['text-bare', validContent.replace('icon: appearance-dark', 'icon: "©"'), 'undefined icon'],
+    ['text-monochrome', validContent.replace('icon: appearance-dark', 'icon: {text: "©", monochrome: true}'), 'image with optional monochrome'],
+    ['image-monochrome-string', validContent.replace('icon: appearance-dark', 'icon: {image: "site/pwa/favicon.svg", monochrome: "true"}'), 'monochrome must be a boolean'],
+    ['image-monochrome-number', validContent.replace('icon: appearance-dark', 'icon: {image: "site/pwa/favicon.svg", monochrome: 1}'), 'monochrome must be a boolean'],
     ['image-empty', validContent.replace('icon: appearance-dark', 'icon: {image: " "}'), 'image must be a non-empty string'],
     ['image-missing', validContent.replace('icon: appearance-dark', 'icon: {image: "missing.webp"}'), 'was not found in page bundle'],
     ['image-page-only', validContent.replace('icon: appearance-dark', 'icon: {image: "./site/pwa/favicon.svg"}'), 'cannot resolve page bundle asset'],

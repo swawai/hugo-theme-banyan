@@ -3,16 +3,25 @@
 {{- $context := .context | default "icon" -}}
 {{- $resolved := "" -}}
 {{- if reflect.IsMap $value -}}
-  {{- if or (ne (len $value) 1) (not (or (isset $value "text") (isset $value "image"))) -}}
-    {{- errorf "Build failed: %s must be an SVG name or an object containing only text or image." $context -}}
+  {{- $isText := and (isset $value "text") (eq (len $value) 1) -}}
+  {{- $isImage := and (isset $value "image") (or (eq (len $value) 1) (and (eq (len $value) 2) (isset $value "monochrome"))) -}}
+  {{- if not (or $isText $isImage) -}}
+    {{- errorf "Build failed: %s must be an SVG name or an object containing only text, or image with optional monochrome." $context -}}
   {{- else -}}
-    {{- range $field, $raw := $value -}}
-      {{- if ne (printf "%T" $raw) "string" -}}
-        {{- errorf "Build failed: %s.%s must be a non-empty string." $context $field -}}
-      {{- else -}}
-        {{- $text := trim $raw " \r\n\t" -}}
-        {{- if not $text -}}{{- errorf "Build failed: %s.%s must be a non-empty string." $context $field -}}{{- end -}}
-        {{- $resolved = dict $field $text -}}
+    {{- $field := cond $isImage "image" "text" -}}
+    {{- $raw := index $value $field -}}
+    {{- if ne (printf "%T" $raw) "string" -}}
+      {{- errorf "Build failed: %s.%s must be a non-empty string." $context $field -}}
+    {{- else -}}
+      {{- $text := trim $raw " \r\n\t" -}}
+      {{- if not $text -}}{{- errorf "Build failed: %s.%s must be a non-empty string." $context $field -}}{{- end -}}
+      {{- $resolved = dict $field $text -}}
+    {{- end -}}
+    {{- if isset $value "monochrome" -}}
+      {{- if ne (printf "%T" $value.monochrome) "bool" -}}
+        {{- errorf "Build failed: %s.monochrome must be a boolean." $context -}}
+      {{- else if and $value.monochrome (reflect.IsMap $resolved) -}}
+        {{- $resolved = merge $resolved (dict "monochrome" true) -}}
       {{- end -}}
     {{- end -}}
   {{- end -}}
@@ -22,6 +31,6 @@
     {{- errorf "Build failed: %s declares undefined icon %q; define it in data/icons.toml." $context $resolved -}}
   {{- end -}}
 {{- else -}}
-  {{- errorf "Build failed: %s must be an SVG name or an object containing only text or image." $context -}}
+  {{- errorf "Build failed: %s must be an SVG name or an object containing only text, or image with optional monochrome." $context -}}
 {{- end -}}
 {{- return $resolved -}}

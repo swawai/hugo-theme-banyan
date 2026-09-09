@@ -155,6 +155,14 @@ a:focus-visible {
     object-fit: contain;
 }
 
+.icon--monochrome {
+    filter: brightness(0);
+}
+
+[data-theme="dark"] .icon--monochrome {
+    filter: brightness(0) invert(1);
+}
+
 .icon-language,
 .icon-theme,
 .icon-my {

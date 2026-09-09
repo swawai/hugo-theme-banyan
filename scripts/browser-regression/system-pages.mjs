@@ -67,7 +67,7 @@ export const systemPageScenarios = [
                 const expected = children.map(name => `${prefix}/${name}/`).sort();
                 assert.deepEqual((await rowPaths(links)).sort(), expected, 'Only real updates children belong to the list.');
                 assert.equal(await page.locator(`[data-root-href="${prefix}/updates/"] .icon--text`).textContent(), '↻');
-                const aboutIcon = page.locator(`[data-root-href="${prefix}/about/"] img.icon--image`);
+                const aboutIcon = page.locator(`[data-root-href="${prefix}/about/"] img.icon--image.icon--monochrome`);
                 const aboutIconHref = await aboutIcon.getAttribute('src');
                 assert.equal(aboutIconHref, await page.locator('head link[rel="icon"][type="image/svg+xml"]').getAttribute('href'), 'The About entry reuses the published site favicon.');
                 await aboutIcon.evaluate(image => image.decode());
@@ -123,6 +123,7 @@ export const systemPageScenarios = [
                         assert.equal(await avatar.count(), 1);
                         assert.equal(await avatar.getAttribute('src'), await page.locator('head link[rel="icon"][type="image/svg+xml"]').getAttribute('href'), 'The GitHub avatar reuses the published favicon resource.');
                         await avatar.evaluate(image => image.decode());
+                        assert.equal(await avatar.evaluate(image => getComputedStyle(image).filter), 'none', 'A shared resource keeps its original colors without monochrome opt-in.');
                         assert.equal(await avatar.getAttribute('height'), '48');
                         assert.deepEqual(await avatar.evaluate(image => ({width: image.getBoundingClientRect().width, naturalRatio: image.naturalWidth / image.naturalHeight})), {width: 64, naturalRatio: 4 / 3});
                         assert.equal(await page.locator('.slot-main .prose table').count(), 0);
@@ -393,6 +394,11 @@ export const systemPageScenarios = [
             await gotoAndWait(page, baseUrl + '/zh/all/?sort=name-asc');
             await page.locator('[data-root-href="/zh/appearance/"]').click();
             await page.waitForURL(baseUrl + '/zh/appearance/');
+            const assertAboutFilter = async (dark) => {
+                const icon = page.locator('[data-root-href="/zh/about/"] img.icon--monochrome');
+                assert.equal(await icon.evaluate(image => getComputedStyle(image).filter), dark ? 'brightness(0) invert(1)' : 'brightness(0)');
+            };
+            await assertAboutFilter(false);
             const choiceContract = await page.evaluate(() => {
                 const list = document.querySelector('.system-page [data-list-view]');
                 return {
@@ -411,20 +417,25 @@ export const systemPageScenarios = [
             assert(choiceContract.options.every((option) => option.tagName === 'BUTTON' && option.pressed !== null));
             await page.locator(`${system} [data-theme-choice="dark"]`).click();
             await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
+            await assertAboutFilter(true);
             assert.equal(await page.evaluate(() => localStorage.getItem('theme-preference')), 'dark');
             await page.reload();
             await page.waitForSelector(`${system} [data-theme-choice="dark"].is-current[aria-pressed="true"]`);
             await page.locator(`${system} [data-theme-choice="light"]`).click();
             await page.waitForSelector(`${system} [data-theme-choice="light"].is-current`);
+            await assertAboutFilter(false);
+            await page.screenshot({ path: path.join(artifactDir, 'appearance-light.png'), animations: 'disabled' });
 
             assert.equal(await page.locator('.site-nav-utilities').count(), 0, 'The old settings buttons are removed.');
             await page.locator(`${system} [data-theme-choice="auto"]`).click();
             await page.emulateMedia({ colorScheme: 'dark' });
             await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
+            await assertAboutFilter(true);
             await page.locator('[data-page-action="back"]').click();
             await page.waitForURL((url) => url.pathname === '/zh/all/');
             await page.emulateMedia({ colorScheme: 'light' });
             await page.waitForFunction(() => document.documentElement.dataset.theme === 'light');
+            await assertAboutFilter(false);
 
             const other = await context.newPage();
             await other.goto(`${baseUrl}/zh/appearance/`);
@@ -433,7 +444,8 @@ export const systemPageScenarios = [
             await other.close();
             await page.goForward();
             await page.waitForSelector(`${system} [data-theme-choice="dark"].is-current`);
-            await page.screenshot({ path: path.join(artifactDir, 'appearance-dark.png') });
+            await assertAboutFilter(true);
+            await page.screenshot({ path: path.join(artifactDir, 'appearance-dark.png'), animations: 'disabled' });
             return { message: 'Appearance choices, refresh, return, system changes and cross-tab sync passed.' };
         }
     },

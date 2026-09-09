@@ -6,7 +6,7 @@
   {{- if ne $published.resource.MediaType.MainType "image" -}}
     {{- errorf "Build failed: %s icon.image must reference an image resource: %q." $owner.RelPermalink $value.image -}}
   {{- else -}}
-    {{- $value = dict "image" $published.src -}}
+    {{- $value = merge $value (dict "image" $published.src) -}}
   {{- end -}}
 {{- end -}}
 {{- return $value -}}
