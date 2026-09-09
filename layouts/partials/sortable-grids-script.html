@@ -1,3 +1,0 @@
-{{ $sortJs := partial "sortable-grids-resource.html" . }}
-{{ $sortJs = $sortJs | fingerprint }}
-<script src="{{ $sortJs.RelPermalink }}" integrity="{{ $sortJs.Data.Integrity }}" defer></script>

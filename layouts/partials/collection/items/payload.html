@@ -1,0 +1,43 @@
+{{/* Compact items payload model; JSON encoding belongs to the publish/embed boundary. */}}
+{{- $source := .source -}}
+{{- $config := partial "collection/config.html" (dict "page" $source.page) -}}
+{{- $rows := partial "collection/rows.html" (dict "page" $source.page) -}}
+{{- $fields := slice "key" "kind" "href" "text" "icon" "prefetch_kind" "sort_group" "sort_name" -}}
+{{- if eq $config.view "products" -}}
+  {{- $fields = $fields | append "sort_price" "sort_value" "price_text" "value_text" -}}
+{{- else if eq $config.view "all" -}}
+  {{- $fields = $fields | append "sort_date" "sort_size" "sort_path" "date_text" "size_text" "size_unit" "path_text" "path_href" -}}
+{{- else if eq $config.view "directory" -}}
+  {{- $fields = $fields | append "sort_date" "sort_count" "date_text" "count_text" "count_unit" -}}
+{{- end -}}
+{{- $logicalPath := trim (printf "%v" ($source.logical_path | default "")) " " -}}
+{{- $rowVector := slice -}}
+{{- $seenKeys := dict -}}
+{{- range $row := $rows -}}
+  {{- $key := trim (printf "%v" (index $row "key")) " \r\n\t" -}}
+  {{- $text := trim (printf "%v" (index $row "text")) " \r\n\t" -}}
+  {{- $href := trim (printf "%v" (index $row "href")) " \r\n\t" -}}
+  {{- if or (eq $key "") (eq $text "") (eq $href "") -}}
+    {{- errorf "Build failed: entry source %q has invalid row key=%q text=%q href=%q." $logicalPath $key $text $href -}}
+  {{- end -}}
+  {{- if isset $seenKeys $key -}}
+    {{- errorf "Build failed: entry source %q has duplicate entry key=%q for href=%q and href=%q." $logicalPath $key (index $seenKeys $key) $href -}}
+  {{- end -}}
+  {{- $seenKeys = merge $seenKeys (dict $key $href) -}}
+  {{- range $field := $fields -}}
+    {{- $value := "" -}}
+    {{- with index $row $field -}}
+      {{- if eq $field "icon" -}}{{- $value = . -}}{{- else -}}{{- $value = printf "%v" . -}}{{- end -}}
+    {{- end -}}
+    {{- $rowVector = $rowVector | append $value -}}
+  {{- end -}}
+{{- end -}}
+{{- return (dict
+  "v" 1
+  "p" "collection"
+  "lp" $logicalPath
+  "sv" $config.sort_variant
+  "ds" $config.default_sort
+  "f" $fields
+  "rv" $rowVector
+) -}}

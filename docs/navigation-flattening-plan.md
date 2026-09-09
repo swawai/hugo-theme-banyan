@@ -29,7 +29,7 @@
 
 已确认：现有面包屑通过 `from` 保存进入路径，结合 `sort/sorts` 恢复排序，并已有根入口及各列选中逻辑。本次复用该机制，将结果接到统一第一列，清除主菜单另用 `nav_primary` 判断归属的分支。
 
-第一列复用第二、三列的 `grid-title-cell.html`、`collection/item-content.html` 和 `collection-list.css`，沿用行结构、图标、间距、悬停及 `.is-current` 选中态；适配容器与断点限制。统一入口列表保持完整，来源变化只更新选中项，避免原根菜单渲染函数把它替换成局部菜单。
+第一列复用第二、三列的 `list/link-cell.html`、`list/item-content.html` 和 `collection-list.css`，沿用行结构、图标、间距、悬停及 `.is-current` 选中态；适配容器与断点限制。统一入口列表保持完整，来源变化只更新选中项，避免原根菜单渲染函数把它替换成局部菜单。
 
 目标入口：文章 - 全部、文章 - 分类、产品 - 全部、产品 - 分类、语言、外观、我的、关于、更新、RSS 订阅、微信、GitHub、备案（图片图标＋粤ICP备2024338434号）、首页（© 2026 Swaw）。
 
@@ -46,7 +46,7 @@
 
 当前行动安排（2026-09-09，以下规则优先于后面的历史记录）：
 
-入口显式声明：根页面只有顶层 `root_nav: true` 才显示，未声明默认隐藏。三语言可见根页面及首页已补齐声明，前四项采用“文章 - 全部、文章 - 分类、产品 - 全部、产品 - 分类”，权重依次 10、20、30、40。目录与阅读目的保留真实页面、集合数据和文章底部链接，第一列隐藏后共 15 项。隐藏来源及直接访问目录下文章时，第一列无选中项，右侧仍显示真实路径；不新增菜单归属映射。仅在 `navigation/root.html` 过滤展示，完整根模型不变，无新增 JS 或样式分支。下面 17 项入口等记录描述此前步骤。
+入口显式声明：根页面只有顶层 `root_nav: true` 才显示，未声明默认隐藏。三语言可见根页面及首页已补齐声明，前四项采用“文章 - 全部、文章 - 分类、产品 - 全部、产品 - 分类”，权重依次 10、20、30、40。目录与阅读目的保留真实页面、集合数据和文章底部链接，第一列隐藏后共 15 项。隐藏来源及直接访问目录下文章时，第一列无选中项，右侧仍显示真实路径；不新增菜单归属映射。仅在 `navigation/root/render.html` 过滤展示，完整根模型不变，无新增 JS 或样式分支。下面 17 项入口等记录描述此前步骤。
 
 显式入口验收：生产构建 `temp_workspace/public/2609090047-explicit-root-navigation-fixed` 的 141 页 HTML 审计通过，6 项相关浏览器回归通过（`temp_workspace/regression/260909004745-browser/report.json`），覆盖三语言显示名称与顺序、隐藏来源首帧／运行时选中、底部元信息进入分类、排序／刷新／历史，以及三种宽度下的统一布局。集合契约检查通过（`temp_workspace/collection-contract-Ho6B9d`），验证 `true`、`false`、缺省、字符串声明、普通子项不被提升、隐藏页面仍输出及目录主动加入入口。已查看文章全部、文章分类和隐藏阅读目的路径截图。
 
@@ -58,7 +58,7 @@
 
 PWA 条目图标：主题三语言 `content/site/pwa/index*.md` 声明 `icon: { text: "↻" }`，沿用当前 15px 字号和 1.5rem 图标占位；目录主表、文章路径列及运行时数据使用相同字符，不增加特殊样式。生产构建 `temp_workspace/public/2609090012-pwa-update-icon` 的 141 页 HTML 审计及 `system-site-directory` 回归通过（`temp_workspace/regression/260909001233-browser/report.json`），验证三语言目录、路径列及排序／刷新／历史中的字符图标。
 
-说明页目标链接：RSS 订阅地址、备案页两个查询链接、GitHub 头像和文字链接均使用原生新标签打开，第一列入口仍在当前标签打开说明页。RSS 短代码为既有 `link.html` 传入 `target="_blank"` 和 `rel="noopener noreferrer"`；GitHub／备案正文使用小型 `new-tab` 短代码复用同一渲染器，主题 GitHub 默认页同步采用。保留 `unsafe: false`，不增加 JS 或全站链接重写。生产构建 `temp_workspace/public/2609082309-info-links-new-tab` 的 141 页 HTML 审计及 `system-site-directory` 回归通过（`temp_workspace/regression/260908231037-browser/report.json`）；三语言共 15 次实际点击验证新标签 URL、`window.opener` 为空、原页面 URL 保持，以及根入口仍在当前标签打开。测试拦截目标响应以排除外站和 XML 查看器差异，RSS 实际 XML 仍独立读取校验。
+说明页目标链接：RSS 订阅地址、备案页两个查询链接、GitHub 头像和文字链接均使用原生新标签打开，第一列入口仍在当前标签打开说明页。RSS 短代码为既有 `html/link.html` 传入 `target="_blank"` 和 `rel="noopener noreferrer"`；GitHub／备案正文使用小型 `new-tab` 短代码复用同一渲染器，主题 GitHub 默认页同步采用。保留 `unsafe: false`，不增加 JS 或全站链接重写。生产构建 `temp_workspace/public/2609082309-info-links-new-tab` 的 141 页 HTML 审计及 `system-site-directory` 回归通过（`temp_workspace/regression/260908231037-browser/report.json`）；三语言共 15 次实际点击验证新标签 URL、`window.opener` 为空、原页面 URL 保持，以及根入口仍在当前标签打开。测试拦截目标响应以排除外站和 XML 查看器差异，RSS 实际 XML 仍独立读取校验。
 
 GitHub 账号与头像：项目三语言 GitHub 说明页仅展示 SwawHQ 组织账号，撤掉表格、个人账号与介绍文案，正文只保留可点击的头像及 `github.com/SwawHQ` 链接。清理重复资源后，头像统一引用项目 `assets/site/pwa/favicon.svg`，通过现有 `asset` 短代码与站点入口、浏览器图标共用哈希资源；尺寸声明为 64×48，保持 SVG 的 4:3 图形比例。关于页同步只保留 SwawHQ。无新增模板、样式或运行时分支。
 
@@ -70,7 +70,7 @@ GitHub 简化验收：生产构建 `temp_workspace/public/2609082304-github-simp
 
 联系与订阅入口验收：生产构建 `temp_workspace/public/2609082242-contact-root-entries` 的 141 页 HTML 审计及 4 项相关浏览器回归通过（`temp_workspace/regression/260908224256-browser/report.json`）。覆盖三语言 15 项根导航、微信 SVG 与二维码解码、GitHub 正文目标、RSS 实际地址及 XML、站点剩余三项排序和路径列，以及根入口选中、刷新、历史与设置返回。已查看站点和微信页截图；当前局域网预览服务未运行，本轮使用测试构建验证。
 
-站点 Logo：三语言站点入口声明 `icon: { image: "site/pwa/favicon.svg" }`，通用图片图标改为调用现有 `asset/publish.html`，复用页面 bundle／全站 assets 的既有解析和哈希发布规则。入口 Logo 与 HTML 的 favicon 共用 `/site/pwa/favicon.<sha256>.svg`；不复制 Logo、不增加发布器或 JS 分支。图片目录默认值和自身声明均支持 assets，既有 ICP bundle 图片继续使用原哈希路径。
+站点 Logo：三语言站点入口声明 `icon: { image: "site/pwa/favicon.svg" }`，通用图片图标改为调用现有 `asset/publish-local.html`，复用页面 bundle／全站 assets 的既有解析和哈希发布规则。入口 Logo 与 HTML 的 favicon 共用 `/site/pwa/favicon.<sha256>.svg`；不复制 Logo、不增加发布器或 JS 分支。图片目录默认值和自身声明均支持 assets，既有 ICP bundle 图片继续使用原哈希路径。
 
 站点 Logo 验收：集合契约 `temp_workspace/collection-contract-BeFSY5` 覆盖 assets 自身／默认图标、三语言 SSR／运行时、刷新和历史，以及显式 bundle、静态／远程 URL、缺失及非图片资源校验；确认全站 Logo 只生成一份哈希资源。生产构建 `temp_workspace/public/2609082213-site-logo-assets` 的 141 页 HTML 审计、图片发布检查和 2 项相关浏览器回归通过（`temp_workspace/regression/260908221328-browser/report.json`）。局域网预览核对三语言同一 favicon URL、15px 图标尺寸、文章进入后的选中态及浅色／深色截图，产物在 `temp_workspace/site-logo-live/`。
 
@@ -78,7 +78,7 @@ GitHub 简化验收：生产构建 `temp_workspace/public/2609082304-github-simp
 
 备案名称与链接补齐：三语言入口显示完整 `粤ICP备2024338434号`；正文备案号自身加粗并链接至 `https://beian.miit.gov.cn/`，原有查询网站说明链接继续保留。
 
-图片图标与入口排序：备案入口改为 `weight: 105`，排在版权入口 `110` 前面；三语言声明 `icon: { image: "0.webp" }`，资源来自项目 `content/icp/0.webp`。通用图标增加图片值，声明时以所属页面解析，再复用现有 `page-resource/publish.html` 发布到 `/media/content/icp/0.<sha256>.webp`；主表、路径列、图标默认值继承与 JSON 均保留同一地址。图片使用共用占位及 `1rem` 图形尺寸，保持比例；备案页保留 `build.publishResources: false`，只发布哈希资源。不改变缓存策略或新增图片发布链。
+图片图标与入口排序：备案入口改为 `weight: 105`，排在版权入口 `110` 前面；三语言声明 `icon: { image: "0.webp" }`，资源来自项目 `content/icp/0.webp`。通用图标增加图片值，声明时以所属页面解析，再复用现有 `asset/publish-page.html` 发布到 `/media/content/icp/0.<sha256>.webp`；主表、路径列、图标默认值继承与 JSON 均保留同一地址。图片使用共用占位及 `1rem` 图形尺寸，保持比例；备案页保留 `build.publishResources: false`，只发布哈希资源。不改变缓存策略或新增图片发布链。
 
 图片图标验收：集合契约 `temp_workspace/collection-contract-vNQ8sR` 覆盖三种列表、三语言、自身与目录继承图片、资源哈希及原始字节、SSR／运行时、刷新和历史，并验证空值、缺失、远程及非图片声明构建失败。生产构建 `temp_workspace/public/2609082140-image-icons-final` 的 141 页 HTML 审计、图片发布检查及 5 项相关浏览器回归通过（`temp_workspace/regression/260908214029-browser/report.json`）。局域网预览完整重建后核对三语言顺序、图片解码、15px 尺寸及截图，产物在 `temp_workspace/image-icons-live/`。
 
@@ -242,7 +242,7 @@ offer:
 | 打开语言、外观、我的或站点页，携带 `return` | 当前系统页，`return` 不参与菜单归属 |
 | 首页或没有可列出根祖先的内部页 | 不强行选中某一入口 |
 
-第 4 步结构：`navigation/root-pages.html` 合并首页直接子页与真实分类法根，按页面 weight 排序；第一列只输出一份共享列表，站点名列头返回首页。内容祖先决定直接访问的归属，有效 `from` 决定来源归属；完整入口表不再复制进每份集合数据。同步内联初始化、首帧预览和运行时共用选中函数，慢速外部 JS 加载也不会先高亮默认目录。第一列与路径列使用同一行组件、225px 列宽及选中／悬停样式。页脚随导航自然排列，窄屏仍保持当前上下布局。
+第 4 步结构：`navigation/root/pages.html` 合并首页直接子页与真实分类法根，按页面 weight 排序；第一列只输出一份共享列表，站点名列头返回首页。内容祖先决定直接访问的归属，有效 `from` 决定来源归属；完整入口表不再复制进每份集合数据。同步内联初始化、首帧预览和运行时共用选中函数，慢速外部 JS 加载也不会先高亮默认目录。第一列与路径列使用同一行组件、225px 列宽及选中／悬停样式。页脚随导航自然排列，窄屏仍保持当前上下布局。
 
 第 4 步清理：根项目与主题中的 `nav_primary`、三个旧导航 slot、导航和面包屑覆盖片段、旧控件模板／脚本／样式均已删除。保留 `breadcrumb`、`meta`、`footer` 及业务集合配置；正文目录元信息仍使用完整的真实内容路径。系统链接携带独立 `return`；新版本以站点入口的箭头及本地化说明提示，点击先进入站点页，再由页内按钮检查或应用。
 

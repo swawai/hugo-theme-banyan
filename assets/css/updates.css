@@ -1,0 +1,9 @@
+.updates-panel {
+    margin-block-start: 1rem;
+}
+
+.updates-status {
+    font-size: small;
+    color: var(--link-visited);
+    line-height: 1.55;
+}

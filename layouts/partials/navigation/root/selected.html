@@ -1,0 +1,11 @@
+{{- $ctx := . -}}
+{{- $roots := partialCached "navigation/root/pages.html" $ctx $ctx.Language.Lang -}}
+{{- $selected := false -}}
+{{- range $node := (slice $ctx) | append $ctx.Ancestors -}}
+  {{- if and $node.IsHome (not $ctx.IsHome) -}}{{- continue -}}{{- end -}}
+  {{- if in $roots $node -}}
+    {{- $selected = $node -}}
+    {{- break -}}
+  {{- end -}}
+{{- end -}}
+{{- return $selected -}}

@@ -1,0 +1,39 @@
+{{- $page := .page -}}
+{{- if not $page -}}
+  {{- errorf "Build failed: collection/rows/taxonomy.html requires page." -}}
+{{- end -}}
+{{- $spec := partial "taxonomy/config.html" (dict "ctx" $page "plural" $page.Data.Plural) -}}
+{{- $rows := slice -}}
+{{- range $entry := partial "taxonomy/children/get.html" (dict "ctx" $page "spec" $spec) -}}
+  {{- $isCat := eq .kind "cat" -}}
+  {{- $key := .term_key -}}
+  {{- if not $isCat -}}
+    {{- $key = partial "collection/rows/page-key.html" (dict "ctx" .node) -}}
+  {{- end -}}
+  {{- $text := .text -}}
+  {{- $countText := printf "%v" .cnt -}}
+  {{- $countUnit := "" -}}
+  {{- if not $isCat -}}
+    {{- $bytes := .bytes | default .cnt | default 0 -}}
+    {{- $countText = printf "%v" (div (add $bytes 1023) 1024) -}}
+    {{- $countUnit = "&thinsp;KB" -}}
+  {{- end -}}
+  {{- $rows = $rows | append (dict
+    "node" .node
+    "key" $key
+    "kind" .kind
+    "href" .url
+    "schema_href" .url
+    "title" .title
+    "text" $text
+    "prefetch_kind" (cond $isCat "desc" "post")
+    "sort_group" (cond $isCat "0" "1")
+    "sort_name" $text
+    "sort_date" (.latestKey | default "")
+    "date_text" (.latest | default ".")
+    "sort_count" (printf "%v" (.cnt | default 0))
+    "count_text" $countText
+    "count_unit" $countUnit
+  ) -}}
+{{- end -}}
+{{- return $rows -}}

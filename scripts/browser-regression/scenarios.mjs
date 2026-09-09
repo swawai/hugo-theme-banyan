@@ -15,7 +15,7 @@ import {
     waitForUpdateReady
 } from './helpers.mjs';
 import { relFromSite } from './paths.mjs';
-import { systemPageScenarios } from './system-pages.mjs';
+import { preferenceAndUpdateScenarios } from './preference-and-updates.mjs';
 import { updatesNavigationScenarios } from './updates-navigation.mjs';
 import { canvasScenarios } from './canvas.mjs';
 
@@ -681,7 +681,7 @@ async function readBreadcrumbPrefetchSlotContract(page) {
 
 export const scenarios = [
     ...canvasScenarios,
-    ...systemPageScenarios,
+    ...preferenceAndUpdateScenarios,
     ...updatesNavigationScenarios,
     {
         id: 'root-navigation-contract',

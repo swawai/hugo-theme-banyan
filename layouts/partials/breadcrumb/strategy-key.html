@@ -1,8 +1,0 @@
-{{- $ctx := .ctx | default . -}}
-{{- $key := "model-page" -}}
-{{- if $ctx.IsHome -}}
-  {{- $key = "model-home" -}}
-{{- else if or (eq $ctx.Kind "taxonomy") (eq $ctx.Kind "term") -}}
-  {{- $key = "model-taxonomy" -}}
-{{- end -}}
-{{- return $key -}}

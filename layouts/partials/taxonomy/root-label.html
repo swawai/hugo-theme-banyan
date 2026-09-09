@@ -1,0 +1,10 @@
+{{- $ctx := .ctx | default . -}}
+{{- $spec := .spec | default dict -}}
+{{- $plural := printf "%v" (index $spec "plural") -}}
+{{- $page := partial "taxonomy/root-page.html" (dict "ctx" $ctx "plural" $plural) -}}
+{{- $pagePath := $page.File.Path | default (printf "content/%s/_index.*" $plural) -}}
+{{- $title := trim (printf "%v" ($page.Title | default "")) " \r\n\t" -}}
+{{- if eq $title "" -}}
+  {{- errorf "Build failed: %s must provide a non-empty title as the full semantic title for taxonomy %q. linkTitle is optional compact navigation text." $pagePath $plural -}}
+{{- end -}}
+{{- return ($page.LinkTitle | default $title) -}}

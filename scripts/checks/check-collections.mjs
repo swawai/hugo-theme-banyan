@@ -45,6 +45,7 @@ for (const lang of langs) {
     for (const term of ['contract-dates', 'contract-dates/child']) {
         write(path.join(overlay, `tags/${term}/_index${lang}.md`), `---\ntitle: ${term}\n---\n`);
     }
+    write(path.join(overlay, `tags/untagged/_index${lang}.md`), '---\ntitle: Untagged\n---\n');
     const paid = fs.readFileSync(`content/products/paid/_index${lang}.md`, 'utf8');
     write(path.join(overlay, `products/paid/_index${lang}.md`), paid.replace('---', '---\nlist_icon_file: appearance-light'));
     for (const [name, fields] of cases) write(path.join(overlay, `d/contract-${name}/index${lang}.md`),
@@ -127,6 +128,9 @@ for (const view of ['directory', 'all', 'products', 'name']) {
         assertUpdated('tags/contract-dates', '/tags/contract-dates/child/', '2026-08-02', '20260802000000');
         assertUpdated('tags/contract-dates', '/p/contract-priced/', '2026-08-01', '20260801000000');
         assertUpdated('tags/contract-dates/child', '/p/contract-missing/', '2026-08-02', '20260802000000');
+        const unassignedRow = payload(output, lang, 'tags/untagged').rows.find(row => row.href === `${prefixes[index]}/p/contract-unclassified/`);
+        assert(unassignedRow, 'unassigned taxonomy term contains pages without taxonomy values');
+        assert.equal(unassignedRow.key, 'contract-unclassified', 'unassigned taxonomy pages use the same stable collection key');
         const iconFor = (list, href) => payload(output, lang, list).rows.find(row => row.href === `${prefixes[index]}${href}`)?.icon;
         for (const list of ['d', 'all', 'products/free', 'all-products']) {
             assert.deepEqual(iconFor(list, '/p/contract-no-offer/'), ownImage, 'own image resolves against its article bundle in every list');

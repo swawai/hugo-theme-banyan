@@ -1,3 +1,0 @@
-{{- $page := .page -}}
-{{- $logicalPath := partial "entry-source/logical-path-from-href.html" (dict "ctx" $page "href" $page.RelPermalink) -}}
-{{- return partial "entry-source/source-page-model.html" (dict "page" $page "logical_path" $logicalPath) -}}

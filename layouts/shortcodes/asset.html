@@ -1,6 +1,6 @@
 {{- $src := trim (printf "%v" (.Get "src" | default (.Get 0) | default "")) " \r\n\t" -}}
 {{- if eq $src "" -}}{{- errorf "Build failed: asset shortcode requires src." -}}{{- end -}}
-{{- $published := partial "asset/publish.html" (dict "ctx" . "src" $src) -}}
+{{- $published := partial "asset/publish-local.html" (dict "ctx" . "src" $src) -}}
 {{- $href := index $published "src" -}}
 {{- $alt := trim (printf "%v" (.Get "alt" | default "")) " \r\n\t" -}}
 {{- $text := trim (printf "%v" (.Get "text" | default (.Get 1) | default "")) " \r\n\t" -}}

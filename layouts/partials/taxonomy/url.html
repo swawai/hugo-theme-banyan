@@ -7,15 +7,15 @@
   {{- if ne $value "" -}}
     {{- $unassignedTerm := printf "%v" (index $spec "unassigned_term" | default "") -}}
     {{- $targetValue := $value -}}
-    {{- if and (ne $unassignedTerm "") (eq (partial "taxonomy/normalize.html" (dict "spec" $spec "value" $value)) (partial "taxonomy/normalize.html" (dict "spec" $spec "value" $unassignedTerm))) -}}
+    {{- if and (ne $unassignedTerm "") (eq (partial "taxonomy/normalize-value.html" (dict "spec" $spec "value" $value)) (partial "taxonomy/normalize-value.html" (dict "spec" $spec "value" $unassignedTerm))) -}}
       {{- $targetValue = $unassignedTerm -}}
     {{- end -}}
-    {{- with partial "taxonomy/term-page-get.html" (dict "ctx" $ctx "spec" $spec "plural" $plural "value" $targetValue) -}}
+    {{- with partial "taxonomy/term-page.html" (dict "ctx" $ctx "spec" $spec "plural" $plural "value" $targetValue) -}}
       {{- $url = .RelPermalink -}}
     {{- end -}}
   {{- end -}}
 {{- else -}}
-  {{- with partial "taxonomy/root-page-get.html" (dict "ctx" $ctx "spec" $spec "plural" $plural) -}}
+  {{- with partial "taxonomy/root-page.html" (dict "ctx" $ctx "plural" $plural) -}}
     {{- $url = .RelPermalink -}}
   {{- end -}}
 {{- end -}}

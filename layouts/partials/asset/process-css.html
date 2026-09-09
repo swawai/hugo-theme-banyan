@@ -1,0 +1,8 @@
+{{ $css := .resource }}
+{{ if not $css }}{{ return }}{{ end }}
+{{ $pathHint := lower (printf "%v" ($css.Name | default "")) }}
+{{ $alreadyMinified := in $pathHint ".min.css" }}
+{{ if and (not hugo.IsServer) (not $alreadyMinified) }}{{ $css = $css | minify }}{{ end }}
+{{ $css = $css | fingerprint }}
+{{ if not hugo.IsServer }}{{ $css = $css | resources.PostProcess }}{{ end }}
+{{ return $css }}

@@ -1,4 +1,4 @@
-{{- $desc := partial "seo-description.html" . -}}
+{{- $desc := partial "seo/description.html" . -}}
 {{- $author := or site.Params.author "ipzu" -}}
 {{- $published := .PublishDate -}}
 {{- if le $published.Unix 0 -}}
@@ -8,7 +8,7 @@
 {{- if le $modified.Unix 0 -}}
   {{- $modified = $published -}}
 {{- end -}}
-{{- $shareImage := partial "share-image/resolve.html" . -}}
+{{- $shareImage := partial "seo/share-image/resolve.html" . -}}
 {{- $imageURL := index $shareImage "url" | default "" -}}
 {{- $payload := dict
   "@context" "https://schema.org"

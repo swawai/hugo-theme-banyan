@@ -2,7 +2,7 @@
 {{- $slotFlags := $ctx.Scratch.Get "slot_flags" | default dict -}}
 {{- $breadcrumbItems := slice -}}
 {{- with index $slotFlags "breadcrumb" -}}
-  {{- $breadcrumbModel := partial "breadcrumb/model.html" (dict "ctx" $ctx) -}}
+  {{- $breadcrumbModel := partial "navigation/path/model.html" (dict "ctx" $ctx) -}}
   {{- $breadcrumbItems = index $breadcrumbModel "schema_items" | default slice -}}
 {{- end -}}
 {{- $directoryItems := slice -}}
@@ -12,12 +12,12 @@
   {{- end -}}
 {{- end -}}
 {{- $hasPath := gt (len $directoryItems) 0 -}}
-{{- $taxonomySpecs := partial "taxonomy/enabled.html" (dict "ctx" $ctx) -}}
+{{- $taxonomySpecs := partial "taxonomy/configs.html" (dict "ctx" $ctx) -}}
 {{- $hasTaxonomy := false -}}
 {{- range sort $taxonomySpecs "article_weight" "asc" -}}
   {{- $spec := . -}}
   {{- $articleMode := printf "%v" (index $spec "article_mode") -}}
-  {{- $values := partial "taxonomy/values.html" (dict "page" $ctx "spec" $spec) -}}
+  {{- $values := partial "taxonomy/page-values.html" (dict "page" $ctx "spec" $spec) -}}
   {{- if and (ne $articleMode "none") (gt (len $values) 0) -}}
     {{- $hasTaxonomy = true -}}
     {{- break -}}
@@ -37,18 +37,17 @@
       {{- if eq $index 0 -}}
         {{- $itemText = index $item "title" | default $itemText -}}
       {{- end -}}
-      {{- partial "link.html" (dict
-        "ctx" $ctx
+      {{- partial "html/link.html" (dict
         "href" (index $item "href")
         "text" $itemText
         "title" (index $item "title")
         "ariaCurrent" (cond (eq (index $item "current") true) "page" "")
-        "linkSlot" "nav"
+        "prefetchSlot" "nav"
       ) -}}
     {{- end -}}
   </nav>
   {{- end -}}
-  {{- if $hasTaxonomy -}}{{ partial "taxonomy/article-links.html" (dict "ctx" $ctx) }}{{- end -}}
+  {{- if $hasTaxonomy -}}{{ partial "article/taxonomy-links.html" (dict "ctx" $ctx) }}{{- end -}}
   {{- if $hasDates -}}{{ partial "article/dates.html" $ctx }}{{- end -}}
   {{- $externalLinks | safeHTML -}}
 </div>

@@ -1,15 +1,18 @@
 {{ define "styles" }}
-{{ partial "head-styles.html" (dict "ctx" . "variant" "page") }}
+{{ partial "asset/head-styles.html" (dict "ctx" . "variant" "page") }}
 {{ end }}
 
 {{ define "head-extra" }}
 <meta name="robots" content="noindex, follow">
-{{ partial "article/styles.html" (dict "ctx" .) }}
+{{ partial "content/styles.html" (dict "ctx" .) }}
 {{ $notFoundCssPath := "css/not-found.css" }}
 {{ $notFoundCss := resources.Get $notFoundCssPath }}
-{{ if not $notFoundCss }}{{ errorf "Build failed: missing resource %q." $notFoundCssPath }}{{ end }}
-{{ $notFoundCss = partial "css-process.html" (dict "resource" $notFoundCss "fingerprint" true) }}
+{{ if not $notFoundCss }}
+{{ errorf "Build failed: missing resource %q." $notFoundCssPath }}
+{{ else }}
+{{ $notFoundCss = partial "asset/process-css.html" (dict "resource" $notFoundCss) }}
 <link rel="stylesheet" href="{{ $notFoundCss.RelPermalink }}">
+{{ end }}
 {{ end }}
 
 {{ define "main" }}
@@ -41,5 +44,5 @@
 {{ end }}
 
 {{ define "body-extra" }}
-{{ partial "assets/script.html" (dict "path" "js/not-found-alt-langs.js") }}
+{{ partial "asset/script.html" (dict "path" "js/not-found-alt-langs.js") }}
 {{ end }}

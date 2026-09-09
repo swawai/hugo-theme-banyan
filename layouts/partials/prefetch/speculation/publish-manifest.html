@@ -1,0 +1,22 @@
+{{- $ctx := .ctx -}}
+{{- $mode := lower (printf "%v" .mode) -}}
+{{- $speculationConfig := .speculation_config -}}
+{{- $overlapWarnings := .overlap_warnings | default slice -}}
+{{- if eq $mode "header" -}}
+  {{- $payload := partial "prefetch/speculation/document.html" (dict
+    "speculation_config" $speculationConfig
+  ) -}}
+  {{- if gt (len $payload) 0 -}}
+    {{- $route := printf "%v" $ctx.RelPermalink -}}
+    {{- $manifestKey := md5 $route -}}
+    {{- $manifestPayload := dict
+      "route" $route
+      "rules" $payload
+      "overlap_warnings" $overlapWarnings
+    -}}
+    {{- $manifestBody := $manifestPayload | jsonify (dict "indent" "  ") -}}
+    {{- $manifestResource := resources.FromString (printf "__speculation-rules-manifests/%s.json" $manifestKey) $manifestBody -}}
+    {{- $publishManifest := $manifestResource.RelPermalink -}}
+    {{- $noop := $publishManifest -}}
+  {{- end -}}
+{{- end -}}

@@ -93,7 +93,6 @@ mode = "off"
 #   batches run only once per browser session.
 
 [params.prefetch_runtime.env.TT]
-menu = "sw_xf_g"
 nav = "sw_xf_g"
 crumb = "sw_mf_g"
 sort_siblings = "sw_xf_g"
@@ -104,7 +103,6 @@ post = "sw_mf_g"
 ref = "TT"
 
 [params.prefetch_runtime.env.TF]
-menu = "link_mf"
 nav = "link_xf"
 crumb = "link_mf"
 sort_siblings = "link_xf"
@@ -117,7 +115,6 @@ post = "link_mf"
 # keep this off and let the runtime/SW prefetch stack handle warmup.
 mode = "off"
 runtime_coordination = "preempt_runtime_when_supported"
-menu = "prefetch_moderate"
 nav = "prefetch_eager"
 crumb = "prefetch_moderate"
 sort_siblings = "prefetch_eager"

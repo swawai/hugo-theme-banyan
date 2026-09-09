@@ -1,5 +1,5 @@
 (function () {
-    var slotOrder = ['menu', 'nav', 'crumb', 'sort', 'desc', 'post'];
+    var slotOrder = ['nav', 'crumb', 'sort', 'desc', 'post'];
 
     function supportsSpeculationRules() {
         try {

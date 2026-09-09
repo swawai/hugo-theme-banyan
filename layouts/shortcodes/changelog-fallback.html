@@ -24,9 +24,9 @@
 {{- else if gt (len $buildRevision) 12 -}}
   {{- $buildCommitDisplay = substr $buildRevision 0 12 -}}
 {{- end -}}
-{{- $buildVersion := partial "build-version.html" $page -}}
-{{- $buildTimeISO := partial "build-time-iso.html" $page -}}
-{{- $buildTimeDisplay := partial "build-time-display.html" $page -}}
+{{- $buildVersion := partial "build/version.html" $page -}}
+{{- $buildTimeISO := partial "build/time-iso.html" $page -}}
+{{- $buildTimeDisplay := partial "build/time-display.html" $page -}}
 <p>{{ index $copy "intro" }}</p>
 <h2>{{ index $copy "current_build" }}</h2>
 <ul>

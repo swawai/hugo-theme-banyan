@@ -187,4 +187,4 @@ entry 页与 collection 页虽然仍有不同的 orchestration，但它们共享
 - `from/sorts` 仍是当前页面路径状态
 - slots 不负责承载 browser 状态
 
-路径列只有一种呈现方式，不再按宽度或 `variant` 选择不同菜单。`column_items` 的同一协议贯穿 Hugo 静态输出、同步预览和异步重绘；没有保留旧 `menu` 字段兼容读取。预取配置中的 `menu` 是独立的入口预取类别，继续有效。
+路径列只有一种呈现方式，不再按宽度或 `variant` 选择不同菜单。`column_items` 的同一协议贯穿 Hugo 静态输出、同步预览和异步重绘；没有保留旧 `menu` 字段兼容读取。第一列没有 `data-prefetch-slot` 生产者，因此预取配置也不再保留 `menu` 类别。

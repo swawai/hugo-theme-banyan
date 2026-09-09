@@ -135,6 +135,8 @@ runtime stack 继续保留短码 mode，因为这套短码表达的是它自己�
 - `prerender_eager`
 - `off`
 
+当前有效候选只有 `nav`、`crumb`、`sort`、`desc`、`post`。配置字段 `sort_siblings` 和 `descendants` 分别映射到 DOM slot `sort` 和 `desc`。第一列根入口没有预取 slot，因此不提供无实际链接来源的 `menu` 配置。
+
 这样做的关键好处是：
 
 - `params.speculation_rules` 只表达 speculation 自己

@@ -17,12 +17,12 @@
   {{- else -}}
     {{- errorf "aggregate on %s must reference a section or taxonomy root." $page.RelPermalink -}}
   {{- end -}}
-  {{- range $members -}}{{- $rows = $rows | append (partial "collection/page-row.html" (dict "page" .)) -}}{{- end -}}
+  {{- range $members -}}{{- $rows = $rows | append (partial "collection/rows/page.html" (dict "page" .)) -}}{{- end -}}
 {{- else -}}
   {{- if in (slice "taxonomy" "term") $page.Kind -}}
-    {{- $rows = partial "collection/rows-taxonomy.html" (dict "page" $page) -}}
+    {{- $rows = partial "collection/rows/taxonomy.html" (dict "page" $page) -}}
   {{- else if eq $page.Kind "section" -}}
-    {{- $rows = partial "collection/rows-section.html" (dict "page" $page) -}}
+    {{- $rows = partial "collection/rows/section.html" (dict "page" $page) -}}
   {{- else -}}
     {{- errorf "List page %s has no native children; declare aggregate with its section or taxonomy root." $page.RelPermalink -}}
   {{- end -}}
@@ -40,7 +40,7 @@
     {{- $pathText := "/" -}}
     {{- $pathHref := $node.Site.Home.RelPermalink -}}
     {{- with $node.Parent -}}
-      {{- $pathText = partial "entry-source/logical-path-from-href.html" (dict "ctx" $node "href" .RelPermalink) -}}
+      {{- $pathText = partial "collection/logical-path.html" (dict "ctx" $node "href" .RelPermalink) -}}
       {{- $pathHref = .RelPermalink -}}
     {{- end -}}
     {{- $bytes := len $node.RawContent -}}

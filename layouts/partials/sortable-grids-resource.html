@@ -1,4 +1,0 @@
-{{ $buildParams := partialCached "js-build-params.html" site "js-build-params" }}
-{{ $sortJs := resources.Get "js/sortable-grids.js" | js.Build (dict "params" $buildParams) }}
-{{ if not hugo.IsServer }}{{ $sortJs = $sortJs | minify }}{{ end }}
-{{ return $sortJs }}

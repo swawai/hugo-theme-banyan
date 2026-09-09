@@ -1,15 +1,17 @@
 {{ define "styles" }}
-{{ partial "head-styles.html" (dict "ctx" .) }}
+{{ partial "asset/head-styles.html" (dict "ctx" .) }}
 {{ end }}
 
 {{ define "head-extra" }}
-{{ partial "article/styles.html" (dict "ctx" . "with_meta" true) }}
+{{ partial "content/styles.html" (dict "ctx" . "with_meta" true) }}
 {{ end }}
 
 {{ define "main" }}
-{{ partial "article/render-page.html" . }}
+{{ partial "content/render-page.html" . }}
+{{- if and .IsPage (eq .Section "d") -}}{{- partial "article/schema.html" . -}}{{- end -}}
+{{- with index (.Scratch.Get "slot_flags" | default dict) "breadcrumb" -}}{{- partial "seo/breadcrumb.html" (dict "ctx" $) -}}{{- end -}}
 {{ end }}
 
 {{ define "body-extra" }}
-{{ partial "assets/script.html" (dict "path" "js/offline/page.js") }}
+{{ partial "asset/script.html" (dict "path" "js/offline/page.js") }}
 {{ end }}

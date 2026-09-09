@@ -1,0 +1,21 @@
+{{- $prefetchConfig := .prefetch_config -}}
+{{- $prefetchLabels := .prefetch_labels -}}
+{{- $rawEnvConfigMap := index $prefetchConfig "env" | default dict -}}
+{{- $normalizedEnvConfigMap := dict -}}
+{{- range $rawEnvKey, $envConfig := $rawEnvConfigMap -}}
+  {{- $envKey := upper (printf "%v" $rawEnvKey) -}}
+  {{- if eq (len (findRE "^[TF]{2}$" $envKey)) 0 -}}
+    {{- errorf "Build failed: params.prefetch_runtime.env only supports two-flag T/F environment keys (for example TT, FT, FF); got %q." $rawEnvKey -}}
+  {{- end -}}
+  {{- $normalizedEnvConfigMap = merge $normalizedEnvConfigMap (dict $envKey ($envConfig | default dict)) -}}
+{{- end -}}
+{{- $resolvedEnvConfigMap := dict -}}
+{{- range $envKey, $_ := $normalizedEnvConfigMap -}}
+  {{- $resolvedEnvConfigMap = merge $resolvedEnvConfigMap (dict $envKey (partial "prefetch/runtime/resolve-env.html" (dict
+    "env_key" $envKey
+    "env_config_map" $normalizedEnvConfigMap
+    "prefetch_labels" $prefetchLabels
+    "stack" (slice)
+  ))) -}}
+{{- end -}}
+{{- return $resolvedEnvConfigMap -}}

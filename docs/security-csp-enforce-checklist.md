@@ -112,10 +112,10 @@ Strict-Transport-Security: max-age=300
 
 当前存在：
 
-- `themes/banyan/layouts/partials/prefetch-runtime-embed.html`
+- `themes/banyan/layouts/partials/prefetch/runtime/embed.html`
 - `themes/banyan/layouts/partials/article/schema.html`
-- `themes/banyan/layouts/partials/breadcrumb/schema.html`
-- `themes/banyan/layouts/partials/schema-itemlist.html`
+- `themes/banyan/layouts/partials/seo/breadcrumb.html`
+- `themes/banyan/layouts/partials/collection/schema.html`
 
 这类脚本当前属于 data block，不是普通 JavaScript 执行块。根据 MDN `<script>` 文档，`type` 为非 JavaScript MIME 时，内容会被当作 data block，而不会执行。
 

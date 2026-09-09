@@ -1,0 +1,11 @@
+{{- $contentHTML := printf "%s" .Content -}}
+{{- $content := trim $contentHTML " \r\n\t" -}}
+{{- partial "content/validate-heading.html" . -}}
+<article class="article">
+  <div class="prose">
+    <h1 id="{{ .Title | anchorize }}">{{ .Title }}</h1>
+    {{- if ne $content "" -}}
+    {{- $contentHTML | safeHTML -}}
+    {{- end -}}
+  </div>
+</article>

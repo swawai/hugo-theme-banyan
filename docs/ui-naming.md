@@ -4,7 +4,7 @@
 
 | 实体 | 名称与位置 |
 | --- | --- |
-| 第一列根入口 | `root-navigation.js`、`navigation/root.html`；由真实页面的 `root_nav` 声明产生 |
+| 第一列根入口 | `root-navigation.js`、`navigation/root/render.html`；由真实页面的 `root_nav` 声明产生 |
 | 可见路径列 | `path-navigation-ui.js`、`path-navigation.css`；容器 `.path-columns`、单列 `.path-column` |
 | 集合页面 | `_default/collection-page.html`、`collection/render-page.html`；列表内容由 `collection/render.html` 渲染 |
 | 正文中的有序／无序列表 | `prose-lists.css`；只作用于正文 `ul/ol/li` |
@@ -26,7 +26,7 @@ list: name
 
 ## 路径数据与显示
 
-`breadcrumb/` 与 `breadcrumb-*.js` 继续处理结构路径、浏览来源及恢复。`breadcrumb/schema.html` 输出 SEO 的 BreadcrumbList；`slots.breadcrumb` 和网址 `from / sort / sorts` 保持既有约定。
+服务端的 `navigation/path/` 与浏览器端的 `breadcrumb-*.js` 共同处理结构路径、浏览来源及恢复。`seo/breadcrumb.html` 输出 SEO 的 BreadcrumbList；`slots.breadcrumb` 和网址 `from / sort / sorts` 保持既有约定。
 
 可见路径列通过 `renderPathColumns()` 装配，通过 `renderPathColumn()` 重绘单列。`buildPathColumnItems()` 及其同步版本生成行数据。路径模型中 `column_items` 表示该列的兄弟条目，行的选中状态只使用 `current`；不再读取 `highlighted`、`selected` 别名。输入参数 `selected_href` 等仍明确表示用哪个地址寻找当前行。
 

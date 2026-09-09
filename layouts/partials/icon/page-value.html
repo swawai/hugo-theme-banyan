@@ -2,7 +2,7 @@
 {{- $value := partial "icon/resolve.html" . -}}
 {{- if and (reflect.IsMap $value) (isset $value "image") -}}
   {{- $owner := .page -}}
-  {{- $published := partialCached "asset/publish.html" (dict "ctx" (dict "Page" $owner) "src" $value.image) $owner.RelPermalink $value.image -}}
+  {{- $published := partialCached "asset/publish-local.html" (dict "ctx" (dict "Page" $owner) "src" $value.image) $owner.RelPermalink $value.image -}}
   {{- with $published.resource -}}
     {{- if ne .MediaType.MainType "image" -}}
       {{- errorf "Build failed: %s icon.image must reference an image resource: %q." $owner.RelPermalink $value.image -}}

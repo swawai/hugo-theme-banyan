@@ -1,6 +1,7 @@
 export function initBackLinks() {
-    // Retire old settings URLs without reading or retaining their return address.
-    if (document.querySelector('[data-system-page]')) {
+    // These pages once accepted `return`. The marker keeps migration behavior
+    // explicit without making it a styling or page-category contract.
+    if (document.querySelector('[data-retire-return-param]')) {
         const url = new URL(window.location.href);
         if (url.searchParams.has('return')) {
             url.searchParams.delete('return');

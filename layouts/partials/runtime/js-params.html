@@ -1,0 +1,4 @@
+{{- $routingConfig := partialCached "routing/config.html" site "routing-config" -}}
+{{- return dict
+  "navigationState" $routingConfig
+-}}

@@ -29,7 +29,7 @@
 
 ### 1. 删除退役渲染链
 
-删除旧 `section-index` 布局、旧首页快捷集合、旧 breadcrumb 包装、旧 taxonomy 逻辑路径、旧资源包装和调试模板，共 13 个经实验确认未执行的布局／partial；同步删除 `breadcrumb/page-column-items.html`（当时名为 `page-item-menu.html`）中唯一服务 `section-index` 的分支。样式按需装配后再删除仍在执行但只返回一个字段的 `page-style-flags.html`，合计退役 14 个模板入口。
+删除旧 `section-index` 布局、旧首页快捷集合、旧 breadcrumb 包装、旧 taxonomy 逻辑路径、旧资源包装和调试模板，共 13 个经实验确认未执行的布局／partial；同步删除 `navigation/path/section-items.html`（当时名为 `page-item-menu.html`）中唯一服务 `section-index` 的分支。样式按需装配后再删除仍在执行但只返回一个字段的 `page-style-flags.html`，合计退役 14 个模板入口。
 
 删除只有注释的 `assets/css/site-header.css`，并从样式装配中移除该空位置。
 
@@ -43,7 +43,7 @@ taxonomy 根不再要求或声明 `show_in_home`、`home_weight`。它们唯一�
 
 ### 3. 收拢仍在工作的实现
 
-`head-styles.html` 先解析当前页面 variant，再只拼接这一份 CSS。目标文件名和列表职责不变：`grid-base` 仍是单列基底，directory、products、all 只追加各自列定义。
+`asset/head-styles.html` 先解析当前页面 variant，再只拼接这一份 CSS。目标文件名和列表职责不变：`grid-base` 仍是单列基底，directory、products、all 只追加各自列定义。
 
 页面 shell 只输出实际参与布局的 `page-shell--has-path-columns`；默认 rail 网格直接属于 `.page-shell`。语言和“我的”的 stroke、fill、线宽等属性移入 `data/icons.toml`，与外观图标使用同一事实源。
 
@@ -81,7 +81,7 @@ README、taxonomy、列表、slots、发布迁移及导航计划已改为当前�
 - 删除三个路径生成器中的 `variant: trail` 和 `strategy` 返回字段，以及 canonical 模型中无消费者的 `strategy` 字段。按 Hugo 页面种类选择生成器的内部逻辑继续有效。
 - `page-item-menu.html`、`taxonomy-item-menu.html`、`menu-items-from-entries.html` 分别更名为 `page-column-items.html`、`taxonomy-column-items.html`、`column-items-from-entries.html`；两个调用方都提供固定 `text`、`href`，不再传 `text_key`、`href_key`。删除分类转换中的未使用局部变量。
 - 路径数据的 `menu` 统一为 `column_items`，JavaScript 函数改为 `buildPathColumnItems` 等名称。静态渲染、图标注册、浏览器来源精简、预览、重绘、排序和测试同步切换，没有增加旧字段兼容读取。
-- 删除 `link.html` 无调用方的 `ariaHaspopup`、`ariaExpanded` 参数；保留用于验证下拉控件不会重新出现的浏览器断言。预取配置中的 `menu` 和微信的 `menu:setfont` 是独立有效接口，不属于本次列数据更名。
+- 删除 `html/link.html` 无调用方的 `ariaHaspopup`、`ariaExpanded` 参数；保留用于验证下拉控件不会重新出现的浏览器断言。微信的 `menu:setfont` 属于微信浏览器接口，与列数据命名无关；预取配置中没有 DOM 生产者的 `menu` 已在后续收尾中完整移除。
 - 更新 [面包屑模型](breadcrumb-models.md) 与 [导航状态](navigation-state.md)，移除对旧站点页、页脚和宽度模式的现状描述。
 
 清理前后生产构建分别为 `temp_workspace/public/2609091142-breadcrumb-before-cleanup` 和 `temp_workspace/public/2609091143-breadcrumb-column-cleanup`。只归一化实际构建时间、版本、资源哈希与相应的 runtime 完整性校验值后，141 个 HTML、22 个 CSS、60 份 `_items.json` 均一致，结果为 `temp_workspace/breadcrumb-cleanup-comparison.json`。141 页 HTML、agent readiness 和导航状态检查通过；四种列表三语言集合契约通过，目录为 `temp_workspace/collection-contract-MCmzyI`。
@@ -101,4 +101,20 @@ README、taxonomy、列表、slots、发布迁移及导航计划已改为当前�
 
 最终浏览器回归 39/39 通过，没有跳过项；报告为 `temp_workspace/regression/260909120211-browser/report.json`。包含此次改名前后版本升级，验证通知、激活、重载、旧导航缓存清理和 `sw.js` 的 `no-cache, max-age=0, must-revalidate`。缓存策略仍为 navigation 的 cache-first／versioned、hash 资源的 cache-first／fingerprinted，`sw.js` 为 ignore；首次导航扫描 HTML 引用资源的预缓存流程保留。产品正文展开与深色外观截图已人工复核，本地开发站点也已返回新路径列结构。
 
-异常配置测试中发现：`asset/publish.html` 记录非法路径或缺失资源错误后仍执行 `fingerprint`，造成空资源二次异常；相关 Hugo 测试进程曾挂起。将失败与成功分支分开，只有已解析资源才允许变换；图标调用端也只检查成功解析的资源。没有用默认图标掩盖错误，非法配置仍让构建失败。修正后完整集合契约重跑通过，目录为 `temp_workspace/collection-contract-EvJT8r`；非法 `/favicon.svg` 又独立连续复测三次，均正常退出并只报告预期校验错误。最终正常产物与改名前对照仍一致。
+异常配置测试中发现：`asset/publish-local.html` 记录非法路径或缺失资源错误后仍执行 `fingerprint`，造成空资源二次异常；相关 Hugo 测试进程曾挂起。将失败与成功分支分开，只有已解析资源才允许变换；图标调用端也只检查成功解析的资源。没有用默认图标掩盖错误，非法配置仍让构建失败。修正后完整集合契约重跑通过，目录为 `temp_workspace/collection-contract-EvJT8r`；非法 `/favicon.svg` 又独立连续复测三次，均正常退出并只报告预期校验错误。最终正常产物与改名前对照仍一致。
+
+## Partial 职责重组实验（2026-09-09）
+
+本轮没有按页面把模板重新分堆，而是按“事实源、领域模型、可见输出、构建副作用”划分职责。`layouts/partials` 从 139 个 partial、根部 35 个散落文件，整理为 133 个 partial、根部 0 个文件；`baseof.html` 从约 410 行降至 263 行。详细依赖与新增规则见 [Partial 架构](partial-architecture.md)。
+
+主要边界如下：
+
+- `routing/` 只定义 `from`、当前排序和路径排序的 URL 协议；`collection` 与 `navigation` 都可消费它，routing 不反向依赖二者。
+- `taxonomy/` 只发现 taxonomy 成员与层级；`collection/rows.html` 是统一 row pipeline，页面种类适配器放在 `collection/rows/`，排序子系统放在 `collection/sort/`。
+- `navigation/path` 生成 canonical 结构路径，`navigation/source` 保存用户实际进入来源；SEO BreadcrumbList 只消费 path，不参与可见导航。
+- `cache-policy/` 是托管发布与 Service Worker 的共享事实源；`deployment/` 只做托管平台投影和文件发布，`pwa/` 负责 favicon 与 Service Worker 资源。
+- `prefetch/runtime` 与 `prefetch/speculation` 保持为两套独立传输机制；跨机制槽位归属与冲突检测集中在 `prefetch/coordination.html`。只有 `prefetch/config.html` 读取站点配置，其余叶子 partial 全部使用显式输入。
+
+结构审查同时修复了四个潜伏问题：无分类文章进入 `unassigned_term` 时缺失稳定 key；预取环境循环引用会继续递归；更新按钮失去共享控件 reset；集合 items 模型先 JSON 编码再反序列化。已经没有 DOM 生产者的 `menu` 预取槽也从配置、运行时、调试、测试和文档完整删除，没有保留兼容读取。
+
+机械移动阶段与重构前基线比较，141 个 HTML、22 个 CSS、60 份 `_items.json` 在归一化构建时间与资源指纹后完全一致。最后的 `collection/rows`、`collection/sort` 分组与 PWA 提取后的对照仍为零差异，报告为 `temp_workspace/partial-restructure-comparison.json`。最终生产构建位于 `temp_workspace/public/2609091329-partial-structure-final-2`；公开 HTML、agent、图片、导航状态和完整集合契约全部通过，集合报告为 `temp_workspace/collection-contract-RoVUq9`。浏览器回归 39/39 通过，报告为 `temp_workspace/regression/260909133137-browser/report.json`；另有启用 Speculation Rules 的 3/3 回归报告 `temp_workspace/regression/260909132101-browser-speculation-rules/report.json`。静态调用图没有动态 partial、缺失 partial 或孤儿 partial，`exampleSite` 未修改。

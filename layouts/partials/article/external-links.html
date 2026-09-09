@@ -2,7 +2,7 @@
 {{- $links := slice -}}
 {{- $pageID := $ctx.RelPermalink -}}
 {{- with $ctx.File -}}{{- $pageID = .Path -}}{{- end -}}
-{{- with partial "content-source/page-url.html" $ctx -}}
+{{- with partial "site/content-url.html" $ctx -}}
   {{- $links = $links | append (dict
     "href" .
     "text" "GitHub"
@@ -38,8 +38,7 @@
   <span class="label">{{ i18n "article_meta_resources" }}</span>
   {{- range $index, $link := $links -}}
     {{- if gt $index 0 -}}<span class="sep" aria-hidden="true">·</span>{{- end -}}
-    {{- partial "link.html" (dict
-      "ctx" $ctx
+    {{- partial "html/link.html" (dict
       "href" (index $link "href")
       "text" (index $link "text")
       "target" (index $link "target")

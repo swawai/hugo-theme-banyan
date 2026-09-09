@@ -1,0 +1,38 @@
+{{- $ctx := .ctx | default . -}}
+{{- $canonical := $ctx.Scratch.Get "breadcrumb:canonical" -}}
+{{- if not $canonical -}}
+  {{- $base := dict -}}
+  {{- if $ctx.IsHome -}}
+    {{- $base = partial "navigation/path/model-home.html" (dict "ctx" $ctx) -}}
+  {{- else if or (eq $ctx.Kind "taxonomy") (eq $ctx.Kind "term") -}}
+    {{- $base = partial "navigation/path/model-taxonomy.html" (dict "ctx" $ctx) -}}
+  {{- else -}}
+    {{- $base = partial "navigation/path/model-page.html" (dict "ctx" $ctx) -}}
+  {{- end -}}
+  {{- $rootItem := dict -}}
+  {{- with partial "navigation/root/selected.html" $ctx -}}
+    {{- $rootItem = dict "text" (.LinkTitle | default .Title) "title" .Title "href" .RelPermalink -}}
+  {{- end -}}
+  {{- $tailItems := slice -}}
+  {{- $levels := slice -}}
+  {{- $collectionHref := index $rootItem "href" | default "" -}}
+  {{- $collectionLabel := index $rootItem "text" | default "" -}}
+  {{- range $item := index $base "items" | default slice -}}
+    {{- if eq (index $item "href") (index $rootItem "href") -}}{{- continue -}}{{- end -}}
+    {{- if ne $collectionHref "" -}}
+      {{- $item = merge $item (dict "collection_href" $collectionHref "collection_label" $collectionLabel) -}}
+    {{- end -}}
+    {{- $tailItems = $tailItems | append $item -}}
+    {{- $levels = $levels | append (dict "item" $item "collection_href" $collectionHref) -}}
+    {{- $collectionHref = index $item "href" -}}
+    {{- $collectionLabel = index $item "text" -}}
+  {{- end -}}
+  {{- $canonical = dict
+    "schema_items" (index $base "schema_items")
+    "root_item" $rootItem
+    "tail_items" $tailItems
+    "levels" $levels
+  -}}
+  {{- $ctx.Scratch.Set "breadcrumb:canonical" $canonical -}}
+{{- end -}}
+{{- return $canonical -}}

@@ -157,3 +157,6 @@ a:focus-visible {
     height: 0;
     overflow: hidden;
 }
+.page-back-link {
+    margin-block-start: 1rem;
+}

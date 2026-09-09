@@ -16,7 +16,7 @@
 {{- end -}}
 {{- $metaHome := $currentSite.Home -}}
 {{- if $isGlobal -}}{{- $metaHome = $primarySite.Home -}}{{- end -}}
-{{- $siteMeta := partial "site-meta.html" $metaHome -}}
+{{- $siteMeta := partial "site/meta.html" $metaHome -}}
 {{- $siteDescription := trim (printf "%v" (index $siteMeta "description" | default "")) " \r\n\t" -}}
 # {{ $primarySite.Title }}{{ if not $isGlobal }} - {{ $currentSite.Language.LanguageName | default $currentSite.Language.Lang }}{{ end }}
 {{- with $siteDescription }}
@@ -73,7 +73,7 @@ Sitemap: {{ absURL "sitemap.xml" }}
 ## Site Entry Points
 {{ range $site := $scopeSites }}
 {{- $homeDescription := "" -}}
-{{- $homeMeta := partial "site-meta.html" $site.Home -}}
+{{- $homeMeta := partial "site/meta.html" $site.Home -}}
 {{- with index $homeMeta "description" -}}{{- $homeDescription = trim (printf "%v" .) " \r\n\t" -}}{{- end -}}
 {{- $homeLabel := printf "%s Home" ($site.Language.LanguageName | default $site.Language.Lang) }}
 - [{{ $homeLabel }}]({{ $site.Home.Permalink }}){{ with $homeDescription }}: {{ . }}{{ end }}

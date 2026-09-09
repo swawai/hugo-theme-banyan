@@ -1,0 +1,45 @@
+{{- $prefetchLabels := .prefetch_labels | default slice -}}
+{{- if eq (len $prefetchLabels) 0 -}}
+  {{- range partial "prefetch/targets.html" . -}}
+    {{- $prefetchLabels = $prefetchLabels | append (index . "config_key") -}}
+  {{- end -}}
+{{- end -}}
+{{- $envKey := upper (printf "%v" (.env_key | default "")) -}}
+{{- $envConfigMap := .env_config_map | default dict -}}
+{{- $stack := .stack | default (slice) -}}
+{{- $resolvedEnvConfig := dict -}}
+{{- if in $stack $envKey -}}
+  {{- errorf "Build failed: params.prefetch_runtime.env.%s reference chain contains a cycle: %s." $envKey (delimit (append $envKey $stack) " -> ") -}}
+{{- else -}}
+  {{- $rawEnvConfig := index $envConfigMap $envKey | default dict -}}
+  {{- $refTargetRaw := "" -}}
+  {{- if isset $rawEnvConfig "ref" -}}
+    {{- $refTargetRaw = printf "%v" (index $rawEnvConfig "ref") -}}
+  {{- end -}}
+  {{- $refTargetRaw = replaceRE "^\\s+|\\s+$" "" $refTargetRaw -}}
+  {{- if and (ne $refTargetRaw "") (ne $refTargetRaw "<nil>") -}}
+    {{- $refTarget := upper $refTargetRaw -}}
+    {{- $validRef := true -}}
+    {{- if eq (len (findRE "^[TF]{2}$" $refTarget)) 0 -}}
+      {{- errorf "Build failed: params.prefetch_runtime.env.%s reference targets only support two-flag T/F environment keys (for example TT, FT, FF); got %q." $envKey $refTargetRaw -}}
+      {{- $validRef = false -}}
+    {{- else if not (isset $envConfigMap $refTarget) -}}
+      {{- errorf "Build failed: params.prefetch_runtime.env.%s references undefined environment %q." $envKey $refTarget -}}
+      {{- $validRef = false -}}
+    {{- end -}}
+    {{- if $validRef -}}
+      {{- $resolvedEnvConfig = partial "prefetch/runtime/resolve-env.html" (dict
+        "env_key" $refTarget
+        "env_config_map" $envConfigMap
+        "prefetch_labels" $prefetchLabels
+        "stack" ($stack | append $envKey)
+      ) -}}
+    {{- end -}}
+  {{- end -}}
+  {{- range $label := $prefetchLabels -}}
+    {{- if isset $rawEnvConfig $label -}}
+      {{- $resolvedEnvConfig = merge $resolvedEnvConfig (dict $label (index $rawEnvConfig $label)) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $resolvedEnvConfig -}}

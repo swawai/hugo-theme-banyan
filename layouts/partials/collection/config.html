@@ -2,7 +2,7 @@
 {{- $page := .page -}}
 {{- $view := "" -}}
 {{- if eq $page.Layout "collection-page" -}}
-  {{- $view = partial "list/view.html" (dict "page" $page) -}}
+  {{- $view = partial "list/resolve-view.html" (dict "page" $page) -}}
   {{- if not (in (slice "name" "directory" "all" "products") $view) -}}
     {{- errorf "List page %s needs list: name, directory, all or products (own declaration or nearest ancestor)." $page.RelPermalink -}}
   {{- end -}}

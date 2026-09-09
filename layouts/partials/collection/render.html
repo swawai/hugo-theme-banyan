@@ -1,9 +1,9 @@
 {{- $page := .page -}}
 {{- $config := partial "collection/config.html" (dict "page" $page) -}}
 {{- $rows := partial "collection/rows.html" (dict "page" $page) -}}
-{{- $source := partial "entry-source/collection-source.html" (dict "page" $page) -}}
-{{- $lineageParam := partialCached "navigation-state-param-name.html" (dict "semantic" "entry_lineage") "navigation-state-param:entry_lineage" -}}
-{{- $from := partial "entry-source/from-param-value.html" (dict "logical_path" $source.logical_path) -}}
+{{- $source := partial "collection/source.html" (dict "page" $page) -}}
+{{- $lineageParam := partialCached "routing/param-name.html" (dict "semantic" "entry_lineage") "routing-param:entry_lineage" -}}
+{{- $from := partial "routing/lineage-value.html" (dict "logical_path" $source.logical_path) -}}
 {{- $fields := slice "name" "date" "count" -}}
 {{- $classes := dict "name" "cell-title" "date" "cell-date" "count" "cell-count" "size" "cell-count" "path" "cell-path" "price" "cell-price" "value" "cell-value" -}}
 {{- $prefix := "list" -}}
@@ -22,7 +22,7 @@
 {{- $default := split $config.default_sort "-" -}}
 <div class="grid-list {{ $gridClass }} grid-list--headed collection-list collection-list--grid" data-sortable="true" data-sort-variant="{{ $config.sort_variant }}" data-sort-columns="{{ len $fields }}" data-sort-default="{{ $config.default_sort }}">
   {{- range $field := $fields -}}
-    {{- partial "grid-sort-cell.html" (dict
+    {{- partial "collection/sort/cell.html" (dict
       "class" (index $classes $field) "ctx" $page "baseHref" $page.RelPermalink
       "field" $field "label" (i18n (printf "%s_col_%s" $prefix $field))
       "defaultOrder" (cond (in (slice "name" "path" "value") $field) "asc" "desc")
@@ -40,7 +40,7 @@
         {{- $attrs = merge $attrs (dict (printf "sort-%s" $key) (index $row (printf "sort_%s" $key))) -}}
       {{- end -}}
     {{- end -}}
-    {{- partial "grid-title-cell.html" (dict "ctx" $page "href" $href "title" $row.title "text" $row.text "icon" $row.icon "prefetchKind" $row.prefetch_kind "dataAttrs" $attrs) -}}
+    {{- partial "list/link-cell.html" (dict "href" $href "title" $row.title "text" $row.text "icon" $row.icon "prefetchSlot" $row.prefetch_kind "dataAttrs" $attrs) -}}
     {{- if eq $config.view "products" -}}
       <span class="cell-price" title="{{ $row.price_text }}">{{ $row.price_text }}</span>
       <span class="cell-value" title="{{ $row.value_text }}">{{ $row.value_text }}</span>
@@ -50,11 +50,11 @@
       {{- if eq $config.view "all" -}}{{- $count = $row.size_text -}}{{- $unit = $row.size_unit -}}{{- end -}}
       <span class="cell-count"><span>{{ $count }}</span><span class="unit">{{ $unit | safeHTML }}</span></span>
       {{- if eq $config.view "all" -}}
-        <span class="cell-path">{{ partial "link.html" (dict "href" $row.path_href "text" $row.path_text "title" $row.path_text) }}</span>
+        <span class="cell-path">{{ partial "html/link.html" (dict "href" $row.path_href "text" $row.path_text "title" $row.path_text) }}</span>
       {{- end -}}
     {{- end -}}
   {{- end -}}
 </div>
 {{- $entries := slice -}}
 {{- range $rows -}}{{- $entries = $entries | append (dict "url" .href "name" .title) -}}{{- end -}}
-{{- partial "schema-itemlist.html" (dict "entries" $entries) -}}
+{{- partial "collection/schema.html" (dict "entries" $entries) -}}

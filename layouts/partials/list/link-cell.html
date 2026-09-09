@@ -1,0 +1,21 @@
+{{ $href := .href }}
+{{ $title := .title }}
+{{ $text := .text | default $title }}
+{{ $tooltip := .tooltip | default $title }}
+{{ $icon := .icon | default "file" }}
+{{ $label := .label }}
+{{ $prefetchSlot := lower (printf "%v" (.prefetchSlot | default "")) }}
+{{ $target := .target }}
+{{ $rel := .rel }}
+{{ $dataAttrs := .dataAttrs | default dict }}
+{{ $linkDataAttrs := .linkDataAttrs | default dict }}
+{{ $linkClass := trim (printf "collection-item-link %s" (.linkClass | default "")) " " }}
+{{ $isCurrent := eq (.isCurrent | default false) true }}
+{{ if $isCurrent }}{{ $linkClass = printf "%s is-current" $linkClass }}{{ end }}
+{{ $ariaCurrent := .ariaCurrent | default (cond $isCurrent "page" "") }}
+{{ $allowedPrefetchSlots := slice "nav" "crumb" "sort" "desc" "post" }}
+<span class="cell-title"{{ with $dataAttrs }}{{ range $name, $value := . }} {{ printf "data-%s=%q" $name $value | safeHTMLAttr }}{{ end }}{{ end }}>
+  <a class="{{ $linkClass }}" href="{{ $href }}"{{ with $tooltip }} title="{{ . }}"{{ end }}{{ with $label }} aria-label="{{ . }}"{{ end }}{{ with $ariaCurrent }} aria-current="{{ . }}"{{ end }}{{ with $target }} target="{{ . }}"{{ end }}{{ with $rel }} rel="{{ . }}"{{ end }}{{ with $linkDataAttrs }}{{ range $name, $value := . }} {{ printf "data-%s=%q" $name $value | safeHTMLAttr }}{{ end }}{{ end }}{{ if in $allowedPrefetchSlots $prefetchSlot }} data-prefetch-slot="{{ $prefetchSlot }}"{{ end }}>
+    {{ partial "list/item-content.html" (dict "text" $text "icon" $icon) }}
+  </a>
+</span>

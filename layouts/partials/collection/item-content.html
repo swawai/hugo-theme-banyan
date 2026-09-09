@@ -1,7 +1,0 @@
-{{- $text := .text | default "" -}}
-{{- $icon := .icon | default "file" -}}
-{{- $isText := and (reflect.IsMap $icon) (isset $icon "text") -}}
-<span class="collection-item-icon{{ if $isText }} collection-item-icon--text{{ end }}"{{ if reflect.IsMap $icon }} aria-hidden="true"{{ end }}>
-  {{- partial "icon" (dict "name" $icon "class" (cond (reflect.IsMap $icon) "" "collection-item-icon-svg")) -}}
-</span>
-<span class="collection-item-title">{{ $text }}</span>

@@ -1,0 +1,23 @@
+{{- $ctx := .ctx -}}
+{{- if not $ctx -}}
+  {{- errorf "Build failed: taxonomy/children/get.html requires ctx." -}}
+{{- end -}}
+{{- $spec := .spec | default (partial "taxonomy/config.html" (dict "ctx" $ctx "plural" $ctx.Data.Plural)) -}}
+{{- $kind := .kind | default (cond (eq $ctx.Kind "term") "term" "root") -}}
+{{- $specKey := md5 ($spec | jsonify) -}}
+{{- $result := slice -}}
+{{- if eq (index $spec "mode") "tree" -}}
+  {{- $result = partialCached "taxonomy/children/tree.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) $ctx.Site.Language.Lang $ctx.Kind $ctx.RelPermalink (printf "%v" ($ctx.Data.Plural | default "")) (printf "%v" ($ctx.Data.Term | default "")) $kind $specKey -}}
+{{- else -}}
+  {{- $result = partialCached "taxonomy/children/flat.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) $ctx.Site.Language.Lang $ctx.Kind $ctx.RelPermalink (printf "%v" ($ctx.Data.Plural | default "")) (printf "%v" ($ctx.Data.Term | default "")) $kind $specKey -}}
+{{- end -}}
+{{- /* Keep the server-side default projection aligned with tree/date-desc:
+      pages before categories, newest first inside each group. */ -}}
+{{- $ordered := slice -}}
+{{- range sort (where $result "kind" "==" "page") "latestKey" "desc" -}}
+  {{- $ordered = $ordered | append . -}}
+{{- end -}}
+{{- range sort (where $result "kind" "==" "cat") "latestKey" "desc" -}}
+  {{- $ordered = $ordered | append . -}}
+{{- end -}}
+{{- return $ordered -}}

@@ -18,6 +18,15 @@
     border-bottom: none;
 }
 
+.grid-list button.collection-item-link {
+    appearance: none;
+    background: transparent;
+    border: 0;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+}
+
 .collection-item-link::before {
     content: "";
     position: absolute;
