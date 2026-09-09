@@ -7,7 +7,7 @@ import {
 import {
     normalizeFromPath,
     readSortTokenForPath,
-} from './nav-state.js';
+} from './navigation-state.js';
 
 const ITEMS_PAYLOAD_PROVIDERS = new Set(['collection']);
 

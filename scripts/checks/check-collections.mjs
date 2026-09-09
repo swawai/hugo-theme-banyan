@@ -41,7 +41,7 @@ for (const lang of langs) {
     write(path.join(overlay, `products/contract-empty/_index${lang}.md`), '---\ntitle: Contract empty category\nicon: rss\n---\n');
     write(path.join(overlay, `products/contract-dates/_index${lang}.md`), '---\ntitle: Contract dates\nlist: directory\n---\n');
     write(path.join(overlay, `products/contract-name/_index${lang}.md`), '---\ntitle: Names only\nlist: name\n---\n');
-    write(path.join(overlay, `contract-name-all/index${lang}.md`), '---\ntitle: All names\nslug: contract-name-all\nroot_nav: true\nlayout: article-list\nlist: name\naggregate: /d\nslots: {breadcrumb: true}\n---\n');
+    write(path.join(overlay, `contract-name-all/index${lang}.md`), '---\ntitle: All names\nslug: contract-name-all\nroot_nav: true\nlayout: collection-page\nlist: name\naggregate: /d\nslots: {breadcrumb: true}\n---\n');
     for (const term of ['contract-dates', 'contract-dates/child']) {
         write(path.join(overlay, `tags/${term}/_index${lang}.md`), `---\ntitle: ${term}\n---\n`);
     }

@@ -1,7 +1,7 @@
 {{- $ctx := .ctx | default . -}}
 {{- $entries := slice -}}
 {{- range $page := sort $ctx.Site.Pages "RelPermalink" -}}
-  {{- if eq $page.Layout "article-list" -}}
+  {{- if eq $page.Layout "collection-page" -}}
     {{- $entries = $entries | append (partial "entry-source/model-page.html" (dict "page" $page)) -}}
   {{- end -}}
 {{- end -}}

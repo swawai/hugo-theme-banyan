@@ -705,7 +705,7 @@ const speculationHeaderScenarios = [
         id: 'speculation-rules-header-breadcrumb',
         path: SPECULATION_BREADCRUMB_PATH,
         title: 'Speculation-Rules Header: Breadcrumb Path',
-        waitForSelector: '.slot-row-breadcrumb',
+        waitForSelector: '.path-columns',
         expectedEagerSlots: ['nav', 'sort'],
         async afterLoad(page) {
             await waitForBreadcrumbSettled(page);

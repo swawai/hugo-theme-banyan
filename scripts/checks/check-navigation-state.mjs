@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import * as esbuild from 'esbuild';
 
 const siteRoot = process.cwd();
-const navStateEntry = path.join(siteRoot, 'themes/banyan/assets/js/nav-state.js');
+const navStateEntry = path.join(siteRoot, 'themes/banyan/assets/js/navigation-state.js');
 const breadcrumbItemsEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-items.js');
 const breadcrumbPreviewEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-preview.js');
 const breadcrumbSourceEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-source.js');
@@ -58,7 +58,7 @@ function applySorts(module, inputUrl, tokens, defaultTokens = []) {
     return `${url.pathname}${url.search}${url.hash}`;
 }
 
-const navState = await importBrowserModule(navStateEntry, 'nav-state.js');
+const navState = await importBrowserModule(navStateEntry, 'navigation-state.js');
 
 assert.equal(
     applySorts(

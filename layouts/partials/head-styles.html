@@ -4,8 +4,8 @@
 {{ with .variant }}{{ $variant = . }}{{ end }}
 {{ $resolvedVariant := $variant }}
 {{ if not $resolvedVariant }}
-{{ $slotSources := $ctx.Scratch.Get "slot_sources" | default dict }}
-{{ $resolvedVariant = cond (index $slotSources "breadcrumb") "page-crumb" "page" }}
+{{ $slotFlags := $ctx.Scratch.Get "slot_flags" | default dict }}
+{{ $resolvedVariant = cond (index $slotFlags "breadcrumb") "page-crumb" "page" }}
 {{ end }}
 {{ if not (in (slice "page" "page-crumb" "name" "directory" "products" "all") $resolvedVariant) }}
 {{ errorf "Build failed: unsupported page style variant %q." $resolvedVariant }}
@@ -19,7 +19,7 @@
 {{ $parts := slice $coreBase $collectionList $gridBase $rootNavigation $coreA11y $coreMotion }}
 {{ $target := "css/bundle-page.css" }}
 {{ if ne $resolvedVariant "page" }}
-{{ $parts = $parts | append (resources.Get "css/nav-breadcrumb.css") }}
+{{ $parts = $parts | append (resources.Get "css/path-navigation.css") }}
 {{ $target = "css/bundle-page-crumb.css" }}
 {{ end }}
 {{ if eq $resolvedVariant "directory" }}

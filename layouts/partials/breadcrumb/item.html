@@ -11,16 +11,11 @@
   {{- $collectionSource = dict "href" $collectionHref "label" (index $item "collection_label" | default "") -}}
 {{- end -}}
 {{- $header := partial "collection/column-header.html" (dict "ctx" $ctx "source" $collectionSource) -}}
-{{- $hasHighlighted := gt (len (where $items "highlighted" true)) 0 -}}
-{{- $hasCurrent := gt (len (where $items "current" true)) 0 -}}
-{{- $hasSelected := gt (len (where $items "selected" true)) 0 -}}
-<div class="breadcrumb-column" data-collection-column="true"{{ with $collectionHref }} data-breadcrumb-collection-href="{{ . }}"{{ end }}>
+<div class="path-column" data-collection-column="true"{{ with $collectionHref }} data-breadcrumb-collection-href="{{ . }}"{{ end }}>
   <div class="grid-list collection-list collection-list--column{{ if $header }} grid-list--headed{{ end }}">
     {{- $header -}}
     {{- range $row := $items -}}
-      {{- $isCurrent := eq (index $row "highlighted") true -}}
-      {{- if and (not $hasHighlighted) $hasCurrent -}}{{- $isCurrent = eq (index $row "current") true -}}{{- end -}}
-      {{- if and (not $hasHighlighted) (not $hasCurrent) $hasSelected -}}{{- $isCurrent = eq (index $row "selected") true -}}{{- end -}}
+      {{- $isCurrent := eq (index $row "current") true -}}
       {{- $kind := lower (trim (printf "%v" (index $row "kind" | default "")) " ") -}}
       {{- $dataAttrs := dict -}}
       {{- if $kind -}}{{- $dataAttrs = dict "breadcrumb-kind" $kind -}}{{- end -}}
@@ -30,7 +25,7 @@
         "text" (index $row "text")
         "icon" (index $row "icon" | default (cond (eq $kind "page") "file" "folder"))
         "title" (index $row "title")
-        "linkClass" "breadcrumb-column-link"
+        "linkClass" "path-column-link"
         "linkDataAttrs" $dataAttrs
         "isCurrent" $isCurrent
         "linkSlot" "crumb"

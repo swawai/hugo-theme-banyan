@@ -33,11 +33,11 @@ list: products
 
 原有 WSL 文章仍全部保留，只把列换成名称、价格、价值说明；没有 `offer` 的文章显示价格 `—`。改成 `list: all` 就使用名称、更新时间、大小、路径列；改成 `list: directory` 就使用名称、更新时间、数量／大小列；改成 `list: name` 就只显示带图标的名称列。没有声明时，继承最近内容祖先的 `list`。普通文章仍使用 `article-page`，不会因祖先的列表声明变成列表。
 
-新增普通列表目录时使用 `layout: article-list`、`list: directory` 和需要的 `slots.breadcrumb: true`；位于已有目录下时可继承布局和展示声明。正文只写介绍，表格自动在介绍后出现，旧的 `section-list`、`taxonomy-list`、`all-list`、`products-list` shortcode 已删除。
+新增普通列表目录时使用 `layout: collection-page`、`list: directory` 和需要的 `slots.breadcrumb: true`；位于已有目录下时可继承布局和展示声明。正文只写介绍，表格自动在介绍后出现，旧的 `section-list`、`taxonomy-list`、`all-list`、`products-list` shortcode 已删除。
 
 `aggregate` 只用于汇总入口，指向一个 section 或 taxonomy 根。它不从父目录继承。普通目录和分类页无需写 `aggregate`，也不写 `list_source` 或 `product_filter`。主题默认页面的站点专用修改可通过项目同路径文件覆盖；三种语言各自保留完整 front matter。
 
-更新目录声明 `layout: article-list`、`list: name`，与 `/d/` 复用相同模板、集合来源、排序及路径列。目录中只有真实子项，没有追加的版本、检查、状态或返回按钮；全站骨架、公共样式装配和根导航不识别 `site_update`。`root_nav: true`、`weight: 96`、`icon: { text: "↻" }` 将它作为普通“更新”入口列在第一列。
+更新目录声明 `layout: collection-page`、`list: name`，与 `/d/` 复用相同模板、集合来源、排序及路径列。目录中只有真实子项，没有追加的版本、检查、状态或返回按钮；全站骨架、公共样式装配和根导航不识别 `site_update`。`root_nav: true`、`weight: 96`、`icon: { text: "↻" }` 将它作为普通“更新”入口列在第一列。
 
 检查更新是主题 `content/updates/check/index*.md` 的真实子页面，声明 `layout: update-check` 和 `icon: { text: "↻" }`，网址为 `/updates/check/`（各语言加对应前缀）。其布局装配当前构建版本、检查按钮及状态，`site_update.labels` 仍是静态界面与运行时文案的单一事实源。版本时间显示为普通文本，不再链接到更新记录；更新记录通过同级列表访问，因此移除了 `site_update.changelog_page`。这里只检查和应用站点版本，不同步用户数据，也不把版本时间伪装成内容更新时间。
 
@@ -52,7 +52,7 @@ list: products
 例如将已有 WSL 目录改成名称列表，只需在 `content/d/wsl/_index.zh.md` 增加 `list: name`。新建独立目录时可声明：
 
 ```yaml
-layout: article-list
+layout: collection-page
 list: name
 slots:
   breadcrumb: true

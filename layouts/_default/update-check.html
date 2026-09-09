@@ -11,10 +11,10 @@
   <div class="collection-list collection-list--index">
     <h1 class="collection-list-header">{{ .Title }}</h1>
     <div class="prose">{{ .Content }}</div>
-    {{ partial "system/site-update.html" . }}
+    {{ partial "updates/panel.html" . }}
   </div>
 </article>
-{{- with index (.Scratch.Get "slot_sources" | default dict) "breadcrumb" -}}
+{{- with index (.Scratch.Get "slot_flags" | default dict) "breadcrumb" -}}
   {{- partial "breadcrumb/schema.html" (dict "ctx" $) -}}
 {{- end -}}
 {{ end }}

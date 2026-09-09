@@ -8,7 +8,7 @@
 
 - 新 worker 能否被发现
 - waiting -> activate -> reload 这条链是否稳定
-- 更新提示是否能在第一列「系统－站点」入口与站点页中显示
+- 更新提示是否能在检查更新页面中显示，普通页面是否正确使用确认提示
 - 没有可用更新控件时，是否正确退化到 `confirm`
 - 失败恢复是否会误伤正常用户
 
@@ -30,7 +30,7 @@
 - `themes/banyan/assets/js/sw.enable.js.tmpl`
 - `themes/banyan/assets/js/sw-manager.enable.runtime.js`
 - `themes/banyan/assets/js/sw-manager.enable.update.js`
-- `themes/banyan/assets/js/preferences/site-update-ui.js`
+- `themes/banyan/assets/js/updates/ui.js`
 - `themes/banyan/assets/js/sw-manager.disable.js`
 - `themes/banyan/assets/js/runtime-manifest.js`
 - `themes/banyan/layouts/_default/baseof.html`
@@ -200,7 +200,7 @@ bun run build:browser:temp -- sw-upgrade-after
 
 建议页面：
 
-- 临时隐藏第一列站点链接，且当前页没有站点页更新按钮的场景
+- 临时隐藏检查更新按钮，且页面没有其他可见更新控件的场景
 - offline 页面不属于这个场景，因为它不注入 enable manager
 
 操作：
@@ -342,10 +342,10 @@ bun run build:browser:temp -- sw-upgrade-after
 如果不想每次都全测，至少覆盖这 6 组：
 
 1. 首页首次访问
-2. 首页与集合页面出现 waiting 后，通过第一列链接进入站点页，再应用更新（`sw-update-site-entry-home`、`sw-update-site-entry-collection`）
-3. `zh-hk` 与 `zh-mo` 的入口状态文案 fallback（`sw-update-site-entry-zh-hk`、`sw-update-site-entry-zh-mo`）
+2. 首页与集合页面出现 waiting 后，通过第一列「更新」进入更新目录，再打开检查页应用更新（`sw-update-entry-home`、`sw-update-entry-collection`）
+3. `zh-hk` 与 `zh-mo` 的入口状态文案 fallback（`sw-update-entry-zh-hk`、`sw-update-entry-zh-mo`）
 4. 隐藏更新入口后出现一次 confirm，取消后继续保留 waiting（`sw-update-without-visible-control-fallback`）
-5. 站点页离线重试、检查新版本、激活刷新及旧导航缓存清理（`sw-system-site-update`）
+5. 检查更新页离线重试、检查新版本、激活刷新及旧导航缓存清理（`sw-update-check`）
 6. 新版本 waiting 时，语言设置页仍然可以使用
 
 运行升级回归时，显式设置 `BANYAN_BROWSER_UPGRADE_FROM_DIR` 和 `BANYAN_BROWSER_UPGRADE_TO_DIR`，指向两个完整构建；此矩阵需要两份都包含展平后的第一列和系统页。不要让自动选择误用临时结构探针的产物。
@@ -359,7 +359,7 @@ bun run build:browser:temp -- sw-upgrade-after
 1. 新 worker 根本没进入 `waiting`
 2. `data-site-update="ready"` 没被设置
 3. 当前页更新按钮的可见性判断不正确，或原生确认提示未触发
-4. PWA 页的 `data-site-update-state` 或状态文字未更新
+4. 检查更新页的 `data-site-update-state` 或状态文字未更新
 
 ### 文案语言不对
 

@@ -30,6 +30,8 @@
 项目自身的 `href` 与提供兄弟条目的 `collection_href` 含义不同。例如“WSL”项目指向 `/d/wsl/`，其兄弟列表来自 `/d/`。`collection_label` 取该所属页面的名称，用于没有排序 provider 的静态列头。
 每个路径项目的 `column_items` 保存该列要显示的兄弟条目；没有兄弟条目时，渲染器只显示项目自身。它是普通列数据，不含展开、隐藏或下拉状态。
 
+可见路径列由 `path-navigation-ui.js`／`path-navigation.css` 实现，使用 `renderPathColumns()` 与 `renderPathColumn()`；结构模型和 SEO BreadcrumbList 仍属于 breadcrumb。行选中状态统一使用 `current`，不再接受 `highlighted` 或 `selected` 别名。完整命名约定见 [UI 命名与职责](ui-naming.md)。
+
 `breadcrumb/page-column-items.html` 和 `breadcrumb/taxonomy-column-items.html` 分别查找真实父目录与分类父级，通过 `breadcrumb/column-items-from-entries.html` 把条目转换成统一的 `text`、`href`、`current`、`title`、`kind`、`icon` 字段。调用方已经提供统一行结构，不再另传字段名称。
 
 `entry-source/source-page-model.html` 将这些层级映射到集合 provider 与 `_items.json`。所有列表页统一使用 collection 来源，排序字段由 `list` 声明决定。主列表、路径列与来源 JSON 共用 `collection/rows.html`。若浏览器来源已携带 `collection_items`，便省略可由它重建的 `column_items`，避免重复发布兄弟条目。

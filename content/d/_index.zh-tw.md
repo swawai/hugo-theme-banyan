@@ -4,7 +4,7 @@ linkTitle: 目錄
 weight: 10
 browser_title: "技術文庫與實戰指南"
 description: "按主題與欄目瀏覽已發布文章和實戰指南。"
-layout: "article-list"
+layout: "collection-page"
 list: directory
 slots:
   breadcrumb: true
@@ -17,7 +17,7 @@ cascade:
       meta: true
   - target:
       kind: "section"
-    layout: "article-list"
+    layout: "collection-page"
     slots:
       breadcrumb: true
 ---

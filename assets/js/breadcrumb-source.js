@@ -1,5 +1,5 @@
 import { normalizeBreadcrumbCollectionSource } from './breadcrumb-items.js';
-import { normalizeFromPath, normalizePathname } from './nav-state.js';
+import { normalizeFromPath, normalizePathname } from './navigation-state.js';
 import { normalizeIcon } from './icon-value.js';
 
 function normalizeItemsPayload(payload) {
@@ -35,12 +35,6 @@ function normalizeLinkItem(item) {
     }
     if (typeof item.current === 'boolean') {
         normalized.current = item.current;
-    }
-    if (typeof item.selected === 'boolean') {
-        normalized.selected = item.selected;
-    }
-    if (typeof item.highlighted === 'boolean') {
-        normalized.highlighted = item.highlighted;
     }
     const icon = normalizeIcon(item.icon);
     if (icon) normalized.icon = icon;

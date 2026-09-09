@@ -102,8 +102,8 @@
         "url" (printf "%s%s/" .Home.RelPermalink $offlineNoticePath)
     ) -}}
 {{- end -}}
-{{- $slotSources := partial "slots/prepare.html" (dict "ctx" .) -}}
-{{- $hasBreadcrumbCapability := eq (index $slotSources "breadcrumb") true -}}
+{{- $slotFlags := partial "slots/prepare.html" (dict "ctx" .) -}}
+{{- $hasBreadcrumbCapability := eq (index $slotFlags "breadcrumb") true -}}
 {{- .Scratch.Set "needs_breadcrumb_runtime" $hasBreadcrumbCapability -}}
 {{- $pageCollectionSource := dict -}}
 {{- $entryBreadcrumbSources := slice -}}
@@ -354,17 +354,17 @@
     <div class="page">
         <a class="skip" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
         {{- $breadcrumbModel := partial "breadcrumb/model.html" (dict "ctx" $) -}}
-        {{- $hasBreadcrumbTail := and $hasBreadcrumbCapability (gt (len (index $breadcrumbModel "tail_items")) 0) -}}
+        {{- $hasPathColumns := and $hasBreadcrumbCapability (gt (len (index $breadcrumbModel "tail_items")) 0) -}}
         {{- $pageShellClasses := slice "page-shell" -}}
-        {{- if $hasBreadcrumbTail -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-breadcrumb-tail" -}}{{- end -}}
+        {{- if $hasPathColumns -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-path-columns" -}}{{- end -}}
         <div class="{{ delimit $pageShellClasses " " }}">
             <div class="page-rail">
                 {{- partial "navigation/root.html" . -}}
                 {{- printf "<script>%s</script>" (index (index $inlineScripts "root_navigation") "content") | safeHTML -}}
             </div>
             <div class="page-stage">
-            {{- if $hasBreadcrumbTail -}}
-            <div class="slot-row slot-row-breadcrumb">
+            {{- if $hasPathColumns -}}
+            <div class="slot-row path-columns">
                 <div class="slot slot-breadcrumb" data-slot="breadcrumb">
                     {{- partial "slots/render.html" (dict "ctx" $ "slot" "breadcrumb") -}}
                 </div>
@@ -375,7 +375,7 @@
             <main id="main" class="slot slot-main" data-slot="main" tabindex="-1">
                 {{- block "main" . -}}{{- end -}}
             </main>
-            {{- with index $slotSources "meta" -}}
+            {{- with index $slotFlags "meta" -}}
             <div class="slot slot-meta" data-slot="meta">
                 {{- partial "slots/render.html" (dict "ctx" $ "slot" "meta") -}}
             </div>

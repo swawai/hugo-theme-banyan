@@ -4,7 +4,7 @@ title: Products - Categories
 description: Browse products by price or origin.
 linkTitle: Products - Categories
 weight: 40
-layout: article-list
+layout: collection-page
 list: directory
 list_icon_file: product
 outputs:
@@ -14,7 +14,7 @@ slots:
 cascade:
   - target:
       kind: term
-    layout: article-list
+    layout: collection-page
     list: products
     slots:
       breadcrumb: true

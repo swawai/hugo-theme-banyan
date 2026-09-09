@@ -1,4 +1,4 @@
-import { bindUpdateUi, confirmSiteUpdate, hasVisibleUpdateControl, renderUpdateUi } from './preferences/site-update-ui.js';
+import { bindUpdateUi, confirmSiteUpdate, hasVisibleUpdateControl, renderUpdateUi } from './updates/ui.js';
 
 const SW_ACTIVATION_TIMEOUT_MS = 4000;
 const NAVIGATION_CACHE_PREFIX = 'nav-html-';

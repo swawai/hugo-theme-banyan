@@ -1,7 +1,7 @@
 {{- $ctx := .ctx | default . -}}
 {{- $slot := printf "%v" .slot -}}
-{{- $sources := $ctx.Scratch.Get "slot_sources" | default dict -}}
-{{- with index $sources $slot -}}
+{{- $slotFlags := $ctx.Scratch.Get "slot_flags" | default dict -}}
+{{- with index $slotFlags $slot -}}
   {{- if eq $slot "breadcrumb" -}}
     {{- partial "breadcrumb/entry.html" (dict "ctx" $ctx) -}}
   {{- else if eq $slot "meta" -}}

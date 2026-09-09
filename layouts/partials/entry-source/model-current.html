@@ -1,6 +1,6 @@
 {{- $page := .page | default . -}}
 {{- $result := dict -}}
-{{- if eq $page.Layout "article-list" -}}
+{{- if eq $page.Layout "collection-page" -}}
   {{- $result = partial "entry-source/collection-source.html" (dict "page" $page) -}}
 {{- end -}}
 {{- return $result -}}

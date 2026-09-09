@@ -24,7 +24,7 @@ import {
     normalizeFromPath,
     normalizePathname,
     readCurrentFromPath,
-} from './nav-state.js';
+} from './navigation-state.js';
 
 export function normalizeBreadcrumbCollectionSource(source) {
     if (!source || typeof source !== 'object') {
@@ -252,7 +252,7 @@ export function buildBreadcrumbRowHref(row, collectionSource, sortState) {
     );
 }
 
-export function buildBreadcrumbColumnItemsFromDecodedRows(decoded, collectionSource, { selectedKey = '', selectedPathname = '' } = {}) {
+export function buildPathColumnItemsFromDecodedRows(decoded, collectionSource, { selectedKey = '', selectedPathname = '' } = {}) {
     if (!decoded || !collectionSource?.logicalPath) {
         return [];
     }
@@ -302,14 +302,14 @@ export function buildBreadcrumbColumnItemsFromDecodedRows(decoded, collectionSou
         .filter(Boolean);
 }
 
-export async function buildBreadcrumbColumnItems(fragmentRoot, collectionSource, selection = {}) {
+export async function buildPathColumnItems(fragmentRoot, collectionSource, selection = {}) {
     if (!fragmentRoot || !collectionSource?.logicalPath || !supportsItemsPayloadProvider(collectionSource.provider)) {
         return [];
     }
 
     const payload = await getItemsPayload(fragmentRoot, collectionSource.logicalPath);
     const decoded = decodeItemsPayload(payload);
-    return buildBreadcrumbColumnItemsFromDecodedRows(decoded, collectionSource, selection);
+    return buildPathColumnItemsFromDecodedRows(decoded, collectionSource, selection);
 }
 
 function findSelectedRow(rows, selectedPathname = '') {
@@ -361,7 +361,7 @@ export async function buildSelectedBreadcrumbItem(fragmentRoot, source, selected
     }
 
     const selectedKey = selectedRow.key || '';
-    const columnItems = buildBreadcrumbColumnItemsFromDecodedRows(decoded, collectionSource, {
+    const columnItems = buildPathColumnItemsFromDecodedRows(decoded, collectionSource, {
         selectedKey,
         selectedPathname: normalizedSelectedPathname,
     });

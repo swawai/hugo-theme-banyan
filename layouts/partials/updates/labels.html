@@ -5,4 +5,4 @@
 {{- range slice "current_version" "check" "checking" "check_failed" "unavailable" "status" "status_current" "status_ready" "status_offline" "status_click_update" "status_click_retry" -}}
   {{- if not (index $labels .) -}}{{- errorf "Build failed: %s requires site_update.labels.%s." $page.File.Path . -}}{{- end -}}
 {{- end -}}
-{{- return (dict "labels" $labels) -}}
+{{- return $labels -}}

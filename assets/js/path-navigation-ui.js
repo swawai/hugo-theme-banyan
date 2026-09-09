@@ -158,8 +158,8 @@ function buildCollectionCell(item, current) {
     const option = document.createElement('a');
     option.href = item.href;
     option.className = current
-        ? 'breadcrumb-column-link collection-item-link is-current'
-        : 'breadcrumb-column-link collection-item-link';
+        ? 'path-column-link collection-item-link is-current'
+        : 'path-column-link collection-item-link';
     applyBreadcrumbPrefetchSlot(option);
     applyBreadcrumbKind(option, item);
     if (current) {
@@ -179,16 +179,13 @@ function buildCollectionColumnGrid(items, collectionSource, options = {}) {
         grid.classList.add('grid-list--headed');
         grid.appendChild(header);
     }
-    const selectedField = ['highlighted', 'current', 'selected'].find(
-        (field) => items.some((item) => item[field] === true)
-    );
     items.forEach((item) => {
-        grid.appendChild(buildCollectionCell(item, !!selectedField && item[selectedField] === true));
+        grid.appendChild(buildCollectionCell(item, item.current === true));
     });
     return grid;
 }
 
-export function renderBreadcrumbColumn(
+export function renderPathColumn(
     column,
     items,
     collectionSource = null,
@@ -201,7 +198,7 @@ export function renderBreadcrumbColumn(
     column.replaceChildren(buildCollectionColumnGrid(items, collectionSource, options));
 }
 
-function buildBreadcrumbColumn(item) {
+function buildPathColumn(item) {
     const columnItems = Array.isArray(item.column_items) ? item.column_items.filter(Boolean) : [];
     const collectionSource = item.collection_source || item.collectionSource || {
         href: item.collection_href || '',
@@ -209,26 +206,26 @@ function buildBreadcrumbColumn(item) {
     };
     const collectionHref = item.collection_href || item.collectionHref || collectionSource.href || '';
     const column = document.createElement('div');
-    column.className = 'breadcrumb-column';
+    column.className = 'path-column';
     column.dataset.collectionColumn = 'true';
     if (collectionHref) {
         column.dataset.breadcrumbCollectionHref = collectionHref;
     }
-    renderBreadcrumbColumn(column, columnItems.length > 0 ? columnItems : [item], collectionSource);
+    renderPathColumn(column, columnItems.length > 0 ? columnItems : [item], collectionSource);
     return column;
 }
 
-export function renderTopBreadcrumb(items) {
+export function renderPathColumns(items) {
     const container = document.querySelector('.slot-breadcrumb');
     if (!container || !Array.isArray(items) || items.length === 0) {
         return;
     }
 
     const nav = document.createElement('nav');
-    nav.className = 'breadcrumb-nav';
+    nav.className = 'path-navigation';
     nav.setAttribute('aria-label', 'Breadcrumb');
 
-    items.forEach((item) => nav.appendChild(buildBreadcrumbColumn(item)));
+    items.forEach((item) => nav.appendChild(buildPathColumn(item)));
 
     container.replaceChildren(nav);
 }

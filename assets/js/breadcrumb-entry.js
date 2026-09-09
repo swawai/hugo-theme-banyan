@@ -1,6 +1,6 @@
 import { renderRootSelection } from './root-navigation.js';
 import {
-    buildBreadcrumbColumnItems,
+    buildPathColumnItems,
     buildCollectionPageHref,
     buildSelectedBreadcrumbItem,
     getSourceSortVariant,
@@ -11,13 +11,13 @@ import {
     parseEntrySelection,
 } from './breadcrumb-source.js';
 import {
-    renderTopBreadcrumb,
-} from './breadcrumb-ui.js';
+    renderPathColumns,
+} from './path-navigation-ui.js';
 import {
     normalizeCollectionLogicalPathFromUrl as normalizeLogicalPathFromUrl,
     normalizePathname,
     readCurrentFromPath,
-} from './nav-state.js';
+} from './navigation-state.js';
 import { getRuntimeFragmentRoot } from './runtime-manifest.js';
 
 const ENTRY_BREADCRUMB_PREVIEW_PENDING_ATTR = 'data-entry-breadcrumb-preview-pending';
@@ -68,7 +68,7 @@ async function buildPrefixLevelItem(fragmentRoot, source, level) {
     if (collectionSource) {
         result.collection_source = collectionSource;
         result.collection_href = collectionSource.href || baseItem.href;
-        const columnItems = await buildBreadcrumbColumnItems(fragmentRoot, collectionSource, {
+        const columnItems = await buildPathColumnItems(fragmentRoot, collectionSource, {
             selectedPathname: targetPathname,
         });
         if (columnItems.length > 0) {
@@ -149,7 +149,7 @@ export async function initEntryBreadcrumb() {
         }
 
         renderRootSelection(state.rootItem);
-        renderTopBreadcrumb(state.breadcrumbItems);
+        renderPathColumns(state.breadcrumbItems);
     } finally {
         clearEntryBreadcrumbPending();
     }

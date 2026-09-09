@@ -8,12 +8,12 @@ function requireUpgradePair(upgradePair) {
     assert.ok(upgradePair?.fromDir && upgradePair?.toDir, 'Two builds containing the flattened navigation are required.');
 }
 
-export const siteUpdateNavigationScenarios = [
+export const updatesNavigationScenarios = [
     ...[
         { name: 'home', href: '/zh/' },
         { name: 'collection', href: '/zh/all/?sort=name-asc' }
     ].map(({ name, href }) => ({
-        id: `sw-update-site-entry-${name}`,
+        id: `sw-update-entry-${name}`,
         kind: 'upgrade',
         title: `Updates List Opens Check Controls (${name})`,
         dialogPolicy: 'dismiss',
@@ -56,7 +56,7 @@ export const siteUpdateNavigationScenarios = [
         }
     })),
     ...['zh-hk', 'zh-mo'].map(lang => ({
-        id: `sw-update-site-entry-${lang}`,
+        id: `sw-update-entry-${lang}`,
         kind: 'upgrade',
         title: `Check Updates Uses Traditional Chinese for ${lang}`,
         dialogPolicy: 'dismiss',

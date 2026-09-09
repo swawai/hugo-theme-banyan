@@ -16,7 +16,7 @@ import {
 } from './helpers.mjs';
 import { relFromSite } from './paths.mjs';
 import { systemPageScenarios } from './system-pages.mjs';
-import { siteUpdateNavigationScenarios } from './site-update-navigation.mjs';
+import { updatesNavigationScenarios } from './updates-navigation.mjs';
 import { canvasScenarios } from './canvas.mjs';
 
 const WIDE_VIEWPORT = { width: 1600, height: 1100 };
@@ -61,10 +61,10 @@ async function startBreadcrumbContinuityProbe(page, columnIndex = 0) {
             }
 
             const columns = Array.from(document.querySelectorAll(
-                '.slot-row-breadcrumb .grid-list'
+                '.path-columns .grid-list'
             )).filter((column) => column.querySelector('.collection-column-header'));
             const column = columns[targetColumnIndex];
-            const rail = document.querySelector('.slot-row-breadcrumb');
+            const rail = document.querySelector('.path-columns');
             const railStyle = rail ? getComputedStyle(rail) : null;
             const visibleRows = column
                 ? Array.from(column.querySelectorAll('.collection-item-link'))
@@ -164,7 +164,7 @@ function recordFirstBreadcrumbColumnStateScript(targetCollectionHref) {
     const findTarget = () => {
         const targetPath = new URL(targetCollectionHref, window.location.origin).pathname;
         return Array.from(document.querySelectorAll(
-            '.slot-row-breadcrumb [data-breadcrumb-collection-href]'
+            '.path-columns [data-breadcrumb-collection-href]'
         )).find((wrapper) => (
             new URL(wrapper.dataset.breadcrumbCollectionHref, window.location.origin).pathname
                 === targetPath
@@ -174,7 +174,7 @@ function recordFirstBreadcrumbColumnStateScript(targetCollectionHref) {
     const readOrder = () => {
         const target = findTarget();
         return target instanceof HTMLElement
-            ? Array.from(target.querySelectorAll('a.breadcrumb-column-link'))
+            ? Array.from(target.querySelectorAll('a.path-column-link'))
                 .map((option) => (option.textContent || '').trim())
                 .filter(Boolean)
             : [];
@@ -389,7 +389,7 @@ async function readDesignAuditMetrics(page, viewportId) {
             navigationLabels: navLabels,
             viewportId: activeViewportId,
             visibleBreadcrumb: (() => {
-                const node = document.querySelector('.slot-row-breadcrumb');
+                const node = document.querySelector('.path-columns');
                 if (!(node instanceof HTMLElement)) return false;
                 const style = getComputedStyle(node);
                 return style.display !== 'none'
@@ -628,7 +628,7 @@ export const securityScenarios = [
             createConsoleRecorder(page, consoleEntries);
             const url = `${baseUrl}${BREADCRUMB_PRODUCTS_PATH}`;
             const response = await gotoAndWait(page, url);
-            await page.waitForSelector('.slot-row-breadcrumb');
+            await page.waitForSelector('.path-columns');
             await waitForBreadcrumbSettled(page);
 
             return collectSecurityOutcome(page, response, consoleEntries, {
@@ -648,11 +648,11 @@ async function readBreadcrumbPrefetchSlotContract(page) {
         });
 
         const breadcrumbAnchors = Array.from(document.querySelectorAll(
-            '.slot-breadcrumb a.breadcrumb-column-link[href]'
+            '.slot-breadcrumb a.path-column-link[href]'
         ));
-        const slotRowAnchors = Array.from(document.querySelectorAll('.slot-row-breadcrumb a[href]'));
+        const slotRowAnchors = Array.from(document.querySelectorAll('.path-columns a[href]'));
         const slotRowBreadcrumbColumnOptions = Array.from(document.querySelectorAll(
-            '.slot-row-breadcrumb a.breadcrumb-column-link[href]'
+            '.path-columns a.path-column-link[href]'
         ));
 
         const breadcrumbInvalidAnchors = breadcrumbAnchors
@@ -682,7 +682,7 @@ async function readBreadcrumbPrefetchSlotContract(page) {
 export const scenarios = [
     ...canvasScenarios,
     ...systemPageScenarios,
-    ...siteUpdateNavigationScenarios,
+    ...updatesNavigationScenarios,
     {
         id: 'root-navigation-contract',
         kind: 'single',
@@ -1058,7 +1058,7 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
             await gotoAndWait(page, `${baseUrl}${BREADCRUMB_PRODUCTS_PATH}`);
-            await page.waitForSelector('.slot-row-breadcrumb');
+            await page.waitForSelector('.path-columns');
             await waitForBreadcrumbSettled(page);
             const mainX1 = await getMainInlineStart(page);
             await page.waitForTimeout(800);
@@ -1219,7 +1219,7 @@ export const scenarios = [
 
             const defaultUrl = new URL(BREADCRUMB_FIRST_FRAME_PATH, `${baseUrl}/`);
             await gotoAndWait(page, defaultUrl.href);
-            await page.waitForSelector('.slot-row-breadcrumb');
+            await page.waitForSelector('.path-columns');
             await waitForBreadcrumbSettled(page);
             const defaultColumnCount = await getVisibleBreadcrumbColumnCount(page);
             const defaultDirectoryMeta = await readDirectoryMeta();
@@ -1227,7 +1227,7 @@ export const scenarios = [
             const transitionUrl = new URL(defaultUrl.href);
             transitionUrl.searchParams.set('from', BREADCRUMB_FIRST_FRAME_FROM);
             await gotoAndWait(page, transitionUrl.href);
-            await page.waitForSelector('.slot-row-breadcrumb');
+            await page.waitForSelector('.path-columns');
 
             const firstLayout = await readFirstMainLayout(page);
             await waitForBreadcrumbSettled(page);
@@ -1435,7 +1435,7 @@ export const scenarios = [
             initialUrl.searchParams.set('from', 'd/wsl');
 
             const readColumns = () => page.evaluate(() => (
-                Array.from(document.querySelectorAll('.slot-row-breadcrumb .grid-list'))
+                Array.from(document.querySelectorAll('.path-columns .grid-list'))
                     .filter((column) => column.querySelector('.collection-column-header'))
                     .map((column) => ({
                         indicator: column.querySelector('.collection-sort-indicator')?.textContent?.trim() || '',
@@ -1449,7 +1449,7 @@ export const scenarios = [
             ));
             const openInitialState = async () => {
                 await gotoAndWait(page, initialUrl.href);
-                await page.waitForSelector('.slot-row-breadcrumb .collection-column-header');
+                await page.waitForSelector('.path-columns .collection-column-header');
                 await waitForBreadcrumbSettled(page);
                 const columns = await readColumns();
                 if (columns.length !== 2 || columns.some((column) => column.indicator !== '↓')) {
@@ -1463,14 +1463,14 @@ export const scenarios = [
 
             const initialBeforeChild = await openInitialState();
             const childToggle = page.locator(
-                '.slot-row-breadcrumb [data-collection-sort-toggle="true"]'
+                '.path-columns [data-collection-sort-toggle="true"]'
             ).nth(1);
             const childInPlace = await runBreadcrumbSortInPlace(page, {
                 action: async () => {
                     await childToggle.click();
                     await page.waitForFunction((beforeRows) => {
                         const columns = Array.from(document.querySelectorAll(
-                            '.slot-row-breadcrumb .grid-list'
+                            '.path-columns .grid-list'
                         )).filter((column) => (
                             column.querySelector('.collection-column-header')
                         ));
@@ -1531,14 +1531,14 @@ export const scenarios = [
 
             const initialBeforeAncestor = await openInitialState();
             const ancestorToggle = page.locator(
-                '.slot-row-breadcrumb [data-collection-sort-toggle="true"]'
+                '.path-columns [data-collection-sort-toggle="true"]'
             ).first();
             const ancestorInPlace = await runBreadcrumbSortInPlace(page, {
                 action: async () => {
                     await ancestorToggle.click();
                     await page.waitForFunction((beforeRows) => {
                         const columns = Array.from(document.querySelectorAll(
-                            '.slot-row-breadcrumb .grid-list'
+                            '.path-columns .grid-list'
                         )).filter((column) => (
                             column.querySelector('.collection-column-header')
                         ));
@@ -1620,13 +1620,13 @@ export const scenarios = [
             url.searchParams.set('sorts', 'date-asc');
             await gotoAndWait(page, url.href);
             await page.waitForSelector(
-                '.slot-row-breadcrumb [data-collection-sort-toggle="true"]'
+                '.path-columns [data-collection-sort-toggle="true"]'
             );
             await waitForBreadcrumbSettled(page);
 
             const readState = () => page.evaluate(() => {
                 const column = Array.from(document.querySelectorAll(
-                    '.slot-row-breadcrumb .grid-list'
+                    '.path-columns .grid-list'
                 )).find((candidate) => candidate.querySelector('.collection-column-header'));
                 const mainGrid = document.querySelector(
                     '.slot-main [data-sortable="true"][data-sort-variant]'
@@ -1667,12 +1667,12 @@ export const scenarios = [
             const inPlace = await runBreadcrumbSortInPlace(page, {
                 action: async () => {
                     await page.locator(
-                        '.slot-row-breadcrumb [data-collection-sort-toggle="true"]'
+                        '.path-columns [data-collection-sort-toggle="true"]'
                     ).first().click();
                     await page.waitForFunction((beforeRows) => {
                         const currentUrl = new URL(window.location.href);
                         const column = Array.from(document.querySelectorAll(
-                            '.slot-row-breadcrumb .grid-list'
+                            '.path-columns .grid-list'
                         )).find((candidate) => (
                             candidate.querySelector('.collection-column-header')
                         ));
@@ -1757,14 +1757,14 @@ export const scenarios = [
             const url = new URL(BREADCRUMB_WIDE_CANVAS_PATH, `${baseUrl}/`);
             url.searchParams.set('from', BREADCRUMB_WIDE_CANVAS_FROM);
             await gotoAndWait(page, url.href);
-            await page.waitForSelector('.slot-row-breadcrumb');
+            await page.waitForSelector('.path-columns');
             await waitForBreadcrumbSettled(page);
 
             const geometry = await page.evaluate(() => {
-                const breadcrumb = document.querySelector('.slot-row-breadcrumb');
+                const breadcrumb = document.querySelector('.path-columns');
                 const main = document.querySelector('.slot-main');
                 const scrollingElement = document.scrollingElement;
-                const visibleColumns = Array.from(breadcrumb.querySelectorAll('.breadcrumb-column'))
+                const visibleColumns = Array.from(breadcrumb.querySelectorAll('.path-column'))
                     .filter((column) => {
                         const rect = column.getBoundingClientRect();
                         const style = getComputedStyle(column);
@@ -1781,9 +1781,9 @@ export const scenarios = [
                     return probe.getBoundingClientRect().width;
                 };
                 const expectedColumnInline = measureInline('15rem');
-                const columnInline = measureInline('var(--breadcrumb-column-inline)');
-                const gapInline = measureInline('var(--breadcrumb-gap-inline)');
-                const mainInline = measureInline('var(--breadcrumb-main-inline)');
+                const columnInline = measureInline('var(--path-column-inline)');
+                const gapInline = measureInline('var(--path-columns-gap-inline)');
+                const mainInline = measureInline('var(--main-column-inline)');
                 const railCurrent = document.querySelector('[data-root-navigation] .is-current');
                 const railRect = railCurrent?.getBoundingClientRect();
                 const columnRects = visibleColumns.map((column) => column.getBoundingClientRect());
@@ -1847,7 +1847,7 @@ export const scenarios = [
                 });
             }
             if (geometry.mainInline <= 0 || geometry.mainWidth + 1 < geometry.mainInline) {
-                fail('Wide canvas main track shrank below --breadcrumb-main-inline.', geometry);
+                fail('Wide canvas main track shrank below --main-column-inline.', geometry);
             }
             if (geometry.documentScrollWidth <= geometry.documentClientWidth) {
                 fail('Wide canvas overflow must reach the document scroller.', geometry);
@@ -1887,7 +1887,7 @@ export const scenarios = [
                         return probe.getBoundingClientRect().width;
                     };
                     const result = {
-                        breadcrumbInline: measure('var(--breadcrumb-column-inline)'),
+                        breadcrumbInline: measure('var(--path-column-inline)'),
                         documentClientInline: document.documentElement.clientWidth,
                         documentScrollInline: document.documentElement.scrollWidth,
                         nameInline: nameCell.getBoundingClientRect().width,
@@ -2071,7 +2071,7 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
             await gotoAndWait(page, `${baseUrl}/d/products/?sort=name-asc`);
-            await page.waitForSelector('.slot-row-breadcrumb');
+            await page.waitForSelector('.path-columns');
             await waitForBreadcrumbSettled(page);
 
             const state = await readBreadcrumbPrefetchSlotContract(page);
@@ -2082,7 +2082,7 @@ export const scenarios = [
                 fail('Breadcrumb anchors must use data-prefetch-slot="crumb".', state);
             }
             if (state.slotRowNavAnchors.length > 0) {
-                fail('slot-row-breadcrumb must not contain nav prefetch anchors.', state);
+                fail('path-columns must not contain nav prefetch anchors.', state);
             }
             if (state.slotRowBreadcrumbColumnOptionCount === 0) {
                 fail('Sorted breadcrumb page did not expose rebuilt breadcrumb column items.', state);
@@ -2106,7 +2106,7 @@ export const scenarios = [
             );
 
             await gotoAndWait(page, `${baseUrl}${BREADCRUMB_TAGS_PATH}`);
-            await page.waitForSelector('.slot-row-breadcrumb');
+            await page.waitForSelector('.path-columns');
             await waitForBreadcrumbSettled(page);
             const firstAndFinalState = await page.evaluate(() => ({
                 firstOrder: window.__banyanFirstBreadcrumbColumnOrder,

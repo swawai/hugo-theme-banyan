@@ -18,16 +18,16 @@
     {{- errorf "Build failed: page %q does not support slots.%s." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) $key -}}
   {{- end -}}
 {{- end -}}
-{{- $sources := dict -}}
+{{- $slotFlags := dict -}}
 {{- range $slot := $supportedSlots -}}
-  {{- $sources = merge $sources (dict $slot false) -}}
+  {{- $slotFlags = merge $slotFlags (dict $slot false) -}}
   {{- if not (isset $slotConfig $slot) -}}{{- continue -}}{{- end -}}
   {{- $raw := index $slotConfig $slot -}}
   {{- if ne (printf "%T" $raw) "bool" -}}
     {{- errorf "Build failed: page %q only supports true/false for slots.%s." ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) $slot -}}
   {{- else -}}
-    {{- $sources = merge $sources (dict $slot $raw) -}}
+    {{- $slotFlags = merge $slotFlags (dict $slot $raw) -}}
   {{- end -}}
 {{- end -}}
-{{- $ctx.Scratch.Set "slot_sources" $sources -}}
-{{- return $sources -}}
+{{- $ctx.Scratch.Set "slot_flags" $slotFlags -}}
+{{- return $slotFlags -}}

@@ -45,7 +45,7 @@ taxonomy 根不再要求或声明 `show_in_home`、`home_weight`。它们唯一�
 
 `head-styles.html` 先解析当前页面 variant，再只拼接这一份 CSS。目标文件名和列表职责不变：`grid-base` 仍是单列基底，directory、products、all 只追加各自列定义。
 
-页面 shell 只输出实际参与布局的 `page-shell--has-breadcrumb-tail`；默认 rail 网格直接属于 `.page-shell`。语言和“我的”的 stroke、fill、线宽等属性移入 `data/icons.toml`，与外观图标使用同一事实源。
+页面 shell 只输出实际参与布局的 `page-shell--has-path-columns`；默认 rail 网格直接属于 `.page-shell`。语言和“我的”的 stroke、fill、线宽等属性移入 `data/icons.toml`，与外观图标使用同一事实源。
 
 合并 breadcrumb 首帧脚本内两个完全相同的来源查找函数；把仅在自身模块使用的 10 个 JavaScript export 收回为局部符号，保留测试直接调用的公开函数。
 
@@ -59,7 +59,7 @@ README、taxonomy、列表、slots、发布迁移及导航计划已改为当前�
 
 - `baseof.html` 仍是全部页面的公共骨架；资源、CSP、部署文件发布副作用都在实际执行。
 - `_headers`、`_redirects`、`edgeone.json` 的 `RelPermalink` 局部变量虽不被后续读取，但访问本身负责触发 Hugo Pipes 发布，因此保留并在原处注明。
-- 动态 `model-home-auto`、`model-page-auto`、`model-taxonomy-auto` 由 strategy 动态选择，不能按静态字符串误删。
+- 动态 `model-home`、`model-page`、`model-taxonomy` 由 strategy 动态选择，不能按静态字符串误删。
 - breadcrumb pending、skeleton、preview、runtime 分别承担首帧和异步恢复。
 - `canvas-position.js` 保证新增列向右扩展时，已有画幅不突然跳走。
 - SW disable 脚本负责清理历史安装状态；旧 URL redirects 维护外部书签。
@@ -80,10 +80,25 @@ README、taxonomy、列表、slots、发布迁移及导航计划已改为当前�
 
 - 删除三个路径生成器中的 `variant: trail` 和 `strategy` 返回字段，以及 canonical 模型中无消费者的 `strategy` 字段。按 Hugo 页面种类选择生成器的内部逻辑继续有效。
 - `page-item-menu.html`、`taxonomy-item-menu.html`、`menu-items-from-entries.html` 分别更名为 `page-column-items.html`、`taxonomy-column-items.html`、`column-items-from-entries.html`；两个调用方都提供固定 `text`、`href`，不再传 `text_key`、`href_key`。删除分类转换中的未使用局部变量。
-- 路径数据的 `menu` 统一为 `column_items`，JavaScript 函数改为 `buildBreadcrumbColumnItems` 等名称。静态渲染、图标注册、浏览器来源精简、预览、重绘、排序和测试同步切换，没有增加旧字段兼容读取。
+- 路径数据的 `menu` 统一为 `column_items`，JavaScript 函数改为 `buildPathColumnItems` 等名称。静态渲染、图标注册、浏览器来源精简、预览、重绘、排序和测试同步切换，没有增加旧字段兼容读取。
 - 删除 `link.html` 无调用方的 `ariaHaspopup`、`ariaExpanded` 参数；保留用于验证下拉控件不会重新出现的浏览器断言。预取配置中的 `menu` 和微信的 `menu:setfont` 是独立有效接口，不属于本次列数据更名。
 - 更新 [面包屑模型](breadcrumb-models.md) 与 [导航状态](navigation-state.md)，移除对旧站点页、页脚和宽度模式的现状描述。
 
 清理前后生产构建分别为 `temp_workspace/public/2609091142-breadcrumb-before-cleanup` 和 `temp_workspace/public/2609091143-breadcrumb-column-cleanup`。只归一化实际构建时间、版本、资源哈希与相应的 runtime 完整性校验值后，141 个 HTML、22 个 CSS、60 份 `_items.json` 均一致，结果为 `temp_workspace/breadcrumb-cleanup-comparison.json`。141 页 HTML、agent readiness 和导航状态检查通过；四种列表三语言集合契约通过，目录为 `temp_workspace/collection-contract-MCmzyI`。
 
 完整浏览器回归 39/39 通过，无跳过项；报告为 `temp_workspace/regression/260909114322-browser/report.json`。覆盖 SSR／预览／重绘、列排序隔离、目录／标签／产品来源、刷新和前进后退、三种宽度、真实触摸事件，以及清理前版本升级到新版本。实际布局和样式保持一致，`exampleSite` 未修改。
+
+## UI 语义命名整理（2026-09-09）
+
+- 集合页模板 `article-list` 改为 `collection-page`；页面包装移到 `collection/render-page.html`。主题与根站点的三语言声明、cascade、布局识别、测试及文档同步迁移，没有旧模板别名。
+- 原 `article-list.css` 只负责正文 `ul/ol/li`，改为 `prose-lists.css`。区域开关 `slot_sources`／`slotSources` 改为 `slot_flags`／`slotFlags`；三个结构路径生成器删除 `-auto` 后缀；`nav-state.js` 改为 `navigation-state.js`。
+- 可见路径列使用 `path-navigation-ui.js`、`path-navigation.css`、`renderPathColumns()`、`renderPathColumn()` 和 `.path-columns`／`.path-column`。SSR、首帧占位、异步重绘、排序及测试同步更名，主内容宽度改用 `--main-column-inline`。
+- 行选中状态只保留 `current`。确认 `highlighted`／`selected` 没有生成端后，删除模板与浏览器中的兼容读取和优先级分支；寻找当前行的 `selected_href` 等输入参数仍有独立职责。
+- 更新 UI、模板与文案读取集中到 `updates/`，文案 partial 直接返回标签字典。Service Worker 只调整 UI 模块导入位置，缓存与激活逻辑不变。更新入口测试名称删除旧 `site-entry` 指代。
+- 保留结构路径与 SEO BreadcrumbList 的 `breadcrumb` 名称、公开 `slots.breadcrumb`、`root_nav`、`list` 和 `from / sort / sorts`；`site_update` 继续表达站点更新功能。详细维护约定见 [UI 命名与职责](ui-naming.md)。
+
+生产构建为 `temp_workspace/public/2609091201-semantic-names-verified`，对照构建为 `temp_workspace/public/2609091152-semantic-names-before`。归一化明确列出的 CSS 类名／属性更名、实际构建时间、资源哈希和计算得到的脚本 SRI 后，141 个 HTML、22 个 CSS、60 份集合 JSON 完全一致；报告为 `temp_workspace/ui-semantics-comparison.json`。HTML、导航状态和 agent readiness 检查通过。
+
+最终浏览器回归 39/39 通过，没有跳过项；报告为 `temp_workspace/regression/260909120211-browser/report.json`。包含此次改名前后版本升级，验证通知、激活、重载、旧导航缓存清理和 `sw.js` 的 `no-cache, max-age=0, must-revalidate`。缓存策略仍为 navigation 的 cache-first／versioned、hash 资源的 cache-first／fingerprinted，`sw.js` 为 ignore；首次导航扫描 HTML 引用资源的预缓存流程保留。产品正文展开与深色外观截图已人工复核，本地开发站点也已返回新路径列结构。
+
+异常配置测试中发现：`asset/publish.html` 记录非法路径或缺失资源错误后仍执行 `fingerprint`，造成空资源二次异常；相关 Hugo 测试进程曾挂起。将失败与成功分支分开，只有已解析资源才允许变换；图标调用端也只检查成功解析的资源。没有用默认图标掩盖错误，非法配置仍让构建失败。修正后完整集合契约重跑通过，目录为 `temp_workspace/collection-contract-EvJT8r`；非法 `/favicon.svg` 又独立连续复测三次，均正常退出并只报告预期校验错误。最终正常产物与改名前对照仍一致。

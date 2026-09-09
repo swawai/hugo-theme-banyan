@@ -4,6 +4,8 @@
 
 第一列入口由内容树生成，页面无需声明菜单归属。`slots` 只控制路径和元信息是否装配；框架负责布局。正文 `main` 是内建区域，不通过 front matter 指向 fragment。
 
+布局、路径列、集合与更新模块的命名见 [UI 命名与职责](ui-naming.md)。内部 `slot_flags` 保存区域开关，不再表示片段来源。
+
 ## 第一列入口
 
 当前语言的根页面集合包含首页自身及直接子页 `Home.Pages`，再合并父页面为首页的 taxonomy 根页；这份结构集合完整保留，用于路径归属。第一列只显示其中顶层声明布尔值 `root_nav: true` 的页面，默认不显示。名称取 `LinkTitle`／`Title`，网址取 `RelPermalink`，顺序取页面 `weight`。来源变化只更新选中项，不替换可见入口列表。
@@ -52,7 +54,7 @@ slots:
 
 语言、外观页面用顶层 `list: choice` 声明选择行，并分别由 `language-page`、`appearance-page` 布局提供选项，由语言、外观脚本处理操作；我的等系统页无需列表声明。它们都无需为了显示第一列设置 `slots`。布局、集合 provider 和产品属性仍是各自独立的配置。
 
-更新目录 `content/updates/_index*.md` 使用 `layout: article-list`、`list: name`，只列出检查更新与更新记录两个真实子页。`baseof.html` 不追加操作，根导航也不承担更新标记。`content/updates/check/index*.md` 使用 `update-check` 布局明确调用更新面板与系统样式；`site_update.labels` 只提供功能文案，不是全站装配开关。版本为普通状态文本，记录通过同级列表访问。两个子页均保留更新路径列。语言和外观布局分别明确调用 `system/return.html`。
+更新目录 `content/updates/_index*.md` 使用 `layout: collection-page`、`list: name`，只列出检查更新与更新记录两个真实子页。`baseof.html` 不追加操作，根导航也不承担更新标记。`content/updates/check/index*.md` 使用 `update-check` 布局明确调用更新面板与系统样式；`site_update.labels` 只提供功能文案，不是全站装配开关。版本为普通状态文本，记录通过同级列表访问。两个子页均保留更新路径列。语言和外观布局分别明确调用 `system/return.html`。
 
 保留的 fragment 按内容语义命名，例如 `site-meta`；不要用最终容器位置命名。`site-meta` 提供站点品牌与 SEO 元数据，`slots.meta` 则控制当前页面的日期、taxonomy 等元信息，两者职责不同。
 

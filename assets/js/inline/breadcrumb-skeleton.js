@@ -110,7 +110,7 @@ try {
         return;
     }
 
-    var trailContainer = document.querySelector(".slot-row-breadcrumb .slot-breadcrumb");
+    var trailContainer = document.querySelector(".path-columns .slot-breadcrumb");
     if (!trailContainer) {
         return;
     }
@@ -151,12 +151,12 @@ try {
     }
 
     var nav = document.createElement("nav");
-    nav.className = "breadcrumb-nav";
+    nav.className = "path-navigation";
     nav.setAttribute("aria-hidden", "true");
 
     for (var itemIndex = 0; itemIndex < placeholderCount; itemIndex += 1) {
         var placeholder = document.createElement("span");
-        placeholder.className = "breadcrumb-column";
+        placeholder.className = "path-column";
         placeholder.dataset.collectionColumn = "true";
         nav.appendChild(placeholder);
     }

@@ -1,5 +1,5 @@
 import { parseEntrySelection } from './breadcrumb-source.js';
-import { readCurrentFromPath } from './nav-state.js';
+import { readCurrentFromPath } from './navigation-state.js';
 
 export function renderRootSelection(rootItem) {
     const navigation = document.querySelector('[data-root-navigation]');

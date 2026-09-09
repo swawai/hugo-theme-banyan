@@ -75,7 +75,7 @@ export const systemPageScenarios = [
                 assert.equal(await page.locator(`${grid} [data-site-update-action]`).count(), 0, 'Update actions stay outside sortable content.');
                 assert.equal(await page.locator('[data-site-update-panel], [data-site-update-action], [data-page-action="back"]').count(), 0, 'The directory contains no appended system controls.');
                 assert.equal(await page.locator('[data-site-update-link]').count(), 0, 'Root navigation does not specialize the updates entry.');
-                assert.equal(await page.locator('.slot-main > article > [data-sortable="true"]').count(), 1, 'The ordinary article-list renders the directory.');
+                assert.equal(await page.locator('.slot-main > article > [data-sortable="true"]').count(), 1, 'The ordinary collection-page renders the directory.');
                 assert.equal(await page.locator('.slot-main > article [data-site-update-panel]').count(), 0, 'The list layout does not append update controls.');
                 assert.equal(await page.locator('footer, .slot-footer').count(), 0, 'The homepage entry replaces the footer.');
                 assert.equal(await page.locator(`${homeEntry} .collection-item-title`).textContent(), brand);
@@ -450,7 +450,7 @@ export const systemPageScenarios = [
         }
     },
     {
-        id: 'sw-system-site-update',
+        id: 'sw-update-check',
         kind: 'upgrade',
         title: 'Check Updates Child Applies Service Worker Updates',
         dialogPolicy: 'dismiss',

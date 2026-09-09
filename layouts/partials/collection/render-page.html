@@ -3,6 +3,6 @@
   {{- with $content -}}<div class="prose">{{ . | safeHTML }}</div>{{- end -}}
   {{- partial "collection/render.html" (dict "page" .) -}}
 </article>
-{{- with index (.Scratch.Get "slot_sources" | default dict) "breadcrumb" -}}
+{{- with index (.Scratch.Get "slot_flags" | default dict) "breadcrumb" -}}
   {{- partial "breadcrumb/schema.html" (dict "ctx" $) -}}
 {{- end -}}

@@ -9,12 +9,12 @@
   {{- end -}}
   {{- if $owner -}}
     {{- $entries := slice -}}
-    {{- if eq $owner.Layout "article-list" -}}
+    {{- if eq $owner.Layout "collection-page" -}}
       {{- $entries = partial "collection/rows.html" (dict "page" $owner) -}}
     {{- else -}}
       {{- $entries = partial "section/direct-children.html" (dict "ctx" $owner) -}}
     {{- end -}}
-    {{- if ne $owner.Layout "article-list" -}}
+    {{- if ne $owner.Layout "collection-page" -}}
       {{- $iconDefaults := partial "list/icon-defaults.html" (dict "page" $owner) -}}
       {{- $decorated := slice -}}
       {{- range $entry := $entries -}}

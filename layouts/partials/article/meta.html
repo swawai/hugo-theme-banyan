@@ -1,7 +1,7 @@
 {{- $ctx := .ctx | default . -}}
-{{- $slotSources := $ctx.Scratch.Get "slot_sources" | default dict -}}
+{{- $slotFlags := $ctx.Scratch.Get "slot_flags" | default dict -}}
 {{- $breadcrumbItems := slice -}}
-{{- with index $slotSources "breadcrumb" -}}
+{{- with index $slotFlags "breadcrumb" -}}
   {{- $breadcrumbModel := partial "breadcrumb/model.html" (dict "ctx" $ctx) -}}
   {{- $breadcrumbItems = index $breadcrumbModel "schema_items" | default slice -}}
 {{- end -}}

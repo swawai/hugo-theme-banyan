@@ -58,7 +58,7 @@ export function recordFirstMainLayoutScript() {
 
             const root = document.documentElement;
             const visibleBreadcrumbColumns = Array.from(
-                document.querySelectorAll('.slot-row-breadcrumb .breadcrumb-column')
+                document.querySelectorAll('.path-columns .path-column')
             ).filter((node) => {
                 if (!(node instanceof HTMLElement)) return false;
                 const style = window.getComputedStyle(node);
@@ -127,7 +127,7 @@ export async function getMainInlineStart(page) {
 
 export async function getVisibleBreadcrumbColumnCount(page) {
     return page.evaluate(() => Array.from(
-        document.querySelectorAll('.slot-row-breadcrumb .breadcrumb-column')
+        document.querySelectorAll('.path-columns .path-column')
     ).filter((node) => {
         if (!(node instanceof HTMLElement)) return false;
         const style = window.getComputedStyle(node);

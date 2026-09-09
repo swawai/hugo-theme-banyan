@@ -1,16 +1,16 @@
 import { renderRootSelection } from './root-navigation.js';
 import {
-    buildBreadcrumbColumnItemsFromDecodedRows,
+    buildPathColumnItemsFromDecodedRows,
     normalizeBreadcrumbCollectionSource,
 } from './breadcrumb-items.js';
 import { decodeItemsPayload } from './collection-items.js';
-import { normalizePathname, readCurrentFromPath } from './nav-state.js';
+import { normalizePathname, readCurrentFromPath } from './navigation-state.js';
 import {
     parseEntryBreadcrumbSources,
     parseEntrySelection,
     pickSourceByLogicalPath,
 } from './breadcrumb-source.js';
-import { renderTopBreadcrumb } from './breadcrumb-ui.js';
+import { renderPathColumns } from './path-navigation-ui.js';
 
 const ENTRY_BREADCRUMB_PREVIEW_PENDING_ATTR = 'data-entry-breadcrumb-preview-pending';
 const BREADCRUMB_SORT_PENDING_ATTR = 'data-breadcrumb-sort-pending';
@@ -31,7 +31,7 @@ function buildColumnItemsFromPayload(payload, collectionSource, selection = {}) 
         return [];
     }
 
-    return buildBreadcrumbColumnItemsFromDecodedRows(decoded, collectionSource, selection);
+    return buildPathColumnItemsFromDecodedRows(decoded, collectionSource, selection);
 }
 
 function buildPreviewLevelItems(source) {
@@ -178,7 +178,7 @@ export function runBreadcrumbPreview() {
                 }
 
                 renderRootSelection(entrySource.rootItem);
-                renderTopBreadcrumb(prefixItems);
+                renderPathColumns(prefixItems);
             }
 
             html.removeAttribute(ENTRY_BREADCRUMB_PREVIEW_PENDING_ATTR);
@@ -191,7 +191,7 @@ export function runBreadcrumbPreview() {
                 if (collectionSource) {
                     const collectionItems = buildPreviewLevelItems(collectionSource);
                     if (collectionItems.length > 0) {
-                        renderTopBreadcrumb(collectionItems);
+                        renderPathColumns(collectionItems);
                     }
                 }
             }

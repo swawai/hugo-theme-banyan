@@ -1,5 +1,5 @@
 import {
-    buildBreadcrumbColumnItems,
+    buildPathColumnItems,
     buildCollectionSortToggleHref,
     normalizeBreadcrumbCollectionSource,
 } from './breadcrumb-items.js';
@@ -7,12 +7,12 @@ import {
     parseCollectionSourceIndex,
     pickCollectionSourceByHref,
 } from './breadcrumb-source.js';
-import { renderBreadcrumbColumn } from './breadcrumb-ui.js';
+import { renderPathColumn } from './path-navigation-ui.js';
 import {
     getLogicalPathDepth,
     normalizePathname,
     readCurrentFromPath,
-} from './nav-state.js';
+} from './navigation-state.js';
 import { getRuntimeFragmentRoot } from './runtime-manifest.js';
 import { NAVIGATION_STATE_CHANGE_EVENT } from './navigation-events.js';
 
@@ -106,7 +106,7 @@ export async function refreshBreadcrumbCollectionColumns() {
             return;
         }
 
-        const link = wrapper.querySelector('a.breadcrumb-column-link[aria-current="page"][href]');
+        const link = wrapper.querySelector('a.path-column-link[aria-current="page"][href]');
         if (!(link instanceof HTMLAnchorElement)) {
             return;
         }
@@ -114,7 +114,7 @@ export async function refreshBreadcrumbCollectionColumns() {
         const selectedPathname = normalizePathname(
             new URL(link.href, window.location.origin).pathname
         );
-        const columnItems = await buildBreadcrumbColumnItems(
+        const columnItems = await buildPathColumnItems(
             fragmentRoot,
             collectionSource,
             { selectedPathname }
@@ -127,7 +127,7 @@ export async function refreshBreadcrumbCollectionColumns() {
             return;
         }
 
-        renderBreadcrumbColumn(
+        renderPathColumn(
             wrapper,
             columnItems,
             collectionSource,

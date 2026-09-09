@@ -1,7 +1,7 @@
 {{- $ctx := .ctx | default . -}}
 {{- $visibleItems := .items | default slice -}}
 {{- if gt (len $visibleItems) 0 -}}
-<nav class="breadcrumb-nav" aria-label="Breadcrumb">
+<nav class="path-navigation" aria-label="Breadcrumb">
   {{- range $item := $visibleItems -}}
     {{ partial "breadcrumb/item.html" (dict "ctx" $ctx "item" $item) }}
   {{- end -}}

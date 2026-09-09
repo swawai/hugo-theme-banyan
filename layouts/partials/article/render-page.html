@@ -1,4 +1,4 @@
-{{- $slotSources := .Scratch.Get "slot_sources" | default dict -}}
+{{- $slotFlags := .Scratch.Get "slot_flags" | default dict -}}
 {{- $contentHTML := printf "%s" .Content -}}
 {{- $content := trim $contentHTML " \r\n\t" -}}
 {{- partial "article/assert-content-contract.html" . -}}
@@ -11,4 +11,4 @@
   </div>
 </article>
 {{- if and .IsPage (eq .Section "d") -}}{{- partial "article/schema.html" . -}}{{- end -}}
-{{- with index $slotSources "breadcrumb" -}}{{- partial "breadcrumb/schema.html" (dict "ctx" $) -}}{{- end -}}
+{{- with index $slotFlags "breadcrumb" -}}{{- partial "breadcrumb/schema.html" (dict "ctx" $) -}}{{- end -}}

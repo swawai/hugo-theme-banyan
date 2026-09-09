@@ -14,9 +14,9 @@
     --page-shell-min-inline: 100%;
     --page-rail-inline: var(--navigation-column-inline);
     --page-shell-gap-inline: 1rem;
-    --breadcrumb-column-inline: var(--navigation-column-inline);
-    --breadcrumb-gap-inline: var(--page-shell-gap-inline);
-    --breadcrumb-main-inline: min(88ch, 100cqi);
+    --path-column-inline: var(--navigation-column-inline);
+    --path-columns-gap-inline: var(--page-shell-gap-inline);
+    --main-column-inline: min(88ch, 100cqi);
     --page-shell-min-block: calc(100vh - var(--page-edge-block-start));
 }
 
@@ -96,7 +96,7 @@ body {
 
 .slot-main,
 .slot-meta {
-    inline-size: var(--breadcrumb-main-inline);
+    inline-size: var(--main-column-inline);
 }
 
 .slot-main {

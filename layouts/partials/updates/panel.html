@@ -1,5 +1,4 @@
-{{ $model := partial "preferences/site-update-model.html" (dict "ctx" .) }}
-{{ $labels := $model.labels }}
+{{ $labels := partial "updates/labels.html" (dict "ctx" .) }}
 {{ $buildVersion := partial "build-version.html" . }}
 <div class="system-page-section" data-site-update-panel>
   <p>{{ $labels.current_version }}: <span data-site-update-version title="{{ $buildVersion }}">{{ partial "build-time-display.html" . | default $buildVersion }}</span></p>

@@ -1,7 +1,7 @@
 import {
     applySortQueryTokenToUrl,
     readCurrentSortTokenRaw,
-} from './nav-state.js';
+} from './navigation-state.js';
 
 export const SORT_VARIANTS = {
     name: {

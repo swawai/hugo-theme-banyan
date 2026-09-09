@@ -27,8 +27,7 @@
   {{- end -}}
 {{- end -}}
 
-{{- $updateModel := partial "preferences/site-update-model.html" (dict "ctx" .) -}}
-{{- $siteVersionLabels := $updateModel.labels -}}
+{{- $siteVersionLabels := partial "updates/labels.html" (dict "ctx" .) -}}
 
 {{- dict
   "site_update_prompt" $siteUpdatePrompt

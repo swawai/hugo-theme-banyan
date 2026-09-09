@@ -223,7 +223,7 @@ function extractStartTags(text, tagName) {
     return [...text.matchAll(new RegExp(`<${escapedTagName}\\b[^>]*>`, 'gi'))].map((match) => match[0]);
 }
 
-const breadcrumbPrefetchAnchorClasses = new Set(['breadcrumb-column-link']);
+const breadcrumbPrefetchAnchorClasses = new Set(['path-column-link']);
 
 function hasBreadcrumbPrefetchAnchorClass(className) {
     return className

@@ -17,7 +17,7 @@
 用户已确认以 `/updates/` 收纳“检查更新”和“更新记录”，采用真实内容子页。列表基础已获用户确认，本轮迁移内容和更新入口，不在中间增加临时专用列表。
 
 1. **名称列表与样式拆分（已验收）**：增加 `list: name`，仅显示图标和名称，默认名称升序，完整复用集合来源、继承、排序、路径列和历史。`grid-list.css` 改名为 `grid-base.css` 并成为单列基底；目录三列配置移到 `grid-directory.css`，all／products 只叠加各自列布局。choice 共用基底，保留原生链接／按钮及各自功能逻辑，不增加排序。不引入 `list: base`、`list_columns` 或 `grid-name.css`。
-2. **更新入口迁移（已实施，待用户确认）**：主题 `content/updates/_index*.md` 使用 `layout: article-list`、`list: name`、`root_nav: true`；`updates/check/index*.md` 使用 `update-check` 布局承载现有检查操作，`updates/changelog/index*.md` 承载更新记录，项目同路径内容同步迁移。检查页内显示实际版本／状态，版本为普通文本，不再嵌套更新记录链接；相关 `changelog_page` 字段和模板耦合已删除。名称列表不伪造运行时更新时间。旧 `pwa/`、`site/` 内容入口及 `pwa-page` 布局已删除，第一列合并为“更新”，共 14 项；模型、引用、sitemap、导航及对应测试已迁移。`assets/site/pwa/` 资源路径不变。更新记录保留 `/changelog/`，旧 `/pwa/`、`/site/` 通过根部署规则分别永久跳转到检查页和更新列表，覆盖三语言与有无尾斜杠。
+2. **更新入口迁移（已实施，待用户确认）**：主题 `content/updates/_index*.md` 使用 `layout: collection-page`、`list: name`、`root_nav: true`；`updates/check/index*.md` 使用 `update-check` 布局承载现有检查操作，`updates/changelog/index*.md` 承载更新记录，项目同路径内容同步迁移。检查页内显示实际版本／状态，版本为普通文本，不再嵌套更新记录链接；相关 `changelog_page` 字段和模板耦合已删除。名称列表不伪造运行时更新时间。旧 `pwa/`、`site/` 内容入口及 `pwa-page` 布局已删除，第一列合并为“更新”，共 14 项；模型、引用、sitemap、导航及对应测试已迁移。`assets/site/pwa/` 资源路径不变。更新记录保留 `/changelog/`，旧 `/pwa/`、`/site/` 通过根部署规则分别永久跳转到检查页和更新列表，覆盖三语言与有无尾斜杠。
 
 列表基础验收：生产构建 `temp_workspace/public/2609090126-name-list-base` 的 141 页 HTML 审计通过；10 项浏览器回归通过，报告为 `temp_workspace/regression/260909012714-browser/report.json`，覆盖画幅宽度、系统页面、入口、产品路径、排序隔离与视觉对齐。四种列表 × 三语言集合契约及 name 的目录／分类／汇总、升降序、进入文章、刷新、前进后退验证通过，产物为 `temp_workspace/collection-contract-umloRE`。已查看名称主列、文章路径列、目录及语言页截图。该阶段仅交付列表基础，未迁移业务内容。
 
@@ -106,7 +106,7 @@ GitHub 简化验收：生产构建 `temp_workspace/public/2609082304-github-simp
 
 本步验证：集合契约 `temp_workspace/collection-contract-YZQQJy` 覆盖三语言、三种列表、显式更新时间／默认日期／无时间、目录和平面／树形分类汇总、升降序进入路径列；生产构建 `temp_workspace/public/2609081815-list-lastmod` 的 HTML 与导航检查、5 项相关浏览器回归通过（`temp_workspace/regression/260908181601-browser/report.json`）。实际 `192.168.1.114:5120` 预览检查五个列表根的三语言列名，站点三个子项显示日期及排序值与 Git 一致，进入子页、排序、刷新和历史保留第二列；截图与报告位于 `temp_workspace/list-lastmod-live/`。本步等待用户复测，不推进后续布局整理。
 
-站点目录再次收敛：按用户要求删除 `site-page.html`，三语言站点根统一声明 `layout: article-list`、`list: directory`。撤销集合配置、来源注册、路径菜单及图标审计中的站点布局分支；既有 `site_update` 声明仅负责由全站骨架附加操作区、样式和入口更新标记。下述保留专用布局的方案已被替代。验收覆盖三语言全部三个子页（微信、关于、更新记录）的默认／排序进入、第二列及选中保留、刷新与前进后退，并直接检查用户使用的局域网预览，不能只凭临时生产构建通过就交付。
+站点目录再次收敛：按用户要求删除 `site-page.html`，三语言站点根统一声明 `layout: collection-page`、`list: directory`。撤销集合配置、来源注册、路径菜单及图标审计中的站点布局分支；既有 `site_update` 声明仅负责由全站骨架附加操作区、样式和入口更新标记。下述保留专用布局的方案已被替代。验收覆盖三语言全部三个子页（微信、关于、更新记录）的默认／排序进入、第二列及选中保留、刷新与前进后退，并直接检查用户使用的局域网预览，不能只凭临时生产构建通过就交付。
 
 本次直接请求 `192.168.1.114:5120` 复现了缺失路径栏：开发进程返回的三个子页都没有路径栏及脚本，虽内容文件已显式开启。触发 Hugo 配置完整重建（仅更新文件时间，配置字节未修改）后恢复。原地址的浏览器验证已覆盖全部九个语言／子页组合、默认及排序进入、刷新和历史；另验证禁用 JavaScript 的九页，以及 770px 微信截图，产物位于 `temp_workspace/site-shared-layout-live/`。生产构建 `temp_workspace/public/2609081800-site-shared-layout` 的 HTML、导航、集合契约和 9 项相关浏览器回归、3 项安全检查通过。验收以用户实际预览地址的最新输出为准。
 
@@ -218,7 +218,7 @@ offer:
 
 第 3 步行为：`assets/js/preferences/` 承担全站语言、外观及设置返回行为；语言页通过 `return` 读取原页面静态译文关系，保留查询参数和锚点，缺失译文时确认后转往目标语言首页，读取失败时允许重试。只接受同源返回地址。原存储键 `preferred_lang`、`theme-preference` 保持有效；外观支持跟随系统、跨页和跨标签页同步，存储不可用时当前页仍可操作。“我的”保留占位说明和原有返回／首页操作，返回优先使用设置来源。
 
-站点页的 `site_update` 是版本文案与更新记录引用的事实源。更新引擎只处理注册、检查、等待和激活；`preferences/site-update-ui.js` 显示状态，旧下拉呈现暂放在 `fragments/nav-utilities/version-menu.js`，明确在第 4 步删除。旧语言、外观独立操作脚本已移除，两种入口共用全站实现。列表组件补齐原生按钮的点击与焦点支持。
+站点页的 `site_update` 是版本文案与更新记录引用的事实源。更新引擎只处理注册、检查、等待和激活；`updates/ui.js` 显示状态，旧下拉呈现暂放在 `fragments/nav-utilities/version-menu.js`，明确在第 4 步删除。旧语言、外观独立操作脚本已移除，两种入口共用全站实现。列表组件补齐原生按钮的点击与焦点支持。
 
 第 3 步验收：生产模式构建、导航状态检查、129 个 HTML 审计通过；14 项功能回归与 2 项 CSP／导航预加载检查通过。新增语言返回、外观独立性、站点页更新三个回归，覆盖从文章进入、原来源及排序、刷新、返回、离线重试、新版本提示与激活。补充核对三种语言的 12 个系统页、8 张桌面／窄屏截图、键盘操作和存储受限行为。已验证首次访问的引用资源缓存、离线刷新、旧导航缓存删除、`sw.js` 不入缓存及其响应头；原缓存策略和 SW 模板未修改。移除旧控件后，全站语言推荐和更新确认提示仍有效。
 

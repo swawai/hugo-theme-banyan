@@ -6,7 +6,7 @@ weight: 10
 browser_title: "All Articles and Technical Guides"
 description: "Browse every published article and technical guide in one place."
 slug: "all"
-layout: article-list
+layout: collection-page
 slots:
   breadcrumb: true
 list: all

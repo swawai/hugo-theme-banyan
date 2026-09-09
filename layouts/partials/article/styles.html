@@ -3,7 +3,7 @@
 {{ $articleProse := resources.Get "css/article-prose.css" }}
 {{ $articleInline := resources.Get "css/article-inline.css" }}
 {{ $articleCode := resources.Get "css/article-code.css" }}
-{{ $articleList := resources.Get "css/article-list.css" }}
+{{ $proseLists := resources.Get "css/prose-lists.css" }}
 {{ $articleMedia := resources.Get "css/article-media.css" }}
 {{ $articleQuote := resources.Get "css/article-quote.css" }}
 {{ $articleTable := resources.Get "css/article-table.css" }}
@@ -29,7 +29,7 @@
 <link rel="stylesheet" href="{{ $articleCore.RelPermalink }}">
 {{ $articleAddonParts := slice }}
 {{ $articleAddonKeys := slice }}
-{{ if in $features "list" }}{{ $articleAddonParts = $articleAddonParts | append $articleList }}{{ $articleAddonKeys = $articleAddonKeys | append "list" }}{{ end }}
+{{ if in $features "list" }}{{ $articleAddonParts = $articleAddonParts | append $proseLists }}{{ $articleAddonKeys = $articleAddonKeys | append "list" }}{{ end }}
 {{ if in $features "quote" }}{{ $articleAddonParts = $articleAddonParts | append $articleQuote }}{{ $articleAddonKeys = $articleAddonKeys | append "quote" }}{{ end }}
 {{ if in $features "media" }}{{ $articleAddonParts = $articleAddonParts | append $articleMedia }}{{ $articleAddonKeys = $articleAddonKeys | append "media" }}{{ end }}
 {{ if in $features "code" }}{{ $articleAddonParts = $articleAddonParts | append $articleCode }}{{ $articleAddonKeys = $articleAddonKeys | append "code" }}{{ end }}

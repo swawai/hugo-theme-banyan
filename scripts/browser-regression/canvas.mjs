@@ -42,7 +42,7 @@ async function readCanvas(page) {
             mainDocumentX: main.getBoundingClientRect().x + scrollX,
             nav: rect(nav),
             columns: columns.map(rect),
-            columnLinks: columns.map(column => column.querySelectorAll('.breadcrumb-column-link[href]').length),
+            columnLinks: columns.map(column => column.querySelectorAll('.path-column-link[href]').length),
             plainColumns: columns.every(column => (
                 column.querySelector(':scope > .grid-list.collection-list--column')
                 && !column.querySelector('[aria-expanded], [role="menu"], [hidden]')

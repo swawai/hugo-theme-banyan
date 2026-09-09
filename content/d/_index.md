@@ -4,7 +4,7 @@ linkTitle: Directory
 weight: 10
 browser_title: "Technical Library and Practical Guides"
 description: "Browse published articles and practical guides by topic and section."
-layout: "article-list"
+layout: "collection-page"
 list: directory
 slots:
   breadcrumb: true
@@ -17,7 +17,7 @@ cascade:
       meta: true
   - target:
       kind: "section"
-    layout: "article-list"
+    layout: "collection-page"
     slots:
       breadcrumb: true
 ---
