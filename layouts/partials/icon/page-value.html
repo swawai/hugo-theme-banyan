@@ -3,10 +3,12 @@
 {{- if and (reflect.IsMap $value) (isset $value "image") -}}
   {{- $owner := .page -}}
   {{- $published := partialCached "asset/publish.html" (dict "ctx" (dict "Page" $owner) "src" $value.image) $owner.RelPermalink $value.image -}}
-  {{- if ne $published.resource.MediaType.MainType "image" -}}
-    {{- errorf "Build failed: %s icon.image must reference an image resource: %q." $owner.RelPermalink $value.image -}}
-  {{- else -}}
-    {{- $value = merge $value (dict "image" $published.src) -}}
+  {{- with $published.resource -}}
+    {{- if ne .MediaType.MainType "image" -}}
+      {{- errorf "Build failed: %s icon.image must reference an image resource: %q." $owner.RelPermalink $value.image -}}
+    {{- else -}}
+      {{- $value = merge $value (dict "image" $published.src) -}}
+    {{- end -}}
   {{- end -}}
 {{- end -}}
 {{- return $value -}}
