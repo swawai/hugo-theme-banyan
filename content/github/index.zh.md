@@ -4,7 +4,6 @@ title: GitHub
 description: 查看 Banyan 主题的源代码。
 date: 2026-09-08
 slug: github
-type: page
 layout: article-page
 icon: github
 weight: 102

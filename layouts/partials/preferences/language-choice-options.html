@@ -1,6 +1,6 @@
 {{- $ctx := . -}}
 {{- $icons := dict -}}
-{{- range $ctx.Sites -}}
+{{- range hugo.Sites -}}
   {{- $value := "language" -}}
   {{- if isset .Params "icon" -}}{{- $value = .Params.icon -}}{{- end -}}
   {{- $icon := partial "icon/page-value.html" (dict "value" $value "page" .Home "context" (printf "languages.%s.params.icon" .Language.Lang)) | default "language" -}}

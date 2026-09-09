@@ -82,7 +82,7 @@ export function normalizeFromPath(value) {
     return `/${segments.join('/')}/`;
 }
 
-export function buildFromParamValue(logicalPath) {
+function buildFromParamValue(logicalPath) {
     const normalizedPath = normalizeFromPath(logicalPath);
     if (!normalizedPath) {
         return '';
@@ -121,7 +121,7 @@ export function normalizePathname(pathname) {
     return normalized === '//' ? '/' : normalized;
 }
 
-export function normalizeCollectionLogicalPathFromPathname(pathname, siteRoot = '/') {
+function normalizeCollectionLogicalPathFromPathname(pathname, siteRoot = '/') {
     const normalizedPath = normalizePathname(pathname);
     const normalizedSiteRoot = normalizePathname(siteRoot);
     if (
@@ -142,7 +142,7 @@ export function normalizeCollectionLogicalPathFromUrl(url, siteRoot = '/') {
     return normalizeCollectionLogicalPathFromPathname(url.pathname, siteRoot);
 }
 
-export function readCurrentSortsTokens() {
+function readCurrentSortsTokens() {
     const rawValue = safeDecode(readSearchParam(LINEAGE_SORTS_FIELD));
     if (!rawValue.trim()) {
         return [];

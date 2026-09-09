@@ -1,8 +1,8 @@
-{{- $themeConfig := index site.Data "navigation-state-default" | default dict -}}
+{{- $themeConfig := index hugo.Data "navigation-state-default" | default dict -}}
 {{- if eq (len $themeConfig) 0 -}}
   {{- errorf "Build failed: missing theme default navigation state data %q." "themes/<theme>/data/navigation-state-default.toml" -}}
 {{- end -}}
-{{- $siteConfig := index site.Data "navigation-state" | default dict -}}
+{{- $siteConfig := index hugo.Data "navigation-state" | default dict -}}
 {{- $themeFields := index $themeConfig "fields" | default dict -}}
 {{- $siteFields := index $siteConfig "fields" | default dict -}}
 {{- $fields := dict -}}

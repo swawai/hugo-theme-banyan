@@ -20,7 +20,7 @@
 
 `nav_primary`、`slots.primary_nav`、`slots.utilities` 和 `slots.breadcrumb_root` 已移除，对应的主菜单、系统下拉及 breadcrumb model fragment 不再参与装配。新增入口应建立真实根页面或 taxonomy 根，声明 `root_nav: true` 并提供名称与顺序。
 
-分类法的 `banyan_taxonomy.show_in_home`／`home_weight` 仍控制独立的首页快捷列表，不能当成旧菜单字段删除；第一列排序使用页面 `weight`。
+原首页快捷列表已经移除；分类法不再声明 `banyan_taxonomy.show_in_home`／`home_weight`。第一列是否显示由页面 `root_nav` 决定，顺序使用页面 `weight`。
 
 ## 支持的 slots
 

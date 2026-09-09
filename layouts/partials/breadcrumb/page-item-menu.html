@@ -9,13 +9,7 @@
   {{- end -}}
   {{- if $owner -}}
     {{- $entries := slice -}}
-    {{- if eq $owner.Layout "section-index" -}}
-      {{- range $owner.Pages.ByWeight -}}
-        {{- $entries = $entries | append (dict
-          "node" . "href" .RelPermalink "text" .LinkTitle "title" .Title "kind" .Kind
-        ) -}}
-      {{- end -}}
-    {{- else if eq $owner.Layout "article-list" -}}
+    {{- if eq $owner.Layout "article-list" -}}
       {{- $entries = partial "collection/rows.html" (dict "page" $owner) -}}
     {{- else -}}
       {{- $entries = partial "section/direct-children.html" (dict "ctx" $owner) -}}

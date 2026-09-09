@@ -1,7 +1,5 @@
 .prose {
     max-inline-size: min(100%, var(--article-prose-max-inline));
-    /* word-break: break-all;
-    text-align: justify; */
     overflow-wrap: break-word;
 }
 
@@ -88,7 +86,6 @@
 
 .prose :is(pre, .highlight) + :is(pre, .highlight) { margin-top: 24px; }
 
-/* --- 自定义占位与间隙控制类（通过 theme-owned shortcodes 输出） --- */
 .prose .md-caption {
     display: block;
     margin-top: -18px;

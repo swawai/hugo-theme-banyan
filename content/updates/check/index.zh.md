@@ -1,7 +1,6 @@
 ---
 title: 检查更新
 description: 查看当前站点版本并检查更新。
-type: page
 date: 2026-09-08
 slug: check
 layout: update-check

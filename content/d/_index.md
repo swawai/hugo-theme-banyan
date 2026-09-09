@@ -9,14 +9,13 @@ list: directory
 slots:
   breadcrumb: true
 cascade:
-  - _target:
+  - target:
       kind: "page"
-    type: "post"
     layout: "article-page"
     slots:
       breadcrumb: true
       meta: true
-  - _target:
+  - target:
       kind: "section"
     layout: "article-list"
     slots:

@@ -1,7 +1,6 @@
 ---
 title: Check for updates
 description: View the current site version and check for updates.
-type: page
 date: 2026-09-08
 slug: check
 layout: update-check

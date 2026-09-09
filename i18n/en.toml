@@ -38,8 +38,6 @@ other = "Value"
 
 [products_free]
 other = "Free"
-[products_empty]
-other = "No products yet."
 [products_sort_name_asc]
 other = "Sort by name ascending"
 [products_sort_name_desc]

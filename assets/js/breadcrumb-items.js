@@ -205,7 +205,7 @@ function buildDescendantCollectionHref(href, collectionSource, sortToken = '', d
     }
 }
 
-export function buildEntrySourceHref(href, logicalPath, sortToken = '', defaultSort = '', sortsTokens = [], defaultSortsTokens = []) {
+function buildEntrySourceHref(href, logicalPath, sortToken = '', defaultSort = '', sortsTokens = [], defaultSortsTokens = []) {
     const rawHref = typeof href === 'string' ? href.trim() : '';
     if (!rawHref) {
         return '';

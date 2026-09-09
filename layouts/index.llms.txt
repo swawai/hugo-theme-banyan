@@ -1,7 +1,7 @@
 {{- $body := partial "agent-access/llms.txt" (dict "page" . "languageOnly" false) -}}
-{{- $primarySite := index (sort .Sites "Language.Weight") 0 -}}
+{{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
 {{- $isPrimaryLanguage := eq .Site.Language.Lang $primarySite.Language.Lang -}}
-{{- $isMultilingual := gt (len .Sites) 1 -}}
+{{- $isMultilingual := gt (len hugo.Sites) 1 -}}
 {{- $isRootLanguageHome := eq .Site.Home.Permalink $primarySite.BaseURL -}}
 {{- if and $isMultilingual $isPrimaryLanguage $isRootLanguageHome -}}
   {{- $languageBody := partial "agent-access/llms.txt" (dict "page" . "languageOnly" true) -}}

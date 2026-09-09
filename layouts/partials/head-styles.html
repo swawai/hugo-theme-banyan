@@ -2,49 +2,36 @@
 {{ with .ctx }}{{ $ctx = . }}{{ end }}
 {{ $variant := "" }}
 {{ with .variant }}{{ $variant = . }}{{ end }}
-{{ $flags := partial "page-style-flags.html" (dict "ctx" $ctx) }}
+{{ $resolvedVariant := $variant }}
+{{ if not $resolvedVariant }}
+{{ $slotSources := $ctx.Scratch.Get "slot_sources" | default dict }}
+{{ $resolvedVariant = cond (index $slotSources "breadcrumb") "page-crumb" "page" }}
+{{ end }}
+{{ if not (in (slice "page" "page-crumb" "name" "directory" "products" "all") $resolvedVariant) }}
+{{ errorf "Build failed: unsupported page style variant %q." $resolvedVariant }}
+{{ end }}
 {{ $coreA11y := resources.Get "css/core-a11y.css" }}
 {{ $coreBase := resources.Get "css/core-base.css" }}
 {{ $coreMotion := resources.Get "css/core-motion.css" }}
 {{ $collectionList := resources.Get "css/collection-list.css" }}
-{{ $gridAll := resources.Get "css/grid-all.css" }}
 {{ $gridBase := resources.Get "css/grid-base.css" }}
-{{ $gridDirectory := resources.Get "css/grid-directory.css" }}
-{{ $gridProducts := resources.Get "css/grid-products.css" }}
-{{ $navBreadcrumb := resources.Get "css/nav-breadcrumb.css" }}
-{{ $siteHeader := resources.Get "css/site-header.css" }}
 {{ $rootNavigation := resources.Get "css/root-navigation.css" }}
-{{ $pageBundleParts := slice $coreBase $siteHeader }}
-{{ $pageBundleParts = $pageBundleParts | append $collectionList $gridBase $rootNavigation }}
-{{ $pageBundleParts = $pageBundleParts | append $coreA11y }}
-{{ $pageBundleParts = $pageBundleParts | append $coreMotion }}
-{{ $pageBundle := $pageBundleParts | resources.Concat "css/bundle-page.css" }}
-{{ $pageBundle = partial "css-process.html" (dict "resource" $pageBundle "fingerprint" true) }}
-{{ $pageCrumbBundleParts := $pageBundleParts }}
-{{ $pageCrumbBundleParts = $pageCrumbBundleParts | append $navBreadcrumb }}
-{{ $pageCrumbBundle := $pageCrumbBundleParts | resources.Concat "css/bundle-page-crumb.css" }}
-{{ $pageCrumbBundle = partial "css-process.html" (dict "resource" $pageCrumbBundle "fingerprint" true) }}
-{{ $directoryBundleParts := $pageCrumbBundleParts | append $gridDirectory }}
-{{ $directoryBundle := $directoryBundleParts | resources.Concat "css/bundle-directory.css" }}
-{{ $directoryBundle = partial "css-process.html" (dict "resource" $directoryBundle "fingerprint" true) }}
-{{ $productsBundleParts := $pageCrumbBundleParts | append $gridProducts }}
-{{ $productsBundle := $productsBundleParts | resources.Concat "css/bundle-products.css" }}
-{{ $productsBundle = partial "css-process.html" (dict "resource" $productsBundle "fingerprint" true) }}
-{{ $allBundleParts := $pageCrumbBundleParts | append $gridAll }}
-{{ $allBundle := $allBundleParts | resources.Concat "css/bundle-all.css" }}
-{{ $allBundle = partial "css-process.html" (dict "resource" $allBundle "fingerprint" true) }}
-{{ $resolvedVariant := $variant }}
-{{ if not $resolvedVariant }}
-{{ $resolvedVariant = index $flags "defaultVariant" }}
+{{ $parts := slice $coreBase $collectionList $gridBase $rootNavigation $coreA11y $coreMotion }}
+{{ $target := "css/bundle-page.css" }}
+{{ if ne $resolvedVariant "page" }}
+{{ $parts = $parts | append (resources.Get "css/nav-breadcrumb.css") }}
+{{ $target = "css/bundle-page-crumb.css" }}
 {{ end }}
-{{ if eq $resolvedVariant "all" }}
-<link rel="stylesheet" href="{{ $allBundle.RelPermalink }}">
+{{ if eq $resolvedVariant "directory" }}
+{{ $parts = $parts | append (resources.Get "css/grid-directory.css") }}
+{{ $target = "css/bundle-directory.css" }}
 {{ else if eq $resolvedVariant "products" }}
-<link rel="stylesheet" href="{{ $productsBundle.RelPermalink }}">
-{{ else if eq $resolvedVariant "directory" }}
-<link rel="stylesheet" href="{{ $directoryBundle.RelPermalink }}">
-{{ else if eq $resolvedVariant "page" }}
-<link rel="stylesheet" href="{{ $pageBundle.RelPermalink }}">
-{{ else }}
-<link rel="stylesheet" href="{{ $pageCrumbBundle.RelPermalink }}">
+{{ $parts = $parts | append (resources.Get "css/grid-products.css") }}
+{{ $target = "css/bundle-products.css" }}
+{{ else if eq $resolvedVariant "all" }}
+{{ $parts = $parts | append (resources.Get "css/grid-all.css") }}
+{{ $target = "css/bundle-all.css" }}
 {{ end }}
+{{ $bundle := $parts | resources.Concat $target }}
+{{ $bundle = partial "css-process.html" (dict "resource" $bundle "fingerprint" true) }}
+<link rel="stylesheet" href="{{ $bundle.RelPermalink }}">

@@ -761,8 +761,16 @@ async function inspectBuildVersionContract(rootDir, rows) {
             const manifestText = await fs.readFile(manifestPaths[0], 'utf8');
             const manifest = JSON.parse(manifestText);
             buildVersion = typeof manifest?.buildVersion === 'string' ? manifest.buildVersion : '';
+            const buildTime = typeof manifest?.buildTime === 'string' ? manifest.buildTime : '';
+            const buildTimeISO = typeof manifest?.buildTimeISO === 'string' ? manifest.buildTimeISO : '';
             if (!buildVersion) {
                 issues.push('runtime asset manifest is missing buildVersion.');
+            }
+            if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(buildTime)) {
+                issues.push(`runtime asset manifest has invalid buildTime ${JSON.stringify(buildTime)}.`);
+            }
+            if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(buildTimeISO)) {
+                issues.push(`runtime asset manifest has invalid buildTimeISO ${JSON.stringify(buildTimeISO)}.`);
             }
             if (Object.prototype.hasOwnProperty.call(manifest, 'langList')) {
                 issues.push('runtime asset manifest must not expose langList; language navigation is rendered into HTML.');

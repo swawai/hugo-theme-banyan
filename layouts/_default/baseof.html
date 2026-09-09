@@ -14,7 +14,7 @@
 {{- errorf "Build failed: params.service_worker.offline_notice_path cannot be empty." -}}
 {{- end -}}
 {{- $offlineNoticeRelPermalinks := slice -}}
-{{- range sort .Sites "Language.Weight" -}}
+{{- range sort hugo.Sites "Language.Weight" -}}
     {{- $offlineNoticeRelPermalinks = $offlineNoticeRelPermalinks | append (lower (printf "%s%s/" .Home.RelPermalink $offlineNoticePath)) -}}
 {{- end -}}
 {{- $isOfflinePage := in $offlineNoticeRelPermalinks (lower .RelPermalink) -}}
@@ -25,7 +25,7 @@
 {{- end -}}
 {{- partialCached "audit/permalink-collision.html" (dict "ctx" .) "audit-permalink-collision" -}}
 {{- partialCached "audit/content-icons.html" . "audit-content-icons" -}}
-{{- $primarySite := index (sort .Sites "Language.Weight") 0 -}}
+{{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
 {{- $buildVersion := partial "build-version.html" $primarySite.Home -}}
 {{- $buildTimeISO := partial "build-time-iso.html" $primarySite.Home -}}
 {{- $buildTimeDisplay := partial "build-time-display.html" $primarySite.Home -}}
@@ -33,12 +33,12 @@
 {{- with index $swConfig "cache_first_extensions" -}}
 {{- errorf "Build failed: params.service_worker.cache_first_extensions has moved to data/cache-policy.toml (or the theme default cache policy) routes[].sw config; do not keep setting it in hugo.toml." -}}
 {{- end -}}
-{{- $themeCachePolicy := index site.Data "cache-policy-default" | default dict -}}
+{{- $themeCachePolicy := index hugo.Data "cache-policy-default" | default dict -}}
 {{- if eq (len $themeCachePolicy) 0 -}}
 {{- errorf "Build failed: missing theme default cache policy data %q." "themes/<theme>/data/cache-policy-default.toml" -}}
 {{- end -}}
-{{- $siteCachePolicy := index site.Data "cache-policy" | default dict -}}
-{{- $siteRedirects := index site.Data "redirects" | default dict -}}
+{{- $siteCachePolicy := index hugo.Data "cache-policy" | default dict -}}
+{{- $siteRedirects := index hugo.Data "redirects" | default dict -}}
 {{- $siteRedirectRules := partial "redirect-rules.html" (dict
     "rules" (index $siteRedirects "rules" | default slice)
 ) -}}
@@ -96,7 +96,7 @@
     {{- end -}}
 {{- end -}}
 {{- $offlineFallbacks := slice -}}
-{{- range sort .Sites "Language.Weight" -}}
+{{- range sort hugo.Sites "Language.Weight" -}}
     {{- $offlineFallbacks = $offlineFallbacks | append (dict
         "path_prefix" (lower (printf "%v" .Home.RelPermalink))
         "url" (printf "%s%s/" .Home.RelPermalink $offlineNoticePath)
@@ -134,6 +134,7 @@
     {{- partialCached "entry-fragments-publish.html" (dict "language" .Language.Lang "sources" $entryBreadcrumbSourceModels "build_version" $buildVersion) .Language.Lang $buildVersion -}}
 {{- end -}}
 {{- if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) -}}
+    {{- /* Accessing RelPermalink evaluates and publishes these generated deployment files. */ -}}
     {{- $headersBody := partial "cache-policy-cloudflare-headers-body.txt" (dict "routes" $cachePolicyHeaderRoutes) -}}
     {{- $headersResource := resources.FromString "_headers" $headersBody -}}
     {{- $publishHeaders := $headersResource.RelPermalink -}}
@@ -174,7 +175,7 @@
         {{- end -}}
     {{- end -}}
     {{- $runtimeI18n := dict -}}
-    {{- range sort .Sites "Language.Weight" -}}
+    {{- range sort hugo.Sites "Language.Weight" -}}
         {{- $langCode := .Language.Lang -}}
         {{- $i18nBody := partial "runtime/i18n-body.json" . -}}
         {{- $i18nResource := resources.FromString (printf "runtime/i18n.%s.json" $langCode) $i18nBody | fingerprint -}}
@@ -354,9 +355,8 @@
         <a class="skip" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
         {{- $breadcrumbModel := partial "breadcrumb/model.html" (dict "ctx" $) -}}
         {{- $hasBreadcrumbTail := and $hasBreadcrumbCapability (gt (len (index $breadcrumbModel "tail_items")) 0) -}}
-        {{- $pageShellClasses := slice "page-shell" "page-shell--has-rail" -}}
-        {{- if $hasBreadcrumbTail -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-breadcrumb-tail" -}}{{- else -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--no-breadcrumb-tail" -}}{{- end -}}
-        {{- with index $slotSources "meta" -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-meta" -}}{{- else -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--no-meta" -}}{{- end -}}
+        {{- $pageShellClasses := slice "page-shell" -}}
+        {{- if $hasBreadcrumbTail -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-breadcrumb-tail" -}}{{- end -}}
         <div class="{{ delimit $pageShellClasses " " }}">
             <div class="page-rail">
                 {{- partial "navigation/root.html" . -}}

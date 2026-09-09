@@ -1,7 +1,3 @@
-/* @view-transition {
-    navigation: auto;
-} */
-
 :root {
     --bg: #FFFFFF;
     --fg: #1B1B1B;
@@ -22,8 +18,6 @@
     --breadcrumb-gap-inline: var(--page-shell-gap-inline);
     --breadcrumb-main-inline: min(88ch, 100cqi);
     --page-shell-min-block: calc(100vh - var(--page-edge-block-start));
-    /* --text-secondary:#5F5F5F;
-    --bg-surface:#FAFAFA; F9F9F9 F1F1F1 #E3E3E3 #D7D7D7 #868686 1D1D1D 7727272 */
 }
 
 [data-theme="dark"] {
@@ -34,8 +28,6 @@
     --border: #CCCCCC;
     --focus: #AC7B73;
     --accent-secondary: #7388AC;
-    /* E3E3E3 #9B9B9B 505050 333333 323232  313131 303030 2C2C2C 282828 202020
-    --bg-surface:#2A2A2A; */
 }
 
 
@@ -84,16 +76,12 @@ body {
 
 .page-shell {
     display: grid;
-    grid-template-columns: max-content;
+    grid-template-columns: var(--page-rail-inline) max-content;
+    column-gap: var(--page-shell-gap-inline);
     inline-size: max-content;
     min-inline-size: 100%;
     padding-inline-end: var(--page-edge-inline);
     align-items: start;
-}
-
-.page-shell--has-rail {
-    grid-template-columns: var(--page-rail-inline) max-content;
-    column-gap: var(--page-shell-gap-inline);
 }
 
 .page-rail {
@@ -161,16 +149,6 @@ a:focus-visible {
 
 [data-theme="dark"] .icon--monochrome {
     filter: brightness(0) invert(1);
-}
-
-.icon-language,
-.icon-theme,
-.icon-my {
-    fill: none;
-    stroke: currentColor;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 1.5;
 }
 
 .icon-sprite-root {

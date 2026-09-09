@@ -90,14 +90,15 @@ Navigation contract after the 2026-09-07 flattening step:
   `breadcrumb_root` slots are removed, including their navigation fragments.
 - `slots` now supports only `breadcrumb`, `meta`, and `footer`. Collection
   providers, product metadata, and footer content retain their existing owners.
-- Taxonomy `show_in_home` and `home_weight` remain the configuration for the
-  independent homepage shortcut list; they do not order the first column.
+- Taxonomy roots require only rendering metadata that affects taxonomy output.
+  Root navigation visibility and ordering belong to page `root_nav` and `weight`.
 - Language, appearance, my, and updates are real root pages. The updates directory
   uses `list: name` and lists its real check/changelog children without appended controls.
   `content/updates/check/index*.md` owns update copy and actions through `update-check`;
   the ordinary navigation retains the updates column while the child handles actions.
   Other pages use the existing update confirmation when no control is visible.
-- This step does not complete the later responsive-layout merge or color work.
+- The current page shell uses one horizontal canvas at every viewport width.
+  The later color simplification remains separate visual work.
   See [layout slots](layout-slots.md) and the
   [navigation flattening plan](navigation-flattening-plan.md).
 
@@ -191,8 +192,8 @@ Keep in theme content:
 - Hidden `offline` and `prefetch-debug` utility pages.
 - `language`, `appearance`, and `my` root pages use `build.list: local` so they
   appear under Home without joining global article lists.
-- `site/`, including `site/about` and `site/changelog`, and the `all`, `d`,
-  `products`, and `all-products` structural/template pages for now.
+- `about`, `github`, `rss`, and `updates` provide generic root-page defaults;
+  `all`, `d`, `products`, and `all-products` provide structural collection pages.
   These are intentionally retained as theme live content until the page model is
   stable enough to split templates from live defaults.
 

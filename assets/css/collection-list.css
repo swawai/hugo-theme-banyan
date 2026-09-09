@@ -1,6 +1,4 @@
 :root {
-    --collection-item-padding-block: 0.1rem;
-    --collection-item-padding-inline: 0.24rem;
     --collection-item-radius: 0.22rem;
     --collection-item-hover-bg: color-mix(in srgb, var(--focus) 8%, transparent);
     --collection-item-current-bg: color-mix(in srgb, var(--focus) 14%, transparent);

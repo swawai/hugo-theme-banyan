@@ -27,7 +27,7 @@
   {{- end -}}
 {{- else if eq (printf "%T" $value) "string" -}}
   {{- $resolved = lower (trim $value " \r\n\t") -}}
-  {{- if and $resolved (not (index site.Data.icons $resolved)) -}}
+  {{- if and $resolved (not (index hugo.Data.icons $resolved)) -}}
     {{- errorf "Build failed: %s declares undefined icon %q; define it in data/icons.toml." $context $resolved -}}
   {{- end -}}
 {{- else -}}

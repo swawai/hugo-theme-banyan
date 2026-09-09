@@ -6,7 +6,6 @@ title: "關於"
 slug: "about"
 url: about/
 weight: 95
-type: "page"
 layout: "article-page"
 slots:
   breadcrumb: true

@@ -1,7 +1,7 @@
 const runtimeJsonPromises = new Map();
 const runtimeJsonCache = new Map();
 
-export function readRuntimeManifestUrl() {
+function readRuntimeManifestUrl() {
     return document.body?.dataset.assetManifestUrl || '';
 }
 

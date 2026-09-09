@@ -11,7 +11,7 @@
   {{- end -}}
   {{- $lang := $page.Site.Language.Lang | default "default" -}}
   {{- $defaultLang := "" -}}
-  {{- with index $page.Site.Sites 0 -}}
+  {{- with index hugo.Sites 0 -}}
     {{- $defaultLang = .Language.Lang | default "" -}}
   {{- end -}}
   {{- $unassignedTerm := printf "%v" (index $spec "unassigned_term" | default "") -}}

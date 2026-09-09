@@ -17,8 +17,9 @@
     {{- $buildVersion = printf "%s%s" $versionPrefix ($buildTime.Format $timestampLayout) -}}
   {{- end -}}
 
-  {{- $noop := hugo.Store.Set $versionKey $buildVersion -}}
-  {{- $noop = hugo.Store.Set "banyan.build_time_iso" ($buildTime.UTC.Format "2006-01-02T15:04:05Z") -}}
+  {{- $noop := hugo.Store.Set "banyan.build_time_iso" ($buildTime.UTC.Format "2006-01-02T15:04:05Z") -}}
   {{- $noop = hugo.Store.Set "banyan.build_time_display" ($buildTime.Format "2006-01-02 15:04") -}}
+  {{- /* Publish the version sentinel last so concurrent renders never observe partial build metadata. */ -}}
+  {{- $noop = hugo.Store.Set $versionKey $buildVersion -}}
   {{- $buildVersion -}}
 {{- end -}}

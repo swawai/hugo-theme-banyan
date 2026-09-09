@@ -4,7 +4,6 @@ draft: false
 title: 系统－我的
 linkTitle: 我的
 slug: my
-type: my
 layout: my-page
 icon: my
 robots: noindex, follow

@@ -9,7 +9,7 @@ import {
     readSortTokenForPath,
 } from './nav-state.js';
 
-export const ITEMS_PAYLOAD_PROVIDERS = new Set(['collection']);
+const ITEMS_PAYLOAD_PROVIDERS = new Set(['collection']);
 
 const itemsPayloadPromises = new Map();
 

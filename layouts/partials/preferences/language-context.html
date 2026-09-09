@@ -4,7 +4,7 @@
   {{- $translated = merge $translated (dict .Language.Lang .RelPermalink) -}}
 {{- end -}}
 {{- $options := slice -}}
-{{- range sort $ctx.Sites "Language.Weight" -}}
+{{- range sort hugo.Sites "Language.Weight" -}}
   {{- $code := .Language.Lang -}}
   {{- $options = $options | append (dict "code" $code
     "name" (.Language.LanguageName | default $code)

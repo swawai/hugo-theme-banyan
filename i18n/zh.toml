@@ -38,8 +38,6 @@ other = "价值点"
 
 [products_free]
 other = "免费"
-[products_empty]
-other = "还没有产品。"
 [products_sort_name_asc]
 other = "按名称升序排序"
 [products_sort_name_desc]

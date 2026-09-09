@@ -82,7 +82,7 @@ function getSearchParams(search) {
     return new URLSearchParams(value);
 }
 
-export const NAVIGATION_STATE_FIELDS = createFieldsMap();
+const NAVIGATION_STATE_FIELDS = createFieldsMap();
 export const ENTRY_LINEAGE_FIELD = NAVIGATION_STATE_FIELDS.entry_lineage;
 export const ACTIVE_SORT_FIELD = NAVIGATION_STATE_FIELDS.active_sort;
 export const LINEAGE_SORTS_FIELD = NAVIGATION_STATE_FIELDS.lineage_sorts;
@@ -92,14 +92,14 @@ export const SORT_PARAM_KEY = ACTIVE_SORT_FIELD.name;
 export const SORTS_PARAM_KEY = LINEAGE_SORTS_FIELD.name;
 export const SORTS_PLACEHOLDER = LINEAGE_SORTS_FIELD.placeholder || '_';
 
-export const CACHE_IGNORED_QUERY_KEYS = Object.freeze(
+const CACHE_IGNORED_QUERY_KEYS = Object.freeze(
     Object.values(NAVIGATION_STATE_FIELDS)
         .filter((field) => field.location === 'query' && field.cache_key === 'ignore')
         .flatMap((field) => field.keys)
         .filter((value, index, list) => value && list.indexOf(value) === index)
 );
 
-export function getFieldKeys(field) {
+function getFieldKeys(field) {
     return Array.isArray(field?.keys) ? field.keys.slice() : [];
 }
 

@@ -178,7 +178,7 @@ function addCollectionSourceToIndex(index, source) {
     }
 }
 
-export function buildCollectionSourceIndex(sources, extraSources = []) {
+function buildCollectionSourceIndex(sources, extraSources = []) {
     const index = new Map();
 
     (Array.isArray(sources) ? sources : []).forEach((source) => {

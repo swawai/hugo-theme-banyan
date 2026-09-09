@@ -8,7 +8,7 @@
 
 当前前四项依次为：主题 `content/all/index*.md` 的“文章 - 全部”（`weight: 10`）、项目 `content/tags/_index*.md` 的“文章 - 分类”（`20`）、主题 `content/all-products/_index*.md` 的“产品 - 全部”（`30`）、主题 `content/products/_index*.md` 的“产品 - 分类”（`40`），均使用 `linkTitle` 指定入口文字。
 
-`/d/` 和 `/intent/` 不声明 `root_nav`。它们继续渲染目录／分类页，文章底部目录和阅读目的链接、集合成员、排序、`from` 及路径列均保留。隐藏来源没有对应的第一列选中项；直接访问正文时若实际根为隐藏的 `/d/`，同样不选中第一列。可见入口过滤仅发生在 `navigation/root.html`，`navigation/root-pages.html` 保留完整结构供归属与来源模型使用。`banyan_taxonomy.show_in_home` 控制另一个首页快捷列表，与第一列无关。
+`/d/` 和 `/intent/` 不声明 `root_nav`。它们继续渲染目录／分类页，文章底部目录和阅读目的链接、集合成员、排序、`from` 及路径列均保留。隐藏来源没有对应的第一列选中项；直接访问正文时若实际根为隐藏的 `/d/`，同样不选中第一列。可见入口过滤仅发生在 `navigation/root.html`，`navigation/root-pages.html` 保留完整结构供归属与来源模型使用。
 
 ## 在哪里改表格
 

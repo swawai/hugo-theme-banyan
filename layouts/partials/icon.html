@@ -7,7 +7,7 @@
 {{- end -}}
 {{- else -}}
 {{- $name := $value -}}
-{{- $iconData := index site.Data.icons $name -}}
+{{- $iconData := index hugo.Data.icons $name -}}
 {{- if not $iconData -}}
   {{- errorf "Build failed: undefined icon %q." $name -}}
 {{- end -}}

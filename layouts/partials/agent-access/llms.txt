@@ -1,14 +1,14 @@
 {{- $page := .page -}}
 {{- $languageOnly := .languageOnly | default false -}}
 {{- $currentSite := $page.Site -}}
-{{- $primarySite := index (sort $page.Sites "Language.Weight") 0 -}}
+{{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
 {{- $isPrimaryLanguage := eq $currentSite.Language.Lang $primarySite.Language.Lang -}}
-{{- $isMultilingual := gt (len $page.Sites) 1 -}}
+{{- $isMultilingual := gt (len hugo.Sites) 1 -}}
 {{- $isRootLanguageHome := eq $currentSite.Home.Permalink $primarySite.BaseURL -}}
 {{- $isGlobal := and (not $languageOnly) $isMultilingual $isPrimaryLanguage $isRootLanguageHome -}}
 {{- $scopeSites := slice -}}
 {{- if $isGlobal -}}
-  {{- range sort $page.Sites "Language.Weight" -}}
+  {{- range sort hugo.Sites "Language.Weight" -}}
     {{- $scopeSites = $scopeSites | append . -}}
   {{- end -}}
 {{- else -}}
@@ -53,7 +53,7 @@ Sitemap: {{ absURL "sitemap.xml" }}
 
 {{ if $isGlobal }}
 ## Languages
-{{ range $site := sort $page.Sites "Language.Weight" }}
+{{ range $site := sort hugo.Sites "Language.Weight" }}
 {{- $llmsURL := "" -}}
 {{- if and (eq $site.Language.Lang $primarySite.Language.Lang) (eq $site.Home.Permalink $primarySite.BaseURL) -}}
   {{- $llmsURL = absURL (printf "%s/llms.txt" $site.Language.Lang) -}}
@@ -87,7 +87,7 @@ Sitemap: {{ absURL "sitemap.xml" }}
 
 {{- $contentPages := slice -}}
 {{- $seenContentPages := dict -}}
-{{- range $seedSite := sort $page.Sites "Language.Weight" -}}
+{{- range $seedSite := sort hugo.Sites "Language.Weight" -}}
 {{- range where $seedSite.Pages "Kind" "page" -}}
   {{- $entryPage := . -}}
   {{- range .AllTranslations -}}

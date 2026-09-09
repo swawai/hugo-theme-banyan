@@ -15,7 +15,6 @@
 }
 
 .grid-products > .cell-price {
-    /* grid-column: 1; */
     justify-self: start;
     text-align: left;
 }
@@ -23,11 +22,3 @@
 .grid-products > .cell-price.header {
     justify-self: stretch;
 }
-/* 
-.grid-products > .cell-title {
-    grid-column: 2;
-}
-
-.grid-products > .cell-value {
-    grid-column: 3;
-} */

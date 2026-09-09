@@ -3,7 +3,6 @@ date: "2026-03-17T00:00:00+08:00"
 draft: false
 title: "離線瀏覽"
 slug: "offline"
-type: "page"
 layout: "offline-page"
 robots: "noindex, follow"
 build:

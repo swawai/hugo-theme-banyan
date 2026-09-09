@@ -75,28 +75,7 @@ function countTrailItems(source) {
     return countVisibleItems(tailItems);
 }
 
-function findEntrySource(sources, logicalPath) {
-    var normalizedPath = normalizePath(logicalPath);
-    if (!normalizedPath) {
-        return null;
-    }
-
-    for (var index = 0; index < sources.length; index += 1) {
-        var source = sources[index];
-        if (!source || typeof source !== "object") {
-            continue;
-        }
-
-        var sourcePath = normalizePath(source.logical_path || source.logicalPath || "");
-        if (sourcePath === normalizedPath) {
-            return source;
-        }
-    }
-
-    return null;
-}
-
-function findCollectionSource(sources, logicalPath) {
+function findSource(sources, logicalPath) {
     var normalizedPath = normalizePath(logicalPath);
     if (!normalizedPath) {
         return null;
@@ -146,7 +125,7 @@ try {
     var placeholderCount = 0;
 
     if (previewPending) {
-        var entrySource = findEntrySource(entryBreadcrumbSources, readFirst(params, entryLineageKeys) || "");
+        var entrySource = findSource(entryBreadcrumbSources, readFirst(params, entryLineageKeys) || "");
         if (entrySource) {
             placeholderCount = countTrailItems(entrySource);
 
@@ -158,7 +137,7 @@ try {
         }
     } else if (sortPending) {
         var pageCollectionSource = parseJson(body.dataset.pageCollectionSource || "{}", {});
-        var collectionSource = findCollectionSource(entryBreadcrumbSources, pageCollectionSource.logical_path || pageCollectionSource.logicalPath || "");
+        var collectionSource = findSource(entryBreadcrumbSources, pageCollectionSource.logical_path || pageCollectionSource.logicalPath || "");
         if (collectionSource) {
             var collectionLevels = Array.isArray(collectionSource.levels) ? collectionSource.levels : [];
             placeholderCount = countVisibleItems(collectionLevels.map(function (level) {

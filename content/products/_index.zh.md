@@ -12,7 +12,7 @@ outputs:
 slots:
   breadcrumb: true
 cascade:
-  - _target:
+  - target:
       kind: term
     layout: article-list
     list: products
@@ -20,8 +20,6 @@ cascade:
       breadcrumb: true
 banyan_taxonomy:
   mode: flat
-  show_in_home: false
-  home_weight: 50
   article_weight: 40
   normalize: identity
   article_mode: all

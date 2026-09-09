@@ -20,12 +20,12 @@
     <ul>
         <li><a href="{{ .Site.Home.RelPermalink }}">{{ i18n "goHome" | default "Go to this language's homepage" }}</a></li>
         {{- $siteLangs := slice -}}
-        {{- range .Site.Languages -}}
-            {{- $siteLangs = $siteLangs | append .Lang -}}
+        {{- range hugo.Sites -}}
+            {{- $siteLangs = $siteLangs | append .Language.Lang -}}
         {{- end -}}
-        {{- $defaultLang := (index (sort site.Sites "Language.Weight") 0).Language.Lang -}}
+        {{- $defaultLang := (index (sort hugo.Sites "Language.Weight") 0).Language.Lang -}}
         {{- $langHomes := dict -}}
-        {{- range sort site.Sites "Language.Weight" -}}
+        {{- range sort hugo.Sites "Language.Weight" -}}
             {{- $langHomes = merge $langHomes (dict .Language.Lang .Home.RelPermalink) -}}
         {{- end -}}
         <li id="try-others"

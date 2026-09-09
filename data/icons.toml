@@ -57,6 +57,11 @@ body = '<path d="M18 3C8.6 3 1 8.8 1 16c0 4 2.3 7.5 5.9 9.9L6 30l5.4-2.6c2 .7 4.
 
 [language]
 viewBox = "0 0 24 24"
+fill = "none"
+stroke = "currentColor"
+stroke_linecap = "round"
+stroke_linejoin = "round"
+stroke_width = "1.5"
 body = '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2c5 6 5 14 0 20m0-20c-5 6-5 14 0 20"/>'
 
 [info]
@@ -102,4 +107,9 @@ body = '<path d="M4 6H20M4 12H20M4 18H20"/>'
 
 [my]
 viewBox = "0 0 24 24"
+fill = "none"
+stroke = "currentColor"
+stroke_linecap = "round"
+stroke_linejoin = "round"
+stroke_width = "1.5"
 body = '<circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/>'

@@ -12,7 +12,7 @@
   {{- $primaryByHref := dict -}}
   {{- $aliasByHref := dict -}}
 
-  {{- range sort $ctx.Sites "Language.Weight" -}}
+  {{- range sort hugo.Sites "Language.Weight" -}}
     {{- $site := . -}}
     {{- range $site.Pages -}}
       {{- $page := . -}}
