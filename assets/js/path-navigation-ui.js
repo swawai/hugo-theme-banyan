@@ -48,7 +48,7 @@ function buildCollectionItemContent(item) {
     } else {
         const iconName = value;
         const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.classList.add('icon', `icon-${iconName}`, 'collection-item-icon-svg');
+        svg.classList.add('icon', `icon-${iconName}`);
         svg.setAttribute('width', '1em');
         svg.setAttribute('height', '1em');
         svg.setAttribute('aria-hidden', 'true');
@@ -90,7 +90,9 @@ function buildCollectionColumnHeader(source, { lineageLogicalPath = '' } = {}) {
     }
 
     const header = document.createElement('span');
-    header.className = 'cell-title header collection-column-header collection-list-header';
+    header.className = 'collection-cell collection-cell--name collection-cell--header collection-header--path collection-header';
+    header.dataset.collectionCell = 'name';
+    header.dataset.collectionHeader = '';
     const label = document.createElement('a');
     label.className = 'collection-column-label';
     label.href = collectionSource.href;
@@ -134,6 +136,7 @@ function buildCollectionColumnHeader(source, { lineageLogicalPath = '' } = {}) {
     sortLabel.textContent = copy.fields[state.field] || state.field;
     const indicator = document.createElement('span');
     indicator.className = 'collection-sort-indicator';
+    indicator.dataset.sortIndicator = '';
     indicator.setAttribute('aria-hidden', 'true');
     indicator.textContent = state.order === 'asc' ? '↑' : '↓';
     toggle.append(sortLabel, indicator);
@@ -143,12 +146,14 @@ function buildCollectionColumnHeader(source, { lineageLogicalPath = '' } = {}) {
 
 function buildCollectionCell(item, current) {
     const cell = document.createElement('span');
-    cell.className = 'cell-title';
+    cell.className = 'collection-cell collection-cell--name';
+    cell.dataset.collectionCell = 'name';
     const option = document.createElement('a');
     option.href = item.href;
     option.className = current
-        ? 'path-column-link collection-item-link is-current'
-        : 'path-column-link collection-item-link';
+        ? 'collection-item-link is-current'
+        : 'collection-item-link';
+    option.dataset.collectionEntry = '';
     applyBreadcrumbPrefetchSlot(option);
     if (current) {
         option.setAttribute('aria-current', 'page');
@@ -161,10 +166,10 @@ function buildCollectionCell(item, current) {
 
 function buildCollectionColumnGrid(items, collectionSource, options = {}) {
     const grid = document.createElement('div');
-    grid.className = 'grid-list collection-list collection-list--column';
+    grid.className = 'collection-list collection-list--path-column';
     const header = buildCollectionColumnHeader(collectionSource, options);
     if (header) {
-        grid.classList.add('grid-list--headed');
+        grid.classList.add('collection-list--headed');
         grid.appendChild(header);
     }
     items.forEach((item) => {

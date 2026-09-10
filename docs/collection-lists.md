@@ -62,13 +62,15 @@ slots:
 
 | 样式文件 | 职责 |
 | --- | --- |
-| `assets/css/grid-base.css` | `.grid-list` 默认单列；共用网格间距、单元格及列头横线，供名称列表、第一列、路径列和选择列表使用 |
-| `assets/css/grid-directory.css` | 目录列表的名称、更新时间、计数三列宽度 |
-| `assets/css/grid-all.css` | 全部文章的四列布局与路径单元格 |
-| `assets/css/grid-products.css` | 产品的三列布局与价格／说明单元格 |
-| `assets/css/collection-list.css` | 共用条目行、图标占位、悬停及选中状态 |
+| `assets/css/collection-item.css` | 共用条目行、图标占位、链接／按钮 reset、悬停及选中状态 |
+| `assets/css/collection-grid.css` | `.collection-list` 默认单列、列头、网格间距和路径列行结构，供 name、choice、第一列、路径列及多列表格共同使用 |
+| `assets/css/collection-table.css` | 多列表格的滚动、字段呈现，以及 `.collection-list--directory`、`--all`、`--products` 三种列定义 |
 
-`system-ui/page-styles.html` 分别读取列表视图与 `slots.breadcrumb`：视图决定是否叠加 directory、products、all 的列定义，slot 决定是否加入路径导航样式。`name`、`choice` 与普通页面共用基础包，选择页不会因为使用单列而加载路径样式。公共单列无需 `grid-name.css`，旧 `grid-list.css` 和 `grid-list--single` 已移除；带列头的网格显式使用 `grid-list--headed`，多列表格使用 `grid-list--table`。
+`list` 由集合模型解析，决定渲染器输出的列表变体；`slots.breadcrumb` 决定路径区域是否存在。`system-ui/page-styles.html` 统一发布稳定的 `page.css`，其中包含三个集合样式文件以及路径、元信息和两个小型入口功能的样式。CSS 由对应类名匹配生效，不再按 view／slot 组合生成近乎相同的文件。SSR 与动态路径列统一使用 `.collection-*` 类名，旧 `grid-*`／`cell-*` 选择器已删除。根入口、路径列、主列表和 choice 的条目状态统一由 `collection-item.css` 所有。
+
+公共单列无需单独的名称列表 CSS；带列头的网格使用 `.collection-list--headed`，多列表格使用 `.collection-list--table`，路径列使用 `.collection-list--path-column`。`.collection-panel` 仅限制容器宽度，不被视为列表。集合页只有确实渲染 `.prose` 时才取得单一 `prose.css`；纯列表不会加载正文包。
+
+行为连接独立于样式：每个单元格有 `data-collection-cell="name|date|count|size|path|price|value"`，列头另有 `data-collection-header`；可进入的条目或选择按钮有 `data-collection-entry`，排序箭头有 `data-sort-indicator`。排序按这些标记和既有 `data-sort-*` 数据处理，不再解析类名前缀。样式分工与验证记录见 [CSS 结构审查](css-structure-review.md)。
 
 ## 站点信息与 RSS
 

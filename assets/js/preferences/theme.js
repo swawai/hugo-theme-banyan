@@ -11,14 +11,12 @@ export function initThemePreference() {
     };
     let mode = readMode();
     const apply = () => {
-        document.documentElement.dataset.themePreference = mode;
         document.documentElement.dataset.theme = mode === 'auto' ? (media.matches ? 'dark' : 'light') : mode;
         document.querySelectorAll('[data-theme-choice]').forEach((option) => {
             const selected = option.dataset.themeChoice === mode;
             option.classList.toggle('is-current', selected);
             option.setAttribute('aria-pressed', String(selected));
         });
-        document.dispatchEvent(new CustomEvent('banyan:theme-preference', { detail: mode }));
     };
     document.addEventListener('click', (event) => {
         const option = event.target instanceof Element ? event.target.closest('[data-theme-choice]') : null;

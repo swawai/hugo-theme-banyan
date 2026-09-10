@@ -1,9 +1,6 @@
-{{ define "styles" }}
-{{ $config := partial "feature-browse/collection/config.html" (dict "page" .) }}
-{{ partial "system-ui/page-styles.html" (dict "ctx" . "view" $config.view) }}
-{{ end }}
 {{ define "head-extra" }}
-{{ partial "feature-document/styles.html" (dict "ctx" .) }}
+{{ $content := trim (printf "%s" .Content) " \r\n\t" }}
+{{ with $content }}{{ partial "feature-document/styles.html" $ }}{{ end }}
 {{ end }}
 {{ define "main" }}
 {{ partial "feature-browse/collection/render-page.html" . }}

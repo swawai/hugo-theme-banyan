@@ -1,8 +1,3 @@
-.prose :is(ul, ol) {
-    color: inherit;
-    font-size: inherit;
-}
-
 .prose ul {
     padding-left: 1.4em;
     list-style-type: disc;
@@ -11,12 +6,6 @@
 .prose ol {
     padding-left: 1.6em;
     list-style-type: decimal;
-}
-
-.prose li {
-    display: list-item;
-    color: inherit;
-    word-break: break-all;
 }
 
 .prose ul ul {

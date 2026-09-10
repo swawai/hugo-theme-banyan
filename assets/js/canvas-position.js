@@ -14,7 +14,7 @@ export function initCanvasPosition() {
     window.addEventListener('click', event => {
         if (event.defaultPrevented || event.button !== 0
             || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-        const link = event.target.closest?.('.collection-item-link[href], .slot-breadcrumb a[href]');
+        const link = event.target.closest?.('[data-collection-entry][href], [data-slot="breadcrumb"] a[href]');
         if (!link || link.hasAttribute('download') || (link.target && link.target !== '_self')) return;
         if (link.origin !== location.origin || link.hash || link.href === location.href) return;
         try {

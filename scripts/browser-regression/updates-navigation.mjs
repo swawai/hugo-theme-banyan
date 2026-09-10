@@ -28,8 +28,10 @@ export const updatesNavigationScenarios = [
             server.setRoot(upgradePair.toDir);
             await forceServiceWorkerUpdate(page);
             await waitForUpdateReady(page);
-            await pollUntil(() => dialogs.length === 1, { label: 'ordinary page update confirmation' });
-            assert.equal(dialogs[0].type, 'confirm');
+            await forceServiceWorkerUpdate(page);
+            assert.equal(dialogs.length, 0, 'Discovering an update, including repeated checks, must not prompt.');
+            assert.equal(page.url(), baseUrl + href, 'An available update does not navigate or reload the reading page.');
+            assert.equal(await page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration('/'))?.waiting), true);
             await page.screenshot({ path: path.join(artifactDir, 'site-entry-ready.png') });
 
             await page.locator(updatesEntry).click();
@@ -41,7 +43,6 @@ export const updatesNavigationScenarios = [
             assert.equal(new URL(page.url()).searchParams.has('return'), false);
             assert.equal(await page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration('/'))?.waiting), true,
                 'Root navigation must leave the worker waiting for the PWA page action.');
-            const dialogsBeforeApply = dialogs.length;
             assert.equal(await page.locator(`${updatesEntry}.is-current`).count(), 1);
             assert.equal(await page.locator('.slot-breadcrumb .collection-item-link').count(), 2);
 
@@ -49,10 +50,11 @@ export const updatesNavigationScenarios = [
             await page.locator('[data-site-update-action="check"]').click();
             await reload;
             await waitForServiceWorkerActive(page);
-            await page.waitForFunction(async () => !(await navigator.serviceWorker.getRegistration('/'))?.waiting
-                && document.documentElement.dataset.siteUpdate !== 'ready');
-            assert.equal(dialogs.length, dialogsBeforeApply, 'The PWA page applies updates in place without another confirmation.');
-            return { message: 'Ordinary pages retain update confirmation; the updates entry opens its controls, whose action applies and reloads.' };
+            await pollUntil(() => page.evaluate(async () => !(await navigator.serviceWorker.getRegistration('/'))?.waiting
+                && document.querySelector('[data-site-update-panel]')?.dataset.siteUpdateState !== 'ready'),
+                { label: 'Updated page has no waiting worker' });
+            assert.equal(dialogs.length, 0, 'The PWA page applies updates in place without a confirmation.');
+            return { message: 'Ordinary pages remain quiet; the updates entry opens its controls, whose action applies and reloads.' };
         }
     })),
     ...['zh-hk', 'zh-mo'].map(lang => ({
@@ -81,9 +83,9 @@ export const updatesNavigationScenarios = [
         }
     })),
     {
-        id: 'sw-update-without-visible-control-fallback',
+        id: 'sw-update-hidden-control-stays-quiet',
         kind: 'upgrade',
-        title: 'Hidden PWA Control Falls Back to One Confirmation',
+        title: 'Hidden PWA Control Keeps the Update Waiting Without a Dialog',
         dialogPolicy: 'dismiss',
         async run({ page, baseUrl, server, upgradePair, dialogs }) {
             requireUpgradePair(upgradePair);
@@ -95,13 +97,12 @@ export const updatesNavigationScenarios = [
             server.setRoot(upgradePair.toDir);
             await forceServiceWorkerUpdate(page);
             await waitForUpdateReady(page);
-            await pollUntil(() => dialogs.length === 1, { label: 'single fallback confirmation' });
-            assert.equal(dialogs[0].type, 'confirm');
+            await page.waitForSelector('[data-site-update-panel][data-site-update-state="ready"]');
             await forceServiceWorkerUpdate(page);
-            assert.equal(dialogs.length, 1, 'Repeated discovery of the same waiting worker must not repeat the fallback.');
+            assert.equal(dialogs.length, 0, 'A hidden control must not enable a fallback confirmation.');
             assert.equal(await page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration('/'))?.waiting), true,
-                'Dismissing the fallback leaves the waiting worker unapplied.');
-            return { message: 'A hidden PWA action allows one confirmation; dismissing it keeps the waiting update available.' };
+                'The update waits for an explicit page action.');
+            return { message: 'A hidden PWA action leaves the update available without prompting or applying it.' };
         }
     }
 ];

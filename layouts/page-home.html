@@ -1,7 +1,3 @@
-{{ define "styles" }}
-{{ partial "system-ui/page-styles.html" (dict "ctx" .) }}
-{{ end }}
-
 {{ define "head-extra" }}
 {{- $homeBrandModel := partial "entry-page-home/model.html" . -}}
 {{- .Scratch.Set "homeBrandModel" $homeBrandModel -}}

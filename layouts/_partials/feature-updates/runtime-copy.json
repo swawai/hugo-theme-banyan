@@ -1,6 +1,5 @@
 {{- $labels := partial "feature-updates/labels.html" (dict "ctx" .) -}}
 {{- dict
-  "site_update_prompt" (printf "%v" (index $labels "prompt"))
   "site_version_check" (printf "%v" (index $labels "check"))
   "site_version_checking" (printf "%v" (index $labels "checking"))
   "site_version_check_failed" (printf "%v" (index $labels "check_failed"))

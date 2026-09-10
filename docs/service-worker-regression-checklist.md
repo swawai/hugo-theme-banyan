@@ -8,8 +8,8 @@
 
 - 新 worker 能否被发现
 - waiting -> activate -> reload 这条链是否稳定
-- 更新提示是否能在检查更新页面中显示，普通页面是否正确使用确认提示
-- 没有可用更新控件时，是否正确退化到 `confirm`
+- 更新状态是否能在检查更新页面中显示，普通页面是否保持安静
+- 隐藏更新控件时，是否仍然保留 waiting 且不弹确认
 - 失败恢复是否会误伤正常用户
 
 一个重要心智：
@@ -31,6 +31,7 @@
 - `themes/banyan/assets/js/sw-manager.enable.runtime.js`
 - `themes/banyan/assets/js/sw-manager.enable.update.js`
 - `themes/banyan/assets/js/updates/ui.js`
+- `themes/banyan/assets/js/updates/page.js`
 - `themes/banyan/assets/js/sw-manager.disable.js`
 - `themes/banyan/assets/js/runtime-manifest.js`
 - `themes/banyan/layouts/baseof.html`
@@ -48,19 +49,22 @@
 ### 更新提示界面
 
 - 检查更新子页面 `/updates/check/` 使用 `data-site-update-panel` 显示版本、检查按钮和状态；共用更新引擎
+- 只有检查页加载 `updates/page.js` 和 UI 文案逻辑。全站引擎通过 `BanyanServiceWorkerManagerRuntime.updates.subscribe()` 提供状态，页面用 `check()` 请求检查／应用；引擎不再导入 UI
+- 普通页面没有 `html[data-site-update]` 镜像状态；测试通过 `registration.waiting` 判断待更新，检查页通过 `data-site-update-state` 验证显示
 - 更新目录 `/updates/` 使用名称列表显示两个真实子项，第一列没有 `data-site-update-link` 或专用更新标记
 - 第一列通过普通更新入口进入名称列表，再进入检查更新页；点击入口不会检查或应用更新
 - 旧 Ver 下拉菜单及脚本已移除
 - 当前逻辑应当：
-  - 当前页存在可见更新按钮时，在页面内显示状态；没有可见按钮时沿用原生确认提示
-  - 拒绝确认后仍能通过更新入口及其子项进入检查更新页，worker 仍处于 waiting
+  - 普通页面静默发现更新，不弹确认、不因发现更新主动重载
+  - 用户通过更新入口及其子项进入检查更新页，worker 仍处于 waiting
   - 检查页按钮检查更新，ready 时显示“立即更新”并负责应用更新；目录和路径列不承担更新动作
+  - 已有 waiting worker 时用户主动刷新页面，继续沿用现有应用更新逻辑
 
 ### 语言文案
 
-- 更新确认文案来自 runtime i18n JSON；版本界面文案的事实源为 `content/updates/check/index*.md` 的 `site_update.labels`，由同一 partial 提供给静态界面和 runtime JSON
+- 版本界面文案的事实源为 `content/updates/check/index*.md` 的 `site_update.labels`，由同一 partial 提供给静态界面和 runtime JSON；不再定义弹窗文案
 - 语言 fallback 依赖 `runtime/asset-manifest.json` 内的 `i18nFallbacks`
-- `sw-manager` 使用 `runtime-manifest.js`；语言偏好独立使用页面内静态译文关系，不再依赖版本菜单或 runtime JSON
+- 只有更新页 UI 使用 `runtime-manifest.js` 获取版本与文案；语言选项和返回独立使用页面内静态译文关系，不依赖 runtime JSON
 
 ### 激活失败恢复
 
@@ -184,7 +188,7 @@ bun run build:browser:temp -- sw-upgrade-after
 
 预期：
 
-- 普通页面没有可见检查按钮时，沿用本地化的原生更新确认；拒绝后仍可正常浏览
+- 普通页面没有弹窗或自动重载，更新等待用户在检查页应用
 - 第一列是普通更新入口，无特殊更新标记；名称列表仅含两个真实子项
 - 进入检查页后保留更新列表列及其选中项，worker 仍然 waiting，直到点击「立即更新」
 - 可见检查按钮所在页面直接呈现状态，应用后重载并保留当前页和路径列
@@ -194,9 +198,9 @@ bun run build:browser:temp -- sw-upgrade-after
 - 点击普通入口或子项就应用更新
 - 检查页丢失更新路径列或正确选中项
 - breadcrumb 当前项带有更新动作
-- 检查按钮可见时仍重复弹 `confirm`
+- 任意页面出现自动更新确认框
 
-### 5. 无可用更新入口时的兜底 fallback
+### 5. 隐藏更新控件时仍保持安静
 
 建议页面：
 
@@ -206,24 +210,23 @@ bun run build:browser:temp -- sw-upgrade-after
 操作：
 
 1. 让页面进入 update ready 状态
-2. 观察是否退化到 `window.confirm`
+2. 再次检查更新，观察页面和 waiting worker
 
 预期：
 
-- 真正没有可用入口时，fallback confirm 会出现
-- 点击确认后，会继续走 waiting worker 应用链
+- 控件隐藏不会触发弹窗或自动应用
+- waiting worker 保持可用；重新显示控件后可手动应用
 
 失败信号：
 
-- 无可用入口也无任何提示
-- fallback 连续反复弹出
-- fallback 出现后不能真正进入激活链
+- 出现 `window.confirm`
+- 因控件隐藏而自动应用或丢失 waiting worker
 
 ### 6. 激活成功链
 
 操作：
 
-1. 在 ready 状态下确认更新
+1. 在检查页 ready 状态下点击“立即更新”
 2. 观察 worker 状态与页面刷新
 
 预期：
@@ -248,7 +251,7 @@ bun run build:browser:temp -- sw-upgrade-after
 操作思路：
 
 1. 制造一个“waiting worker 切换非常慢或卡住”的场景
-2. 触发更新确认
+2. 在检查页点击“立即更新”
 3. 观察 4 秒 fallback
 
 预期：
@@ -281,18 +284,17 @@ bun run build:browser:temp -- sw-upgrade-after
 操作：
 
 1. 分别让页面进入 update ready
-2. 查看 PWA 状态页或普通页面的 confirm
+2. 查看检查更新页面中的状态和按钮文案
 
 预期：
 
-- fallback confirm 文案来自对应语言的 runtime i18n
-- 原生 confirm 的提示来自 `site_update_prompt`；按钮文字由浏览器提供
-- 版本界面的字段来自 PWA 子页 `site_update.labels`
+- 状态和按钮文案来自对应语言的 runtime i18n
+- 版本界面的字段来自检查页 `site_update.labels`
 
 失败信号：
 
 - 某语言退回英文但其实有本地化资源
-- fallback confirm 提示未本地化，或版本界面没有读到 PWA 子页文案
+- 版本界面没有读到检查页文案
 
 ### 9. fallback 语言链
 
@@ -304,7 +306,7 @@ bun run build:browser:temp -- sw-upgrade-after
 操作：
 
 1. 让页面语言环境命中 `zh-hk` 或 `zh-mo`
-2. 触发更新提示
+2. 在检查页触发更新状态变化
 
 预期：
 
@@ -313,7 +315,7 @@ bun run build:browser:temp -- sw-upgrade-after
 失败信号：
 
 - 仍然退回英文
-- 第一列更新状态仍使用英文，未解析 runtime i18n 的回退关系
+- 检查页更新状态仍使用英文，未解析 runtime i18n 的回退关系
 
 ## 关闭模式 checks
 
@@ -344,7 +346,7 @@ bun run build:browser:temp -- sw-upgrade-after
 1. 首页首次访问
 2. 首页与集合页面出现 waiting 后，通过第一列「更新」进入更新目录，再打开检查页应用更新（`sw-update-entry-home`、`sw-update-entry-collection`）
 3. `zh-hk` 与 `zh-mo` 的入口状态文案 fallback（`sw-update-entry-zh-hk`、`sw-update-entry-zh-mo`）
-4. 隐藏更新入口后出现一次 confirm，取消后继续保留 waiting（`sw-update-without-visible-control-fallback`）
+4. 隐藏检查按钮后仍不弹窗，重复检查继续保留 waiting（`sw-update-hidden-control-stays-quiet`）
 5. 检查更新页离线重试、检查新版本、激活刷新及旧导航缓存清理（`sw-update-check`）
 6. 新版本 waiting 时，语言设置页仍然可以使用
 
@@ -358,8 +360,8 @@ bun run build:browser:temp -- sw-upgrade-after
 
 1. 新 worker 根本没进入 `waiting`
 2. `data-site-update="ready"` 没被设置
-3. 当前页更新按钮的可见性判断不正确，或原生确认提示未触发
-4. 检查更新页的 `data-site-update-state` 或状态文字未更新
+3. 是否已经进入检查更新页；普通页面不显示提示
+4. 检查页的 `data-site-update-state` 或状态文字未更新
 
 ### 文案语言不对
 
@@ -390,7 +392,7 @@ bun run build:browser:temp -- sw-upgrade-after
 
 ### 更新入口与操作分开
 
-第一列「更新」与其他目录入口相同，不承担更新标记。检查、应用更新由真实子页「检查更新」中的按钮执行；其他 breadcrumb 列和当前菜单选项不带更新动作。没有可见更新按钮的页面继续使用既有原生确认提示。
+第一列「更新」与其他目录入口相同，不承担更新标记。检查、应用更新由真实子页「检查更新」中的按钮执行；其他 breadcrumb 列和当前菜单选项不带更新动作。普通页面和隐藏控件的页面均不再弹确认框。
 
 ### 4 秒激活超时
 

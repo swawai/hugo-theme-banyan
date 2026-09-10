@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { chromium } from 'playwright';
-import { gotoAndWait, suppressLanguageSuggestDialogScript } from './helpers.mjs';
+import { gotoAndWait } from './helpers.mjs';
 
 const pendingKey = 'banyan:language-return';
+const labelKey = 'banyan:language-return-label';
 const choose = async (page, baseUrl, code) => {
     await page.locator(`[data-language-choice="${code}"]`).click();
     await page.waitForURL(baseUrl + (code === 'en' ? '' : `/${code}`) + '/language/');
@@ -21,12 +22,15 @@ export const languageReturnScenarios = [
             await page.locator('[data-root-href="/language/"]').click();
             const historyLength = await page.evaluate(() => history.length);
             for (const code of ['zh-tw', 'en', 'zh']) await choose(page, baseUrl, code);
+            assert.equal(await page.evaluate(key => sessionStorage.getItem(key), pendingKey), 'zh',
+                'Cached pages must still be able to read the language code directly.');
             await page.reload();
             await page.locator('[data-page-action="back"]').click();
             await page.waitForURL(baseUrl + '/zh' + suffix);
             await page.waitForSelector('[data-root-href="/zh/products/"].is-current');
             assert.equal(await page.evaluate(() => history.length), historyLength);
             assert.equal(await page.evaluate(key => sessionStorage.getItem(key), pendingKey), null);
+            assert.equal(await page.evaluate(key => sessionStorage.getItem(key), labelKey), null);
             await page.screenshot({ path: path.join(artifactDir, 'returned-chinese.png') });
             await page.goForward();
             await page.waitForURL(baseUrl + '/zh/language/');
@@ -103,6 +107,34 @@ export const languageReturnScenarios = [
         }
     },
     {
+        id: 'language-return-storage-contract',
+        kind: 'single',
+        serviceWorkers: 'block',
+        title: 'Older Language Writers Work Without Matching Display Metadata',
+        async run({ page, baseUrl }) {
+            for (const keepLabel of [false, true]) {
+                await gotoAndWait(page, baseUrl + '/prefetchdebug/');
+                await page.locator('[data-root-href="/language/"]').click();
+                await choose(page, baseUrl, 'zh');
+                await page.waitForLoadState('networkidle');
+                // An older language page only writes the code. It does not know the label key.
+                await page.evaluate(({ pendingKey, labelKey, keepLabel }) => {
+                    sessionStorage.setItem(pendingKey, 'zh-tw');
+                    if (!keepLabel) sessionStorage.removeItem(labelKey);
+                }, { pendingKey, labelKey, keepLabel });
+                await page.locator('[data-page-action="back"]').click();
+                await page.waitForSelector('[data-language-return-notice][role="status"]');
+                const notice = await page.locator('[data-language-return-notice]').textContent();
+                assert.match(notice, /zh-tw/, 'Missing translation identifies the code written by the older page.');
+                assert.doesNotMatch(notice, /中文/, 'A stale label for a different choice must not be displayed.');
+                for (const key of [pendingKey, labelKey]) {
+                    assert.equal(await page.evaluate(key => sessionStorage.getItem(key), key), null);
+                }
+            }
+            return { message: 'Code-only language records are consumed correctly with absent or stale display metadata.' };
+        }
+    },
+    {
         id: 'language-return-bfcache',
         kind: 'single',
         title: 'Selected Language Applies to Real BFCache Restorations',
@@ -110,7 +142,6 @@ export const languageReturnScenarios = [
             const browser = await chromium.launch({ channel: 'chromium', headless: true, ignoreDefaultArgs: ['--disable-back-forward-cache'] });
             try {
                 const context = await browser.newContext({ serviceWorkers: 'block' });
-                await context.addInitScript(suppressLanguageSuggestDialogScript());
                 await context.addInitScript(() => {
                     window.addEventListener('pageshow', event => {
                         const events = JSON.parse(sessionStorage.getItem('test:pageshows') || '[]');

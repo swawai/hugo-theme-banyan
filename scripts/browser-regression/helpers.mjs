@@ -4,16 +4,6 @@ export function fail(message, details = null) {
     throw error;
 }
 
-export function suppressLanguageSuggestDialogScript() {
-    return () => {
-        try {
-            // Keep browser-regression deterministic: language recommendation dialogs
-            // are covered by language preference scenarios, not by SW / breadcrumb scenarios.
-            window.localStorage.setItem('lang-suggest-handled-v1', '1');
-        } catch (error) { }
-    };
-}
-
 export async function pollUntil(check, options = {}) {
     const timeoutMs = options.timeoutMs || 10000;
     const intervalMs = options.intervalMs || 250;
@@ -175,15 +165,15 @@ export async function readSecurityPolicyViolations(page) {
 }
 
 export async function waitForServiceWorkerActive(page, timeoutMs = 10000) {
-    await page.waitForFunction(async () => {
+    await pollUntil(() => page.evaluate(async () => {
         if (!('serviceWorker' in navigator)) return false;
         try {
-            const registration = await navigator.serviceWorker.ready;
-            return !!registration?.active;
+            const registration = await navigator.serviceWorker.getRegistration('/');
+            return registration?.active?.state === 'activated' && Boolean(navigator.serviceWorker.controller);
         } catch (error) {
             return false;
         }
-    }, { timeout: timeoutMs });
+    }), { timeoutMs, label: 'Service worker activation and page control' });
 }
 
 export async function forceServiceWorkerUpdate(page) {
@@ -197,7 +187,7 @@ export async function forceServiceWorkerUpdate(page) {
 }
 
 export async function waitForUpdateReady(page, timeoutMs = 15000) {
-    await page.waitForFunction(() => document.documentElement.getAttribute('data-site-update') === 'ready', {
-        timeout: timeoutMs
-    });
+    // waitForFunction treats a Promise as truthy; poll the resolved browser result instead.
+    await pollUntil(() => page.evaluate(async () => (await navigator.serviceWorker.getRegistration('/'))?.waiting?.state === 'installed'),
+        { timeoutMs, label: 'Waiting service worker' });
 }

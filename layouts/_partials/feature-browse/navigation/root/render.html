@@ -4,8 +4,8 @@
 {{- $iconDefaults := partial "system-ui/list/icon-defaults.html" (dict "page" $ctx.Site.Home) -}}
 {{- $defaultHref := "" -}}
 {{- with $selected -}}{{- $defaultHref = .RelPermalink -}}{{- end -}}
-<nav class="root-navigation collection-list--index" data-root-navigation data-default-root-href="{{ $defaultHref }}" aria-label="{{ $ctx.Site.Title }}">
-  <div class="grid-list collection-list collection-list--grid">
+<nav class="collection-panel" data-root-navigation data-default-root-href="{{ $defaultHref }}" aria-label="{{ $ctx.Site.Title }}">
+  <div class="collection-list">
     {{- range where $roots "Params.root_nav" true -}}
       {{- $attrs := dict "root-href" .RelPermalink -}}
       {{- $icon := partial "system-ui/list/item-icon.html" (dict "page" . "defaults" $iconDefaults "kind" "folder") -}}

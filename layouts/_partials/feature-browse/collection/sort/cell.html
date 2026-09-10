@@ -14,7 +14,7 @@
 {{ if $isActive }}{{ $indicator = cond (eq $currentOrder "asc") "↑" "↓" }}{{ end }}
 {{ $actionLabel := cond (eq $nextOrder "asc") $titleAsc $titleDesc }}
 {{ $href := partial "feature-browse/collection/sort/url.html" (dict "ctx" $ctx "baseHref" .baseHref "sort" (printf "%s-%s" $field $nextOrder) "fragment" .fragment) }}
-<span class="{{ $class }} header collection-list-header">
+<span class="collection-cell {{ $class }} collection-cell--header collection-header" data-collection-cell="{{ $field }}" data-collection-header>
   <a
     href="{{ $href }}"
     title="{{ $actionLabel }}"
@@ -25,6 +25,6 @@
     data-sort-title-asc="{{ $titleAsc }}"
     data-sort-title-desc="{{ $titleDesc }}"
     data-sort-active="{{ cond $isActive "true" "false" }}">
-    <span class="sort-label">{{ $label }}</span>&nbsp;<span class="collection-sort-indicator" aria-hidden="true">{{ $indicator }}</span>
+    {{ $label }}&nbsp;<span class="collection-sort-indicator" data-sort-indicator aria-hidden="true">{{ $indicator }}</span>
   </a>
 </span>

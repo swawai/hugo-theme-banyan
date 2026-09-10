@@ -45,7 +45,7 @@ taxonomy 根不再要求或声明 `show_in_home`、`home_weight`。它们唯一�
 
 ### 3. 收拢仍在工作的实现
 
-`system-ui/page-styles.html` 当时先按页面类型拼接样式；后续已将列表 `view` 与路径 slot 分开。`grid-base` 仍是单列基底，directory、products、all 只追加各自列定义。
+`system-ui/page-styles.html` 当时先按页面类型拼接样式；后续已收敛为由 `baseof.html` 直接取得唯一公共 `page.css`，真正输出 `.prose` 的入口再取得唯一 `prose.css`。列表源码现由 `collection-item.css`、`collection-grid.css`、`collection-table.css` 分别负责条目状态、公共网格和多列字段；directory、products、all 的 DOM `.grid-*` 类继续作为渲染与浏览器重绘契约。
 
 页面 shell 只输出实际参与布局的 `page-shell--has-path-columns`；默认 rail 网格直接属于 `.page-shell`。语言和“我的”的 stroke、fill、线宽等属性移入 `data/icons.toml`，与外观图标使用同一事实源。
 

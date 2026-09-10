@@ -70,8 +70,8 @@ include_pages = []
 mode = "defer"
 
 [params.media.responsive_images]
-# Keep this fallback aligned with the article prose layout in
-# assets/css/article-base.css. The browser uses sizes with srcset and the
+# Keep this fallback aligned with the readable content width in
+# assets/css/prose-base.css. The browser uses sizes with srcset and the
 # device DPR to choose a generated WebP candidate.
 sizes = "auto, (max-width: 820px) calc(100vw - 32px), 800px"
 widths = [768, 1200, 1600]

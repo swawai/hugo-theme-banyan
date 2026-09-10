@@ -27,12 +27,12 @@
 {{- if $ctx.Date -}}{{- $hasDates = true -}}{{- end -}}
 {{- $externalLinks := partial "feature-document/external-links.html" (dict "ctx" $ctx) -}}
 {{- if or $hasPath $hasTaxonomy $hasDates $externalLinks -}}
-<div class="article-meta">
+<div class="document-meta">
   {{- if $hasPath -}}
-  <nav class="post-taxonomy post-taxonomy-path" aria-label="{{ i18n "article_meta_directory" }}">
-    <span class="label">{{ i18n "article_meta_directory" }}</span>
+  <nav class="document-meta__row document-meta__row--path" aria-label="{{ i18n "article_meta_directory" }}">
+    <span class="document-meta__label">{{ i18n "article_meta_directory" }}</span>
     {{- range $index, $item := $directoryItems -}}
-      {{- if gt $index 0 -}}<span class="sep" aria-hidden="true">/</span>{{- end -}}
+      {{- if gt $index 0 -}}<span class="document-meta__separator" aria-hidden="true">/</span>{{- end -}}
       {{- $itemText := index $item "text" -}}
       {{- if eq $index 0 -}}
         {{- $itemText = index $item "title" | default $itemText -}}

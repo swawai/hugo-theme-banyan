@@ -14,7 +14,7 @@ import {
 } from './paths.mjs';
 import { writeReportFiles } from './report.mjs';
 import { createStaticSiteServer } from './server.mjs';
-import { recordLayoutShiftObserverScript, recordSecurityPolicyViolationScript, suppressLanguageSuggestDialogScript } from './helpers.mjs';
+import { recordLayoutShiftObserverScript, recordSecurityPolicyViolationScript } from './helpers.mjs';
 import { scenarios } from './scenarios.mjs';
 
 function readScenarioFilter() {
@@ -110,6 +110,7 @@ async function runScenario(scenario, runtime) {
     const context = await runtime.browser.newContext({
         viewport: scenario.viewport || { width: 1440, height: 960 },
         serviceWorkers: scenario.serviceWorkers || 'allow',
+        locale: scenario.locale || 'en-US',
         isMobile: scenario.isMobile || false,
         hasTouch: scenario.hasTouch || false
     });
@@ -124,7 +125,6 @@ async function runScenario(scenario, runtime) {
     const page = await context.newPage();
     await page.addInitScript(recordLayoutShiftObserverScript());
     await page.addInitScript(recordSecurityPolicyViolationScript());
-    await page.addInitScript(suppressLanguageSuggestDialogScript());
 
     const dialogs = [];
     createDialogRecorder(page, scenario.dialogPolicy || 'dismiss', dialogs);

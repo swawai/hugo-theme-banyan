@@ -1,12 +1,12 @@
 {{ if .Date }}
-<div class="article-dates" aria-label="{{ i18n "article_meta_dates" }}">
-  <span class="label">{{ i18n "article_meta_dates" }}</span>
+<div class="document-meta__row" aria-label="{{ i18n "article_meta_dates" }}">
+  <span class="document-meta__label">{{ i18n "article_meta_dates" }}</span>
   <time datetime="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}">
     {{ i18n "label_published" | default "Published" }} {{ .Date.Format "2006-01-02" }}
   </time>
   {{ if and .Lastmod (ne (.Lastmod.Format "2006-01-02") (.Date.Format "2006-01-02")) }}
-    <span class="sep"> · </span>
-    <time class="article-updated" datetime="{{ .Lastmod.Format "2006-01-02T15:04:05Z07:00" }}">
+    <span class="document-meta__separator"> · </span>
+    <time datetime="{{ .Lastmod.Format "2006-01-02T15:04:05Z07:00" }}">
       {{ i18n "label_updated" | default "Updated" }} {{ .Lastmod.Format "2006-01-02" }}
     </time>
   {{ end }}

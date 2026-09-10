@@ -8,7 +8,7 @@ html[data-breadcrumb-sort-pending="true"] .path-columns {
 .page-shell--has-path-columns .page-stage {
     display: grid;
     grid-template-columns: max-content var(--main-column-inline);
-    column-gap: var(--path-columns-gap-inline);
+    column-gap: var(--page-shell-gap-inline);
     align-items: start;
 }
 
@@ -17,8 +17,8 @@ html[data-breadcrumb-sort-pending="true"] .path-columns {
     grid-row: 1 / span 2;
     display: grid;
     grid-auto-flow: column;
-    grid-auto-columns: var(--path-column-inline);
-    column-gap: var(--path-columns-gap-inline);
+    grid-auto-columns: var(--navigation-column-inline);
+    column-gap: var(--page-shell-gap-inline);
     align-items: start;
     position: sticky;
     top: var(--page-edge-block-start);
@@ -36,7 +36,7 @@ html[data-breadcrumb-sort-pending="true"] .path-columns {
     display: grid;
     align-content: start;
     min-inline-size: 0;
-    inline-size: var(--path-column-inline);
+    inline-size: var(--navigation-column-inline);
 }
 
 .page-shell--has-path-columns .slot-main {

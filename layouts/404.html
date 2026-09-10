@@ -1,18 +1,5 @@
-{{ define "styles" }}
-{{ partial "system-ui/page-styles.html" (dict "ctx" . "view" "page") }}
-{{ end }}
-
 {{ define "head-extra" }}
 <meta name="robots" content="noindex, follow">
-{{ partial "feature-document/styles.html" (dict "ctx" .) }}
-{{ $notFoundCssPath := "css/not-found.css" }}
-{{ $notFoundCss := resources.Get $notFoundCssPath }}
-{{ if not $notFoundCss }}
-{{ errorf "Build failed: missing resource %q." $notFoundCssPath }}
-{{ else }}
-{{ $notFoundCss = partial "system-assets/process-css.html" (dict "resource" $notFoundCss) }}
-<link rel="stylesheet" href="{{ $notFoundCss.RelPermalink }}">
-{{ end }}
 {{ end }}
 
 {{ define "main" }}

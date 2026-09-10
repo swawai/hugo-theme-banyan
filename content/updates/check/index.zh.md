@@ -26,7 +26,6 @@ site_update:
     status_offline: 离线
     status_click_update: 立即更新
     status_click_retry: 点击重试
-    prompt: 已有新版本可用，立即刷新？
 ---
 
 检查是否有新的站点版本。更新准备好后，点击“立即更新”应用新版本并重新载入当前页面。

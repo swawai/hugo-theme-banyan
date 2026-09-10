@@ -223,12 +223,36 @@ function extractStartTags(text, tagName) {
     return [...text.matchAll(new RegExp(`<${escapedTagName}\\b[^>]*>`, 'gi'))].map((match) => match[0]);
 }
 
-const breadcrumbPrefetchAnchorClasses = new Set(['path-column-link']);
+function extractStylesheetHrefs(text) {
+    const hrefs = [];
+    for (const tag of extractStartTags(text, 'link')) {
+        const rel = extractTagAttribute(tag, 'rel').toLowerCase().split(/\s+/).filter(Boolean);
+        if (!rel.includes('stylesheet')) {
+            continue;
+        }
+        const href = extractTagAttribute(tag, 'href').trim();
+        if (href) {
+            hrefs.push(href);
+        }
+    }
+    return hrefs;
+}
 
-function hasBreadcrumbPrefetchAnchorClass(className) {
-    return className
-        .split(/\s+/)
-        .some((classPart) => breadcrumbPrefetchAnchorClasses.has(classPart));
+function hasClassToken(text, token) {
+    const classPattern = /<[A-Za-z][^>]*\bclass\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi;
+    for (const match of text.matchAll(classPattern)) {
+        const className = match[1] ?? match[2] ?? match[3] ?? '';
+        if (className.split(/\s+/).includes(token)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function normalizeCssAssetFamilyKey(relativePath) {
+    return `${relativePath ?? ''}`
+        .replace(/\.([0-9a-f]{16,})(?=\.css$)/i, '')
+        .replace(/\.min(?=\.css$)/i, '');
 }
 
 function inspectBreadcrumbPrefetchContract(text) {
@@ -236,12 +260,17 @@ function inspectBreadcrumbPrefetchContract(text) {
     let breadcrumbAnchorCount = 0;
     let breadcrumbCrumbAnchorCount = 0;
 
-    for (const tag of extractStartTags(text, 'a')) {
-        const className = extractTagAttribute(tag, 'class');
-        if (!hasBreadcrumbPrefetchAnchorClass(className)) {
+    let depth = 0;
+    for (const [tag] of text.matchAll(/<\/?div\b[^>]*>|<a\b[^>]*>/gi)) {
+        if (/^<\/div/i.test(tag)) {
+            if (depth) depth -= 1;
             continue;
         }
-
+        if (/^<div/i.test(tag)) {
+            if (depth || extractTagAttribute(tag, 'data-slot') === 'breadcrumb') depth += 1;
+            continue;
+        }
+        if (!depth) continue;
         breadcrumbAnchorCount += 1;
         const slot = extractTagAttribute(tag, 'data-prefetch-slot');
         if (slot === 'crumb') {
@@ -250,7 +279,6 @@ function inspectBreadcrumbPrefetchContract(text) {
         }
 
         issues.push({
-            className,
             href: extractTagAttribute(tag, 'href'),
             slot: slot || '<missing>'
         });
@@ -649,6 +677,9 @@ async function inspectHtmlFile(rootDir, absolutePath) {
     ).length;
     const robotsDirective = extractMetaContent(text, 'robots').toLowerCase();
     const jsonLd = inspectJsonLd(text);
+    const stylesheetRefs = extractStylesheetHrefs(text)
+        .map((ref) => normalizeScriptReference(ref, relativePath))
+        .filter(Boolean);
 
     let breadcrumbPayloadBytes = 0;
     let breadcrumbSourceCount = 0;
@@ -699,6 +730,8 @@ async function inspectHtmlFile(rootDir, absolutePath) {
         canonicalHref: extractCanonicalHref(text),
         hasMainBundle: hasMainBundle(text),
         hasPrefetchRuntimeBundle: hasPrefetchRuntimeBundle(text),
+        hasHomeBrand: hasClassToken(text, 'home-brand'),
+        hasProse: hasClassToken(text, 'prose'),
         inlineStyleAttrCount,
         repeatedBreadcrumbCollectionSourceCount,
         breadcrumbPayloadBytes,
@@ -710,6 +743,8 @@ async function inspectHtmlFile(rootDir, absolutePath) {
         ...prefetchStats,
         ...jsonLd,
         externalScriptRefs: extractExternalScriptSrcs(text),
+        stylesheetRefs,
+        stylesheetFamilyKeys: stylesheetRefs.map(normalizeCssAssetFamilyKey),
     };
 }
 
@@ -856,6 +891,117 @@ function buildJsDependencyStats(pageRelativePath, externalScriptRefs, jsAssetsBy
     };
 }
 
+function inspectStylesheetContract(rows, cssAssetsByPath) {
+    const issues = [];
+    const pageStyleRefs = new Set();
+    const proseStyleRefs = new Set();
+    const referencedStylesheetRefs = new Set();
+
+    for (const row of rows) {
+        for (const missingRef of row.missingStylesheetRefs || []) {
+            issues.push(`Missing stylesheet asset ${missingRef} referenced by ${row.relativePath}`);
+        }
+        if (row.isRedirect) {
+            if (row.stylesheetRefs.length > 0) {
+                issues.push(`${row.relativePath}: redirect pages must not load stylesheets, got ${row.stylesheetRefs.join(', ')}.`);
+            }
+            continue;
+        }
+        for (const ref of row.stylesheetRefs) {
+            referencedStylesheetRefs.add(ref);
+        }
+
+        const entries = row.stylesheetRefs.map((ref, index) => ({
+            family: row.stylesheetFamilyKeys[index],
+            ref,
+        }));
+        const refsFor = (family) => entries.filter((entry) => entry.family === family);
+        const pageEntries = refsFor('/css/page.css');
+        const proseEntries = refsFor('/css/prose.css');
+        const deprecatedEntries = entries.filter(({ family }) => (
+            family.startsWith('/css/bundle-')
+            || family.startsWith('/css/article-addon.')
+            || family === '/css/article-core.css'
+            || family === '/css/article-rich.css'
+            || family === '/css/updates.css'
+            || family === '/css/updates-panel.css'
+            || family === '/css/not-found.css'
+        ));
+        const deprecatedRefs = new Set(deprecatedEntries.map(({ ref }) => ref));
+        const allowedFamilies = new Set(['/css/page.css']);
+        if (row.hasProse) {
+            allowedFamilies.add('/css/prose.css');
+        }
+        if (row.hasHomeBrand) {
+            allowedFamilies.add('/css/home-brand.css');
+        }
+        const unexpectedEntries = entries.filter(({ family, ref }) => (
+            !deprecatedRefs.has(ref)
+            && !allowedFamilies.has(family)
+            && !(row.hasHomeBrand && family.startsWith('/css/home-brand-scene.'))
+        ));
+
+        if (pageEntries.length !== 1 || entries[0]?.family !== '/css/page.css') {
+            issues.push(`${row.relativePath}: expected one leading page.css stylesheet, got ${row.stylesheetRefs.join(', ') || '<none>'}.`);
+        } else {
+            pageStyleRefs.add(pageEntries[0].ref);
+        }
+        if (deprecatedEntries.length > 0) {
+            issues.push(`${row.relativePath}: deprecated stylesheet variants remain: ${deprecatedEntries.map((entry) => entry.ref).join(', ')}.`);
+        }
+        if (unexpectedEntries.length > 0) {
+            issues.push(`${row.relativePath}: unexpected stylesheet families: ${unexpectedEntries.map((entry) => entry.ref).join(', ')}.`);
+        }
+
+        const expectedProseCount = row.hasProse ? 1 : 0;
+        if (proseEntries.length !== expectedProseCount) {
+            issues.push(`${row.relativePath}: prose=${row.hasProse} requires ${expectedProseCount} prose.css reference, got ${proseEntries.length}.`);
+        }
+        for (const entry of proseEntries) {
+            proseStyleRefs.add(entry.ref);
+        }
+
+        if (row.hasHomeBrand) {
+            const homeBrandCount = refsFor('/css/home-brand.css').length;
+            const sceneCount = entries.filter(({ family }) => family.startsWith('/css/home-brand-scene.')).length;
+            if (entries.length !== 3 || homeBrandCount !== 1 || sceneCount !== 1) {
+                issues.push(`${row.relativePath}: homepage must keep page.css plus one home-brand.css and one scene stylesheet; got ${row.stylesheetRefs.join(', ') || '<none>'}.`);
+            }
+        }
+    }
+
+    const orphanStylesheetAssets = [...cssAssetsByPath]
+        .filter((ref) => !referencedStylesheetRefs.has(ref))
+        .sort();
+    if (orphanStylesheetAssets.length > 0) {
+        issues.push(`CSS assets must be referenced by rendered HTML; found orphan assets: ${orphanStylesheetAssets.join(', ')}.`);
+    }
+
+    if (pageStyleRefs.size !== 1) {
+        issues.push(`All rendered pages must share one page.css URL; found ${[...pageStyleRefs].join(', ') || '<none>'}.`);
+    }
+    if (proseStyleRefs.size !== 1) {
+        issues.push(`All prose pages must share one prose.css URL; found ${[...proseStyleRefs].join(', ') || '<none>'}.`);
+    }
+
+    const prefetchDebugRows = rows.filter((row) => /(^|\/)prefetchdebug\/index\.html$/i.test(row.relativePath));
+    if (prefetchDebugRows.length === 0) {
+        issues.push('Missing prefetchdebug/index.html stylesheet sentinel.');
+    }
+    for (const row of prefetchDebugRows) {
+        if (!row.hasProse || !row.stylesheetFamilyKeys.includes('/css/prose.css')) {
+            issues.push(`${row.relativePath}: template-rendered <pre> blocks must load prose.css.`);
+        }
+    }
+
+    return {
+        issues,
+        pageStyleRefs: [...pageStyleRefs],
+        proseStyleRefs: [...proseStyleRefs],
+        orphanStylesheetAssets,
+    };
+}
+
 function buildIntegrityIssues(rows) {
     const issues = [];
 
@@ -879,7 +1025,7 @@ function buildIntegrityIssues(rows) {
         }
         for (const issue of row.breadcrumbPrefetchIssues || []) {
             issues.push(
-                `Breadcrumb anchor must use data-prefetch-slot="crumb": ${row.relativePath} href=${issue.href || '<empty>'} slot=${issue.slot} class=${issue.className || '<none>'}`
+                `Breadcrumb anchor must use data-prefetch-slot="crumb": ${row.relativePath} href=${issue.href || '<empty>'} slot=${issue.slot}`
             );
         }
         if (row.prefetchParseError) {
@@ -988,6 +1134,7 @@ async function main() {
         throw new Error(`No HTML files found under: ${publicRoot}`);
     }
     const jsPaths = await collectFilesByExtension(publicRoot, '.js');
+    const cssPaths = await collectFilesByExtension(publicRoot, '.css');
     const sitemapContract = await inspectSitemaps(publicRoot);
 
     const rows = [];
@@ -1000,6 +1147,9 @@ async function main() {
     }
 
     const jsAssetsByPath = new Map(jsAssets.map((asset) => [asset.relativePath, asset]));
+    const cssAssetsByPath = new Set(cssPaths.map((absolutePath) => normalizeAssetPath(
+        path.relative(publicRoot, absolutePath).split(path.sep).join('/')
+    )));
     const jsAssetsByHash = new Map();
     for (const asset of jsAssets) {
         const existing = jsAssetsByHash.get(asset.contentHash) || [];
@@ -1024,6 +1174,7 @@ async function main() {
     }
 
     for (const row of rows) {
+        row.missingStylesheetRefs = row.stylesheetRefs.filter((ref) => !cssAssetsByPath.has(ref));
         const jsDeps = buildJsDependencyStats(row.relativePath, row.externalScriptRefs, jsAssetsByPath);
         let jsDependencyRawBytes = 0;
         let jsDependencyGzipBytes = 0;
@@ -1049,6 +1200,7 @@ async function main() {
 
     const rowsByPath = new Map(rows.map((row) => [row.relativePath, row]));
     const buildVersionContract = await inspectBuildVersionContract(publicRoot, rows);
+    const stylesheetContract = inspectStylesheetContract(rows, cssAssetsByPath);
     const rawTotal = rows.reduce((sum, row) => sum + row.rawBytes, 0);
     const gzipTotal = rows.reduce((sum, row) => sum + row.gzipBytes, 0);
     const breadcrumbTotal = rows.reduce((sum, row) => sum + row.breadcrumbPayloadBytes, 0);
@@ -1121,6 +1273,9 @@ async function main() {
     console.log(`JS gzip total\t${jsGzipTotal}\t${formatBytes(jsGzipTotal)}`);
     console.log(`Referenced JS assets\t${referencedJsAssets.length}`);
     console.log(`Duplicate JS content groups\t${duplicateContentAssets.length}`);
+    console.log(`CSS assets\t${cssAssetsByPath.size}`);
+    console.log(`Page stylesheet URLs\t${stylesheetContract.pageStyleRefs.join(', ') || '<none>'}`);
+    console.log(`Prose stylesheet URLs\t${stylesheetContract.proseStyleRefs.join(', ') || '<none>'}`);
 
     printRankedRows(
         `\nLargest raw HTML pages (top ${options.top})`,
@@ -1184,6 +1339,7 @@ async function main() {
             `Duplicate meta description within ${group.lang}: ${group.paths.join(', ')}`
         )),
         ...buildVersionContract.issues,
+        ...stylesheetContract.issues,
     ];
     const guardrailIssues = options.check ? buildGuardrailIssues(rowsByPath) : [];
 

@@ -1,5 +1,8 @@
 .prose {
-    max-inline-size: min(100%, var(--article-prose-max-inline));
+    /* Keep aligned with params.media.responsive_images.sizes fallback. */
+    --prose-max-inline: 88ch;
+    --prose-rule-border: #888888;
+    max-inline-size: min(100%, var(--prose-max-inline));
     overflow-wrap: break-word;
 }
 
@@ -7,11 +10,21 @@
     margin: 0 0 12px 0;
 }
 
+.prose code {
+    font-family: Operator Mono, Consolas, Monaco, Menlo, monospace;
+}
+
+.prose hr {
+    margin: 18px 0 108px;
+    border: 0;
+    border-top: 1px solid var(--prose-rule-border);
+}
+
 
 .prose :is(h1, h2, h3, h4, h5, h6) {
     display: block;
     text-align: left;
-    color: var(--focus);
+    color: var(--accent);
     letter-spacing: 0;
     font-size: 1rem;
     font-weight: bold;
@@ -19,31 +32,26 @@
 
 .prose h1 {
     margin: 52px 0 52px;
-    color: var(--focus);
     padding-bottom: 3px;
-    border-bottom: 2px solid color-mix(in srgb, var(--focus), transparent 85%);
+    border-bottom: 2px solid color-mix(in srgb, var(--accent), transparent 85%);
 }
 
 .prose h2 {
     margin: 44px 0 44px;
-    text-align: left;
 }
 
 .prose h3 {
     margin: 16px 0 16px;
-    text-align: left;
 }
 
 .prose h4 {
     margin: 16px 0 2px;
-    text-align: left;
 }
 
 .prose h5,
 .prose h6 {
     margin: 16px 0 4px;
     font-weight: normal;
-    font-size: 1rem;
 }
 
 
@@ -92,9 +100,8 @@
     margin-bottom: 12px;
     font-size: 12px;
     text-align: left;
-    color: var(--caption-color);
+    color: var(--muted);
 }
-
 
 .prose .md-spacer {
     display: block;
@@ -103,33 +110,4 @@
     padding: 0;
     overflow: hidden;
     clear: both;
-}
-
-.prose .md-centered-image {
-    display: flex;
-    justify-content: center;
-    margin: 20px 0;
-}
-
-.prose .md-centered-image img {
-    display: block;
-    max-width: 100%;
-    height: auto;
-}
-
-.prose .md-image-link {
-    display: block;
-    color: inherit;
-    text-decoration: none;
-}
-
-.prose .md-responsive-image {
-    display: block;
-}
-
-.prose .md-image-link img {
-    display: block;
-    max-width: 100%;
-    height: auto;
-    cursor: zoom-in;
 }

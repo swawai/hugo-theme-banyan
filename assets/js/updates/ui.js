@@ -6,7 +6,6 @@ let renderRevision = 0;
 
 function getFallbackUpdateCopy() {
     return {
-        message: 'A new version is ready. Refresh now?',
         versionCheck: 'Check for updates',
         versionChecking: 'Checking...',
         versionCheckFailed: 'Check failed',
@@ -25,7 +24,6 @@ function normalizeUpdateCopy(messages) {
     if (!messages || typeof messages !== 'object') return fallback;
 
     return {
-        message: typeof messages.site_update_prompt === 'string' && messages.site_update_prompt ? messages.site_update_prompt : fallback.message,
         versionCheck: typeof messages.site_version_check === 'string' && messages.site_version_check ? messages.site_version_check : fallback.versionCheck,
         versionChecking: typeof messages.site_version_checking === 'string' && messages.site_version_checking ? messages.site_version_checking : fallback.versionChecking,
         versionCheckFailed: typeof messages.site_version_check_failed === 'string' && messages.site_version_check_failed ? messages.site_version_check_failed : fallback.versionCheckFailed,
@@ -81,22 +79,8 @@ function getVersionStatusValue(copy, status, latencyMs) {
     return `${copy.versionStatusCurrent}${latency}`;
 }
 
-
-export function hasVisibleUpdateControl() {
-    return Array.from(document.querySelectorAll('[data-site-update-action]'))
-        .some((element) => getComputedStyle(element).visibility !== 'hidden' && element.getClientRects().length > 0);
-}
-
-export async function confirmSiteUpdate() {
-    const copy = await hydrateUpdateCopy();
-    return window.confirm(copy.message);
-}
-
 export async function renderUpdateUi(status, latencyMs) {
     const revision = ++renderRevision;
-    const root = document.documentElement;
-    if (status === 'ready') root.dataset.siteUpdate = 'ready';
-    else delete root.dataset.siteUpdate;
     const panels = document.querySelectorAll('[data-site-update-panel]');
     if (!panels.length) return;
 
@@ -113,7 +97,7 @@ export async function renderUpdateUi(status, latencyMs) {
             versionNode.title = version;
         }
         const action = panel.querySelector('[data-site-update-action]');
-        const label = action?.querySelector('.collection-item-title');
+        const label = action?.querySelector('[data-site-update-action-label]');
         if (action) action.disabled = status === 'checking' || status === 'unavailable';
         if (label) label.textContent = status === 'ready' ? copy.versionStatusClickUpdate
             : status === 'checking' ? copy.versionChecking : copy.versionCheck;

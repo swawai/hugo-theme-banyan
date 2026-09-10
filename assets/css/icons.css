@@ -1,0 +1,32 @@
+.icon {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+    vertical-align: 0;
+}
+
+.icon--text {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon--image {
+    object-fit: contain;
+}
+
+.icon--monochrome {
+    filter: brightness(0);
+}
+
+[data-theme="dark"] .icon--monochrome {
+    filter: brightness(0) invert(1);
+}
+
+.icon-sprite-root {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+}

@@ -124,12 +124,12 @@ Strict-Transport-Security: max-age=300
 - 现在不必为了“形式洁癖”把它们强行搬走
 - 但继续保留“它们不是 executable inline”的认知边界
 
-### 8. `sw-manager.enable.update.js` 的更新菜单渲染
+### 8. 更新页的动态文案
 
-Ver 菜单已改为 DOM API 渲染：
+旧 Ver 菜单已移除，更新界面位于 `/updates/check/`：
 
-- 菜单容器由 shared `ui/dropdown` 模板输出
-- 运行时只用 `document.createElement` 与 `textContent` 写入动态文案
+- 面板由 `feature-updates/panel.html` 输出
+- 只有此页加载 `updates/page.js`；`updates/ui.js` 使用 `textContent` 更新文案，引擎只提供状态与操作
 
 这里的核心边界是：runtime i18n 与 manifest 内容都按文本写入，不进入 HTML sink。
 

@@ -96,7 +96,7 @@ function updateGridTitleLinks(grid, variantName, currentToken, pageCollectionSou
         ? buildDefaultSortsTokens(pageCollectionSource.logicalPath, variant.defaultToken, 1)
         : [];
 
-    grid.querySelectorAll('.cell-title .collection-item-link[href]').forEach((link) => {
+    grid.querySelectorAll('[data-collection-cell="name"] [data-collection-entry][href]').forEach((link) => {
         const rawHref = link.getAttribute('href') || '';
         if (!rawHref) return;
 
@@ -158,7 +158,7 @@ function readRowGroup(row) {
 
 function readRowStableKey(row) {
     const href = row?.head
-        ?.querySelector('.collection-item-link[href]')
+        ?.querySelector('[data-collection-entry][href]')
         ?.getAttribute('href') || '';
     if (!href) {
         return row?.index ?? '';
@@ -171,12 +171,8 @@ function readRowStableKey(row) {
     }
 }
 
-function isGridCell(node) {
-    return !!node && node.nodeType === 1 && Array.from(node.classList || []).some((className) => className.startsWith('cell-'));
-}
-
 function collectSortableRows(grid, columnCount) {
-    const rowCells = Array.from(grid.children).filter((child) => isGridCell(child) && !child.classList.contains('header'));
+    const rowCells = Array.from(grid.children).filter((child) => child.hasAttribute('data-collection-cell') && !child.hasAttribute('data-collection-header'));
     const rows = [];
 
     for (let index = 0, offset = 0; offset + columnCount <= rowCells.length; index += 1, offset += columnCount) {
@@ -199,7 +195,7 @@ function updateSortControls(grid, variantName, currentToken, pageCollectionSourc
         const active = field === current.field;
         const nextOrder = active ? toggleSortOrder(current.order) : defaultOrder;
         const nextToken = `${field}-${nextOrder}`;
-        const indicator = control.querySelector('.collection-sort-indicator');
+        const indicator = control.querySelector('[data-sort-indicator]');
         const titleAsc = control.dataset.sortTitleAsc || '';
         const titleDesc = control.dataset.sortTitleDesc || '';
         const actionLabel = nextOrder === 'asc' ? titleAsc : titleDesc;

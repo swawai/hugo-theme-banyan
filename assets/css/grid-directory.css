@@ -1,3 +1,0 @@
-.grid-directory {
-    grid-template-columns: var(--navigation-column-inline) minmax(5.1rem, max-content) minmax(4rem, max-content);
-}

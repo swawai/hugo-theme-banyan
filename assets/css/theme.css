@@ -1,0 +1,21 @@
+:root {
+    color-scheme: light;
+    --bg: #FFFFFF;
+    --fg: #1B1B1B;
+    --muted: #5F5F5F;
+    --border: #838383;
+    --link: var(--fg);
+    --link-visited: var(--muted);
+    --accent: #9E685F;
+    --accent-text: color-mix(in srgb, var(--accent) 72%, var(--fg));
+    --focus-ring: var(--accent);
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #191919;
+    --fg: #EFEFEF;
+    --muted: #D0D0D0;
+    --border: #CCCCCC;
+    --accent: #AC7B73;
+}

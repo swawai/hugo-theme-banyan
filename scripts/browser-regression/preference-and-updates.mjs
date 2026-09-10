@@ -8,6 +8,30 @@ const updatePanel = '[data-site-update-panel]';
 
 export const preferenceAndUpdateScenarios = [
     ...languageReturnScenarios,
+    ...[
+        { locale: 'zh-CN', href: '/all/', language: 'en' },
+        { locale: 'en-US', href: '/zh/all/', language: 'zh' }
+    ].map(({ locale, href, language }) => ({
+        id: `language-no-recommendation-${locale}`,
+        kind: 'single',
+        serviceWorkers: 'block',
+        locale,
+        title: `Fresh Visit Keeps Explicit Language (${locale})`,
+        async run({ page, baseUrl, dialogs }) {
+            await gotoAndWait(page, baseUrl + href);
+            assert.equal(await page.evaluate(() => localStorage.length), 0, 'No preference is seeded to suppress a recommendation.');
+            // Wait beyond the retired 800 ms recommendation delay without any user interaction.
+            await page.waitForTimeout(1200);
+            assert.equal(dialogs.length, 0, 'A browser-language mismatch must not prompt or navigate.');
+            assert.equal(page.url(), baseUrl + href);
+            assert.equal(await page.locator('html').getAttribute('lang'), language);
+            await page.reload();
+            await page.waitForTimeout(1200);
+            assert.equal(dialogs.length, 0);
+            assert.equal(page.url(), baseUrl + href);
+            return { message: 'Fresh visits and reloads keep the URL language without a recommendation dialog.' };
+        }
+    })),
     {
         id: 'updates-name-list',
         kind: 'single',
@@ -16,7 +40,7 @@ export const preferenceAndUpdateScenarios = [
         title: 'Updates Name List and Child Navigation',
         async run({ page, baseUrl, artifactDir, context }) {
             const grid = '.slot-main [data-sortable="true"]';
-            const links = `${grid} .cell-title:not(.header) a`;
+            const links = `${grid} .collection-cell--name:not(.collection-cell--header) a`;
             const rowPaths = selector => page.locator(selector).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
             const assertNewTabs = async (links) => {
                 const originalUrl = page.url();
@@ -40,7 +64,7 @@ export const preferenceAndUpdateScenarios = [
                 }
             };
             const geometry = () => page.locator(grid).evaluate(node => {
-                const row = node.querySelector('.cell-title:not(.header) a');
+                const row = node.querySelector('.collection-cell--name:not(.collection-cell--header) a');
                 return {
                     columns: getComputedStyle(node).gridTemplateColumns,
                     rowHeight: row.getBoundingClientRect().height,
@@ -351,7 +375,6 @@ export const preferenceAndUpdateScenarios = [
                 assert.equal(await choice.getAttribute('href'), pathname);
                 await choice.click();
                 await page.waitForURL(baseUrl + pathname);
-                assert.equal(await page.evaluate(() => localStorage.getItem('preferred_lang')), code);
                 assert.equal(await page.locator('[data-language-choice="' + code + '"]').getAttribute('aria-current'), 'page');
                 assert.equal(await page.evaluate(() => history.length), historyLength, 'Choosing a language replaces the current settings entry.');
                 await assertChoiceContract(code);
@@ -363,18 +386,18 @@ export const preferenceAndUpdateScenarios = [
             await page.waitForURL(baseUrl + '/zh/language/');
             await page.goBack();
             await page.waitForURL(article);
-            assert.equal(await page.evaluate(() => localStorage.getItem('preferred_lang')), 'zh', 'Returning does not undo the chosen preference.');
+            assert.equal(await page.locator('html').getAttribute('lang'), 'zh', 'Returning keeps the chosen language.');
 
-            // Old links only lose the obsolete parameter; its value is never used.
+            // Unknown query parameters do not participate in settings navigation.
             await page.addInitScript(() => history.replaceState({ ...history.state, cleanupMarker: true }, '', location.href));
             for (const name of ['language', 'appearance', 'my', 'updates/check']) {
                 await gotoAndWait(page, baseUrl + '/zh/' + name + '/?return=https%3A%2F%2Fexample.invalid%2F&probe=keep#anchor');
-                assert.equal(new URL(page.url()).search, '?probe=keep');
+                assert.equal(new URL(page.url()).search, '?return=https%3A%2F%2Fexample.invalid%2F&probe=keep');
                 assert.equal(new URL(page.url()).hash, '#anchor');
                 assert.equal(await page.evaluate(() => history.state.cleanupMarker), true);
             }
             await gotoAndWait(page, baseUrl + '/zh/updates/?return=unused&probe=keep');
-            assert.equal(new URL(page.url()).search, '?return=unused&probe=keep', 'The ordinary directory does not apply settings-specific URL cleanup.');
+            assert.equal(new URL(page.url()).search, '?return=unused&probe=keep', 'Ordinary and settings pages both ignore unknown query parameters.');
             await gotoAndWait(page, baseUrl + '/language/?return=' + encodeURIComponent('/prefetchdebug/'));
             const dialogCount = dialogs.length;
             await page.locator('[data-language-choice="zh"]').click();
@@ -440,7 +463,7 @@ export const preferenceAndUpdateScenarios = [
             const other = await context.newPage();
             await other.goto(`${baseUrl}/zh/appearance/`);
             await other.locator(`${preferencePage} [data-theme-choice="dark"]`).click();
-            await page.waitForFunction(() => document.documentElement.dataset.themePreference === 'dark');
+            await page.waitForFunction(() => document.documentElement.dataset.theme === 'dark');
             await other.close();
             await page.goForward();
             await page.waitForSelector(`${preferencePage} [data-theme-choice="dark"].is-current`);

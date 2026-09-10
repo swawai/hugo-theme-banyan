@@ -67,9 +67,6 @@ other = "Directory"
 [no_trans_msg]
 other = "This page does not yet have a [{lang}] version.\nGo to the [{lang}] homepage?"
 
-[lang_suggest_msg]
-other = "We recommend the [{target}] version of this page.\nContinue?"
-
 [language_return_missing]
 other = "This page has no {lang} version. Showing the original content."
 

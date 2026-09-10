@@ -109,7 +109,7 @@ async function refreshBreadcrumbCollectionColumns() {
             return;
         }
 
-        const link = wrapper.querySelector('a.path-column-link[aria-current="page"][href]');
+        const link = wrapper.querySelector('a[data-collection-entry][aria-current="page"][href]');
         if (!(link instanceof HTMLAnchorElement)) {
             return;
         }

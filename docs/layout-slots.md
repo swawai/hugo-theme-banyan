@@ -35,6 +35,8 @@
 
 未知 slot 名和错误值类型均应在构建时失败。`slots.footer`、版权页脚片段及其专用模板和样式已移除。旧 `show_breadcrumb`、`show_meta`、`breadcrumb_variant` 和布局导向的 `rail-*`／`stage-*` 声明不属于当前约定。
 
+页面基础样式由 `baseof.html` 直接调用 `system-ui/page-styles.html`，装配为唯一且稳定的 `page.css`，包括画幅、列表、路径、元信息 slot、更新面板和 404 辅助样式；页面入口不能替换或漏掉它。真正渲染 `.prose` 的入口显式调用 `feature-document/styles.html`，取得同一个 `prose.css`。集合页只在实际输出正文时调用；模板直接生成正文结构的预取诊断页也显式调用同一装配器。不会通过页面类型或渲染后的 HTML 标签猜测需要哪些正文组件。
+
 ## 推荐写法
 
 目录、分类法和产品集合页：
@@ -54,7 +56,7 @@ slots:
 
 语言、外观页面用顶层 `list: choice` 声明选择行，并分别由 `page-language`、`page-appearance` 布局提供选项，由语言、外观脚本处理操作；我的等系统页无需列表声明。它们都无需为了显示第一列设置 `slots`。布局、集合 provider 和产品属性仍是各自独立的配置。
 
-更新目录 `content/updates/_index*.md` 使用 `layout: page-collection`、`list: name`，只列出检查更新与更新记录两个真实子页。`baseof.html` 不追加操作，根导航也不承担更新标记。`content/updates/check/index*.md` 使用 `page-update-check` 布局明确调用更新面板与更新专用样式；`site_update.labels` 只提供功能文案，不是全站装配开关。版本为普通状态文本，记录通过同级列表访问。两个子页均保留更新路径列。语言和外观布局分别明确调用 `feature-preferences/back-link.html`。
+更新目录 `content/updates/_index*.md` 使用 `layout: page-collection`、`list: name`，只列出检查更新与更新记录两个真实子页。`baseof.html` 不追加操作，根导航也不承担更新标记。`content/updates/check/index*.md` 使用 `page-update-check` 布局明确渲染更新面板，并在 `body-extra` 中加载 `js/updates/page.js`；面板源码样式仍进入公共 `page.css`。`site_update.labels` 只提供功能文案，不是全站装配开关。版本为普通状态文本，记录通过同级列表访问。两个子页均保留更新路径列。语言和外观布局分别调用 `feature-preferences/back-link.html`；返回脚本只由相应页面装配。语言选择脚本仅由 `page-language` 加载，跨页面语言返回及主题同步继续在全站主脚本中运行。
 
 保留的 fragment 按内容语义命名，例如 `site-meta`；不要用最终容器位置命名。`site-meta` 提供站点品牌与 SEO 元数据，`slots.meta` 则控制当前页面的日期、taxonomy 等元信息，两者职责不同。
 
@@ -68,4 +70,4 @@ slots:
 
 第一列的存在不表示页面具有 collection browser。集合路径仍由 `slots.breadcrumb`、集合来源和 provider 决定；不要新增 `slots.browser_mode`，也不要把来源、排序和列状态写入 front matter。
 
-同一份入口列表和 slot 声明用于各屏幕宽度。整页横向画幅保持原有浏览位置；外观选择页在跟随系统、浅色和深色之间切换，公共色彩变量维持黑白主视觉。
+同一份入口列表和 slot 声明用于各屏幕宽度。整页横向画幅保持原有浏览位置；外观选择页在跟随系统、浅色和深色之间切换，所有页面共同消费 `theme.css` 的语义色变量。黑白灰收敛属于后续 6C，不是 slot 契约的一部分。

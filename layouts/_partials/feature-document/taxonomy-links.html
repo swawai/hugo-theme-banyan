@@ -16,8 +16,8 @@
     {{ continue }}
   {{ end }}
 
-<nav class="post-taxonomy post-taxonomy-{{ $plural }}" aria-label="{{ $labelTitle }}">
-  <span class="label" title="{{ $labelTitle }}">{{ $label }}</span>
+<nav class="document-meta__row document-meta__row--{{ $plural }}" aria-label="{{ $labelTitle }}">
+  <span class="document-meta__label" title="{{ $labelTitle }}">{{ $label }}</span>
   {{ if and (eq (index $spec "mode") "tree") (eq $articleMode "deepest_by_root") }}
     {{ $separator := printf "%v" (index $spec "separator" | default "/") }}
     {{ $deepestByRoot := dict }}

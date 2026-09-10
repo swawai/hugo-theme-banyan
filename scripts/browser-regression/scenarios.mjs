@@ -7,6 +7,7 @@ import {
     getMainInlineStart,
     getVisibleBreadcrumbColumnCount,
     gotoAndWait,
+    pollUntil,
     readFirstMainLayout,
     readSecurityPolicyViolations,
     recordFirstMainLayoutScript,
@@ -18,6 +19,7 @@ import { relFromSite } from './paths.mjs';
 import { preferenceAndUpdateScenarios } from './preference-and-updates.mjs';
 import { updatesNavigationScenarios } from './updates-navigation.mjs';
 import { canvasScenarios } from './canvas.mjs';
+import { presentationContractScenarios } from './presentation-contracts.mjs';
 
 const WIDE_VIEWPORT = { width: 1600, height: 1100 };
 const BREADCRUMB_FIRST_FRAME_VIEWPORT = { width: 1280, height: 960 };
@@ -61,8 +63,8 @@ async function startBreadcrumbContinuityProbe(page, columnIndex = 0) {
             }
 
             const columns = Array.from(document.querySelectorAll(
-                '.path-columns .grid-list'
-            )).filter((column) => column.querySelector('.collection-column-header'));
+                '.path-columns .collection-list'
+            )).filter((column) => column.querySelector('.collection-header--path'));
             const column = columns[targetColumnIndex];
             const rail = document.querySelector('.path-columns');
             const railStyle = rail ? getComputedStyle(rail) : null;
@@ -174,7 +176,7 @@ function recordFirstBreadcrumbColumnStateScript(targetCollectionHref) {
     const readOrder = () => {
         const target = findTarget();
         return target instanceof HTMLElement
-            ? Array.from(target.querySelectorAll('a.path-column-link'))
+            ? Array.from(target.querySelectorAll('[data-collection-entry]'))
                 .map((option) => (option.textContent || '').trim())
                 .filter(Boolean)
             : [];
@@ -182,7 +184,7 @@ function recordFirstBreadcrumbColumnStateScript(targetCollectionHref) {
 
     const readHeaderSpacing = () => {
         const target = findTarget();
-        const header = target?.querySelector('.collection-column-header');
+        const header = target?.querySelector('.collection-header--path');
         const label = header?.querySelector('.collection-column-label');
         const separator = header?.querySelector('.collection-column-separator');
         const sort = header?.querySelector('.collection-column-sort');
@@ -266,7 +268,7 @@ const DESIGN_AUDIT_PAGES = [
         id: 'products',
         path: '/all-products/',
         title: 'Products',
-        waitForSelector: '.grid-list'
+        waitForSelector: '.collection-list'
     },
     {
         id: 'article',
@@ -285,13 +287,11 @@ function ensureTwoBuilds(upgradePair) {
 async function readLanguageSettingsState(page) {
     return page.evaluate(() => {
         const picker = document.querySelector('[data-language-settings]');
-        const context = JSON.parse(document.body?.dataset.languageContext || 'null');
-        return {
+                return {
             state: picker?.dataset.languageState || '',
             listView: picker?.querySelector('[data-list-view]')?.dataset.listView || '',
             sortable: Boolean(picker?.querySelector('[data-sortable]')),
-            noTranslationMessage: context?.missing || '',
-            languageSuggestionMessage: context?.suggestion || '',
+            noTranslationMessage: picker?.dataset.languageMissing || '',
             options: Array.from(picker?.querySelectorAll('[data-language-choice]') || [])
                 .map((option) => ({
                     current: option.getAttribute('aria-current') || '',
@@ -648,11 +648,11 @@ async function readBreadcrumbPrefetchSlotContract(page) {
         });
 
         const breadcrumbAnchors = Array.from(document.querySelectorAll(
-            '.slot-breadcrumb a.path-column-link[href]'
+            '.slot-breadcrumb [data-collection-entry][href]'
         ));
         const slotRowAnchors = Array.from(document.querySelectorAll('.path-columns a[href]'));
         const slotRowBreadcrumbColumnOptions = Array.from(document.querySelectorAll(
-            '.path-columns a.path-column-link[href]'
+            '.path-columns [data-collection-entry][href]'
         ));
 
         const breadcrumbInvalidAnchors = breadcrumbAnchors
@@ -680,6 +680,7 @@ async function readBreadcrumbPrefetchSlotContract(page) {
 }
 
 export const scenarios = [
+    ...presentationContractScenarios,
     ...canvasScenarios,
     ...preferenceAndUpdateScenarios,
     ...updatesNavigationScenarios,
@@ -719,7 +720,7 @@ export const scenarios = [
                             path,
                             nav?.querySelector(`[data-root-href="${prefix}${path}/"] use`)?.getAttribute('href') || ''
                         ])),
-                        rowContentCount: nav?.querySelectorAll('.cell-title > .collection-item-link > .collection-item-title').length,
+                        rowContentCount: nav?.querySelectorAll('.collection-cell--name > .collection-item-link > .collection-item-title').length,
                         oldControls: doc.querySelectorAll('[data-nav-utility-kind], [data-site-version-menu], [data-slot="primary_nav"]').length
                     });
                 }
@@ -990,7 +991,7 @@ export const scenarios = [
 
             // Discover an existing product so the regression does not depend on a product slug.
             await gotoAndWait(page, `${baseUrl}/all-products/`);
-            const productLink = page.locator('.slot-main .grid-products .collection-item-link').first();
+            const productLink = page.locator('.slot-main .collection-list--products .collection-item-link').first();
             const productHref = await productLink.getAttribute('href');
             if (!productHref) fail('Product lineage verification requires one real product.');
             const productPath = new URL(productHref, baseUrl).pathname;
@@ -1006,7 +1007,7 @@ export const scenarios = [
             const results = [];
             for (const collectionPath of ['/all-products/', categorySource.logical_path]) {
                 await gotoAndWait(page, `${baseUrl}${collectionPath}?sort=price-desc`);
-                const target = page.locator(`.slot-main .grid-products .collection-item-link[href^="${productPath}?"]`);
+                const target = page.locator(`.slot-main .collection-list--products .collection-item-link[href^="${productPath}?"]`);
                 await target.click();
                 await page.waitForURL((url) => url.pathname === productPath);
                 await waitForBreadcrumbSettled(page);
@@ -1089,7 +1090,7 @@ export const scenarios = [
             const readState = () => page.evaluate((selector) => {
                 const grid = document.querySelector(selector);
                 const rows = Array.from(
-                    grid?.querySelectorAll('.cell-title:not(.header)') || []
+                    grid?.querySelectorAll('.collection-cell--name:not(.collection-cell--header)') || []
                 ).map((head) => ({
                     dateKey: head.getAttribute('data-sort-date') || '',
                     dateText: head.nextElementSibling?.textContent?.trim() || '',
@@ -1132,7 +1133,7 @@ export const scenarios = [
                 await page.waitForFunction(({ selector, beforeTitles }) => {
                     const titles = Array.from(
                         document.querySelector(selector)
-                            ?.querySelectorAll('.cell-title:not(.header)') || []
+                            ?.querySelectorAll('.collection-cell--name:not(.collection-cell--header)') || []
                     ).map((head) => (
                         head.querySelector('.collection-item-title')?.textContent?.trim() || ''
                     ));
@@ -1161,7 +1162,7 @@ export const scenarios = [
                 await page.waitForFunction(({ selector, expectedTitles }) => {
                     const titles = Array.from(
                         document.querySelector(selector)
-                            ?.querySelectorAll('.cell-title:not(.header)') || []
+                            ?.querySelectorAll('.collection-cell--name:not(.collection-cell--header)') || []
                     ).map((head) => (
                         head.querySelector('.collection-item-title')?.textContent?.trim() || ''
                     ));
@@ -1210,7 +1211,7 @@ export const scenarios = [
         async run({ page, baseUrl }) {
             await page.addInitScript(recordFirstMainLayoutScript());
             const readDirectoryMeta = () => page.evaluate(() => {
-                const node = document.querySelector('.post-taxonomy-path');
+                const node = document.querySelector('.document-meta__row--path');
                 return node ? {
                     ariaLabel: node.getAttribute('aria-label'),
                     html: node.innerHTML
@@ -1299,10 +1300,10 @@ export const scenarios = [
                     '.slot-main [data-sortable="true"][data-sort-variant]'
                 );
                 const pathColumn = Array.from(document.querySelectorAll(
-                    '.path-columns .grid-list'
-                )).find((column) => column.querySelector('.collection-column-header'));
+                    '.path-columns .collection-list'
+                )).find((column) => column.querySelector('.collection-header--path'));
                 const readTitles = (root) => Array.from(
-                    root?.querySelectorAll('.cell-title:not(.header) .collection-item-title') || []
+                    root?.querySelectorAll('.collection-cell--name:not(.collection-cell--header) .collection-item-title') || []
                 ).map((item) => item.textContent?.trim() || '').filter(Boolean);
 
                 return {
@@ -1322,7 +1323,7 @@ export const scenarios = [
 
             const defaultUrl = new URL(BREADCRUMB_COLLECTION_SORT_PATH, `${baseUrl}/`);
             await gotoAndWait(page, defaultUrl.href);
-            await page.waitForSelector('.slot-breadcrumb .collection-column-header');
+            await page.waitForSelector('.slot-breadcrumb .collection-header--path');
             await waitForBreadcrumbSettled(page);
             const descending = await readState();
             if (
@@ -1341,7 +1342,7 @@ export const scenarios = [
             ascendingUrl.searchParams.set('sort', 'date-asc');
             ascendingUrl.searchParams.set('sorts', 'date-asc,date-asc');
             await gotoAndWait(page, ascendingUrl.href);
-            await page.waitForSelector('.slot-breadcrumb .collection-column-header');
+            await page.waitForSelector('.slot-breadcrumb .collection-header--path');
             await waitForBreadcrumbSettled(page);
             const ascending = await readState();
 
@@ -1373,12 +1374,12 @@ export const scenarios = [
             const url = new URL(BREADCRUMB_COLUMN_SORT_PATH, `${baseUrl}/`);
             url.searchParams.set('from', 'all');
             await gotoAndWait(page, url.href);
-            await page.waitForSelector('.slot-breadcrumb .collection-column-header');
+            await page.waitForSelector('.slot-breadcrumb .collection-header--path');
             await waitForBreadcrumbSettled(page);
 
             const readState = () => page.evaluate(() => {
-                const panel = document.querySelector('.slot-breadcrumb .collection-list--column');
-                const header = panel?.querySelector('.collection-column-header');
+                const panel = document.querySelector('.slot-breadcrumb .collection-list--path-column');
+                const header = panel?.querySelector('.collection-header--path');
                 const toggle = header?.querySelector('[data-collection-sort-toggle="true"]');
                 const rows = Array.from(panel?.querySelectorAll('.collection-item-link') || []);
                 const rowTitles = rows
@@ -1387,7 +1388,7 @@ export const scenarios = [
                 return {
                     field: header?.querySelector('.collection-sort-label')?.textContent?.trim() || '',
                     indicator: header?.querySelector('.collection-sort-indicator')?.textContent?.trim() || '',
-                    iconCount: panel?.querySelectorAll('.collection-item-icon-svg').length || 0,
+                    iconCount: panel?.querySelectorAll('.collection-item-icon svg.icon').length || 0,
                     embeddedSourceCount: document.querySelectorAll(
                         '[data-breadcrumb-collection-source]'
                     ).length,
@@ -1430,7 +1431,7 @@ export const scenarios = [
                     await page.waitForFunction((firstTitle) => {
                         const currentUrl = new URL(window.location.href);
                         const panel = document.querySelector(
-                            '.slot-breadcrumb .collection-list--column'
+                            '.slot-breadcrumb .collection-list--path-column'
                         );
                         const nextFirstTitle = panel
                             ?.querySelector('.collection-item-title')
@@ -1511,8 +1512,8 @@ export const scenarios = [
             initialUrl.searchParams.set('from', 'd/wsl');
 
             const readColumns = () => page.evaluate(() => (
-                Array.from(document.querySelectorAll('.path-columns .grid-list'))
-                    .filter((column) => column.querySelector('.collection-column-header'))
+                Array.from(document.querySelectorAll('.path-columns .collection-list'))
+                    .filter((column) => column.querySelector('.collection-header--path'))
                     .map((column) => ({
                         indicator: column.querySelector('.collection-sort-indicator')?.textContent?.trim() || '',
                         label: column.querySelector('.collection-column-label')?.textContent?.trim() || '',
@@ -1525,7 +1526,7 @@ export const scenarios = [
             ));
             const openInitialState = async () => {
                 await gotoAndWait(page, initialUrl.href);
-                await page.waitForSelector('.path-columns .collection-column-header');
+                await page.waitForSelector('.path-columns .collection-header--path');
                 await waitForBreadcrumbSettled(page);
                 const columns = await readColumns();
                 if (columns.length !== 2 || columns.some((column) => column.indicator !== '↓')) {
@@ -1546,9 +1547,9 @@ export const scenarios = [
                     await childToggle.click();
                     await page.waitForFunction((beforeRows) => {
                         const columns = Array.from(document.querySelectorAll(
-                            '.path-columns .grid-list'
+                            '.path-columns .collection-list'
                         )).filter((column) => (
-                            column.querySelector('.collection-column-header')
+                            column.querySelector('.collection-header--path')
                         ));
                         const rows = Array.from(
                             columns[1]?.querySelectorAll('.collection-item-title') || []
@@ -1614,9 +1615,9 @@ export const scenarios = [
                     await ancestorToggle.click();
                     await page.waitForFunction((beforeRows) => {
                         const columns = Array.from(document.querySelectorAll(
-                            '.path-columns .grid-list'
+                            '.path-columns .collection-list'
                         )).filter((column) => (
-                            column.querySelector('.collection-column-header')
+                            column.querySelector('.collection-header--path')
                         ));
                         const rows = Array.from(
                             columns[0]?.querySelectorAll('.collection-item-title') || []
@@ -1702,8 +1703,8 @@ export const scenarios = [
 
             const readState = () => page.evaluate(() => {
                 const column = Array.from(document.querySelectorAll(
-                    '.path-columns .grid-list'
-                )).find((candidate) => candidate.querySelector('.collection-column-header'));
+                    '.path-columns .collection-list'
+                )).find((candidate) => candidate.querySelector('.collection-header--path'));
                 const mainGrid = document.querySelector(
                     '.slot-main [data-sortable="true"][data-sort-variant]'
                 );
@@ -1712,11 +1713,11 @@ export const scenarios = [
                         column?.querySelectorAll('.collection-item-title') || []
                     ).map((item) => item.textContent?.trim() || '').filter(Boolean),
                     mainHrefs: Array.from(
-                        mainGrid?.querySelectorAll('.cell-title:not(.header) .collection-item-link')
+                        mainGrid?.querySelectorAll('.collection-cell--name:not(.collection-cell--header) .collection-item-link')
                             || []
                     ).map((item) => item.getAttribute('href') || '').filter(Boolean),
                     mainRows: Array.from(
-                        mainGrid?.querySelectorAll('.cell-title:not(.header) .collection-item-title')
+                        mainGrid?.querySelectorAll('.collection-cell--name:not(.collection-cell--header) .collection-item-title')
                             || []
                     ).map((item) => item.textContent?.trim() || '').filter(Boolean),
                 };
@@ -1748,9 +1749,9 @@ export const scenarios = [
                     await page.waitForFunction((beforeRows) => {
                         const currentUrl = new URL(window.location.href);
                         const column = Array.from(document.querySelectorAll(
-                            '.path-columns .grid-list'
+                            '.path-columns .collection-list'
                         )).find((candidate) => (
-                            candidate.querySelector('.collection-column-header')
+                            candidate.querySelector('.collection-header--path')
                         ));
                         const rows = Array.from(
                             column?.querySelectorAll('.collection-item-title') || []
@@ -1857,8 +1858,8 @@ export const scenarios = [
                     return probe.getBoundingClientRect().width;
                 };
                 const expectedColumnInline = measureInline('15rem');
-                const columnInline = measureInline('var(--path-column-inline)');
-                const gapInline = measureInline('var(--path-columns-gap-inline)');
+                const columnInline = measureInline('var(--navigation-column-inline)');
+                const gapInline = measureInline('var(--page-shell-gap-inline)');
                 const mainInline = measureInline('var(--main-column-inline)');
                 const railCurrent = document.querySelector('[data-root-navigation] .is-current');
                 const railRect = railCurrent?.getBoundingClientRect();
@@ -1949,10 +1950,10 @@ export const scenarios = [
             for (const target of GRID_LIST_COLUMN_CASES) {
                 await page.setViewportSize(target.viewport);
                 await gotoAndWait(page, `${baseUrl}${target.path}`);
-                await page.waitForSelector('.slot-main .grid-list > .cell-title');
+                await page.waitForSelector('.slot-main .collection-list > .collection-cell--name');
                 const geometry = await page.evaluate(() => {
-                    const grid = document.querySelector('.slot-main .grid-list');
-                    const nameCell = grid?.querySelector(':scope > .cell-title');
+                    const grid = document.querySelector('.slot-main .collection-list');
+                    const nameCell = grid?.querySelector(':scope > .collection-cell--name');
                     if (!(grid instanceof HTMLElement) || !(nameCell instanceof HTMLElement)) return null;
 
                     const probe = document.createElement('div');
@@ -1963,7 +1964,7 @@ export const scenarios = [
                         return probe.getBoundingClientRect().width;
                     };
                     const result = {
-                        breadcrumbInline: measure('var(--path-column-inline)'),
+                        breadcrumbInline: measure('var(--navigation-column-inline)'),
                         documentClientInline: document.documentElement.clientWidth,
                         documentScrollInline: document.documentElement.scrollWidth,
                         nameInline: nameCell.getBoundingClientRect().width,
@@ -1993,11 +1994,11 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
             await gotoAndWait(page, `${baseUrl}/zh/all/`);
-            await page.waitForSelector('.slot-main .collection-list--grid .collection-item-link');
-            await page.locator('.slot-main .collection-list--grid .collection-item-link').first().hover();
+            await page.waitForSelector('.slot-main .collection-list .collection-item-link');
+            await page.locator('.slot-main .collection-list .collection-item-link').first().hover();
             const grid = await page.evaluate(() => {
-                const list = document.querySelector('.slot-main .collection-list--grid');
-                const header = list?.querySelector('.collection-list-header');
+                const list = document.querySelector('.slot-main .collection-list');
+                const header = list?.querySelector('.collection-header');
                 const headerText = header?.querySelector('a');
                 const link = list?.querySelector('.collection-item-link');
                 const icon = link?.querySelector('.collection-item-icon');
@@ -2034,14 +2035,14 @@ export const scenarios = [
             const articleUrl = new URL(BREADCRUMB_COLUMN_SORT_PATH, `${baseUrl}/`);
             articleUrl.searchParams.set('from', 'all');
             await gotoAndWait(page, articleUrl.href);
-            await page.waitForSelector('.slot-breadcrumb .collection-list--column');
+            await page.waitForSelector('.slot-breadcrumb .collection-list--path-column');
             await waitForBreadcrumbSettled(page);
             await page.locator(
-                '.slot-breadcrumb .collection-list--column .collection-item-link:not(.is-current)'
+                '.slot-breadcrumb .collection-list--path-column .collection-item-link:not(.is-current)'
             ).first().hover();
             const column = await page.evaluate(() => {
-                const list = document.querySelector('.slot-breadcrumb .collection-list--column');
-                const header = list?.querySelector('.collection-column-header');
+                const list = document.querySelector('.slot-breadcrumb .collection-list--path-column');
+                const header = list?.querySelector('.collection-header--path');
                 const headerText = header?.querySelector('.collection-column-label');
                 const link = list?.querySelector('.collection-item-link');
                 const icon = link?.querySelector('.collection-item-icon');
@@ -2071,7 +2072,7 @@ export const scenarios = [
                 const headerTrackSize = Number.parseFloat(getComputedStyle(list).gridTemplateRows);
                 return {
                     directCellCount: directCells.length,
-                    directCellsValid: directCells.every((cell) => cell.classList.contains('cell-title')),
+                    directCellsValid: directCells.every((cell) => cell.classList.contains('collection-cell--name')),
                     headerTrackSize,
                     currentLinkBackground: currentStyle.backgroundColor,
                     currentStateBackground: currentStateStyle.backgroundColor,
@@ -2097,7 +2098,7 @@ export const scenarios = [
                     separatorBlockStart: list.getBoundingClientRect().top
                         + Number.parseFloat(separatorStyle.top),
                     singleGridContract: list.matches(
-                        '.grid-list.grid-list--headed.collection-list--column'
+                        '.collection-list.collection-list--headed.collection-list--path-column'
                     )
                 };
             });
@@ -2138,6 +2139,245 @@ export const scenarios = [
             }
 
             return { grid, column };
+        }
+    },
+    {
+        id: 'collection-interaction-theme-contract',
+        kind: 'single',
+        title: 'Shared Collection Interaction and Theme Contract',
+        viewport: WIDE_VIEWPORT,
+        async run({ page, baseUrl }) {
+            const readState = async (locator) => locator.evaluate(async (element) => {
+                // Flush the transition start, then sample the settled collection-row state.
+                void getComputedStyle(element).color;
+                await Promise.all(element.getAnimations().map((animation) => (
+                    animation.finished.catch(() => {})
+                )));
+                const style = getComputedStyle(element);
+                const stateStyle = getComputedStyle(element, '::before');
+                return {
+                    color: style.color,
+                    stateBackground: stateStyle.backgroundColor,
+                    stateShadow: stateStyle.boxShadow,
+                };
+            });
+            const readHover = async (locator) => {
+                await locator.hover();
+                return readState(locator);
+            };
+            const readFocus = async (locator) => {
+                // Establish keyboard modality before focusing the exact contract target.
+                await page.keyboard.press('Tab');
+                await locator.focus();
+                return locator.evaluate((element) => {
+                    const style = getComputedStyle(element);
+                    const probe = document.createElement('span');
+                    probe.style.color = 'var(--focus-ring)';
+                    document.body.appendChild(probe);
+                    const focusRingColor = getComputedStyle(probe).color;
+                    probe.remove();
+                    return {
+                        focusRingColor,
+                        focusVisible: element.matches(':focus-visible'),
+                        outlineColor: style.outlineColor,
+                        outlineStyle: style.outlineStyle,
+                        outlineWidth: style.outlineWidth,
+                        tagName: element.tagName,
+                    };
+                });
+            };
+            const assertShared = (label, entries) => {
+                const serialized = entries.map((entry) => JSON.stringify(entry));
+                if (new Set(serialized).size !== 1) {
+                    fail(`${label} must be shared by root, path, and choice collections.`, { entries });
+                }
+            };
+            const results = [];
+
+            for (const theme of ['light', 'dark']) {
+                await gotoAndWait(page, `${baseUrl}/zh/appearance/`);
+                await page.locator(`[data-theme-choice="${theme}"]`).click();
+                await page.waitForFunction((expected) => (
+                    document.documentElement.dataset.theme === expected
+                ), theme);
+
+                const colorScheme = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme);
+                if (colorScheme !== theme) {
+                    fail('The resolved HTML color-scheme must follow data-theme.', { colorScheme, theme });
+                }
+
+                const rootCurrentLocator = page.locator('[data-root-navigation] [data-root-href].is-current');
+                const choiceCurrentLocator = page.locator(`[data-theme-choice="${theme}"].is-current`);
+                const rootCurrent = await readState(rootCurrentLocator);
+                const choiceCurrent = await readState(choiceCurrentLocator);
+                const rootHover = await readHover(page.locator('[data-root-navigation] [data-root-href]:not(.is-current)').first());
+                const choiceHover = await readHover(page.locator('[data-theme-choice]:not(.is-current)').first());
+                const rootFocus = await readFocus(rootCurrentLocator);
+                const choiceFocus = await readFocus(choiceCurrentLocator);
+
+                const articleUrl = new URL(BREADCRUMB_COLUMN_SORT_PATH, `${baseUrl}/`);
+                articleUrl.searchParams.set('from', 'all');
+                await gotoAndWait(page, articleUrl.href);
+                await page.waitForSelector('.slot-breadcrumb .collection-list--path-column');
+                await waitForBreadcrumbSettled(page);
+
+                const pathRootCurrentLocator = page.locator('[data-root-navigation] [data-root-href].is-current');
+                const pathCurrentLocator = page.locator(
+                    '.slot-breadcrumb .collection-list--path-column .collection-item-link.is-current'
+                ).first();
+                const pathRootCurrent = await readState(pathRootCurrentLocator);
+                const pathCurrent = await readState(pathCurrentLocator);
+                const pathHover = await readHover(page.locator(
+                    '.slot-breadcrumb .collection-list--path-column .collection-item-link:not(.is-current)'
+                ).first());
+                const pathFocus = await readFocus(pathCurrentLocator);
+
+                assertShared(`${theme} current state`, [rootCurrent, choiceCurrent, pathRootCurrent, pathCurrent]);
+                assertShared(`${theme} hover state`, [rootHover, choiceHover, pathHover]);
+                assertShared(`${theme} focus state`, [rootFocus, choiceFocus, pathFocus].map((state) => ({
+                    focusRingColor: state.focusRingColor,
+                    focusVisible: state.focusVisible,
+                    outlineColor: state.outlineColor,
+                    outlineStyle: state.outlineStyle,
+                    outlineWidth: state.outlineWidth,
+                })));
+
+                const focusStates = [rootFocus, choiceFocus, pathFocus];
+                if (
+                    rootFocus.tagName !== 'A'
+                    || pathFocus.tagName !== 'A'
+                    || choiceFocus.tagName !== 'BUTTON'
+                    || focusStates.some((state) => (
+                        !state.focusVisible
+                        || state.outlineStyle !== 'dashed'
+                        || state.outlineWidth !== '2px'
+                        || state.outlineColor !== state.focusRingColor
+                    ))
+                ) {
+                    fail('Collection links and buttons must use the explicit 2px dashed focus ring.', {
+                        choiceFocus,
+                        pathFocus,
+                        rootFocus,
+                        theme,
+                    });
+                }
+
+                results.push({
+                    choiceFocus,
+                    colorScheme,
+                    current: rootCurrent,
+                    focus: rootFocus,
+                    hover: rootHover,
+                    pathFocus,
+                    theme,
+                });
+            }
+
+            return { cases: results };
+        }
+    },
+    {
+        id: 'prose-table-chroma-isolation-contract',
+        kind: 'single',
+        title: 'Prose Table and Chroma Line Number Table Isolation Contract',
+        serviceWorkers: 'block',
+        viewport: WIDE_VIEWPORT,
+        async run({ page, baseUrl }) {
+            await gotoAndWait(page, `${baseUrl}/about/`);
+            await page.waitForSelector('.slot-main .prose');
+
+            const state = await page.evaluate(() => {
+                const prose = document.querySelector('.slot-main .prose');
+                if (!(prose instanceof HTMLElement)) return null;
+                const existingLineNumberTableCount = prose.querySelectorAll('table.lntable').length;
+
+                const ordinaryTable = document.createElement('table');
+                ordinaryTable.dataset.proseTableFixture = 'ordinary';
+                ordinaryTable.innerHTML = [
+                    '<thead><tr><th>Kind</th><th>Value</th></tr></thead>',
+                    '<tbody><tr><td>ordinary</td><td>table</td></tr></tbody>'
+                ].join('');
+
+                const highlight = document.createElement('div');
+                highlight.className = 'highlight';
+                highlight.dataset.proseTableFixture = 'chroma';
+                highlight.innerHTML = [
+                    '<div class="chroma">',
+                    '<table class="lntable"><tbody><tr>',
+                    '<td class="lntd"><pre class="chroma"><code><span class="lnt">1</span></code></pre></td>',
+                    '<td class="lntd"><pre class="chroma"><code><span class="line">const value = 1;</span></code></pre></td>',
+                    '</tr></tbody></table>',
+                    '</div>'
+                ].join('');
+                prose.append(ordinaryTable, highlight);
+
+                const chromaTable = highlight.querySelector('table.lntable');
+                const ordinaryCell = ordinaryTable.querySelector('td');
+                const chromaCell = chromaTable?.querySelector('td.lntd');
+                if (!(chromaTable instanceof HTMLTableElement)
+                    || !(ordinaryCell instanceof HTMLTableCellElement)
+                    || !(chromaCell instanceof HTMLTableCellElement)) return null;
+
+                const describe = (element) => {
+                    const style = getComputedStyle(element);
+                    return {
+                        borderCollapse: style.borderCollapse,
+                        borderTopStyle: style.borderTopStyle,
+                        borderTopWidth: style.borderTopWidth,
+                        display: style.display,
+                        fontSize: style.fontSize,
+                        overflowX: style.overflowX,
+                        overflowY: style.overflowY,
+                        paddingBlockStart: style.paddingBlockStart,
+                        paddingInlineStart: style.paddingInlineStart
+                    };
+                };
+
+                return {
+                    existingLineNumberTableCount,
+                    proseFontSize: getComputedStyle(prose).fontSize,
+                    ordinary: {
+                        cell: describe(ordinaryCell),
+                        table: describe(ordinaryTable)
+                    },
+                    chroma: {
+                        cell: describe(chromaCell),
+                        table: describe(chromaTable)
+                    }
+                };
+            });
+
+            const ordinaryValid = state
+                && state.ordinary.table.display === 'block'
+                && state.ordinary.table.overflowX === 'auto'
+                && state.ordinary.table.overflowY === 'hidden'
+                && state.ordinary.table.borderCollapse === 'collapse'
+                && state.ordinary.cell.borderTopStyle === 'solid'
+                && state.ordinary.cell.borderTopWidth !== '0px'
+                && state.ordinary.cell.fontSize !== state.proseFontSize;
+            if (!ordinaryValid) {
+                fail('Ordinary Markdown tables must keep the prose table presentation.', state);
+            }
+
+            const chromaValid = state.chroma.table.display === 'table'
+                && state.chroma.table.overflowX === 'visible'
+                && state.chroma.table.overflowY === 'visible'
+                && state.chroma.table.borderCollapse === 'separate'
+                && state.chroma.table.borderTopStyle === 'none'
+                && state.chroma.table.borderTopWidth === '0px'
+                && state.chroma.cell.borderTopStyle === 'none'
+                && state.chroma.cell.borderTopWidth === '0px'
+                && state.chroma.cell.paddingBlockStart === '0px'
+                && state.chroma.cell.paddingInlineStart === '0px'
+                && state.chroma.cell.fontSize === state.proseFontSize;
+            if (!chromaValid) {
+                fail('Chroma line-number tables must not inherit ordinary prose table layout and cell styles.', state);
+            }
+
+            return {
+                details: state,
+                message: 'Ordinary prose tables remain styled while Chroma line-number tables keep their native table layout.'
+            };
         }
     },
     {
@@ -2283,10 +2523,8 @@ export const scenarios = [
             await page.waitForURL((url) => url.pathname === new URL(targetOption.href, baseUrl).pathname);
             await page.waitForSelector('[data-language-settings] .is-current');
             const switchedState = await readLanguageSettingsState(page);
-            const preferredLanguage = await page.evaluate(() => localStorage.getItem('preferred_lang'));
-            if (!switchedState.options.some((option) => option.value === 'zh' && option.current === 'page')
-                || preferredLanguage !== 'zh') {
-                fail('Language navigation must mark and persist the selected language.', { switchedState, preferredLanguage });
+            if (!switchedState.options.some((option) => option.value === 'zh' && option.current === 'page')) {
+                fail('Language navigation must mark the selected language.', { switchedState });
             }
 
             await resetRuntimeJsonFetchProbe(page);
@@ -2295,7 +2533,6 @@ export const scenarios = [
             const missingTranslationState = await readLanguageSettingsState(page);
             const missingTarget = missingTranslationState.options.find((option) => option.value === 'zh');
             if (!missingTranslationState.noTranslationMessage
-                || !missingTranslationState.languageSuggestionMessage
                 || !missingTarget?.href || !missingTarget.hasTranslation || missingTarget.disabled) {
                 fail('Settings language choices depend on their own translations, not the return page.', missingTranslationState);
             }
@@ -2318,9 +2555,40 @@ export const scenarios = [
         kind: 'single',
         title: 'SW Register Smoke (Home)',
         viewport: { width: 1440, height: 960 },
-        async run({ page, baseUrl }) {
+        async run({ page, context, baseUrl }) {
             await gotoAndWait(page, `${baseUrl}/`);
             await waitForServiceWorkerActive(page);
+            // The first page is warmed by the manager; HTML scanning must cache its CSS/JS too.
+            await pollUntil(() => page.evaluate(async () => {
+                if (!navigator.serviceWorker.controller) return false;
+                const keys = await caches.keys();
+                const navKey = keys.find(key => key.startsWith('nav-html-'));
+                if (!navKey || !keys.includes('asset-fingerprint')) return false;
+                if (!(await (await caches.open(navKey)).match(location.href))) return false;
+                const assetCache = await caches.open('asset-fingerprint');
+                const urls = [...document.querySelectorAll('link[rel="stylesheet"][href], script[src]')]
+                    .map(node => node.href || node.src);
+                return urls.length > 0 && (await Promise.all(urls.map(url => assetCache.match(url)))).every(Boolean);
+            }), { label: 'First navigation and its fingerprinted CSS/JS are cached' });
+            const cachedSw = await page.evaluate(async () => {
+                const keys = await caches.keys();
+                for (const key of keys) {
+                    const requests = await (await caches.open(key)).keys();
+                    if (requests.some(request => new URL(request.url).pathname === '/sw.js')) return key;
+                }
+                return '';
+            });
+            if (cachedSw) fail('sw.js must never enter Cache Storage.', { cachedSw });
+            const swResponse = await context.request.get(`${baseUrl}/sw.js`);
+            if (swResponse.headers()['cache-control'] !== 'no-cache, max-age=0, must-revalidate') {
+                fail('sw.js must revalidate on every request.', { headers: swResponse.headers() });
+            }
+            await context.setOffline(true);
+            const offlineResponse = await page.reload({ waitUntil: 'load' });
+            if (!offlineResponse?.ok() || !offlineResponse.fromServiceWorker()) {
+                fail('The first navigation must remain available offline through the service worker.');
+            }
+            await context.setOffline(false);
             const state = await page.evaluate(async () => {
                 const registration = await navigator.serviceWorker.getRegistration('/');
                 return {

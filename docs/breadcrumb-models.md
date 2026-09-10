@@ -51,4 +51,4 @@
 
 `canvas-position.js` 不再主动把新页面的主列移入视野。沿列表在同标签页打开页面时，只向下一文档传递来源、目标与横向视觉坐标；目标页读取后清除记录，来源与目标匹配的新访问才使用，已有列保持位置，新列向右扩展。内联入口位于头部样式之后，在解析到 `#main` 时通过临时 `scroll-margin` 和一次原生 `scrollIntoView` 还原坐标，随后清除临时样式。浏览器自行处理桌面文档滚动与手机视觉视口平移，不另建滚动容器或设备模式。主列宽度与前置骨架须提前确定；已有滚动位置、锚点或加载期间的输入优先。直接访问从画幅起点开始，历史返回、前进和刷新使用原生恢复，排序与异步重绘不重置画幅。
 
-修改路径排序协议参见 [navigation-state.md](navigation-state.md)。列表与产品声明见 [collection-lists.md](collection-lists.md)。主题配色由外观选择页与黑白色变量控制；历史实施过程见 [入口展平记录](navigation-flattening-plan.md)。
+修改路径排序协议参见 [navigation-state.md](navigation-state.md)。列表与产品声明见 [collection-lists.md](collection-lists.md)。主题状态由外观选择页切换，具体语义颜色集中在 `theme.css`；黑白灰收敛属于后续 6C。历史实施过程见 [入口展平记录](navigation-flattening-plan.md)。

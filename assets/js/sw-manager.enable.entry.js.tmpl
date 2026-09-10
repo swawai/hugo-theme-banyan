@@ -8,4 +8,4 @@ const runtime = createServiceWorkerManagerRuntime({
     updateVisibilityThrottle: {{ mul .visibility_throttle 60000 }}
 });
 
-startEnableMode(runtime);
+runtime.updates = startEnableMode(runtime);

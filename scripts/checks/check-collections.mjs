@@ -8,7 +8,7 @@ import { chromium } from 'playwright';
 import { resolveHugoCommand } from '../build/hugo-command.mjs';
 import { createHugoEnv } from '../build/hugo-env.mjs';
 import { createStaticSiteServer } from '../browser-regression/server.mjs';
-import { gotoAndWait, waitForBreadcrumbSettled, suppressLanguageSuggestDialogScript } from '../browser-regression/helpers.mjs';
+import { gotoAndWait, waitForBreadcrumbSettled } from '../browser-regression/helpers.mjs';
 
 const root = process.cwd();
 const work = fs.mkdtempSync(path.join(root, 'temp_workspace', 'collection-contract-'));
@@ -206,7 +206,6 @@ await server.start();
 const baseUrl = server.getBaseUrl();
 try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 960 }, serviceWorkers: 'block' });
-    await context.addInitScript(suppressLanguageSuggestDialogScript());
     const page = await context.newPage();
     for (const [index, lang] of ['en', 'zh', 'zh-tw'].entries()) {
         await gotoAndWait(page, `${baseUrl}${prefixes[index]}/products/`);
@@ -227,7 +226,7 @@ try {
             const links = '.slot-main .collection-item-link[href*="/p/contract-"]';
             const dates = await page.locator(links).evaluateAll(nodes => nodes
                 .filter(node => /\/p\/contract-(priced|missing)\//.test(node.href))
-                .map(node => node.closest('.cell-title').nextElementSibling.textContent.trim()));
+                .map(node => node.closest('.collection-cell--name').nextElementSibling.textContent.trim()));
             assert.deepEqual(dates, direction === 'asc' ? ['2026-08-01', '2026-08-02'] : ['2026-08-02', '2026-08-01']);
             assert.match(await page.locator('.slot-main [data-sort-field="date"]').textContent(), /Updated/);
             const ordered = await page.locator(links).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
@@ -240,9 +239,9 @@ try {
     console.log('PASS Lastmod ascending/descending display and article path order');
     for (const direction of ['asc', 'desc']) {
         await gotoAndWait(page, `${baseUrl}/products/free/?sort=price-${direction}`);
-        const ordered = await page.locator('.slot-main .grid-products .collection-item-link').evaluateAll(links => links.map(link => ({
+        const ordered = await page.locator('.slot-main .collection-list--products .collection-item-link').evaluateAll(links => links.map(link => ({
             href: new URL(link.href).pathname,
-            price: link.closest('.cell-title').dataset.sortPrice ?? ''
+            price: link.closest('.collection-cell--name').dataset.sortPrice ?? ''
         })));
         assert.equal(ordered.length, payload(builds.directory, 'en', 'products/free').rows.length);
         const firstMissing = ordered.findIndex(row => row.price === '');
@@ -292,7 +291,6 @@ try {
     await noJs.close();
 
     const iconsContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1440, height: 960 } });
-    await iconsContext.addInitScript(suppressLanguageSuggestDialogScript());
     const iconsPage = await iconsContext.newPage();
     const selectedIcon = () => iconsPage.locator('.slot-breadcrumb a.is-current[href*="/p/contract-missing/"] use').getAttribute('href');
     await gotoAndWait(iconsPage, `${baseUrl}/products/free/?sort=name-desc`);
@@ -365,7 +363,6 @@ try {
 
     server.setRoot(builds.name);
     const namesContext = await browser.newContext({ serviceWorkers: 'block', viewport: { width: 1024, height: 700 } });
-    await namesContext.addInitScript(suppressLanguageSuggestDialogScript());
     const namesPage = await namesContext.newPage();
     const paths = selector => namesPage.locator(selector).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
     const nameGrid = '.slot-main [data-sortable="true"]';
@@ -382,7 +379,7 @@ try {
                 const grid = doc.querySelector('.slot-main [data-sortable]');
                 return { fields: [...grid.querySelectorAll('[data-sort-field]')].map(node => node.dataset.sortField),
                     items: [...grid.querySelectorAll('.collection-item-link')].map(node => new URL(node.getAttribute('href'), location.href).pathname),
-                    nonNameCells: grid.querySelectorAll(':scope > :not(.cell-title)').length };
+                    nonNameCells: grid.querySelectorAll(':scope > :not(.collection-cell--name)').length };
             }, address);
             assert.deepEqual(staticRows, {fields: ['name'], items: expected, nonNameCells: 0}, 'SSR renders only name cells and canonical name order');
             assert.deepEqual(await paths(mainLinks), expected, 'Hydration preserves SSR order');

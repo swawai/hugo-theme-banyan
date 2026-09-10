@@ -698,7 +698,7 @@ const speculationHeaderScenarios = [
         id: 'speculation-rules-header-all',
         path: '/all/',
         title: 'Speculation-Rules Header: All',
-        waitForSelector: '.grid-list',
+        waitForSelector: '.collection-list',
         expectedEagerSlots: ['nav']
     }),
     createSpeculationHeaderScenario({

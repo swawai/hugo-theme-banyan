@@ -113,7 +113,7 @@
     {{- if $hasBreadcrumbCapability }}
     <script>{{ $breadcrumbPendingInline | safeJS }}</script>
     {{- end }}
-    {{- block "styles" . -}}{{ partial "system-ui/page-styles.html" (dict "ctx" .) }}{{- end -}}
+    {{- partial "system-ui/page-styles.html" . -}}
     <script>{{ index $inlineScripts "canvas_position" | safeJS }}</script>
     {{- block "head-extra" . -}}{{- end -}}
     {{- $prefetch := partial "system-delivery/prefetch/config.html" (dict "sw_mode" $swMode) -}}
@@ -148,12 +148,12 @@
     <link rel="manifest" href="{{ $manifest.RelPermalink }}" fetchpriority="low">
     {{- end }}
 </head>
-<body data-language-context="{{ partial "feature-preferences/language-context.html" . | jsonify }}" data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $browserNavigationSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}"{{ if or $hasBreadcrumbCapability $hasSortableCollection }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }} data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}">
+<body data-language-return-missing="{{ i18n "language_return_missing" }}" data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $browserNavigationSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}"{{ if or $hasBreadcrumbCapability $hasSortableCollection }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }} data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}">
     {{- if and .IsPage (not .Params.slug) -}}
 {{- errorf "Build failed: page %q (title: %q) is missing the slug field." .File.Path .Title -}}
     {{- end -}}
     <div class="page">
-        <a class="skip" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
+        <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
         {{- $breadcrumbModel := dict -}}
         {{- $hasPathColumns := false -}}
         {{- if $hasBreadcrumbCapability -}}
@@ -171,7 +171,7 @@
             </div>
             <div class="page-stage">
             {{- if $hasPathColumns -}}
-            <div class="slot-row path-columns">
+            <div class="path-columns">
                 <div class="slot slot-breadcrumb" data-slot="breadcrumb">
                     {{- partial "feature-browse/navigation/path/render.html" (dict "ctx" $ "items" (index $breadcrumbModel "tail_items") "collection_sources_by_href" $collectionSourcesByHref) -}}
                 </div>

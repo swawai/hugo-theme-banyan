@@ -34,10 +34,10 @@
   ) -}}
 {{- end -}}
 {{- if gt (len $links) 0 -}}
-<nav class="post-taxonomy post-taxonomy-resources" aria-label="{{ i18n "article_meta_resources" }}">
-  <span class="label">{{ i18n "article_meta_resources" }}</span>
+<nav class="document-meta__row document-meta__row--resources" aria-label="{{ i18n "article_meta_resources" }}">
+  <span class="document-meta__label">{{ i18n "article_meta_resources" }}</span>
   {{- range $index, $link := $links -}}
-    {{- if gt $index 0 -}}<span class="sep" aria-hidden="true">·</span>{{- end -}}
+    {{- if gt $index 0 -}}<span class="document-meta__separator" aria-hidden="true">·</span>{{- end -}}
     {{- partial "system-ui/link.html" (dict
       "href" (index $link "href")
       "text" (index $link "text")

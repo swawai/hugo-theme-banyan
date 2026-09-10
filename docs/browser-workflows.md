@@ -6,7 +6,7 @@
 
 1. 普通页面 / UI / 样式 / 交互改动
 2. `prefetch` / `Speculation-Rules` / CSP 改动
-3. SW 升级 / update prompt / fallback 改动
+3. SW 升级 / 检查更新页面 / 激活恢复改动
 4. 生产候选检查
 
 不要先记一堆脚本名。  
@@ -51,8 +51,8 @@ bun run check:browser:speculation:latest-temp
 适用：
 
 - `sw.js`
-- update prompt
-- fallback confirm
+- 更新状态与手动检查
+- 激活失败恢复
 - fragment root 切换
 - SW 版本升级行为
 

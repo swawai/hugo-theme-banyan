@@ -4,5 +4,4 @@
 {{ $alreadyMinified := in $pathHint ".min.css" }}
 {{ if and (not hugo.IsServer) (not $alreadyMinified) }}{{ $css = $css | minify }}{{ end }}
 {{ $css = $css | fingerprint }}
-{{ if not hugo.IsServer }}{{ $css = $css | resources.PostProcess }}{{ end }}
 {{ return $css }}

@@ -42,9 +42,9 @@ async function readCanvas(page) {
             mainDocumentX: main.getBoundingClientRect().x + scrollX,
             nav: rect(nav),
             columns: columns.map(rect),
-            columnLinks: columns.map(column => column.querySelectorAll('.path-column-link[href]').length),
+            columnLinks: columns.map(column => column.querySelectorAll('[data-collection-entry][href]').length),
             plainColumns: columns.every(column => (
-                column.querySelector(':scope > .grid-list.collection-list--column')
+                column.querySelector(':scope > .collection-list.collection-list--path-column')
                 && !column.querySelector('[aria-expanded], [role="menu"], [hidden]')
             )),
             obsoleteControls: document.querySelectorAll('.breadcrumb-item-menu, .breadcrumb-menu-panel, .breadcrumb-menu-trigger').length,
@@ -393,7 +393,7 @@ export const canvasScenarios = [
             assert.ok(heading.x >= -1 && heading.x < 390 && heading.y >= -1 && heading.y < 900,
                 'A direct fragment keeps the native target visible: ' + JSON.stringify(heading));
 
-            await page.locator('.skip').focus();
+            await page.locator('.skip-link').focus();
             await page.keyboard.press('Enter');
             await page.waitForURL(url => url.hash === '#main');
             await nextPaint(page);

@@ -1,5 +1,3 @@
-import { bindUpdateUi, confirmSiteUpdate, hasVisibleUpdateControl, renderUpdateUi } from './updates/ui.js';
-
 const SW_ACTIVATION_TIMEOUT_MS = 4000;
 const NAVIGATION_CACHE_PREFIX = 'nav-html-';
 const VERSIONED_ASSET_CACHE_PREFIX = 'asset-versioned-';
@@ -10,36 +8,28 @@ let waitingWorker = null;
 let reloadOnControllerChange = false;
 let updateCheckTimer = null;
 let warmedCurrentUrl = '';
-let updateFallbackPrompted = false;
-let enableModeStarted = false;
-let activeRuntime = null;
+let updateController = null;
+const statusListeners = new Set();
 let updateStatus = 'idle';
 let updateLatencyMs = null;
 let updateCheckPromise = null;
 let activationFallbackTimer = null;
 
-function renderUpdateStatus() {
-    return renderUpdateUi(updateStatus, updateLatencyMs);
+function publishUpdateStatus() {
+    for (const listener of statusListeners) listener({ status: updateStatus, latencyMs: updateLatencyMs });
 }
 
 function setUpdateReadyState(ready) {
     if (ready) {
         updateStatus = 'ready';
-        void maybePromptUpdate();
-    } else {
-        updateFallbackPrompted = false;
-        if (updateStatus === 'ready') updateStatus = 'idle';
+    } else if (updateStatus === 'ready') {
+        updateStatus = 'idle';
     }
-    void renderUpdateStatus();
-}
-
-async function maybePromptUpdate() {
-    if (updateFallbackPrompted || hasVisibleUpdateControl()) return;
-    updateFallbackPrompted = true;
-    if (await confirmSiteUpdate() && activeRuntime) void applyWaitingWorker(activeRuntime);
+    publishUpdateStatus();
 }
 
 async function checkForUpdates(runtime) {
+    if (updateStatus === 'unavailable') return;
     if (updateStatus === 'ready') {
         await applyWaitingWorker(runtime);
         return;
@@ -50,7 +40,7 @@ async function checkForUpdates(runtime) {
     if (navigator.onLine === false) {
         updateLatencyMs = null;
         updateStatus = 'offline';
-        await renderUpdateStatus();
+        publishUpdateStatus();
         return;
     }
 
@@ -59,12 +49,12 @@ async function checkForUpdates(runtime) {
     updateStatus = 'checking';
     updateCheckPromise = (async () => {
         try {
-            await renderUpdateStatus();
+            publishUpdateStatus();
             const registration = runtime.getActiveRegistration() || await navigator.serviceWorker.getRegistration(runtime.swScope);
             if (!registration) {
                 updateLatencyMs = null;
                 updateStatus = 'failed';
-                await renderUpdateStatus();
+                publishUpdateStatus();
                 return;
             }
 
@@ -72,16 +62,16 @@ async function checkForUpdates(runtime) {
             updateLatencyMs = Math.max(0, performance.now() - checkStartedAt);
             if (bindWaitingWorker(runtime, registration)) {
                 updateStatus = 'ready';
-                await renderUpdateStatus();
+                publishUpdateStatus();
                 return;
             }
 
             updateStatus = 'current';
-            await renderUpdateStatus();
+            publishUpdateStatus();
         } catch (error) {
             updateLatencyMs = null;
             updateStatus = navigator.onLine === false ? 'offline' : 'failed';
-            await renderUpdateStatus();
+            publishUpdateStatus();
         } finally {
             updateCheckPromise = null;
         }
@@ -170,7 +160,7 @@ function markBackgroundUpdateChecked(runtime, registration) {
     if (bindWaitingWorker(runtime, registration)) return;
     updateLatencyMs = null;
     if (updateStatus !== 'ready') updateStatus = 'current';
-    void renderUpdateStatus();
+    publishUpdateStatus();
 }
 
 function scheduleRegistrationUpdates(runtime, registration) {
@@ -313,20 +303,22 @@ async function handleEnableMode(runtime) {
     } catch (error) { }
 }
 
+// The engine owns SW state; the update page subscribes without loading its UI globally.
 export function startEnableMode(runtime) {
-    if (enableModeStarted) return;
-    enableModeStarted = true;
+    if (updateController) return updateController;
+    updateController = {
+        subscribe(listener) {
+            statusListeners.add(listener);
+            listener({ status: updateStatus, latencyMs: updateLatencyMs });
+            return () => statusListeners.delete(listener);
+        },
+        check: () => checkForUpdates(runtime)
+    };
     if (!runtime?.supportsServiceWorker()) {
         updateStatus = 'unavailable';
-        void renderUpdateStatus();
-        return;
+        return updateController;
     }
-    activeRuntime = runtime;
-    bindUpdateUi(() => void checkForUpdates(runtime));
-    void renderUpdateStatus();
-    if (document.readyState === 'complete') {
-        void handleEnableMode(runtime);
-        return;
-    }
-    window.addEventListener('load', () => void handleEnableMode(runtime), { once: true });
+    if (document.readyState === 'complete') void handleEnableMode(runtime);
+    else window.addEventListener('load', () => void handleEnableMode(runtime), { once: true });
+    return updateController;
 }

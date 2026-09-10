@@ -4,6 +4,6 @@
 
 .updates-status {
     font-size: small;
-    color: var(--link-visited);
+    color: var(--muted);
     line-height: 1.55;
 }

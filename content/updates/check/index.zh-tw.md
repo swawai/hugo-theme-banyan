@@ -26,7 +26,6 @@ site_update:
     status_offline: 離線
     status_click_update: 立即更新
     status_click_retry: 點擊重試
-    prompt: 已有新版本可用，立即重新整理？
 ---
 
 檢查是否有新的站點版本。更新準備好後，點擊「立即更新」套用新版本並重新載入目前頁面。

@@ -2,11 +2,11 @@
 {{ $buildVersion := partial "system-build/version.html" . }}
 <div class="updates-panel" data-site-update-panel>
   <p>{{ $labels.current_version }}: <span data-site-update-version title="{{ $buildVersion }}">{{ partial "system-build/time-display.html" . | default $buildVersion }}</span></p>
-  <div class="grid-list collection-list--grid">
+  <div class="collection-list">
     {{ if eq (lower (.Site.Params.service_worker.mode | default "off")) "enable" }}
-    <span class="cell-title">
-      <button type="button" class="collection-item-link" data-site-update-action="check">
-        {{ partial "system-ui/list/item-content.html" (dict "icon" (dict "text" "↻") "text" $labels.check) }}
+    <span class="collection-cell collection-cell--name" data-collection-cell="name">
+      <button type="button" class="collection-item-link" data-collection-entry data-site-update-action="check">
+        {{ partial "system-ui/list/item-content.html" (dict "icon" (dict "text" "↻") "text" $labels.check "labelAttr" "site-update-action-label") }}
       </button>
     </span>
     {{ end }}

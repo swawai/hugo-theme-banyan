@@ -1,13 +1,6 @@
-{{ define "styles" }}
-{{ partial "system-ui/page-styles.html" (dict "ctx" . "view" "choice") }}
-{{ end }}
-{{ define "head-extra" }}
-{{ partial "feature-document/styles.html" (dict "ctx" .) }}
-{{ end }}
-
 {{ define "main" }}
-<article class="article" data-retire-return-param>
-  <div class="collection-list collection-list--index">
+<article class="article">
+  <div class="collection-panel">
     {{- $items := slice -}}
     {{- range slice "auto" "light" "dark" -}}
       {{- $items = $items | append (dict
@@ -19,4 +12,7 @@
     {{ partial "feature-preferences/back-link.html" . }}
   </div>
 </article>
+{{ end }}
+{{ define "body-extra" }}
+{{ partial "system-assets/script.html" (dict "path" "js/back-links.js") }}
 {{ end }}

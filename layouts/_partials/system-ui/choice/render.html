@@ -3,8 +3,8 @@
 {{- if ne $view "choice" -}}
   {{- errorf "Choice page %s needs list: choice (own declaration or nearest ancestor)." $page.RelPermalink -}}
 {{- end -}}
-<div class="grid-list grid-list--headed collection-list--grid" data-list-view="{{ $view }}">
-  <h1 class="cell-title header collection-list-header">{{ .title }}</h1>
+<div class="collection-list collection-list--headed" data-list-view="{{ $view }}">
+  <h1 class="collection-cell collection-cell--name collection-cell--header collection-header" data-collection-cell="name" data-collection-header>{{ .title }}</h1>
   {{- range .items -}}
     {{- $control := printf "%v" (.control | default "") -}}
     {{- $text := .text | default "" -}}
@@ -20,7 +20,7 @@
     {{- else if eq $control "button" -}}
       {{- $class := "collection-item-link" -}}
       {{- if $isCurrent }}{{- $class = printf "%s is-current" $class -}}{{- end -}}
-      <span class="cell-title"><button type="button" class="{{ $class }}" aria-pressed="{{ cond $isCurrent "true" "false" }}"{{ with .title }} title="{{ . }}"{{ end }}{{ with .label }} aria-label="{{ . }}"{{ end }}{{ with $dataAttrs }}{{ range $name, $value := . }} {{ printf "data-%s=%q" $name $value | safeHTMLAttr }}{{ end }}{{ end }}>
+      <span class="collection-cell collection-cell--name" data-collection-cell="name"><button type="button" class="{{ $class }}" data-collection-entry aria-pressed="{{ cond $isCurrent "true" "false" }}"{{ with .title }} title="{{ . }}"{{ end }}{{ with .label }} aria-label="{{ . }}"{{ end }}{{ with $dataAttrs }}{{ range $name, $value := . }} {{ printf "data-%s=%q" $name $value | safeHTMLAttr }}{{ end }}{{ end }}>
         {{- partial "system-ui/list/item-content.html" (dict "text" $text "icon" $icon) -}}
       </button></span>
     {{- else -}}

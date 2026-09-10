@@ -12,7 +12,7 @@
 {{- end -}}
 {{- $header := partial "feature-browse/navigation/path/column-header.html" (dict "ctx" $ctx "source" $collectionSource) -}}
 <div class="path-column" data-collection-column="true"{{ with $collectionHref }} data-breadcrumb-collection-href="{{ . }}"{{ end }}>
-  <div class="grid-list collection-list collection-list--column{{ if $header }} grid-list--headed{{ end }}">
+  <div class="collection-list collection-list--path-column{{ if $header }} collection-list--headed{{ end }}">
     {{- $header -}}
     {{- range $row := $items -}}
       {{- $isCurrent := eq (index $row "current") true -}}
@@ -22,7 +22,6 @@
         "text" (index $row "text")
         "icon" (index $row "icon" | default (cond (eq $kind "page") "file" "folder"))
         "title" (index $row "title")
-        "linkClass" "path-column-link"
         "isCurrent" $isCurrent
         "prefetchSlot" "crumb"
       ) }}
