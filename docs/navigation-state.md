@@ -128,6 +128,8 @@ breadcrumb 分栏不读取或改写 `sort`。
 
 两处都使用同一种紧凑 row payload 协议。页面加载后在输入边界解码一次，路径列初始呈现和列内排序共用这份内存数据，不再生成或请求 `_items.json`／`_children.json`。
 
+生产检查将单页解码后的 `data-entry-breadcrumb-sources` 限制为 64 KiB。这个上限约束每页实际携带的来源、层级与 row 总量；集合页自身的 HTML 预算则按“固定外壳 + 每条 row”计算，正常新增内容不会因为固定总量阈值而误报。
+
 它承担：
 
 - 当前 collection 的 item rows

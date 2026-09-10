@@ -6,6 +6,7 @@ import { gzipSync } from 'node:zlib';
 const siteRoot = process.cwd();
 const defaultPublicDir = 'public';
 const defaultTop = 8;
+const maxPageBreadcrumbPayloadBytes = 64 * 1024;
 
 // These guardrails intentionally target minified production output.
 // Run the script without --check when you only want an exploratory report.
@@ -24,20 +25,27 @@ const productionGuardrails = [
     },
     {
         label: 'all',
-        relativePath: 'all/index.html',
+        rootCollectionSlug: 'all',
+        relativePathLabel: '*/all/index.html',
         // The critical root/path boot modules are bundled inline before first paint.
-        // Keep a narrow fixed allowance here; row payload growth is guarded below.
-        maxRawBytes: 43_000,
-        maxGzipBytes: 12_000,
+        // Keep the shell and each published row bounded independently so normal
+        // content growth does not require recalibrating a fixed total.
+        rawBaseBytes: 28_000,
+        rawPerItemBytes: 1_500,
+        gzipBaseBytes: 10_000,
+        gzipPerItemBytes: 100,
         breadcrumbPayloadBaseBytes: 1_000,
         breadcrumbPayloadPerItemBytes: 220,
         maxBreadcrumbSourceCount: 1
     },
     {
         label: 'products',
-        relativePath: 'products/index.html',
-        maxRawBytes: 42_000,
-        maxGzipBytes: 12_000,
+        rootCollectionSlug: 'products',
+        relativePathLabel: '*/products/index.html',
+        rawBaseBytes: 28_000,
+        rawPerItemBytes: 1_500,
+        gzipBaseBytes: 8_000,
+        gzipPerItemBytes: 100,
         breadcrumbPayloadBaseBytes: 1_300,
         breadcrumbPayloadPerItemBytes: 220,
         maxBreadcrumbSourceCount: 1
@@ -1075,38 +1083,78 @@ function buildSeoIntegrityIssues(rows, sitemapLocs) {
     return issues;
 }
 
+function getGuardrailRows(rowsByPath, guardrail) {
+    if (guardrail.relativePath) {
+        const row = rowsByPath.get(guardrail.relativePath);
+        return row ? [row] : [];
+    }
+    if (guardrail.rootCollectionSlug) {
+        return [...rowsByPath.values()]
+            .filter((row) => {
+                const segments = row.relativePath.split('/');
+                return (
+                    segments.length === 2
+                    && segments[0] === guardrail.rootCollectionSlug
+                    && segments[1] === 'index.html'
+                ) || (
+                    segments.length === 3
+                    && segments[0] === row.htmlLang
+                    && segments[1] === guardrail.rootCollectionSlug
+                    && segments[2] === 'index.html'
+                );
+            });
+    }
+    return [];
+}
+
 function buildGuardrailIssues(rowsByPath) {
     const issues = [];
 
+    for (const row of rowsByPath.values()) {
+        if (row.breadcrumbPayloadBytes > maxPageBreadcrumbPayloadBytes) {
+            issues.push(
+                `Page breadcrumb payload exceeded the site-wide limit: ${formatByteMetric(row.breadcrumbPayloadBytes)} > ${formatByteMetric(maxPageBreadcrumbPayloadBytes)} (${row.relativePath}, items=${row.breadcrumbItemCount}, sources=${row.breadcrumbSourceCount})`
+            );
+        }
+    }
+
     for (const guardrail of productionGuardrails) {
-        const row = rowsByPath.get(guardrail.relativePath);
-        if (!row) {
-            issues.push(`Missing sentinel page: ${guardrail.relativePath}`);
+        const matchingRows = getGuardrailRows(rowsByPath, guardrail);
+        if (matchingRows.length === 0) {
+            issues.push(`Missing sentinel page: ${guardrail.relativePath ?? guardrail.relativePathLabel}`);
             continue;
         }
-        if (row.rawBytes > guardrail.maxRawBytes) {
-            issues.push(
-                `${guardrail.label} raw HTML exceeded budget: ${formatByteMetric(row.rawBytes)} > ${formatByteMetric(guardrail.maxRawBytes)} (${guardrail.relativePath})`
-            );
-        }
-        if (row.gzipBytes > guardrail.maxGzipBytes) {
-            issues.push(
-                `${guardrail.label} gzip HTML exceeded budget: ${formatByteMetric(row.gzipBytes)} > ${formatByteMetric(guardrail.maxGzipBytes)} (${guardrail.relativePath})`
-            );
-        }
-        const maxBreadcrumbPayloadBytes = Number.isFinite(guardrail.maxBreadcrumbPayloadBytes)
-            ? guardrail.maxBreadcrumbPayloadBytes
-            : guardrail.breadcrumbPayloadBaseBytes
-                + row.breadcrumbItemCount * guardrail.breadcrumbPayloadPerItemBytes;
-        if (row.breadcrumbPayloadBytes > maxBreadcrumbPayloadBytes) {
-            issues.push(
-                `${guardrail.label} breadcrumb payload exceeded budget: ${formatByteMetric(row.breadcrumbPayloadBytes)} > ${formatByteMetric(maxBreadcrumbPayloadBytes)} (${guardrail.relativePath}, items=${row.breadcrumbItemCount})`
-            );
-        }
-        if (row.breadcrumbSourceCount > guardrail.maxBreadcrumbSourceCount) {
-            issues.push(
-                `${guardrail.label} breadcrumb source count exceeded budget: ${row.breadcrumbSourceCount} > ${guardrail.maxBreadcrumbSourceCount} (${guardrail.relativePath})`
-            );
+        for (const row of matchingRows) {
+            const maxRawBytes = Number.isFinite(guardrail.maxRawBytes)
+                ? guardrail.maxRawBytes
+                : guardrail.rawBaseBytes + row.breadcrumbItemCount * guardrail.rawPerItemBytes;
+            const maxGzipBytes = Number.isFinite(guardrail.maxGzipBytes)
+                ? guardrail.maxGzipBytes
+                : guardrail.gzipBaseBytes + row.breadcrumbItemCount * guardrail.gzipPerItemBytes;
+            if (row.rawBytes > maxRawBytes) {
+                issues.push(
+                    `${guardrail.label} raw HTML exceeded budget: ${formatByteMetric(row.rawBytes)} > ${formatByteMetric(maxRawBytes)} (${row.relativePath}, items=${row.breadcrumbItemCount})`
+                );
+            }
+            if (row.gzipBytes > maxGzipBytes) {
+                issues.push(
+                    `${guardrail.label} gzip HTML exceeded budget: ${formatByteMetric(row.gzipBytes)} > ${formatByteMetric(maxGzipBytes)} (${row.relativePath}, items=${row.breadcrumbItemCount})`
+                );
+            }
+            const maxBreadcrumbPayloadBytes = Number.isFinite(guardrail.maxBreadcrumbPayloadBytes)
+                ? guardrail.maxBreadcrumbPayloadBytes
+                : guardrail.breadcrumbPayloadBaseBytes
+                    + row.breadcrumbItemCount * guardrail.breadcrumbPayloadPerItemBytes;
+            if (row.breadcrumbPayloadBytes > maxBreadcrumbPayloadBytes) {
+                issues.push(
+                    `${guardrail.label} breadcrumb payload exceeded budget: ${formatByteMetric(row.breadcrumbPayloadBytes)} > ${formatByteMetric(maxBreadcrumbPayloadBytes)} (${row.relativePath}, items=${row.breadcrumbItemCount})`
+                );
+            }
+            if (row.breadcrumbSourceCount > guardrail.maxBreadcrumbSourceCount) {
+                issues.push(
+                    `${guardrail.label} breadcrumb source count exceeded budget: ${row.breadcrumbSourceCount} > ${guardrail.maxBreadcrumbSourceCount} (${row.relativePath})`
+                );
+            }
         }
     }
 
@@ -1246,6 +1294,7 @@ async function main() {
     console.log(`Raw total\t${rawTotal}\t${formatBytes(rawTotal)}`);
     console.log(`Gzip total\t${gzipTotal}\t${formatBytes(gzipTotal)}`);
     console.log(`Breadcrumb payload total\t${breadcrumbTotal}\t${formatBytes(breadcrumbTotal)}`);
+    console.log(`Breadcrumb payload page limit\t${maxPageBreadcrumbPayloadBytes}\t${formatBytes(maxPageBreadcrumbPayloadBytes)}`);
     console.log(`Breadcrumb prefetch anchors\t${breadcrumbAnchorTotal}`);
     console.log(`Breadcrumb crumb anchors\t${breadcrumbCrumbAnchorTotal}`);
     console.log(`Breadcrumb prefetch issues\t${breadcrumbPrefetchIssueTotal}`);
@@ -1323,7 +1372,7 @@ async function main() {
     printDuplicateSeoGroups('Duplicate meta descriptions within one language', duplicateMetaDescriptions);
 
     printSentinelRows(
-        productionGuardrails.map((guardrail) => rowsByPath.get(guardrail.relativePath))
+        productionGuardrails.flatMap((guardrail) => getGuardrailRows(rowsByPath, guardrail))
     );
 
     const integrityIssues = [
