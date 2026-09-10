@@ -102,6 +102,8 @@ system-*    ──X feature-*
 6. 第一列、路径列和主列表可以共用行组件，不能共享“如何发现条目”的逻辑。
 7. 更新面板是用户功能；Service Worker、缓存和预取是 delivery 机制。
 
+页面 bundle 资源的定位与发布是两个动作：`system-assets/resolve-page.html` 只返回源 resource 和目标目录，`system-assets/publish-page.html` 才发布源文件。分享图先解析源 resource；可处理的位图只发布最终 `1200x630` JPG，非位图才发布原资源，避免为了生成衍生图而附带发布未引用的源图。
+
 ## 新增与修改规则
 
 - 调用者知道意图时，直接调用具名 partial；不增加 `mode`、`type`、`op` 字符串分发器。
