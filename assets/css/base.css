@@ -1,0 +1,61 @@
+html {
+    min-height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-size: 15px;
+}
+
+body {
+    margin: 0;
+    -webkit-text-size-adjust: 100% !important;
+    text-size-adjust: 100% !important;
+    background: var(--bg);
+    color: var(--fg);
+    transition: background 0.3s, color 0.3s;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+}
+
+a {
+    color: var(--link);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.08rem;
+    text-decoration-skip-ink: auto;
+    transition: color 0.3s;
+}
+a:visited {
+    color: var(--link-visited);
+}
+
+:is(a, button):focus-visible {
+    outline: 2px dashed var(--focus-ring);
+    outline-offset: 2px;
+}
+
+.page-back-link {
+    margin-block-start: 1rem;
+}
+
+.skip-link {
+    position: absolute;
+    left: -9999px;
+    top: auto;
+}
+
+.skip-link:focus {
+    left: 8px;
+    top: 8px;
+    background: var(--bg);
+    color: var(--fg);
+    outline: 2px solid var(--focus-ring);
+    padding: 4px 8px;
+    z-index: 1000;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body,
+    a {
+        transition-duration: 0.01ms !important;
+    }
+}

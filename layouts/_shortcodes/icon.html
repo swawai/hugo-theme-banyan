@@ -1,0 +1,4 @@
+{{- $name := .Get 0 -}}
+{{- $class := .Get "class" -}}
+{{- $label := .Get "label" -}}
+{{- partial "system-ui/icon/render.html" (dict "name" $name "class" $class "label" $label) -}}

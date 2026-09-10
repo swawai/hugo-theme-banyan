@@ -1,0 +1,19 @@
+{{ define "main" }}
+<article class="article">
+  <div class="collection-panel" data-language-settings data-language-missing="{{ i18n "no_trans_msg" }}">
+    {{- $items := slice -}}
+    {{- range partial "feature-preferences/language-choice-options.html" . -}}
+      {{- $items = $items | append (dict
+        "control" "link" "href" .href "title" .name "text" .name
+        "icon" .icon "isCurrent" (eq .code $.Language.Lang)
+        "prefetchSlot" "nav" "dataAttrs" (dict "language-choice" .code "language-name" .name "has-trans" (printf "%v" .translated))
+      ) -}}
+    {{- end -}}
+    {{ partial "system-ui/choice/render.html" (dict "page" . "title" .Title "items" $items) }}
+    {{ partial "feature-preferences/back-link.html" . }}
+  </div>
+</article>
+{{ end }}
+{{ define "body-extra" }}
+{{ partial "system-assets/script.html" (dict "path" "js/preferences/language-page.js") }}
+{{ end }}

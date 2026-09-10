@@ -1,0 +1,32 @@
+{{- $entries := .entries | default slice -}}
+{{- $selectedHref := printf "%v" (.selected_href | default "") -}}
+{{- $items := slice -}}
+{{- range $entry := $entries -}}
+  {{- $text := "" -}}
+  {{- with index $entry "text" -}}
+    {{- $text = printf "%v" . -}}
+  {{- end -}}
+  {{- $href := "" -}}
+  {{- with index $entry "href" -}}
+    {{- $href = printf "%v" . -}}
+  {{- end -}}
+  {{- if or (eq $text "") (eq $href "") -}}
+    {{- continue -}}
+  {{- end -}}
+  {{- $item := dict
+    "text" $text
+    "href" $href
+    "current" (eq $href $selectedHref)
+  -}}
+  {{- with index $entry "title" -}}
+    {{- $title := trim (printf "%v" .) " " -}}
+    {{- if ne $title "" -}}{{- $item = merge $item (dict "title" $title) -}}{{- end -}}
+  {{- end -}}
+  {{- with index $entry "kind" -}}
+    {{- $kind := lower (trim (printf "%v" .) " ") -}}
+    {{- if ne $kind "" -}}{{- $item = merge $item (dict "kind" $kind) -}}{{- end -}}
+  {{- end -}}
+  {{- with index $entry "icon" -}}{{- $item = merge $item (dict "icon" .) -}}{{- end -}}
+  {{- $items = $items | append $item -}}
+{{- end -}}
+{{- return $items -}}

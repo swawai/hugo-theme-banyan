@@ -1,0 +1,23 @@
+.document-meta {
+    display: grid;
+    gap: 0.24rem;
+    margin: 44px 0 1rem;
+}
+
+.document-meta__row {
+    margin: 0;
+    font-size: small;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem;
+}
+
+.document-meta__label {
+    color: var(--fg);
+}
+
+.document-meta__separator {
+    color: var(--muted);
+}

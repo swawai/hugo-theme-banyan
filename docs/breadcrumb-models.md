@@ -1,279 +1,54 @@
-# Banyan Breadcrumb Models
+# Banyan Breadcrumb Model
 
-## 目的
+## 第一列与进入路径
 
-`themes/banyan/content/fragments/breadcrumb-model-*` 现在应被视为 **正式支持的导航配置面**。
+第一列是当前语言站点的真实根页面列表，由 `feature-browse/navigation/root/pages.html` 构建：
+`Home.Pages` 与直接属于 Home 的 taxonomy 根页面取并集，再按页面 `weight` 排序。
+名称取 `LinkTitle` / `Title`，地址取 `RelPermalink`。只有显式声明 `root_nav: true` 的根页面才显示，`build.list: local` 的系统页面也可以参与。
 
-它不再只是“模板作者自己知道怎么配”的私有技巧，而是会同时影响：
+首页自身作为普通根入口，使用版权文字与字符图标。页面不声明主菜单归属，也没有独立的菜单项目白名单。
+新增入口时，创建真实的根页面并设置 `root_nav: true`、名称和权重；新增某个入口的子项时，把它放在相应内容目录中。
 
-- mobile / medium 的 inline breadcrumb
-- entry 页运行时 breadcrumb 修正
-- wide 下的列式 breadcrumb 视图
-- root current 归属
-- root 已覆盖 tail menu 时的自动裁剪
+## 选中规则
 
-所以这里的目标不是“尽量灵活”，而是：
+`feature-browse/navigation/root/selected.html` 从当前页面及真实内容祖先中找根入口，提供静态 HTML 的默认选中项。
+公开 URL 可以与内容路径不同，因此不能根据 URL 前缀猜所属入口。例如 `content/d/products/xvenv/` 发布在 `/p/xvenv/`，仍属于真实目录；目录隐藏时第一列不选中。`content/updates/changelog/` 保留 `/changelog/` 地址，同时归属“更新”并显示其路径列。
 
-- 配置面小而清楚
-- 失败尽早暴露
-- 新增导航家族时有稳定心智模型
+有效的 `from` 指向当前页面已发布的来源集合。预览与运行时根据该来源的 `root_item` 调整第一列选中项，完整入口列表始终保留。
+从“标签”进入同一篇文章就选中“标签”，从“产品－全部”进入就选中“产品－全部”。不存在或不属于当前文章的来源不参与选中，继续使用内容祖先。
+系统页面选中自己的根入口，使用普通页面网址；返回按钮使用浏览器历史记录，不另存原阅读地址。语言选择后的返回行为见 [navigation-state.md](navigation-state.md#系统页面与返回)。首页作为显式根入口时选中自己；没有根入口祖先的内部页不强制选中一项。
 
-## 一个最小例子
+## 路径模型
 
-Products：
+`feature-browse/navigation/path/model.html` 根据普通页面、首页或 taxonomy 的真实结构构建模型：
 
-```yaml
-breadcrumb:
-  variant: lead-menu
-  auto_tail: current
-  menu_mode: current-root
-  menu_label: 产品分类
-  menu_active_href_source: products-family
-  menu:
-    - page: /products/first-party
-    - page: /products/first-party/paid
-    - page: /products/first-party/free
-    - page: /products/third-party
-```
+- `root_item`：第一列应选中的根页面。
+- `tail_items`：根页面之后的路径项目。
+- `levels`：各路径项目及其所属集合。
+- `schema_items`：结构化数据中的页面路径。
 
-Signals：
+项目自身的 `href` 与提供兄弟条目的 `collection_href` 含义不同。例如“WSL”项目指向 `/d/wsl/`，其兄弟列表来自 `/d/`。`collection_label` 取该所属页面的名称，用于没有排序 provider 的静态列头。
+每个路径项目的 `column_items` 保存该列要显示的兄弟条目；没有兄弟条目时，渲染器只显示项目自身。它是普通列数据，不含展开、隐藏或下拉状态。
 
-```yaml
-breadcrumb:
-  variant: lead-menu
-  auto_tail: full
-  menu_mode: current-root
-  menu_label: 切换根页面
-  menu_active_href_source: signals-family
-  menu:
-    - page: /all
-    - page: /d
-  menu_sources:
-    - source: taxonomy-roots
-```
+可见路径列由 `assets/js/browse/path-render.js`／`path-navigation.css` 实现，使用 `renderPathColumns()` 与 `renderPathColumn()`；结构模型和 SEO BreadcrumbList 仍属于 breadcrumb。行选中状态统一使用 `current`，不再接受 `highlighted` 或 `selected` 别名。完整命名约定见 [UI 命名与职责](ui-naming.md)。
 
-## 核心判断
+`feature-browse/navigation/path/section-items.html` 和 `feature-browse/navigation/path/taxonomy-items.html` 分别查找真实父目录与分类父级，通过 `feature-browse/navigation/path/items-from-rows.html` 把条目转换成统一的 `text`、`href`、`current`、`title`、`kind`、`icon` 字段。调用方已经提供统一行结构，不再另传字段名称。
 
-这类 fragment 负责的是 **导航语义**，不是页面布局。
+`feature-browse/navigation/source/page-model.html` 将这些层级映射到集合 provider 与当前页面内嵌的 source model。所有列表页统一使用 collection 来源，排序字段由 `list` 声明决定。主列表与路径列 source 共用 `feature-browse/collection/rows.html`。浏览器 source 携带当前集合和祖先集合所需的紧凑 `collection_items`，不再发布或请求 `_items.json`。
 
-也就是说：
+首页、普通页面和 taxonomy 的模型生成器负责不同的路径来源，最终共用一个列渲染器。`feature-browse/navigation/path/model.html` 直接按 Hugo 页面种类调用相应生成器；模型不返回 `variant` 或 `strategy` 标签，也没有额外的字符串分发层。
 
-- 它决定 root menu 是什么
-- 决定 tail 是自动取当前层，还是完整路径
-- 决定当前 root 应该高亮哪一项
+第一列只渲染一次，来源模型不携带完整根菜单，也不根据“第一列已覆盖”删除路径集合。分类根的子项可作为第二列出现，分类数量由内容决定。
 
-但它不决定：
+## 布局与维护边界
 
-- rail / stage / column 最终怎么排
-- wide 下列宽是多少
-- dropdown 用什么皮肤
+第一列、路径列和内容列表共用 `system-ui/list/link-cell.html` / `system-ui/list/item-content.html`、选中状态与导航列宽。版权、备案等信息使用普通根入口，已无独立页脚。
+`slots.breadcrumb` 仅控制路径栏是否显示；它不控制全站入口初始化，也不存放进入路径状态。
 
-这就是为什么同一份 `breadcrumb-model-*` 配置，会同时服务 mobile / medium / wide，而不是每种版式各配一份。
+各宽度采用同一横向列结构：每个尾部路径项目是一列普通列表，直接展示兄弟项目；没有兄弟列表时仍显示该项目的一行链接。SSR 与客户端重绘使用相同的列头、图标与选中规则，不再存在下拉菜单触发器、隐藏面板或宽度模式。
 
-## 支持的字段
+文档负责整页横向滚动；入口和路径列固定为 `15rem`，正文取视口可用宽度与 `88ch` 的较小值。表格与代码在正文内局部滚动。DOM 顺序与视觉顺序一致。
 
-### `variant`
+`browse/canvas-position.js` 实现画幅状态，`inline/canvas-position.js` 负责首帧装配。它们不再主动把新页面的主列移入视野。沿列表在同标签页打开页面时，只向下一文档传递来源、目标与横向视觉坐标；目标页读取后清除记录，来源与目标匹配的新访问才使用，已有列保持位置，新列向右扩展。内联入口位于头部样式之后，在解析到 `#main` 时通过临时 `scroll-margin` 和一次原生 `scrollIntoView` 还原坐标，随后清除临时样式。浏览器自行处理桌面文档滚动与手机视觉视口平移，不另建滚动容器或设备模式。主列宽度与前置骨架须提前确定；已有滚动位置、锚点或加载期间的输入优先。直接访问从画幅起点开始，历史返回、前进和刷新使用原生恢复，同步初始化与列内局部排序重绘不重置画幅。
 
-当前支持：
-
-- `trail`
-- `lead-menu`
-- `lead-only`
-
-含义：
-
-- `trail`
-  - 普通 breadcrumb trail
-- `lead-menu`
-  - 第一项承担 root menu
-- `lead-only`
-  - inline breadcrumb 只显示 lead 项
-
-当前 root fragments 实际主要使用 `lead-menu`。
-
-### `auto_tail`
-
-当前支持：
-
-- `current`
-- `full`
-
-含义：
-
-- `current`
-  - 只自动挂当前项
-- `full`
-  - 自动挂完整路径尾部
-
-例子：
-
-- products 更适合 `current`
-- signals/tree taxonomy 更适合 `full`
-
-### `menu_mode`
-
-当前支持：
-
-- `current-root`
-
-含义：
-
-- root menu 的当前项不是简单按第一项或当前页面决定
-- 而是从 root menu 中选出“最具体匹配”的当前 root
-
-如果设置了 `menu_mode: current-root`，配置必须最终能解析出 root menu。
-
-### `menu_label`
-
-root menu 的语义标签。
-
-它主要服务：
-
-- 按钮的 `aria-label`
-- wide / runtime 中的语义文案
-
-建议总是显式填写，不要完全依赖默认回退。
-
-### `menu_active_href_source`
-
-root current 的来源策略。
-
-当前支持：
-
-- `products-family`
-- `signals-family`
-
-这不是一个随便填字符串的扩展口。  
-如果你要新增新的 family 策略，应把它视为 **主题级新能力**：
-
-1. 新增 `layouts/partials/breadcrumb/menu-active-href-*.html`
-2. 补文档
-3. 补校验
-
-### `menu`
-
-显式 root menu。
-
-每项支持一个 breadcrumb item spec，推荐最常用的是：
-
-- `page`
-
-也支持：
-
-- `href`
-- `text`
-- `name`
-- `text_key`
-- `title`
-
-推荐优先使用 `page`，因为它：
-
-- 更稳
-- 能自动带语言站点相对链接
-- 更容易在构建期校验
-
-### `menu_sources`
-
-声明式补充 menu item 来源。
-
-当前支持：
-
-- `taxonomy-roots`
-- `section-children`
-
-#### `taxonomy-roots`
-
-把当前站点的 taxonomy roots 追加进 menu。
-
-例子：
-
-```yaml
-menu_sources:
-  - source: taxonomy-roots
-```
-
-#### `section-children`
-
-把某个 section 的直接子 section 追加进 menu。
-
-例子：
-
-```yaml
-menu_sources:
-  - source: section-children
-    page: /docs
-    include_self: true
-```
-
-这同样是一个正式支持面，而不是可任意拼 partial 名的私有后门。  
-如果未来要新增新 source，也应同步补代码、文档和校验。
-
-### `lead`
-
-可选的显式 lead item。
-
-它也使用同一个 breadcrumb item spec。
-
-当前项目里 root fragments 暂时没有实际用到 `lead`，但 canonical model 已支持。
-
-## 构建期保证
-
-当前构建已经会在 fragment load 时校验这些点：
-
-- `breadcrumb` 配置块必须存在
-- `variant` 必须来自当前支持集合
-- `auto_tail` 必须来自当前支持集合
-- `menu_mode` 必须来自当前支持集合
-- `menu_active_href_source` 必须来自当前支持集合
-- `menu_sources[].source` 必须来自当前支持集合
-- `lead` / `menu` 里的 `page` 必须能解析到真实页面
-- root menu 最终解析出的 href 不能重复
-- `menu_mode: current-root` 不能配出一个空 root menu
-
-这类错误属于“越早失败越好”，因为它们一旦混到运行时，表面上通常只是：
-
-- 当前项高亮不对
-- wide 多出一列
-- dropdown 排序或覆盖关系错位
-
-而不是一眼就能看出的模板错误。
-
-## Wide 下的一个重要规则
-
-如果 root menu 已经完整覆盖了某个 tail menu，wide 下会自动裁掉那一列。
-
-典型例子是 products：
-
-- root menu 已有 `First-party / Paid / Free / Third-party`
-- 某个下层 tail menu 如果再次只给出 `Paid / Free`
-- wide 会把这一级判定为“root 已覆盖”，不再重复渲染
-
-关键点是：
-
-- 这个判断基于 **menu href 集合是否已被 root 完整覆盖**
-- 不是简单按物理路径层级硬扣一层
-
-这样更稳，也更适合后续继续演化内容结构。
-
-## 什么时候该改 fragment，什么时候该改主题
-
-改 fragment 即可：
-
-- 只是换 root menu 的具体项
-- 只是换 `auto_tail=current/full`
-- 只是切当前已支持的 `menu_active_href_source`
-
-应该改主题：
-
-- 想新增新的 `menu_active_href_source`
-- 想新增新的 `menu_sources`
-- 想支持新的 `variant`
-- 想改变 root 覆盖 tail 的判定规则
-
-一个简单心智模型：
-
-- **内容决定导航家族的“内容”**
-- **主题决定导航家族的“语法与能力边界”**
-
-不要为了某个单站点需求，把新的私有语法偷偷塞进 fragment；  
-那样看似灵活，长期其实最难养。
+修改路径排序协议参见 [navigation-state.md](navigation-state.md)。列表与产品声明见 [collection-lists.md](collection-lists.md)。主题状态由外观选择页切换，具体语义颜色集中在 `theme.css`；黑白灰收敛属于后续 6C。历史实施过程见 [入口展平记录](navigation-flattening-plan.md)。

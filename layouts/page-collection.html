@@ -1,0 +1,10 @@
+{{ define "head-extra" }}
+{{ $content := trim (printf "%s" .Content) " \r\n\t" }}
+{{ with $content }}{{ partial "feature-document/styles.html" $ }}{{ end }}
+{{ end }}
+{{ define "main" }}
+{{ partial "feature-browse/collection/render-page.html" . }}
+{{ end }}
+{{ define "body-extra" }}
+{{ partial "feature-browse/collection/sort/script.html" . }}
+{{ end }}

@@ -1,0 +1,17 @@
+{{- $page := .page -}}
+{{- $offer := $page.Params.offer | default dict -}}
+{{- if not (reflect.IsMap $offer) -}}{{- errorf "offer on %s must be an object." $page.RelPermalink -}}{{- end -}}
+{{- $amount := "" -}}
+{{- $price := "—" -}}
+{{- if isset $offer "amount" -}}
+  {{- $amount = trim (printf "%v" $offer.amount) " " -}}
+  {{- if eq (len (findRE `^[0-9]+(?:\.[0-9]+)?$` $amount)) 0 -}}
+    {{- errorf "Invalid offer.amount=%q on %s; expected a nonnegative amount." $amount $page.RelPermalink -}}
+  {{- end -}}
+  {{- $currency := trim (printf "%v" ($offer.currency | default "")) " " -}}
+  {{- if eq $currency "" -}}{{- errorf "offer.amount on %s requires offer.currency." $page.RelPermalink -}}{{- end -}}
+  {{- $price = printf "%s%s" $currency $amount -}}
+  {{- if gt (len (findRE `^0+(?:\.0+)?$` $amount)) 0 -}}{{- $price = i18n "products_free" -}}{{- end -}}
+{{- end -}}
+{{- $value := trim (printf "%v" ($offer.value | default "")) " " -}}
+{{- return (dict "sort_price" $amount "price_text" $price "sort_value" $value "value_text" $value) -}}

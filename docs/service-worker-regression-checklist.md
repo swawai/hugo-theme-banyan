@@ -8,8 +8,8 @@
 
 - 新 worker 能否被发现
 - waiting -> activate -> reload 这条链是否稳定
-- 更新提示是否挂在固定 Ver 菜单上
-- 没有可用菜单时，是否正确退化到 `confirm`
+- 更新状态是否能在检查更新页面中显示，普通页面是否保持安静
+- 隐藏更新控件时，是否仍然保留 waiting 且不弹确认
 - 失败恢复是否会误伤正常用户
 
 一个重要心智：
@@ -27,38 +27,47 @@
 
 ## 当前关键文件
 
-- `themes/banyan/assets/js/sw.enable.js.tmpl`
-- `themes/banyan/assets/js/sw-manager.enable.runtime.js`
-- `themes/banyan/assets/js/sw-manager.enable.update.js`
-- `themes/banyan/assets/js/sw-manager.disable.js`
-- `themes/banyan/assets/js/runtime-manifest.js`
-- `themes/banyan/layouts/_default/baseof.html`
+- `themes/banyan/assets/js/pwa/worker-enable.js.tmpl`
+- `themes/banyan/assets/js/pwa/manager-entry.js.tmpl`
+- `themes/banyan/assets/js/pwa/manager-runtime.js`
+- `themes/banyan/assets/js/pwa/update-engine.js`
+- `themes/banyan/assets/js/pwa/cache-names.js`
+- `themes/banyan/assets/js/updates/page.js`
+- `themes/banyan/assets/js/pwa/worker-disable.js`
+- `themes/banyan/assets/js/pwa/manager-disable.js`
+- `themes/banyan/layouts/_partials/feature-updates/panel.html`
+- `themes/banyan/layouts/baseof.html`
 
 ## 当前实现的关键约定
 
 ### SW enable 模式
 
-- `sw.js` 由 `sw.enable.js.tmpl` 生成
-- 浏览器侧 manager 由 `sw-manager.enable.entry.js.tmpl` 打包进入 `sw-manager.enable.bundle.*.js`
+- `sw.js` 由 `pwa/worker-enable.js.tmpl` 生成
+- 浏览器侧 manager 由 `pwa/manager-entry.js.tmpl` 打包进入稳定的发布名 `sw-manager.enable.bundle.*.js`
 - registration 使用：
   - `scope: /`
   - `updateViaCache: 'none'`
 
-### 更新提示菜单
+### 更新提示界面
 
-- 当前更新提示挂到固定 Ver 菜单上的 `data-site-version-menu`
-- 常规页面应只有一个可用更新菜单
+- 检查更新子页面 `/updates/check/` 使用 `data-site-update-panel` 显示版本、检查按钮和状态；共用更新引擎
+- 只有检查页加载 `updates/page.js`。全站引擎通过 `BanyanServiceWorkerManagerRuntime.updates.subscribe()` 提供状态，页面用 `check()` 请求检查／应用；引擎不导入 UI
+- 普通页面没有 `html[data-site-update]` 镜像状态；测试通过 `registration.waiting` 判断待更新，检查页通过 `data-site-update-state` 验证显示
+- 更新目录 `/updates/` 使用名称列表显示两个真实子项，第一列没有 `data-site-update-link` 或专用更新标记
+- 第一列通过普通更新入口进入名称列表，再进入检查更新页；点击入口不会检查或应用更新
+- 旧 Ver 下拉菜单及脚本已移除
 - 当前逻辑应当：
-  - fallback 检查时，优先找 `data-site-version-menu`
-  - 点击 Ver 按钮时打开版本 dropdown
-  - dropdown 只保留两项：版本号、状态
-  - update ready 时，状态项显示“有新版本 · 点击更新”
+  - 普通页面静默发现更新，不弹确认、不因发现更新主动重载
+  - 用户通过更新入口及其子项进入检查更新页，worker 仍处于 waiting
+  - 检查页按钮检查更新，ready 时显示“立即更新”并负责应用更新；目录和路径列不承担更新动作
+  - 已有 waiting worker 时用户主动刷新页面，继续沿用现有应用更新逻辑
 
-### 语言文案
+### 页面文案与版本
 
-- 更新 fallback 文案来自 runtime i18n JSON；Version 菜单文案来自 `content/fragments/nav-utilities`
-- 语言 fallback 依赖 `runtime/asset-manifest.json` 内的 `i18nFallbacks`
-- `language-menu` 与 `sw-manager` 现在共用同一条 `runtime-manifest.js` 主路径
+- 版本界面文案的事实源为 `content/updates/check/index*.md` 的 `site_update.labels`，由 `feature-updates/panel.html` 同时输出初始界面和 `data-site-update-copy`
+- 构建版本、显示时间和 ISO 时间由 Hugo 直接写入检查页的 `time[data-site-update-version]`
+- `updates/page.js` 同步读取本页数据，只响应更新引擎状态；不请求 runtime manifest 或语言 JSON
+- 每种 Hugo 语言由自己的检查页内容负责。没有对应静态页面的语言代码，不在浏览器端伪造 fallback
 
 ### 激活失败恢复
 
@@ -132,8 +141,11 @@ bun run build:browser:temp -- sw-upgrade-after
 预期：
 
 - 存在当前 build 对应的 `nav-html-*`
-- 存在当前 build 对应的 `asset-versioned-*`
 - 存在 `asset-fingerprint`
+- 仅当站点自定义了非指纹 versioned asset 路由时，才会建立 `asset-versioned-*`
+- 首次导航会预缓存当前 HTML 引用的样式与脚本资源
+- 导航使用 cache-first + versioned，带 hash 资源使用 cache-first + fingerprinted；`sw.js` 不进入缓存
+- `/sw.js` 响应为 `Cache-Control: no-cache, max-age=0, must-revalidate`
 
 失败信号：
 
@@ -156,14 +168,14 @@ bun run build:browser:temp -- sw-upgrade-after
 
 - 新 worker 被发现
 - `registration.waiting` 最终出现
-- 页面进入 `data-site-update="ready"`
+- 检查页的 `[data-site-update-panel]` 进入 `data-site-update-state="ready"`
 
 失败信号：
 
 - 新 build 已部署，但浏览器长时间没有 waiting worker
 - `registration.update()` 后仍停留旧 worker 且无错误线索
 
-### 4. Ver 菜单的更新提示
+### 4. 通过更新入口检查和应用新版本
 
 建议页面：
 
@@ -175,48 +187,49 @@ bun run build:browser:temp -- sw-upgrade-after
 操作：
 
 1. 让页面进入 update ready 状态
-2. 点击可见的 Ver 更新菜单
+2. 点击第一列「更新」，再点击「检查更新」子项
 
 预期：
 
-- 点击该菜单会出现 version dropdown
-- 不会错误退化为 `window.confirm`
-- breadcrumb 下拉菜单不会被更新提示抢占或遮挡
+- 普通页面没有弹窗或自动重载，更新等待用户在检查页应用
+- 第一列是普通更新入口，无特殊更新标记；名称列表仅含两个真实子项
+- 进入检查页后保留更新列表列及其选中项，worker 仍然 waiting，直到点击「立即更新」
+- 可见检查按钮所在页面直接呈现状态，应用后重载并保留当前页和路径列
 
 失败信号：
 
-- 页面上明明有 Ver 菜单，但点击无反应
-- breadcrumb 当前项仍带有更新提示入口数据属性
-- 可见菜单存在，但仍直接弹 `confirm`
+- 点击普通入口或子项就应用更新
+- 检查页丢失更新路径列或正确选中项
+- breadcrumb 当前项带有更新动作
+- 任意页面出现自动更新确认框
 
-### 5. 无可用菜单时的兜底 fallback
+### 5. 隐藏更新控件时仍保持安静
 
 建议页面：
 
-- 临时让当前页没有可见 Ver 菜单的场景
+- 临时隐藏检查更新按钮，且页面没有其他可见更新控件的场景
 - offline 页面不属于这个场景，因为它不注入 enable manager
 
 操作：
 
 1. 让页面进入 update ready 状态
-2. 观察是否退化到 `window.confirm`
+2. 再次检查更新，观察页面和 waiting worker
 
 预期：
 
-- 真正没有可用菜单时，fallback confirm 会出现
-- 点击确认后，会继续走 waiting worker 应用链
+- 控件隐藏不会触发弹窗或自动应用
+- waiting worker 保持可用；重新显示控件后可手动应用
 
 失败信号：
 
-- 无菜单也无任何提示
-- fallback 连续反复弹出
-- fallback 出现后不能真正进入激活链
+- 出现 `window.confirm`
+- 因控件隐藏而自动应用或丢失 waiting worker
 
 ### 6. 激活成功链
 
 操作：
 
-1. 在 ready 状态下确认更新
+1. 在检查页 ready 状态下点击“立即更新”
 2. 观察 worker 状态与页面刷新
 
 预期：
@@ -225,7 +238,7 @@ bun run build:browser:temp -- sw-upgrade-after
 - 浏览器触发 `controllerchange`
 - 页面刷新一次
 - 刷新后使用的是新 active worker
-- `data-site-update="ready"` 被清掉
+- 检查页的 `data-site-update-state` 不再是 `ready`
 
 失败信号：
 
@@ -241,7 +254,7 @@ bun run build:browser:temp -- sw-upgrade-after
 操作思路：
 
 1. 制造一个“waiting worker 切换非常慢或卡住”的场景
-2. 触发更新确认
+2. 在检查页点击“立即更新”
 3. 观察 4 秒 fallback
 
 预期：
@@ -263,7 +276,7 @@ bun run build:browser:temp -- sw-upgrade-after
 
 ## 语言与文案 checks
 
-### 8. runtime i18n 文案加载
+### 8. 检查页静态文案
 
 建议语言：
 
@@ -274,46 +287,32 @@ bun run build:browser:temp -- sw-upgrade-after
 操作：
 
 1. 分别让页面进入 update ready
-2. 打开 version dropdown 或 fallback confirm
+2. 查看检查更新页面中的状态和按钮文案
 
 预期：
 
-- fallback confirm 文案来自对应语言的 runtime i18n
-- fallback confirm 的三个字段都正确：
-  - `site_update_prompt`
-  - `site_update_confirm`
-  - `site_update_later`
-- Version dropdown 的字段来自 `nav-utilities.version.labels`
+- 状态和按钮文案来自当前语言检查页的 `site_update.labels`
+- `time[data-site-update-version]` 的 `title`、`datetime` 和文本分别是构建版本、ISO 时间和显示时间
+- 页面不请求 `/runtime/*.json` 或 `/__fragments/*`
 
 失败信号：
 
-- 某语言退回英文但其实有本地化资源
-- fallback confirm 字段只部分本地化，或 Version dropdown 没有读到 nav-utilities 文案
-
-### 9. fallback 语言链
-
-重点语言：
-
-- `zh-hk`
-- `zh-mo`
-
-操作：
-
-1. 让页面语言环境命中 `zh-hk` 或 `zh-mo`
-2. 触发更新提示
-
-预期：
-
-- 会按 `runtime/asset-manifest.json` 的 `i18nFallbacks` 落到 `zh-tw`
-
-失败信号：
-
-- 仍然退回英文
-- `language-menu` 和 `sw-manager` 对同一语言的 fallback 行为不一致
+- 某个已发布语言显示了另一语言的文案
+- 版本界面没有读到检查页文案
 
 ## 关闭模式 checks
 
-### 10. disable 模式清理
+### 9. disable 模式清理
+
+自动回归使用一份 enable 产物和一份 disable 产物，并显式传入：
+
+```powershell
+$env:BANYAN_BROWSER_UPGRADE_FROM_DIR = 'temp_workspace/public/<enable-build>'
+$env:BANYAN_BROWSER_UPGRADE_TO_DIR = 'temp_workspace/public/<disable-build>'
+bun run check:browser:sw-disable
+```
+
+disable 构建还应将 `params.prefetch_runtime.mode` 设为 `off`，避免配置继续声明依赖 Service Worker 的预取 transport。
 
 操作：
 
@@ -326,6 +325,7 @@ bun run build:browser:temp -- sw-upgrade-after
 - root scope registration 被注销
 - 受管缓存被清理
 - 页面不再重新注册 enable worker
+- 与 Banyan 无关的 Cache Storage 桶保持不变
 
 失败信号：
 
@@ -335,12 +335,15 @@ bun run build:browser:temp -- sw-upgrade-after
 
 ## 建议的最小回归矩阵
 
-如果不想每次都全测，至少覆盖这 4 组：
+如果不想每次都全测，至少覆盖这 5 组：
 
 1. 首页首次访问
-2. breadcrumb 页面出现 waiting 后，点击 Ver 菜单
-3. Ver 无更新时的版本号 dropdown
-4. `zh-hk` 或 `zh-mo` 的文案 fallback
+2. 首页与集合页面出现 waiting 后，通过第一列「更新」进入更新目录，再打开检查页应用更新（`sw-update-entry-home`、`sw-update-entry-collection`）
+3. 三种真实语言检查页的静态文案、版本时间和零 runtime JSON 请求
+4. 隐藏检查按钮后仍不弹窗，重复检查继续保留 waiting（`sw-update-hidden-control-stays-quiet`）
+5. 检查更新页离线重试、检查新版本、激活刷新及旧导航缓存清理（`sw-update-check`），同时确认 waiting 时语言设置页仍可使用
+
+运行升级回归时，显式设置 `BANYAN_BROWSER_UPGRADE_FROM_DIR` 和 `BANYAN_BROWSER_UPGRADE_TO_DIR`，指向两个完整构建；此矩阵需要两份都包含展平后的第一列和系统页。不要让自动选择误用临时结构探针的产物。
 
 ## 出问题时先怀疑哪一层
 
@@ -349,17 +352,17 @@ bun run build:browser:temp -- sw-upgrade-after
 优先怀疑：
 
 1. 新 worker 根本没进入 `waiting`
-2. `data-site-update="ready"` 没被设置
-3. 当前页没有可用 Ver 菜单
-4. 菜单存在但点击命中的不是可用 Ver 入口
+2. 检查页的 `[data-site-update-panel][data-site-update-state="ready"]` 没有出现
+3. 是否已经进入检查更新页；普通页面不显示提示
+4. 检查页的 `data-site-update-state` 或状态文字未更新
 
 ### 文案语言不对
 
 优先怀疑：
 
-1. `runtime/asset-manifest.json` 的 `i18n` / `i18nFallbacks`
-2. `runtime-manifest.js`
-3. 当前页 `document.documentElement.lang`
+1. 当前语言的 `content/updates/check/index*.md` 是否声明完整 `site_update.labels`
+2. `feature-updates/panel.html` 是否把同一 labels 写入 `data-site-update-copy`
+3. `updates/page.js` 是否只读取当前面板的数据
 
 ### 点击更新后卡住
 
@@ -374,16 +377,15 @@ bun run build:browser:temp -- sw-upgrade-after
 
 优先怀疑：
 
-1. `sw-manager.disable.js`
+1. `pwa/manager-disable.js`
 2. root scope registration 是否被正确识别
 3. managed caches 名称前缀是否与 enable 模式一致
 
 ## 当前已知敏感点
 
-### 固定版本菜单
+### 更新入口与操作分开
 
-常规页面应由固定 Ver 菜单独占 `data-site-version-menu`。
-breadcrumb、root rail、menu panel current option 不应再承担更新提示职责。
+第一列「更新」与其他目录入口相同，不承担更新标记。检查、应用更新由真实子页「检查更新」中的按钮执行；其他 breadcrumb 列和当前菜单选项不带更新动作。普通页面和隐藏控件的页面均不再弹确认框。
 
 ### 4 秒激活超时
 
@@ -392,7 +394,7 @@ breadcrumb、root rail、menu panel current option 不应再承担更新提示�
 
 ### disable 模式是 destructive 的
 
-`sw-manager.disable.js` 会：
+`pwa/manager-disable.js` 会：
 
 - `unregister`
 - `clearManagedCaches`

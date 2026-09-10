@@ -1,0 +1,113 @@
+.prose {
+    /* Keep aligned with params.media.responsive_images.sizes fallback. */
+    --prose-max-inline: 88ch;
+    --prose-rule-border: #888888;
+    max-inline-size: min(100%, var(--prose-max-inline));
+    overflow-wrap: break-word;
+}
+
+.prose p {
+    margin: 0 0 12px 0;
+}
+
+.prose code {
+    font-family: Operator Mono, Consolas, Monaco, Menlo, monospace;
+}
+
+.prose hr {
+    margin: 18px 0 108px;
+    border: 0;
+    border-top: 1px solid var(--prose-rule-border);
+}
+
+
+.prose :is(h1, h2, h3, h4, h5, h6) {
+    display: block;
+    text-align: left;
+    color: var(--accent);
+    letter-spacing: 0;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.prose h1 {
+    margin: 52px 0 52px;
+    padding-bottom: 3px;
+    border-bottom: 2px solid color-mix(in srgb, var(--accent), transparent 85%);
+}
+
+.prose h2 {
+    margin: 44px 0 44px;
+}
+
+.prose h3 {
+    margin: 16px 0 16px;
+}
+
+.prose h4 {
+    margin: 16px 0 2px;
+}
+
+.prose h5,
+.prose h6 {
+    margin: 16px 0 4px;
+    font-weight: normal;
+}
+
+
+
+.prose h2 + h3 {
+    margin-top: 38px;
+}
+
+
+.prose h2 + :is(blockquote, table) { margin-top: 50px; }
+.prose :is(blockquote, table) + h2 { margin-top: 50px; }
+.prose h2 + p:has(img) { margin-top: 50px; }
+.prose p:has(img) + h2 { margin-top: 50px; }
+
+.prose h3 + :is(blockquote, table),
+.prose :is(blockquote, table) + h3 { margin-top: 22px; }
+.prose h3 + p:has(img),
+.prose p:has(img) + h3 { margin-top: 22px; }
+
+.prose :is(blockquote, table) + :is(blockquote, p:has(img), table),
+.prose p:has(img) + :is(blockquote, table) { margin-top: 24px; }
+
+.prose p:has(img) + p:has(img) { margin-top: 24px; }
+
+
+
+.prose :is(pre, .highlight) + p:has(img),
+.prose p:has(img) + :is(pre, .highlight) { margin-top: 24px; }
+
+
+.prose h2 + :is(pre, .highlight) { margin-top: 50px; }
+.prose :is(pre, .highlight) + h2 { margin-top: 50px; }
+
+.prose h3 + :is(pre, .highlight),
+.prose :is(pre, .highlight) + h3 { margin-block-start: 22px; }
+
+
+.prose :is(blockquote,table) + :is(pre, .highlight),
+.prose :is(pre, .highlight) + :is(blockquote,table) { margin-top: 24px; }
+
+.prose :is(pre, .highlight) + :is(pre, .highlight) { margin-top: 24px; }
+
+.prose .md-caption {
+    display: block;
+    margin-top: -18px;
+    margin-bottom: 12px;
+    font-size: 12px;
+    text-align: left;
+    color: var(--muted);
+}
+
+.prose .md-spacer {
+    display: block;
+    margin-top: -24px;
+    margin-bottom: 12px;
+    padding: 0;
+    overflow: hidden;
+    clear: both;
+}

@@ -1,7 +1,7 @@
 [list_col_name]
 other = "名稱"
 [list_col_date]
-other = "日期"
+other = "更新時間"
 [list_col_count]
 other = "計數"
 [list_col_size]
@@ -13,9 +13,9 @@ other = "按名稱升冪排序"
 [list_sort_name_desc]
 other = "按名稱降冪排序"
 [list_sort_date_asc]
-other = "按日期升冪排序"
+other = "按更新時間升冪排序"
 [list_sort_date_desc]
-other = "按日期降冪排序"
+other = "按更新時間降冪排序"
 [list_sort_count_asc]
 other = "按計數升冪排序"
 [list_sort_count_desc]
@@ -36,12 +36,8 @@ other = "價格"
 [products_col_value]
 other = "價值點"
 
-[breadcrumb_root_switch]
-other = "切換根頁面"
 [products_free]
 other = "免費"
-[products_empty]
-other = "還沒有產品。"
 [products_sort_name_asc]
 other = "按名稱升冪排序"
 [products_sort_name_desc]
@@ -71,17 +67,8 @@ other = "目錄"
 [no_trans_msg]
 other = "本頁尚未提供 [{lang}] 版本。\n前往該語言首頁嗎？"
 
-[lang_suggest_msg]
-other = "為您推薦本頁的 [{target}] 版本，確認前往嗎？"
-
-[site_update_prompt]
-other = "已有新版本可用，立即重新整理？"
-
-[site_update_confirm]
-other = "立即重新整理"
-
-[site_update_later]
-other = "稍後"
+[language_return_missing]
+other = "本頁尚無{lang}版本，繼續顯示原內容。"
 
 [notFoundTitle]
 other = "頁面不存在"
@@ -94,3 +81,15 @@ other = "返回本語言首頁"
 
 [tryOtherLangs]
 other = "嘗試其他語言版本："
+
+[settings_return]
+other = "返回"
+
+[appearance_auto]
+other = "跟隨系統"
+
+[appearance_light]
+other = "淺色"
+
+[appearance_dark]
+other = "深色"

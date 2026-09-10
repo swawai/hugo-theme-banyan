@@ -10,7 +10,7 @@
 #    可以带参数：{{< icon "folder" class="my-class" label="我的文件夹" >}}
 #
 # 2. 在 Layouts 模板区域 (.html) 中，请统一调用 partial：
-#    {{ partial "icon" (dict "name" "folder") }}
+#    {{ partial "system-ui/icon/render.html" (dict "name" "folder") }}
 #
 # 【运行原理 (JIT 按需 Sprite)】
 # 无论是在哪一种场景引入，系统底层都只会输出一个指向对应 ID 的极简 `<use href="#icon-xxx">`。
@@ -22,15 +22,16 @@
 
 [file]
 viewBox = "0 0 24 24"
-body = '<path fill="var(--focus)" d="M3 1h12.414L21 6.586V23H3V1Zm2 2v18h14V9h-6V3H5Zm10 .414V7h3.586L15 3.414Z"/>'
+body = '<path fill="var(--accent)" d="M3 1h12.414L21 6.586V23H3V1Zm2 2v18h14V9h-6V3H5Zm10 .414V7h3.586L15 3.414Z"/>'
 
 [folder]
 viewBox = "0 0 48 48"
-body = '<path fill="color-mix(in srgb, var(--focus) 80%, black)" d="M40 12H22l-4-4H8c-2.2 0-4 1.8-4 4v8h40v-4c0-2.2-1.8-4-4-4"/><path fill="var(--focus)" d="M40 12H8c-2.2 0-4 1.8-4 4v20c0 2.2 1.8 4 4 4h32c2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4"/>'
+body = '<path fill="color-mix(in srgb, var(--accent) 80%, black)" d="M40 12H22l-4-4H8c-2.2 0-4 1.8-4 4v8h40v-4c0-2.2-1.8-4-4-4"/><path fill="var(--accent)" d="M40 12H8c-2.2 0-4 1.8-4 4v20c0 2.2 1.8 4 4 4h32c2.2 0 4-1.8 4-4V16c0-2.2-1.8-4-4-4"/>'
 
 [product]
 viewBox = "0 0 1024 1024"
-body = '<path fill="var(--focus)" d="M947.2 645.197c0 8.371-6.912 14.438-15.36 14.438-1.536 0-3.072 0-4.608-.768l-118.656-51.61a40.86 40.86 0 0 0-29.952 0L659.2 658.868c-7.68 3.047-16.128 0-18.432-8.345 0-1.536-.768-3.047-.768-5.325V281.6H0v671.053C0 992.128 32.256 1024 72.192 1024h879.616c39.936 0 72.192-31.872 72.192-71.347V281.6h-76.8zm76.8-415.565c-.768-4.454-3.072-8.192-5.376-11.955L845.338 10.496A27.21 27.21 0 0 0 823.808 0H204.8c-8.448 0-16.18 3.738-21.555 9.728L5.376 218.419S.768 225.92 0 230.4h1024z"/>'
+body = '<path fill="var(--accent)" d="M947.2 645.197c0 8.371-6.912 14.438-15.36 14.438-1.536 0-3.072 0-4.608-.768l-118.656-51.61a40.86 40.86 0 0 0-29.952 0L659.2 658.868c-7.68 3.047-16.128 0-18.432-8.345 0-1.536-.768-3.047-.768-5.325V281.6H0v671.053C0 992.128 32.256 1024 72.192 1024h879.616c39.936 0 72.192-31.872 72.192-71.347V281.6h-76.8zm76.8-415.565c-.768-4.454-3.072-8.192-5.376-11.955L845.338 10.496A27.21 27.21 0 0 0 823.808 0H204.8c-8.448 0-16.18 3.738-21.555 9.728L5.376 218.419S.768 225.92 0 230.4h1024z"/>'
+
 
 [github]
 viewBox = "0 0 24 24"
@@ -39,24 +40,29 @@ stroke = "currentColor"
 stroke_linecap = "round"
 stroke_linejoin = "round"
 stroke_width = "1.5"
-body = '<path d="M16 22.027v-2.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7a5.44 5.44 0 0 0-1.5-3.75 5.07 5.07 0 0 0-.09-3.77s-1.18-.35-3.91 1.48a13.38 13.38 0 0 0-7 0c-2.73-1.83-3.91-1.48-3.91-1.48A5.07 5.07 0 0 0 5 5.797a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7a3.37 3.37 0 0 0-.94 2.58v2.87"/><path d="M9 20.027c-3 .973-5.5 0-7-3"/>'
+body = '<path d="M16 22v-3q0-2-1-2 6-1 6-7 0-2-2-4V2l-4 2q-3-1-6 0L5 2v4q-2 2-2 4 0 6 6 7-1 1-1 2v3m0-2q-4 1-6-3"/>'
+
 
 [rss]
-viewBox = "0 0 16 16"
+viewBox = "0 0 24 24"
 fill = "currentColor"
-body = '<path d="M3 11a2 2 0 1 1 0 4 2 2 0 1 1 0-4M2 6a8 8 0 0 1 8 8H7a5 5 0 0 0-5-5M2 1a13 13 0 0 1 13 13h-3A10 10 0 0 0 2 4"/>'
+body = '<circle cx="6" cy="18" r="2"/><path d="M4 10v3c3.86 0 7 3.14 7 7h3c0-5.51-4.49-10-10-10zm0-6v3c7.17 0 13 5.83 13 13h3C20 11.18 12.82 4 4 4z"/>'
+
+
 
 [wechat]
 viewBox = "0 0 36 32"
 fill = "currentColor"
-body = '<path fill-rule="evenodd" d="M18 3C8.6 3 1 8.8 1 16c0 4 2.3 7.5 5.9 9.9L6 30l5.4-2.6c2 .7 4.2 1.1 6.6 1.1 9.4 0 17-5.6 17-12.5S27.4 3 18 3Zm-5 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4Zm10 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/>'
+body = '<path d="M18 3C8.6 3 1 8.8 1 16c0 4 2.3 7.5 5.9 9.9L6 30l5.4-2.6c2 .7 4.2 1.1 6.6 1.1 9.4 0 17-5.6 17-12.5S27.4 3 18 3z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="13" cy="13" r="2"/><circle cx="23" cy="13" r="2"/>'
 
 [language]
 viewBox = "0 0 24 24"
 fill = "none"
 stroke = "currentColor"
+stroke_linecap = "round"
+stroke_linejoin = "round"
 stroke_width = "1.5"
-body = '<path d="M2 12c0 5.523 4.477 10 10 10s10-4.477 10-10S17.523 2 12 2 2 6.477 2 12"/><path d="M13 2.05S16 6 16 12s-3 9.95-3 9.95m-2 0S8 18 8 12s3-9.95 3-9.95M2.63 15.5h18.74m-18.74-7h18.74"/>'
+body = '<circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2c5 6 5 14 0 20m0-20c-5 6-5 14 0 20"/>'
 
 [info]
 viewBox = "0 0 24 24"
@@ -67,6 +73,7 @@ stroke_linejoin = "round"
 stroke_width = "1.5"
 body = '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>'
 
+
 [theme]
 viewBox = "0 0 24 24"
 fill = "none"
@@ -75,6 +82,20 @@ stroke_linecap = "round"
 stroke_linejoin = "round"
 stroke_width = "1.5"
 body = '<path d="M19.548 18A7.96 7.96 0 0 0 22 14.176c-2.453.299-4.963-.833-6.277-3.065a6.13 6.13 0 0 1 .434-6.865 8.26 8.26 0 0 0-6.08.827c-2.77 1.57-4.246 4.493-4.061 7.427M2 15.374a3.15 3.15 0 0 0 3.727 0 1.91 1.91 0 0 1 2.273 0c1.136.812 2.607.83 3.727.018M17 19.635a3.15 3.15 0 0 0-3.727 0 1.94 1.94 0 0 1-2.29-.018c-1.136-.813-2.59-.813-3.71 0-.702.498-1.588.498-2.273 0"/>'
+
+
+
+[appearance-auto]
+viewBox = "0 0 16 16"
+body = '<path fill="currentColor" d="M8 2a6 6 0 0 0 0 12Z"/><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.25"/>'
+
+[appearance-light]
+viewBox = "0 0 16 16"
+body = '<circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.25"/>'
+
+[appearance-dark]
+viewBox = "0 0 16 16"
+body = '<circle cx="8" cy="8" r="6" fill="currentColor" stroke="currentColor" stroke-width="1.25"/>'
 
 [menu]
 viewBox = "0 0 24 24"
@@ -85,10 +106,10 @@ stroke_width = "2"
 body = '<path d="M4 6H20M4 12H20M4 18H20"/>'
 
 [my]
-viewBox = "0 0 1024 1024"
+viewBox = "0 0 24 24"
 fill = "none"
 stroke = "currentColor"
 stroke_linecap = "round"
 stroke_linejoin = "round"
-stroke_width = "40"
-body = '<circle cx="512" cy="330" r="180"/><path d="M96 894c44-204 208-344 416-344s372 140 416 344"/>'
+stroke_width = "1.5"
+body = '<circle cx="12" cy="8" r="4"/><path d="M4 22a8 8 0 0 1 16 0"/>'

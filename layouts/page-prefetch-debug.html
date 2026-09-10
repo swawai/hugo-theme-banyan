@@ -1,0 +1,11 @@
+{{ define "head-extra" }}
+{{ partial "feature-document/styles.html" . }}
+{{ end }}
+
+{{ define "main" }}
+{{ partial "entry-page-prefetch-debug/render.html" . }}
+{{ end }}
+
+{{ define "body-extra" }}
+{{ partial "system-assets/script.html" (dict "path" "js/prefetch/debug-page.js") }}
+{{ end }}

@@ -5,7 +5,7 @@ description = "A Explorer-like Hugo theme."
 homepage = "https://github.com/swawai/banyan/"
 tags = ["blog", "minimalist"]
 features = []
-min_version = "0.120.0"
+min_version = "0.157.0"
 
 [author]
   name = "Banyan maintainers"

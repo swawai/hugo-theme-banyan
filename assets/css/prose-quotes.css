@@ -1,0 +1,44 @@
+.prose {
+    --quote-bg: color-mix(in srgb, var(--accent) 7%, var(--bg));
+    --quote-border: color-mix(in srgb, var(--accent) 72%, var(--fg));
+    --quote-text: var(--fg);
+}
+
+[data-theme="dark"] .prose {
+    --quote-bg: color-mix(in srgb, var(--accent) 16%, var(--bg));
+    --quote-border: color-mix(in srgb, var(--accent) 76%, var(--fg));
+}
+
+.prose blockquote {
+    margin: 18px 0 18px 0;
+    padding: 8px 8px 8px;
+    border-left: 4px solid var(--quote-border);
+
+    background: var(--quote-bg);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--quote-border) 14%, transparent);
+}
+
+/* 嵌套引用不重复添加外边距；顶层末项仍保留上方间距。 */
+.prose blockquote blockquote {
+    margin: 0;
+}
+
+.prose > blockquote:last-child {
+    margin-block-end: 0;
+}
+
+.prose blockquote p {
+    margin: 0 0 0.55rem;
+    /* 覆写了上面 P 的外部节奏间距，因为在此组件内部 */
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--quote-text);
+}
+
+.prose blockquote > :last-child {
+    margin-bottom: 0;
+}
+
+.prose blockquote a {
+    color: var(--quote-text);
+}

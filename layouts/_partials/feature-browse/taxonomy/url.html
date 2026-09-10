@@ -1,0 +1,25 @@
+{{- $ctx := .ctx | default . -}}
+{{- $spec := .spec | default dict -}}
+{{- $plural := printf "%v" (or .plural (index $spec "plural")) -}}
+{{- $url := "" -}}
+{{- if isset . "value" -}}
+  {{- $value := trim (printf "%v" .value) " " -}}
+  {{- if ne $value "" -}}
+    {{- $unassignedTerm := printf "%v" (index $spec "unassigned_term" | default "") -}}
+    {{- $targetValue := $value -}}
+    {{- if and (ne $unassignedTerm "") (eq (partial "feature-browse/taxonomy/normalize-value.html" (dict "spec" $spec "value" $value)) (partial "feature-browse/taxonomy/normalize-value.html" (dict "spec" $spec "value" $unassignedTerm))) -}}
+      {{- $targetValue = $unassignedTerm -}}
+    {{- end -}}
+    {{- with partial "feature-browse/taxonomy/term-page.html" (dict "ctx" $ctx "spec" $spec "plural" $plural "value" $targetValue) -}}
+      {{- $url = .RelPermalink -}}
+    {{- end -}}
+  {{- end -}}
+{{- else -}}
+  {{- with partial "feature-browse/taxonomy/root-page.html" (dict "ctx" $ctx "plural" $plural) -}}
+    {{- $url = .RelPermalink -}}
+  {{- end -}}
+{{- end -}}
+{{- if eq $url "" -}}
+  {{- errorf "Build failed: taxonomy URL cannot resolve plural=%q value=%q for page %q." $plural (printf "%v" (.value | default "")) ($ctx.File.Path | default (printf "%s %s" $ctx.Kind $ctx.RelPermalink)) -}}
+{{- end -}}
+{{- return $url -}}

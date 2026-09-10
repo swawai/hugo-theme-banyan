@@ -1,0 +1,11 @@
+{{ define "head-extra" }}
+{{ partial "feature-document/styles.html" . }}
+{{ end }}
+
+{{ define "main" }}
+{{ partial "feature-document/render-page.html" . }}
+{{ end }}
+
+{{ define "body-extra" }}
+{{ partial "system-assets/script.html" (dict "path" "js/pages/offline.js") }}
+{{ end }}

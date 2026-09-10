@@ -381,7 +381,7 @@ async function collectSpeculationRulesOutcome({
         function collectActionUrls(config, options = {}) {
             const urls = [];
             const seenUrls = new Set();
-            const slotOrder = ['menu', 'nav', 'crumb', 'sort', 'desc', 'post'];
+            const slotOrder = ['nav', 'crumb', 'sort', 'desc', 'post'];
             const onlySlots = new Set(Array.isArray(options.onlySlots) ? options.onlySlots : []);
             const suppressed = new Set(Array.isArray(options.suppressedSlots) ? options.suppressedSlots : []);
             for (const slot of slotOrder) {
@@ -698,14 +698,14 @@ const speculationHeaderScenarios = [
         id: 'speculation-rules-header-all',
         path: '/all/',
         title: 'Speculation-Rules Header: All',
-        waitForSelector: '.grid-list',
+        waitForSelector: '.collection-list',
         expectedEagerSlots: ['nav']
     }),
     createSpeculationHeaderScenario({
         id: 'speculation-rules-header-breadcrumb',
         path: SPECULATION_BREADCRUMB_PATH,
         title: 'Speculation-Rules Header: Breadcrumb Path',
-        waitForSelector: '.slot-row-breadcrumb',
+        waitForSelector: '.path-columns',
         expectedEagerSlots: ['nav', 'sort'],
         async afterLoad(page) {
             await waitForBreadcrumbSettled(page);

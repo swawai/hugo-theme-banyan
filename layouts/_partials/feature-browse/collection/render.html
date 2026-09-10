@@ -1,0 +1,60 @@
+{{- $page := .page -}}
+{{- $config := partial "feature-browse/collection/config.html" (dict "page" $page) -}}
+{{- $rows := partial "feature-browse/collection/rows.html" (dict "page" $page) -}}
+{{- $source := partial "feature-browse/collection/source.html" (dict "page" $page) -}}
+{{- $lineageParam := partialCached "feature-browse/routing/param-name.html" (dict "semantic" "entry_lineage") "routing-param:entry_lineage" -}}
+{{- $from := partial "feature-browse/routing/lineage-value.html" (dict "logical_path" $source.logical_path) -}}
+{{- $fields := slice "name" "date" "count" -}}
+{{- $classes := dict "name" "collection-cell--name" "date" "collection-cell--date" "count" "collection-cell--count" "size" "collection-cell--count" "path" "collection-cell--path" "price" "collection-cell--price" "value" "collection-cell--value" -}}
+{{- $prefix := "list" -}}
+{{- $gridClass := "collection-list--directory collection-list--table" -}}
+{{- if eq $config.view "name" -}}
+  {{- $fields = slice "name" -}}
+  {{- $gridClass = "" -}}
+{{- else if eq $config.view "all" -}}
+  {{- $fields = slice "name" "date" "size" "path" -}}
+  {{- $gridClass = "collection-list--all collection-list--table" -}}
+{{- else if eq $config.view "products" -}}
+  {{- $fields = slice "name" "price" "value" -}}
+  {{- $gridClass = "collection-list--products collection-list--table" -}}
+  {{- $prefix = "products" -}}
+{{- end -}}
+{{- $default := split $config.default_sort "-" -}}
+<div class="collection-list {{ $gridClass }} collection-list--headed" data-sortable="true" data-sort-variant="{{ $config.sort_variant }}" data-sort-columns="{{ len $fields }}">
+  {{- range $field := $fields -}}
+    {{- partial "feature-browse/collection/sort/cell.html" (dict
+      "class" (index $classes $field) "ctx" $page "baseHref" $page.RelPermalink
+      "field" $field "label" (i18n (printf "%s_col_%s" $prefix $field))
+      "defaultOrder" (cond (in (slice "name" "path" "value") $field) "asc" "desc")
+      "currentField" (index $default 0) "currentOrder" (index $default 1)
+      "titleAsc" (i18n (printf "%s_sort_%s_asc" $prefix $field))
+      "titleDesc" (i18n (printf "%s_sort_%s_desc" $prefix $field))
+    ) -}}
+  {{- end -}}
+  {{- range $row := $rows -}}
+    {{- $href := $row.href -}}
+    {{- if eq $row.kind "page" -}}{{- $href = printf "%s?%s=%s" $href $lineageParam $from -}}{{- end -}}
+    {{- $attrs := dict -}}
+    {{- range $key := slice "group" "name" "date" "count" "size" "path" "price" "value" -}}
+      {{- if isset $row (printf "sort_%s" $key) -}}
+        {{- $attrs = merge $attrs (dict (printf "sort-%s" $key) (index $row (printf "sort_%s" $key))) -}}
+      {{- end -}}
+    {{- end -}}
+    {{- partial "system-ui/list/link-cell.html" (dict "href" $href "title" $row.title "text" $row.text "icon" $row.icon "prefetchSlot" $row.prefetch_kind "dataAttrs" $attrs) -}}
+    {{- if eq $config.view "products" -}}
+      <span class="collection-cell collection-cell--price" data-collection-cell="price" title="{{ $row.price_text }}">{{ $row.price_text }}</span>
+      <span class="collection-cell collection-cell--value" data-collection-cell="value" title="{{ $row.value_text }}">{{ $row.value_text }}</span>
+    {{- else if ne $config.view "name" -}}
+      <span class="collection-cell collection-cell--date" data-collection-cell="date" title="{{ $row.date_text }}">{{ $row.date_text }}</span>
+      {{- $count := $row.count_text -}}{{- $unit := $row.count_unit -}}
+      {{- if eq $config.view "all" -}}{{- $count = $row.size_text -}}{{- $unit = $row.size_unit -}}{{- end -}}
+      <span class="collection-cell collection-cell--count" data-collection-cell="{{ cond (eq $config.view "all") "size" "count" }}"><span>{{ $count }}</span><span class="collection-count-unit">{{ $unit | safeHTML }}</span></span>
+      {{- if eq $config.view "all" -}}
+        <span class="collection-cell collection-cell--path" data-collection-cell="path">{{ partial "system-ui/link.html" (dict "href" $row.path_href "text" $row.path_text "title" $row.path_text) }}</span>
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+</div>
+{{- $entries := slice -}}
+{{- range $rows -}}{{- $entries = $entries | append (dict "url" .href "name" .title) -}}{{- end -}}
+{{- partial "feature-browse/collection/schema.html" (dict "entries" $entries) -}}

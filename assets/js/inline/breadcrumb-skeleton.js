@@ -42,7 +42,7 @@ function normalizePath(value) {
     return segments.length === 0 ? "" : "/" + segments.join("/") + "/";
 }
 
-function countVisibleItems(items, hideRootDuplicates) {
+function countVisibleItems(items) {
     if (!Array.isArray(items) || items.length === 0) {
         return 0;
     }
@@ -54,53 +54,28 @@ function countVisibleItems(items, hideRootDuplicates) {
             continue;
         }
 
-        if (hideRootDuplicates && (item.redundant_with_root_menu === true || item.redundantWithRootMenu === true)) {
-            continue;
-        }
-
         total += 1;
     }
 
     return total;
 }
 
-function countTrailItems(source, hideRootDuplicates) {
+function countTrailItems(source) {
     var levels = Array.isArray(source && source.levels) ? source.levels : [];
     if (levels.length > 0) {
         return countVisibleItems(levels.map(function (level) {
             return level && typeof level.item === "object" ? level.item : null;
-        }).filter(Boolean), hideRootDuplicates);
+        }).filter(Boolean));
     }
 
     var tailItems = Array.isArray(source && (source.tail_items || source.tailItems))
         ? (source.tail_items || source.tailItems)
         : [];
 
-    return countVisibleItems(tailItems, hideRootDuplicates);
+    return countVisibleItems(tailItems);
 }
 
-function findEntrySource(sources, logicalPath) {
-    var normalizedPath = normalizePath(logicalPath);
-    if (!normalizedPath) {
-        return null;
-    }
-
-    for (var index = 0; index < sources.length; index += 1) {
-        var source = sources[index];
-        if (!source || typeof source !== "object") {
-            continue;
-        }
-
-        var sourcePath = normalizePath(source.logical_path || source.logicalPath || "");
-        if (sourcePath === normalizedPath) {
-            return source;
-        }
-    }
-
-    return null;
-}
-
-function findCollectionSource(sources, logicalPath) {
+function findSource(sources, logicalPath) {
     var normalizedPath = normalizePath(logicalPath);
     if (!normalizedPath) {
         return null;
@@ -124,13 +99,9 @@ function findCollectionSource(sources, logicalPath) {
 function start() {
 try {
     var html = document.documentElement;
-    var previewPending = html.getAttribute("data-entry-breadcrumb-preview-pending") === "true";
+    var entryPending = html.getAttribute("data-entry-breadcrumb-pending") === "true";
     var sortPending = html.getAttribute("data-breadcrumb-sort-pending") === "true";
-    if (!previewPending && !sortPending) {
-        return;
-    }
-
-    if (!(window.matchMedia && window.matchMedia("(min-width: 75rem)").matches)) {
+    if (!entryPending && !sortPending) {
         return;
     }
 
@@ -139,7 +110,7 @@ try {
         return;
     }
 
-    var trailContainer = document.querySelector(".slot-row-breadcrumb .slot-breadcrumb");
+    var trailContainer = document.querySelector(".path-columns .slot-breadcrumb");
     if (!trailContainer) {
         return;
     }
@@ -151,13 +122,12 @@ try {
 
     var entryLineageKeys = parseJson(html.dataset.entryLineageKeys || "", []);
     var params = new URLSearchParams(window.location.search);
-    var hideRootDuplicates = document.querySelector(".page-shell.page-shell--has-breadcrumb-root.page-shell--has-breadcrumb-tail") !== null;
     var placeholderCount = 0;
 
-    if (previewPending) {
-        var entrySource = findEntrySource(entryBreadcrumbSources, readFirst(params, entryLineageKeys) || "");
+    if (entryPending) {
+        var entrySource = findSource(entryBreadcrumbSources, readFirst(params, entryLineageKeys) || "");
         if (entrySource) {
-            placeholderCount = countTrailItems(entrySource, hideRootDuplicates);
+            placeholderCount = countTrailItems(entrySource);
 
             var currentPageText = body.dataset.currentPageText || document.title || "";
             var currentPageHref = window.location.pathname + window.location.search + window.location.hash;
@@ -167,12 +137,12 @@ try {
         }
     } else if (sortPending) {
         var pageCollectionSource = parseJson(body.dataset.pageCollectionSource || "{}", {});
-        var collectionSource = findCollectionSource(entryBreadcrumbSources, pageCollectionSource.logical_path || pageCollectionSource.logicalPath || "");
+        var collectionSource = findSource(entryBreadcrumbSources, pageCollectionSource.logical_path || pageCollectionSource.logicalPath || "");
         if (collectionSource) {
             var collectionLevels = Array.isArray(collectionSource.levels) ? collectionSource.levels : [];
             placeholderCount = countVisibleItems(collectionLevels.map(function (level) {
                 return level && typeof level.item === "object" ? level.item : null;
-            }).filter(Boolean), hideRootDuplicates);
+            }).filter(Boolean));
         }
     }
 
@@ -181,12 +151,13 @@ try {
     }
 
     var nav = document.createElement("nav");
-    nav.className = "breadcrumb-nav";
+    nav.className = "path-navigation";
     nav.setAttribute("aria-hidden", "true");
 
     for (var itemIndex = 0; itemIndex < placeholderCount; itemIndex += 1) {
         var placeholder = document.createElement("span");
-        placeholder.className = "breadcrumb-item-menu";
+        placeholder.className = "path-column";
+        placeholder.dataset.collectionColumn = "true";
         nav.appendChild(placeholder);
     }
 

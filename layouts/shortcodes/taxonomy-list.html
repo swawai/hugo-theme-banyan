@@ -1,8 +1,0 @@
-{{- $host := .Page -}}
-{{- $kind := $host.Kind -}}
-{{- if and (ne $kind "taxonomy") (ne $kind "term") -}}
-  {{- $hostPath := printf "%s %s" $host.Kind $host.RelPermalink -}}
-  {{- with $host.File }}{{ $hostPath = .Path }}{{ end -}}
-  {{- errorf "Build failed: taxonomy-list shortcode on page %q only supports taxonomy or term pages, got kind=%q." $hostPath $kind -}}
-{{- end -}}
-{{- $host.Store.Set "banyan_article_taxonomy_list" true -}}

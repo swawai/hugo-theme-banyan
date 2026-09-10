@@ -1,0 +1,45 @@
+.prose {
+    --table-header-bg: color-mix(in srgb, var(--accent) 4%, #F1F1F1);
+    --table-border: color-mix(in srgb, var(--accent) 14%, #D7D7D7);
+    --table-striped-bg: color-mix(in srgb, var(--accent) 2%, #FAFAFA);
+    --table-text: var(--muted);
+}
+
+[data-theme="dark"] .prose {
+    --table-header-bg: color-mix(in srgb, var(--accent) 8%, var(--bg));
+    --table-border: color-mix(in srgb, var(--accent) 24%, #3A3A3A);
+    --table-striped-bg: color-mix(in srgb, var(--accent) 4%, var(--bg));
+}
+
+.prose table:where(:not(.chroma, .chroma *)) {
+    display: block;
+    box-sizing: border-box;
+    margin: 18px 0;
+    inline-size: 100%;
+    max-inline-size: 100%;
+    min-inline-size: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    color: var(--table-text);
+    border-collapse: collapse;
+}
+
+.prose th:where(:not(.chroma, .chroma *)) {
+    background: var(--table-header-bg);
+}
+
+.prose :is(th, td):where(:not(.chroma, .chroma *)) {
+    padding: 4px 1px 4px 4px;
+    text-align: left;
+    vertical-align: top;
+    font-size: 12px;
+    color: var(--table-text);
+    word-break: keep-all;
+    border: 1px solid var(--table-border);
+}
+
+.prose tr:where(:not(.chroma, .chroma *)):nth-child(even) {
+    background: var(--table-striped-bg);
+}

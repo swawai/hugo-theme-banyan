@@ -1,16 +1,16 @@
-﻿---
+---
+root_nav: true
 date: "2025-10-11T20:10:44+08:00"
 draft: false
 title: "關於"
 slug: "about"
-type: "page"
-layout: "article-page"
+url: about/
+weight: 95
+layout: "page-article"
 slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
-  footer: /fragments/home-footer-shortcuts
+  breadcrumb: true
 build:
-  list: "never"
+  list: local
 ---
 
 
@@ -22,4 +22,3 @@ Banyan 是一個類似資源管理器的極簡 Hugo 主題，專為清晰結構�
 - **描述**: A Explorer-like Hugo theme. (類似資源管理器的極簡主題)
 
 歡迎體驗並使用本主題！
-

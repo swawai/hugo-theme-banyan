@@ -1,0 +1,54 @@
+{{- $page := .page -}}
+{{- if not $page -}}
+  {{- errorf "Build failed: feature-browse/navigation/source/page-model.html requires page." -}}
+{{- end -}}
+{{- $logicalPath := partial "feature-browse/collection/logical-path.html" (dict "ctx" $page "href" $page.RelPermalink) -}}
+{{- if eq $logicalPath "" -}}
+  {{- errorf "Build failed: entry source page %q is missing logical_path." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+{{- end -}}
+{{- $canonicalModel := partial "feature-browse/navigation/path/model.html" (dict "ctx" $page) -}}
+{{- $rootRaw := index $canonicalModel "root_item" | default dict -}}
+{{- $rootText := trim (printf "%v" (index $rootRaw "text")) " " -}}
+{{- $rootHref := trim (printf "%v" (index $rootRaw "href")) " " -}}
+{{- if or (eq $rootText "") (eq $rootHref "") -}}
+  {{- errorf "Build failed: entry source page %q has a root item missing text or href." ($page.File.Path | default (printf "%s %s" $page.Kind $page.RelPermalink)) -}}
+{{- end -}}
+{{- $rootItem := dict
+  "text" $rootText
+  "href" $rootHref
+-}}
+{{- with index $rootRaw "title" }}{{ $rootItem = merge $rootItem (dict "title" (printf "%v" .)) }}{{ end -}}
+{{- $tailItems := index $canonicalModel "tail_items" | default slice -}}
+{{- $canonicalLevels := index $canonicalModel "levels" | default slice -}}
+{{- $levels := slice -}}
+{{- range $level := $canonicalLevels -}}
+  {{- $item := index $level "item" | default dict -}}
+  {{- $collectionHref := trim (printf "%v" (index $level "collection_href" | default "")) " " -}}
+  {{- $collectionSource := dict -}}
+  {{- range $owner := $page.Site.Pages -}}
+    {{- if eq $owner.RelPermalink $collectionHref -}}
+      {{- $collectionSource = partial "feature-browse/collection/source.html" (dict "page" $owner) -}}
+      {{- break -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $levelModel := dict "item" $item -}}
+  {{- if gt (len $collectionSource) 0 -}}
+    {{- $levelModel = merge $levelModel (dict "collection_source" $collectionSource) -}}
+  {{- end -}}
+  {{- $levels = $levels | append $levelModel -}}
+{{- end -}}
+{{- $currentCollectionSource := partial "feature-browse/collection/source.html" (dict "page" $page) -}}
+{{- $currentCollectionItems := partial "feature-browse/collection/items/payload.html" (dict "source" (dict "page" $page "logical_path" $logicalPath)) -}}
+{{- $entryHrefs := partial "feature-browse/collection/items/page-hrefs.html" (dict "payload" $currentCollectionItems) | default slice -}}
+{{- $result := dict
+  "provider" "collection"
+  "page" $page
+  "logical_path" $logicalPath
+  "root_item" $rootItem
+  "tail_items" $tailItems
+  "levels" $levels
+  "current_collection_source" $currentCollectionSource
+  "current_collection_items" $currentCollectionItems
+  "entry_hrefs" $entryHrefs
+ -}}
+{{- return $result -}}

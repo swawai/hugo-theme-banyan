@@ -1,0 +1,14 @@
+{{- /* Resolve bundle/global images before inheritance or projection into another list. */ -}}
+{{- $value := partial "system-ui/icon/resolve.html" . -}}
+{{- if and (reflect.IsMap $value) (isset $value "image") -}}
+  {{- $owner := .page -}}
+  {{- $published := partialCached "system-assets/publish-local.html" (dict "ctx" (dict "Page" $owner) "src" $value.image) $owner.RelPermalink $value.image -}}
+  {{- with $published.resource -}}
+    {{- if ne .MediaType.MainType "image" -}}
+      {{- errorf "Build failed: %s icon.image must reference an image resource: %q." $owner.RelPermalink $value.image -}}
+    {{- else -}}
+      {{- $value = merge $value (dict "image" $published.src) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $value -}}

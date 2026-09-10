@@ -1,0 +1,209 @@
+{{- $pwaConfig := partial "system-delivery/pwa/config.html" (dict "ctx" .) -}}
+{{- $swConfig := index $pwaConfig "sw_config" -}}
+{{- $swMode := index $pwaConfig "sw_mode" -}}
+{{- $webAppManifestMode := index $pwaConfig "manifest_mode" -}}
+{{- $offlineFallbacks := index $pwaConfig "offline_fallbacks" -}}
+{{- $isOfflinePage := index $pwaConfig "is_offline_page" -}}
+{{- partialCached "system-build/audit/permalink-collision.html" (dict "ctx" .) "audit-permalink-collision" -}}
+{{- partialCached "entry-baseof/audit-content-icons.html" . "audit-content-icons" -}}
+{{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
+{{- $buildVersion := partial "system-build/version.html" $primarySite.Home -}}
+{{- $cachePolicy := partial "system-delivery/cache-policy/model.html" (dict
+  "sw_config" $swConfig
+) -}}
+{{- $siteRedirects := index hugo.Data "redirects" | default dict -}}
+{{- $siteRedirectRules := partial "system-delivery/deployment/redirect-rules.html" (dict
+  "rules" (index $siteRedirects "rules" | default slice)
+) -}}
+{{- $cachePolicyRoutes := index $cachePolicy "routes" -}}
+{{- $cachePolicyEdgeone := index $cachePolicy "edgeone" -}}
+{{- $swRoutes := index $cachePolicy "sw_routes" -}}
+{{- $jsBuildParams := partialCached "feature-browse/js-build-params.html" site "browse-js-build-params" -}}
+{{- $routingConfig := index $jsBuildParams "navigationState" | default dict -}}
+{{- $routingFields := index $routingConfig "fields" | default dict -}}
+{{- $entryLineageField := index $routingFields "entry_lineage" | default dict -}}
+{{- $activeSortField := index $routingFields "active_sort" | default dict -}}
+{{- $lineageSortsField := index $routingFields "lineage_sorts" | default dict -}}
+{{- $inlineScripts := partialCached "entry-baseof/inline-scripts.html" (dict "build_params" $jsBuildParams) (printf "runtime-inline-scripts:%t" hugo.IsServer) -}}
+{{- $themeBootInline := index $inlineScripts "theme_boot" | default "" -}}
+{{- $breadcrumbPendingInline := index $inlineScripts "breadcrumb_pending" | default "" -}}
+{{- $breadcrumbSkeletonInline := index $inlineScripts "breadcrumb_skeleton" | default "" -}}
+{{- $slotFlags := partial "system-ui/page-slots.html" (dict "ctx" .) -}}
+{{- $hasBreadcrumbCapability := eq (index $slotFlags "breadcrumb") true -}}
+{{- $hasSortableCollection := eq .Layout "page-collection" -}}
+{{- /* Root selection consumes the same valid sources even when path columns are hidden. */ -}}
+{{- $navigationSources := partial "feature-browse/navigation/source/context.html" (dict "ctx" .) -}}
+{{- $pageCollectionSource := index $navigationSources "page_collection_source" -}}
+{{- $browserNavigationSources := index $navigationSources "browser_sources" -}}
+{{- $collectionSourcesByHref := index $navigationSources "collection_sources_by_href" -}}
+{{- partial "feature-browse/navigation/source/register-icons.html" (dict "page" . "sources" $browserNavigationSources) -}}
+{{- if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) -}}
+    {{- partial "system-delivery/deployment/publish.html" (dict
+      "routes" $cachePolicyRoutes
+      "redirects" $siteRedirectRules
+      "edgeone" $cachePolicyEdgeone
+      "web_app_manifest_mode" $webAppManifestMode
+    ) -}}
+{{- end -}}
+<!DOCTYPE html>
+<html lang="{{ .Site.Language.Lang }}"
+    {{- if $hasBreadcrumbCapability }}
+    data-entry-lineage-keys='{{ (index $entryLineageField "keys" | default (slice)) | jsonify }}'
+    data-active-sort-keys='{{ (index $activeSortField "keys" | default (slice)) | jsonify }}'
+    data-lineage-sorts-keys='{{ (index $lineageSortsField "keys" | default (slice)) | jsonify }}'
+    data-can-sort-collection-breadcrumb="{{ if and (gt (len $pageCollectionSource) 0) (ne .Kind "page") }}true{{ else }}false{{ end }}"
+    {{- end }}>
+
+<head>
+    {{- $faviconSvg := partialCached "system-delivery/pwa/favicon-svg.html" . "pwa:favicon-svg" -}}
+    {{- $appleTouchIcon := resources.Get "site/pwa/icon-180.png" -}}
+    {{- if not $appleTouchIcon -}}
+{{- errorf "Build failed: missing resource %q." "site/pwa/icon-180.png" -}}
+    {{- else -}}
+        {{- $appleTouchIcon = $appleTouchIcon | fingerprint -}}
+    {{- end -}}
+    {{- $defaultSite := $primarySite -}}
+    {{- $manifest := "" -}}
+    {{- if and $defaultSite (ne $webAppManifestMode "off") -}}
+        {{- $manifestTmpl := resources.Get "site/pwa/manifest.webmanifest.tmpl" -}}
+        {{- if $manifestTmpl -}}
+            {{- $manifest = $manifestTmpl | resources.ExecuteAsTemplate "site/pwa/site.webmanifest" $defaultSite.Home | fingerprint -}}
+        {{- else -}}
+{{- errorf "Build failed: missing resource %q." "site/pwa/manifest.webmanifest.tmpl" -}}
+        {{- end -}}
+    {{- end -}}
+    <meta charset="utf-8">
+    {{- with $faviconSvg }}
+    <link rel="icon" href="{{ .RelPermalink }}" type="image/svg+xml" fetchpriority="low">
+    {{- end }}
+    {{- with $appleTouchIcon }}
+    <link rel="apple-touch-icon" href="{{ .RelPermalink }}" fetchpriority="low">
+    {{- end }}
+    {{- if and $manifest (eq $webAppManifestMode "link") }}
+    <link rel="manifest" href="{{ $manifest.RelPermalink }}" fetchpriority="low">
+    {{- end }}
+    <title>{{ partial "system-metadata/seo/browser-title.html" . }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="wap-font-scale" content="no">
+    <link rel="canonical" href="{{ .Permalink }}">
+    {{- $robotsDirective := .Params.robots | default "" -}}
+    {{- if .Params.translation_placeholder -}}
+      {{- $robotsDirective = "noindex, follow" -}}
+    {{- end -}}
+    {{- with $robotsDirective }}
+    <meta name="robots" content="{{ . }}">
+    {{- end }}
+    {{/* 首屏阻塞性状态初始化：同步主题以防闪烁，并恢复 MPA 跨页导航进度条。 */}}
+    <script>{{ $themeBootInline | safeJS }}</script>
+    {{/* URL 带 from= 时先隐藏默认 breadcrumb，待运行时恢复来源路径；
+         article meta 始终保留 Hugo 的静态输出。 */}}
+    {{- if $hasBreadcrumbCapability }}
+    <script>{{ $breadcrumbPendingInline | safeJS }}</script>
+    {{- end }}
+    {{- partial "system-ui/page-styles.html" . -}}
+    <script>{{ index $inlineScripts "canvas_position" | safeJS }}</script>
+    {{- block "head-extra" . -}}{{- end -}}
+    {{- $prefetch := partial "system-delivery/prefetch/config.html" (dict "sw_mode" $swMode) -}}
+    {{- $prefetchRuntimeMode := index $prefetch "runtime_mode" -}}
+    {{- $prefetchRuntimeEnvConfig := index $prefetch "runtime_env" -}}
+    {{- $speculationRulesMode := index $prefetch "speculation_mode" -}}
+    {{- $speculationRulesConfig := index $prefetch "speculation_config" -}}
+    {{- $speculationRuntimeCoordination := index $prefetch "coordination" -}}
+    {{- hugo.Generator -}}
+    {{- partial "system-metadata/seo/head.html" . -}}
+    {{- /* 主站通用前端逻辑，defer 下载与执行，不阻塞 HTML 解析。 */ -}}
+    {{- $js := resources.Get "js/main.js" | js.Build (dict "params" $jsBuildParams) -}}
+    {{- if not hugo.IsServer -}}{{- $js = $js | minify -}}{{- end -}}
+    {{- $js = $js | fingerprint -}}
+    <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+    {{- if $hasBreadcrumbCapability -}}
+        {{- $breadcrumbRuntime := resources.Get "js/browse/path-entry.js" | js.Build (dict "params" $jsBuildParams) -}}
+        {{- if not hugo.IsServer -}}{{- $breadcrumbRuntime = $breadcrumbRuntime | minify -}}{{- end -}}
+        {{- $breadcrumbRuntime = $breadcrumbRuntime | fingerprint -}}
+    <script src="{{ $breadcrumbRuntime.RelPermalink }}" integrity="{{ $breadcrumbRuntime.Data.Integrity }}" defer></script>
+    {{- end -}}
+    {{- partial "system-delivery/pwa/service-worker.html" (dict
+      "sw_mode" $swMode
+      "sw_config" $swConfig
+      "build_version" $buildVersion
+      "offline_fallbacks" $offlineFallbacks
+      "sw_routes" $swRoutes
+      "js_build_params" $jsBuildParams
+      "is_offline_page" $isOfflinePage
+    ) -}}
+    {{- if and $manifest (eq $webAppManifestMode "defer") }}
+    <link rel="manifest" href="{{ $manifest.RelPermalink }}" fetchpriority="low">
+    {{- end }}
+</head>
+<body data-language-return-missing="{{ i18n "language_return_missing" }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $browserNavigationSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}"{{ if or $hasBreadcrumbCapability $hasSortableCollection }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }} data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}">
+    {{- if and .IsPage (not .Params.slug) -}}
+{{- errorf "Build failed: page %q (title: %q) is missing the slug field." .File.Path .Title -}}
+    {{- end -}}
+    <div class="page">
+        <a class="skip-link" href="#main">{{ i18n "skip_to_content" | default "Skip to content" }}</a>
+        {{- $breadcrumbModel := dict -}}
+        {{- $hasPathColumns := false -}}
+        {{- if $hasBreadcrumbCapability -}}
+          {{- $breadcrumbModel = partial "feature-browse/navigation/path/model.html" (dict "ctx" $) -}}
+          {{- $hasPathColumns = gt (len (index $breadcrumbModel "tail_items")) 0 -}}
+        {{- end -}}
+        {{- $pageShellClasses := slice "page-shell" -}}
+        {{- if $hasPathColumns -}}{{- $pageShellClasses = $pageShellClasses | append "page-shell--has-path-columns" -}}{{- end -}}
+        <div class="{{ delimit $pageShellClasses " " }}">
+            <div class="page-rail">
+                {{- partial "feature-browse/navigation/root/render.html" . -}}
+                {{- if gt (len $browserNavigationSources) 0 -}}
+                <script>{{ index $inlineScripts "root_navigation" | safeJS }}</script>
+                {{- end -}}
+            </div>
+            <div class="page-stage">
+            {{- if $hasPathColumns -}}
+            <div class="path-columns">
+                <div class="slot slot-breadcrumb" data-slot="breadcrumb">
+                    {{- partial "feature-browse/navigation/path/render.html" (dict "ctx" $ "items" (index $breadcrumbModel "tail_items") "collection_sources_by_href" $collectionSourcesByHref) -}}
+                </div>
+            </div>
+            {{- /* Reserve source-dependent columns before parsing main to avoid a first-paint shift. */ -}}
+            <script>{{ $breadcrumbSkeletonInline | safeJS }}</script>
+            {{- end -}}
+            <main id="main" class="slot slot-main" data-slot="main" tabindex="-1">
+                {{- block "main" . -}}{{- end -}}
+                {{- if $hasBreadcrumbCapability -}}
+                  {{- partial "system-metadata/seo/breadcrumb.html" (dict "ctx" $ "model" $breadcrumbModel) -}}
+                {{- end -}}
+            </main>
+            {{- with index $slotFlags "meta" -}}
+            <div class="slot slot-meta" data-slot="meta">
+                {{- partial "feature-document/meta.html" (dict "ctx" $ "slot_flags" $slotFlags "breadcrumb_model" $breadcrumbModel) -}}
+            </div>
+            {{- end -}}
+            </div>
+        </div>
+    </div>
+    {{- block "body-extra" . -}}{{- end -}}
+    {{- if not $isOfflinePage -}}
+    {{- $prefetchCoordination := partial "system-delivery/prefetch/coordination.html" (dict
+      "speculation_mode" $speculationRulesMode
+      "runtime_coordination" $speculationRuntimeCoordination
+      "speculation_config" $speculationRulesConfig
+      "runtime_env_config_map" $prefetchRuntimeEnvConfig
+    ) -}}
+    {{- partial "system-delivery/prefetch/speculation/publish-manifest.html" (dict
+      "ctx" .
+      "mode" $speculationRulesMode
+      "speculation_config" $speculationRulesConfig
+      "overlap_warnings" (index $prefetchCoordination "overlap_warnings")
+    ) -}}
+    {{- if eq $prefetchRuntimeMode "enable" -}}
+      {{- partial "system-delivery/prefetch/runtime/embed.html" (dict
+        "env_config_map" $prefetchRuntimeEnvConfig
+        "js_build_params" $jsBuildParams
+        "speculation_runtime_coordination" $speculationRuntimeCoordination
+        "speculation_runtime_meta" (index $prefetchCoordination "runtime_meta")
+      ) -}}
+    {{- end -}}
+    {{- end -}}
+    {{- partial "system-ui/icon/sprite.html" . -}}
+</body>
+
+</html>

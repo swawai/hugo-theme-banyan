@@ -1,0 +1,32 @@
+{{- $node := .node -}}
+{{- $columnItems := slice -}}
+{{- if $node -}}
+  {{- $owner := "" -}}
+  {{- with $node.Parent -}}
+    {{- if eq .Kind "section" -}}
+      {{- $owner = . -}}
+    {{- end -}}
+  {{- end -}}
+  {{- if $owner -}}
+    {{- $entries := slice -}}
+    {{- if eq $owner.Layout "page-collection" -}}
+      {{- $entries = partial "feature-browse/collection/rows.html" (dict "page" $owner) -}}
+    {{- else -}}
+      {{- $entries = partial "feature-browse/collection/rows/section.html" (dict "page" $owner) -}}
+    {{- end -}}
+    {{- if ne $owner.Layout "page-collection" -}}
+      {{- $iconDefaults := partial "system-ui/list/icon-defaults.html" (dict "page" $owner) -}}
+      {{- $decorated := slice -}}
+      {{- range $entry := $entries -}}
+        {{- $icon := partial "system-ui/list/item-icon.html" (dict "page" $entry.node "defaults" $iconDefaults "kind" (cond (eq $entry.kind "page") "file" "folder")) -}}
+        {{- $decorated = $decorated | append (merge $entry (dict "icon" $icon)) -}}
+      {{- end -}}
+      {{- $entries = $decorated -}}
+    {{- end -}}
+    {{- $columnItems = partial "feature-browse/navigation/path/items-from-rows.html" (dict
+      "entries" $entries
+      "selected_href" $node.RelPermalink
+    ) -}}
+  {{- end -}}
+{{- end -}}
+{{- return $columnItems -}}

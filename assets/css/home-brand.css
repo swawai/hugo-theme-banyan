@@ -2,20 +2,16 @@
     --page-edge-block-end: 1.5rem;
 }
 
-.page-shell {
-    --page-footer-tail-space: 3rem;
-}
-
 .home-brand {
-    --home-brand-anchor-color: var(--link-visited);
+    --home-brand-anchor-color: var(--muted);
     --home-brand-horizon-color: currentColor;
-    --home-brand-signal-color: color-mix(in srgb, var(--accent-secondary) 84%, var(--fg));
+    --home-brand-signal-color: color-mix(in srgb, #5F759E 84%, var(--fg));
     --home-brand-signal-peak-opacity: 0.9;
     --home-brand-signal-guide-opacity: 0.45;
     --home-brand-signal-primary-peak-opacity: 0.9;
     --home-brand-signal-selected-opacity: 1;
-    --home-brand-signal-selected-color: var(--focus);
-    --home-brand-windsock-body-color: var(--focus);
+    --home-brand-signal-selected-color: var(--accent);
+    --home-brand-windsock-body-color: var(--accent);
     --home-brand-windsock-stripe-color: var(--bg);
     --home-brand-windsock-pole-color: currentColor;
     --home-brand-windsock-size: 1.9rem;
@@ -30,13 +26,13 @@
 [data-theme="dark"] .home-brand {
     --home-brand-anchor-color: color-mix(in srgb, var(--fg) 58%, var(--bg));
     --home-brand-horizon-color: color-mix(in srgb, var(--border) 38%, var(--bg));
-    --home-brand-signal-color: color-mix(in srgb, var(--accent-secondary) 78%, var(--fg));
+    --home-brand-signal-color: color-mix(in srgb, #7388AC 78%, var(--fg));
     --home-brand-signal-peak-opacity: 0.79;
     --home-brand-signal-guide-opacity: 0.32;
     --home-brand-signal-primary-peak-opacity: 0.79;
     --home-brand-signal-selected-opacity: 0.82;
-    --home-brand-signal-selected-color: color-mix(in srgb, var(--focus) 82%, var(--fg));
-    --home-brand-windsock-body-color: var(--focus);
+    --home-brand-signal-selected-color: color-mix(in srgb, var(--accent) 82%, var(--fg));
+    --home-brand-windsock-body-color: var(--accent);
     --home-brand-windsock-stripe-color: var(--bg);
     --home-brand-windsock-pole-color: color-mix(in srgb, var(--border) 52%, var(--bg));
 }
@@ -163,7 +159,6 @@
 }
 
 .home-brand__signal > :is(a, button):focus-visible {
-    outline: 1px solid currentColor;
     outline-offset: 0.16rem;
 }
 
@@ -304,9 +299,4 @@
         inset-inline-start: 3rem;
     }
 
-    .page-shell.page-shell--has-rail .page-rail,
-    .page-shell.page-shell--has-rail > .slot-footer {
-        position: relative;
-        top: auto;
-    }
 }

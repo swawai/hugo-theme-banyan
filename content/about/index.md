@@ -1,16 +1,16 @@
-﻿---
+---
+root_nav: true
 date: "2025-10-11T20:10:44+08:00"
 draft: false
 title: "About"
 slug: "about"
-type: "page"
-layout: "article-page"
+url: about/
+weight: 95
+layout: "page-article"
 slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
-  footer: /fragments/home-footer-shortcuts
+  breadcrumb: true
 build:
-  list: "never"
+  list: local
 ---
 
 
@@ -22,4 +22,3 @@ As defined in our `theme.toml`:
 - **Description**: A Explorer-like Hugo theme.
 
 Enjoy using this theme!
-

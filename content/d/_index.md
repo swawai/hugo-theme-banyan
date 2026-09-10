@@ -1,38 +1,23 @@
 ﻿---
 title: Library
 linkTitle: Directory
+weight: 10
 browser_title: "Technical Library and Practical Guides"
 description: "Browse published articles and practical guides by topic and section."
-nav_primary: signals
-layout: "article-list"
-banyan_article_section_list: true
+layout: "page-collection"
+list: directory
 slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
-  breadcrumb_root: /fragments/breadcrumb-model-signals
   breadcrumb: true
 cascade:
-  - _target:
+  - target:
       kind: "page"
-    nav_primary: signals
-    type: "post"
-    layout: "article-page"
+    layout: "page-article"
     slots:
-      primary_nav: /fragments/nav-primary-links
-      utilities: /fragments/nav-utilities
-      breadcrumb_root: /fragments/breadcrumb-model-signals
       breadcrumb: true
       meta: true
-  - _target:
+  - target:
       kind: "section"
-    nav_primary: signals
-    layout: "article-list"
-    banyan_article_section_list: true
+    layout: "page-collection"
     slots:
-      primary_nav: /fragments/nav-primary-links
-      utilities: /fragments/nav-utilities
-      breadcrumb_root: /fragments/breadcrumb-model-signals
       breadcrumb: true
 ---
-
-{{< section-list >}}

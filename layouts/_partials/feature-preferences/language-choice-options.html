@@ -1,0 +1,19 @@
+{{- $ctx := . -}}
+{{- $translated := dict -}}
+{{- range $ctx.AllTranslations -}}
+  {{- if not .Params.translation_placeholder -}}
+    {{- $translated = merge $translated (dict .Language.Lang .RelPermalink) -}}
+  {{- end -}}
+{{- end -}}
+{{- $options := slice -}}
+{{- range sort hugo.Sites "Language.Weight" -}}
+  {{- $code := .Language.Lang -}}
+  {{- $value := "language" -}}
+  {{- if isset .Params "icon" -}}{{- $value = .Params.icon -}}{{- end -}}
+  {{- $icon := partial "system-ui/icon/page-value.html" (dict "value" $value "page" .Home "context" (printf "languages.%s.params.icon" .Language.Lang)) | default "language" -}}
+  {{- $options = $options | append (dict "code" $code "icon" $icon
+    "name" (.Language.LanguageName | default $code)
+    "href" (index $translated $code | default .Home.RelPermalink)
+    "translated" (isset $translated $code)) -}}
+{{- end -}}
+{{- return $options -}}

@@ -1,0 +1,23 @@
+{{- $kind := .kind -}}
+{{- $ctx := .ctx -}}
+{{- $items := slice -}}
+{{- if eq $kind "root" -}}
+  {{- range $entry := $ctx.Pages -}}
+    {{- $summary := partial "feature-browse/taxonomy/pages-summary.html" (dict "pages" $entry.Pages) -}}
+    {{- $items = $items | append (dict
+        "node" $entry
+        "kind" "category"
+        "term" (printf "%v" $entry.Data.Term)
+        "count" (index $summary "count")
+        "lastmod" (index $summary "lastmod")
+        "href" $entry.RelPermalink
+    ) -}}
+  {{- end -}}
+{{- else if eq $kind "term" -}}
+  {{- range $page := $ctx.Pages -}}
+    {{- $items = $items | append (dict "node" $page "kind" "page") -}}
+  {{- end -}}
+{{- else -}}
+  {{- errorf "Build failed: feature-browse/taxonomy/children/flat.html does not support kind=%q." $kind -}}
+{{- end -}}
+{{- return $items -}}

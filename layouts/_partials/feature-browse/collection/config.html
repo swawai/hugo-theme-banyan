@@ -1,0 +1,14 @@
+{{- /* Presentation inherits; membership declarations belong only to their host. */ -}}
+{{- $page := .page -}}
+{{- $view := "" -}}
+{{- if eq $page.Layout "page-collection" -}}
+  {{- $view = partial "system-ui/list/resolve-view.html" (dict "page" $page) -}}
+  {{- if not (in (slice "name" "directory" "all" "products") $view) -}}
+    {{- errorf "List page %s needs list: name, directory, all or products (own declaration or nearest ancestor)." $page.RelPermalink -}}
+  {{- end -}}
+{{- end -}}
+{{- $variant := $view -}}
+{{- if eq $view "directory" -}}
+  {{- $variant = cond (in (slice "taxonomy" "term") $page.Kind) "tree" "section" -}}
+{{- end -}}
+{{- return (dict "view" $view "sort_variant" $variant "default_sort" (cond (in (slice "name" "products") $view) "name-asc" "date-desc")) -}}

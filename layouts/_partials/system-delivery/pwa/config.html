@@ -1,0 +1,39 @@
+{{- $ctx := .ctx | default . -}}
+{{- $swConfig := $ctx.Site.Params.service_worker | default dict -}}
+{{- $swModeRaw := index $swConfig "mode" | default "off" -}}
+{{- $swMode := lower (printf "%v" $swModeRaw) -}}
+{{- if not (in (slice "enable" "disable" "off") $swMode) -}}
+  {{- errorf "Build failed: params.service_worker.mode only supports enable/disable/off; got %q." $swModeRaw -}}
+{{- end -}}
+
+{{- $manifestConfig := $ctx.Site.Params.web_app_manifest | default dict -}}
+{{- $manifestModeRaw := index $manifestConfig "mode" | default "link" -}}
+{{- $manifestMode := lower (printf "%v" $manifestModeRaw) -}}
+{{- if not (in (slice "link" "defer" "off") $manifestMode) -}}
+  {{- errorf "Build failed: params.web_app_manifest.mode only supports link/defer/off; got %q." $manifestModeRaw -}}
+{{- end -}}
+
+{{- $offlinePathRaw := printf "%v" (index $swConfig "offline_notice_path" | default "offline/") -}}
+{{- $offlinePath := trim $offlinePathRaw "/" -}}
+{{- if eq $offlinePath "" -}}
+  {{- errorf "Build failed: params.service_worker.offline_notice_path cannot be empty." -}}
+{{- end -}}
+
+{{- $offlineRelPermalinks := slice -}}
+{{- $offlineFallbacks := slice -}}
+{{- range sort hugo.Sites "Language.Weight" -}}
+  {{- $offlineRelPermalink := printf "%s%s/" .Home.RelPermalink $offlinePath -}}
+  {{- $offlineRelPermalinks = $offlineRelPermalinks | append (lower $offlineRelPermalink) -}}
+  {{- $offlineFallbacks = $offlineFallbacks | append (dict
+    "path_prefix" (lower (printf "%v" .Home.RelPermalink))
+    "url" $offlineRelPermalink
+  ) -}}
+{{- end -}}
+
+{{- return (dict
+  "sw_config" $swConfig
+  "sw_mode" $swMode
+  "manifest_mode" $manifestMode
+  "offline_fallbacks" $offlineFallbacks
+  "is_offline_page" (in $offlineRelPermalinks (lower $ctx.RelPermalink))
+) -}}

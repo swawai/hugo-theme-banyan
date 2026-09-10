@@ -1,5 +1,7 @@
 # Banyan Theme Release Migration Plan
 
+> 历史迁移记录：本文保留发布拆分时的阶段与判断，不作为当前模板契约。当前导航、列表、slot 与 partial 边界分别以 `breadcrumb-models.md`、`collection-lists.md`、`layout-slots.md` 和 `partial-architecture.md` 为准。
+
 This plan tracks the move from "theme developed inside swaw.com" to a releasable
 Banyan theme. The goal is not to move every root file into the theme. The goal is
 to preserve the right owner for each fact.
@@ -60,16 +62,14 @@ Extract into starter/template:
   `[languages]`, and `[permalinks]`.
 - Root `package.json` script shape for a consumer site.
 - Root taxonomy root-bundle shape from `content/intent/_index.*.md` and
-  `content/tags/_index.*.md`.
+  `content/tags/_index.*.md`, including page `weight` for root-entry ordering.
 
 Keep as site-owned:
 
 - `content/_index.*.md`
-- `content/about/index.*.md`
+- `content/about/index*.md` (promoted to a root entry on 2026-09-09)
 - `content/d/products/*`
 - `content/fragments/site-meta/*`
-- `content/fragments/nav-primary-links/*`
-- `content/fragments/home-footer-shortcuts/*`
 - `assets/site/brand/*`
 - `assets/site/pwa/*`
 - `static/favicon.*`
@@ -79,6 +79,31 @@ Theme-side candidates:
 
 - Move theme-level change history into `themes/banyan/CHANGELOG.md`.
 - Keep root `CHANGELOG.md` only for the root site if needed.
+
+Navigation contract after the 2026-09-07 flattening step:
+
+- The theme derives the first-column list from `Home.Pages` plus taxonomy roots
+  whose parent is Home. Names, URLs, and order come from each page's
+  `LinkTitle`/`Title`, `RelPermalink`, and `weight`. As of 2026-09-09, only
+  roots with boolean `root_nav: true` appear; unlisted roots retain their
+  content ancestry and collection navigation without a first-column selection.
+- Sites customize real root pages and taxonomy bundles instead of maintaining a
+  separate menu whitelist. `nav_primary` and the `primary_nav`, `utilities`, and
+  `breadcrumb_root` slots are removed, including their navigation fragments.
+- `slots` now supports only `breadcrumb` and `meta`. Collection providers and
+  product metadata retain their existing owners; the dedicated footer slot has
+  been removed.
+- Taxonomy roots require only rendering metadata that affects taxonomy output.
+  Root navigation visibility and ordering belong to page `root_nav` and `weight`.
+- Language, appearance, my, and updates are real root pages. The updates directory
+  uses `list: name` and lists its real check/changelog children without appended controls.
+  `content/updates/check/index*.md` owns update copy and actions through `page-update-check`;
+  the ordinary navigation retains the updates column while the child handles actions.
+  Other pages use the existing update confirmation when no control is visible.
+- The current page shell uses one horizontal canvas at every viewport width.
+  The appearance page selects the system, light, or dark black-and-white theme.
+  See [layout slots](layout-slots.md) and the
+  [navigation flattening plan](navigation-flattening-plan.md).
 
 Delete candidates for a later cleanup:
 
@@ -124,7 +149,7 @@ Required files:
 - `themes/banyan/exampleSite/package.json`
 - Minimal home page and taxonomy roots under `themes/banyan/exampleSite/content/`
 - Optional demo pages that exercise article pages, lists, products, breadcrumbs,
-  nav utilities, PWA assets, and Service Worker opt-in.
+  system pages, PWA assets, and Service Worker opt-in.
 
 Acceptance:
 
@@ -165,9 +190,13 @@ Purpose: keep live theme content small and intentional.
 
 Keep in theme content:
 
-- Default hidden fragments.
-- `offline`, `prefetch-debug`, `my`, and `changelog` utility pages.
-- `about`, `all`, `d`, and `products` structural/template pages for now.
+- Default hidden metadata and footer fragments; old navigation and breadcrumb
+  model fragments have been removed.
+- Hidden `offline` and `prefetch-debug` utility pages.
+- `language`, `appearance`, and `my` root pages use `build.list: local` so they
+  appear under Home without joining global article lists.
+- `about`, `github`, `rss`, and `updates` provide generic root-page defaults;
+  `all`, `d`, `products`, and `all-products` provide structural collection pages.
   These are intentionally retained as theme live content until the page model is
   stable enough to split templates from live defaults.
 

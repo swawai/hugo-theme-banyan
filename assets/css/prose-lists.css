@@ -1,0 +1,39 @@
+.prose ul {
+    padding-left: 1.4em;
+    list-style-type: disc;
+}
+
+.prose ol {
+    padding-left: 1.6em;
+    list-style-type: decimal;
+}
+
+.prose ul ul {
+    list-style-type: circle;
+}
+
+.prose ul ul ul {
+    list-style-type: square;
+}
+
+.prose ol ol {
+    list-style-type: lower-alpha;
+}
+
+.prose ol ol ol {
+    list-style-type: lower-roman;
+}
+
+.prose :is(ul, ol, li) {
+    margin: 0 0 12px 0;
+}
+
+.prose li:last-child {
+    margin-bottom: 0;
+}
+
+/* 嵌套列表缩进 */
+.prose :is(ul, ol) :is(ul, ol) {
+    margin-top: 12px;
+    padding-left: 1.2em;
+}

@@ -1,0 +1,31 @@
+{{- $swConfig := .sw_config | default dict -}}
+{{- with index $swConfig "cache_first_extensions" -}}
+  {{- errorf "Build failed: params.service_worker.cache_first_extensions has moved to data/cache-policy.toml (or the theme default cache policy) routes[].sw config; do not keep setting it in hugo.toml." -}}
+{{- end -}}
+{{- $themePolicy := index hugo.Data "cache-policy-default" | default dict -}}
+{{- if eq (len $themePolicy) 0 -}}
+  {{- errorf "Build failed: missing theme default cache policy data %q." "themes/<theme>/data/cache-policy-default.toml" -}}
+{{- end -}}
+{{- $sitePolicy := index hugo.Data "cache-policy" | default dict -}}
+{{- $routes := index $themePolicy "routes" | default slice -}}
+{{- with index $sitePolicy "routes" -}}{{- $routes = . -}}{{- end -}}
+{{- $edgeone := merge
+  (index $themePolicy "edgeone" | default dict)
+  (index $sitePolicy "edgeone" | default dict)
+-}}
+{{- $swRoutes := slice -}}
+{{- range $route := $routes -}}
+  {{- with index $route "sw" -}}
+    {{- $swRoutes = $swRoutes | append (dict
+      "scope" (lower (printf "%v" (index $route "scope" | default "")))
+      "path" (printf "%v" (index $route "path" | default ""))
+      "mode" (lower (printf "%v" (index . "mode" | default "ignore")))
+      "bucket" (lower (printf "%v" (index . "bucket" | default "none")))
+    ) -}}
+  {{- end -}}
+{{- end -}}
+{{- return (dict
+  "routes" $routes
+  "edgeone" $edgeone
+  "sw_routes" $swRoutes
+) -}}

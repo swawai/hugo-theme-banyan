@@ -1,19 +1,14 @@
 ﻿---
+root_nav: true
 title: 所有文章
-linkTitle: 全部
+linkTitle: 文章 - 全部
+weight: 10
 browser_title: "全部文章與技術指南"
 description: "集中瀏覽全部已發布文章與技術指南。"
 slug: "all"
-nav_primary: signals
-layout: article-list
+layout: page-collection
 slots:
-  primary_nav: /fragments/nav-primary-links
-  utilities: /fragments/nav-utilities
-  breadcrumb_root: /fragments/breadcrumb-model-signals
   breadcrumb: true
-banyan_entry_source:
-  provider: all
-  target_section: d
+list: all
+aggregate: /d
 ---
-
-{{< all-list section="d" >}}

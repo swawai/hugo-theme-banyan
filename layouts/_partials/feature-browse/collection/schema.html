@@ -1,0 +1,24 @@
+{{- $entries := .entries | default (slice) -}}
+{{- if gt (len $entries) 0 -}}
+{{- $items := slice -}}
+{{- range $i, $e := $entries -}}
+  {{- $url := printf "%v" $e.url -}}
+  {{- if and (not (hasPrefix $url "http://")) (not (hasPrefix $url "https://")) (not (hasPrefix $url "//")) -}}
+    {{- $url = $url | absURL -}}
+  {{- end -}}
+  {{- $items = $items | append (dict
+      "@type" "ListItem"
+      "position" (add $i 1)
+      "url" $url
+      "name" $e.name
+  ) -}}
+{{- end -}}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "itemListElement": {{ $items | jsonify | safeJS }}
+}
+</script>
+{{- end -}}
+

@@ -6,7 +6,7 @@
 
 - HTML / 产物审计抓不到的浏览器时序问题
 - breadcrumb 闪烁 / 抖动
-- service worker 的 waiting / update prompt / fallback confirm
+- service worker 的静默发现、waiting 状态和检查页手动更新
 - CSP / `Speculation-Rules` 这类“只有真实浏览器吃到响应头后才成立”的验证
 
 它不是构建流程的一部分，而是一个 **按需运行的外部浏览器工具**。
@@ -35,8 +35,18 @@
 - `bun run check:browser:trace`
 - `bun run check:browser:install`
 
+产品入口专项场景 `products-category-entry-lineage` 验证四个分类的目录顺序，以及从全部／分类列表进入真实产品后的根选中、分类兄弟项、排序、刷新与前进后退。它从当前站点发现一个真实产品，不依赖固定产品 slug；至少需要一篇带 `product` 数据的产品正文。
+
 
 ## 设计原则
+
+选择器与资源边界的回归位于 `presentation-contracts.mjs`：
+
+- `collection-behavior-without-style-classes` 去除样式类后排序并进入真实文章，确认数据格、行顺序与来源不依赖类名。
+- `prose-scope-and-hover-contract` 检查长链接断行、列表词间换行、末尾引用间距与明暗 hover 透明度。
+- `settings-script-loading-boundary` 检查 8 个真实入口的页面控制器引用及全站包内容。
+
+Service Worker 的异步查询使用 `pollUntil(() => page.evaluate(async ...))`，不要把 async 谓词交给当前 Playwright 的 `waitForFunction`：Promise 对象本身会被判断为真，造成等待提前结束。激活等待包含 worker 已 activated 且当前页受控；waiting 等待包含 worker 已 installed；首次导航缓存等待包含 HTML 及全部引用 CSS／JS 已可从对应缓存读取。
 
 ### 一套场景，同时给人类和 agent 用
 
@@ -52,23 +62,9 @@
 
 ### 先固定浏览器环境，再测目标链路
 
-浏览器回归最容易踩的坑，不是“场景没写全”，而是：
+每个场景使用新的浏览器 context，按需指定 locale、视口和 Service Worker 开关，并记录所有原生弹窗。
 
-- SW 场景被别的 `confirm` 弹窗打断
-- breadcrumb 场景被全局推荐或跳转污染
-
-当前运行器会先做一层最小环境收口：
-
-- 保持新的浏览器 context
-- 预先抑制语言推荐弹窗
-
-这样场景主要验证的是：
-
-- breadcrumb 稳定性
-- SW waiting / version dropdown / fallback
-- 真实响应头是否被浏览器吃到
-
-而不是被无关的全局提示串台。
+站点已经移除全站语言推荐和 PWA 更新确认，不再注入“抑制推荐”的 localStorage 状态。语言场景以不同浏览器语言直接访问页面，验证首次访问和刷新都不会推荐或改写语言；更新场景验证普通页面静默发现 waiting worker，用户仍可进入检查页手动应用更新。
 
 ### 不靠一堆临时参数
 
@@ -118,7 +114,6 @@
 - `breadcrumb-products-wide-stability`
 - `breadcrumb-tags-wide-stability`
 - `sw-home-register`
-- `sw-update-version-menu-single-target`
 - `security-csp-enforce-home`
 - `security-csp-enforce-breadcrumb-wide`
 - `speculation-rules-header-all`
@@ -129,10 +124,11 @@
 
 需要 `temp_workspace/public/` 下至少有两份构建产物：
 
-- `sw-update-version-dropdown`
-- `sw-update-home-version-dropdown`
-- `sw-update-version-dropdown-zh-hk`
-- `sw-update-version-dropdown-zh-mo`
+- `sw-update-entry-home`
+- `sw-update-entry-collection`
+- `sw-update-hidden-control-stays-quiet`
+- `sw-update-check`
+- `sw-update-language-page-static`
 
 upgrade 场景会：
 
@@ -172,7 +168,7 @@ bun run check:browser:public
 
 ```powershell
 bun run build:browser:temp -- sw-upgrade-before
-# 做出你的 SW / fragment / update-flow 改动
+# 做出你的 SW / inline-navigation-data / update-flow 改动
 bun run build:browser:temp -- sw-upgrade-after
 bun run check:browser:upgrade
 ```
@@ -284,11 +280,13 @@ Remove-Item Env:BANYAN_BROWSER_UPGRADE_TO_DIR
 - 首页
 - wide breadcrumb 路径页
 
-原因不是它们“最重要”，而是它们已经覆盖了当前保留的 3 类 executable inline script：
+原因不是它们“最重要”，而是它们已经覆盖了当前保留的 5 个 executable inline script：
 
 - theme boot
 - breadcrumb pending
 - breadcrumb skeleton
+- root navigation
+- canvas position
 
 更完整的 CSP 主线说明见 [security-csp.md](security-csp.md)。
 

@@ -32,6 +32,8 @@ Customize site-level SEO descriptions by overriding
 `content/fragments/site-meta/index.<lang>.md` in your site root.
 Keep each language's social locale in `languages.<lang>.params.locale`; Banyan
 uses it for Open Graph locale tags.
+An optional `languages.<lang>.params.icon = { text = "EN" }` supplies the short marker shown
+by the language choice list; when absent, Banyan uses its language icon.
 
 If you need to customize cache routes, SW cache behavior, or deployment metadata,
 create a site-owned `data/cache-policy.toml`. Banyan falls back to
@@ -211,9 +213,8 @@ linkTitle = "UDC"
 
 [banyan_taxonomy]
 mode = "tree"
-show_in_home = true
-home_weight = 40
 article_weight = 40
+normalize = "lower"
 article_mode = "deepest_by_root"
 +++
 ```
@@ -225,9 +226,9 @@ Notes:
 - Every taxonomy root and term bundle must provide a non-empty `title`. It is the full semantic title used by metadata, schema, and tooltips.
 - `linkTitle` is optional compact text for navigation, breadcrumbs, lists, and article taxonomy labels; it falls back to `title`.
 - `[banyan_taxonomy].label` and `[banyan_taxonomy].home_label` are removed and are not read.
-- Required `[banyan_taxonomy]` keys are: `mode`, `show_in_home`, `home_weight`, `article_weight`, `normalize`, `article_mode`.
+- Required `[banyan_taxonomy]` keys are: `mode`, `article_weight`, `normalize`, and `article_mode`.
 - Attach taxonomy metadata and resources with `content/<plural>/_index.<lang>.md`; terms used by content require matching bundles such as `content/<plural>/<term>/_index.<lang>.md`.
-- Use `themes/banyan/exampleSite/content/intent/` as the sample bundle to copy; avoid treating `themes/banyan/content/` as a template warehouse, because theme content participates in the live build.
+- Follow the current bundle contract in [docs/taxonomies.md](docs/taxonomies.md); avoid treating `themes/banyan/content/` as a template warehouse, because theme content participates in the live build.
 - See [docs/taxonomies.md](docs/taxonomies.md) for intent guidance and the recommended term set.
 
 ## License

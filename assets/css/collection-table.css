@@ -1,0 +1,58 @@
+.collection-list--table {
+    width: max-content;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-x: none;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.collection-list--table > :is(.collection-cell--date, .collection-cell--count, .collection-cell--price, .collection-cell--value) {
+    color: var(--muted);
+}
+
+.collection-list--table .collection-cell--count {
+    justify-self: end;
+    text-align: right;
+}
+
+.collection-list--table .collection-cell--count.collection-cell--header {
+    justify-self: stretch;
+}
+
+.collection-list--table .collection-count-unit {
+    display: inline-block;
+    min-width: 3ch;
+    text-align: left;
+}
+
+.collection-list--directory {
+    grid-template-columns: var(--navigation-column-inline) minmax(5.1rem, max-content) minmax(4rem, max-content);
+}
+
+.collection-list--all {
+    grid-template-columns: var(--navigation-column-inline) minmax(5.1rem, max-content) minmax(4rem, max-content) minmax(8rem, max-content);
+}
+
+.collection-list--all > .collection-cell--path a {
+    display: block;
+    width: 100%;
+    color: inherit;
+}
+
+.collection-list--all > .collection-cell--path a:visited {
+    color: var(--link-visited);
+}
+
+.collection-list--products {
+    grid-template-columns: var(--navigation-column-inline) minmax(4rem, max-content) minmax(10rem, max-content);
+}
+
+.collection-list--products > .collection-cell--price {
+    justify-self: start;
+    text-align: left;
+}
+
+.collection-list--products > .collection-cell--price.collection-cell--header {
+    justify-self: stretch;
+}

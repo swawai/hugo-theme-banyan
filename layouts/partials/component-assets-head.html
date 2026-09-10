@@ -1,5 +1,0 @@
-{{ $ctx := . }}
-{{ if reflect.IsMap . }}{{ with index . "ctx" }}{{ $ctx = . }}{{ end }}{{ end }}
-{{ if eq (printf "%v" ($ctx.Scratch.Get "footer_variant" | default "")) "shortcuts" }}
-{{ partial "assets/stylesheet.html" (dict "path" "css/footer-shortcuts.css") }}
-{{ end }}

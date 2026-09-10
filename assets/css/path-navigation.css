@@ -1,0 +1,51 @@
+/* Path columns use the same layout at every width; the document scrolls horizontally. */
+html[data-entry-breadcrumb-pending="true"] .path-columns,
+html[data-breadcrumb-sort-pending="true"] .path-columns {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.page-shell--has-path-columns .page-stage {
+    display: grid;
+    grid-template-columns: max-content var(--main-column-inline);
+    column-gap: var(--page-shell-gap-inline);
+    align-items: start;
+}
+
+.path-columns {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: var(--navigation-column-inline);
+    column-gap: var(--page-shell-gap-inline);
+    align-items: start;
+    position: sticky;
+    top: var(--page-edge-block-start);
+    max-block-size: calc(100vh - var(--page-edge-block-start) - 1rem);
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+}
+
+.slot-breadcrumb,
+.path-navigation {
+    display: contents;
+}
+
+.path-column {
+    display: grid;
+    align-content: start;
+    min-inline-size: 0;
+    inline-size: var(--navigation-column-inline);
+}
+
+.page-shell--has-path-columns .slot-main {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.page-shell--has-path-columns .slot-meta {
+    grid-column: 2;
+    grid-row: 2;
+    padding-block-start: 0.9rem;
+}

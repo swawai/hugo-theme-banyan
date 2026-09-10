@@ -1,0 +1,18 @@
+{{ define "main" }}
+<article class="article">
+  <div class="collection-panel">
+    {{- $items := slice -}}
+    {{- range slice "auto" "light" "dark" -}}
+      {{- $items = $items | append (dict
+        "control" "button" "text" (i18n (printf "appearance_%s" .)) "icon" (printf "appearance-%s" .)
+        "dataAttrs" (dict "theme-choice" .)
+      ) -}}
+    {{- end -}}
+    {{ partial "system-ui/choice/render.html" (dict "page" . "title" .Title "items" $items) }}
+    {{ partial "feature-preferences/back-link.html" . }}
+  </div>
+</article>
+{{ end }}
+{{ define "body-extra" }}
+{{ partial "system-assets/script.html" (dict "path" "js/preferences/back-links.js") }}
+{{ end }}

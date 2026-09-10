@@ -19,11 +19,13 @@
 
 ### 1. 可执行 inline script 已收敛
 
-当前只保留 3 类可执行 inline script，并且都已经纳入构建后真实 hash：
+当前只保留 5 个可执行 inline script，并且都已经纳入构建后真实 hash：
 
 - `themes/banyan/assets/js/inline/theme-boot.js`
 - `themes/banyan/assets/js/inline/breadcrumb-pending.js`
 - `themes/banyan/assets/js/inline/breadcrumb-skeleton.js`
+- `themes/banyan/assets/js/inline/root-navigation.js`
+- `themes/banyan/assets/js/inline/canvas-position.js`
 
 这部分已经不是 Enforce 主阻塞项。
 
@@ -38,11 +40,13 @@
 
 ### 3. `speculationrules` 已脱离 runtime inline 注入
 
-当前 `Speculation-Rules` 栈已经改成：
+当 `params.speculation_rules.mode = "header"` 时，`Speculation-Rules` 栈会：
 
-- 默认响应头返回 `Speculation-Rules: "/speculation-rules/document.<hash>.json"`
+- 通过响应头返回 `Speculation-Rules: "/speculation-rules/document.<hash>.json"`
 - 规则内容位于外部 `application/speculationrules+json` document rules 文件
 - 页面不再 runtime append `script[type="speculationrules"]`
+
+swaw.com 的正式配置因 EdgeOne header value 限制保持 `off`；header 模式只在专项构建中回归。
 
 这意味着：
 
@@ -62,10 +66,11 @@
 - 页面运行过程中没有 `SecurityPolicyViolationEvent`
 - 没有 CSP 相关 console 噪音
 
-secondary speculation header 回归当前也已覆盖：
+secondary speculation header 专项回归当前也已覆盖：
 
 - `/all/`
-- `/p/xvenv/?from=products/first-party&sorts=_,name-asc`
+- `/intent/explore/`
+- `/prefetchdebug/`
 
 它们确认：
 
@@ -112,10 +117,10 @@ Strict-Transport-Security: max-age=300
 
 当前存在：
 
-- `themes/banyan/layouts/partials/prefetch-runtime-embed.html`
-- `themes/banyan/layouts/partials/article/schema.html`
-- `themes/banyan/layouts/partials/breadcrumb/schema.html`
-- `themes/banyan/layouts/partials/schema-itemlist.html`
+- `themes/banyan/layouts/_partials/system-delivery/prefetch/runtime/embed.html`
+- `themes/banyan/layouts/_partials/feature-document/schema.html`
+- `themes/banyan/layouts/_partials/system-metadata/seo/breadcrumb.html`
+- `themes/banyan/layouts/_partials/feature-browse/collection/schema.html`
 
 这类脚本当前属于 data block，不是普通 JavaScript 执行块。根据 MDN `<script>` 文档，`type` 为非 JavaScript MIME 时，内容会被当作 data block，而不会执行。
 
@@ -124,14 +129,14 @@ Strict-Transport-Security: max-age=300
 - 现在不必为了“形式洁癖”把它们强行搬走
 - 但继续保留“它们不是 executable inline”的认知边界
 
-### 8. `sw-manager.enable.update.js` 的更新菜单渲染
+### 8. 更新页的动态文案
 
-Ver 菜单已改为 DOM API 渲染：
+旧 Ver 菜单已移除，更新界面位于 `/updates/check/`：
 
-- 菜单容器由 shared `ui/dropdown` 模板输出
-- 运行时只用 `document.createElement` 与 `textContent` 写入动态文案
+- 面板由 `feature-updates/panel.html` 输出
+- 只有此页加载 `updates/page.js`；该页面入口使用 `textContent` 更新静态文案，引擎只提供状态与操作
 
-这里的核心边界是：runtime i18n 与 manifest 内容都按文本写入，不进入 HTML sink。
+这里的核心边界是：当前语言页面随 HTML 提供文案，运行时只把这些值作为文本写入，不经过 HTML sink。
 
 ### 9. `Speculation-Rules` 支持度与重叠语义仍是次级风险
 

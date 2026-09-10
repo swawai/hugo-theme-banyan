@@ -1,0 +1,59 @@
+{{- $published := .published -}}
+{{- $resource := index $published "resource" -}}
+{{- $src := index $published "src" -}}
+{{- $targetDir := index $published "targetDir" -}}
+{{- $alt := printf "%v" (.alt | default "") -}}
+{{- $title := printf "%v" (.title | default "") -}}
+{{- $stem := partial "system-assets/media/resource-stem.html" $resource -}}
+{{- $mediaConfig := site.Params.media | default dict -}}
+{{- $responsiveConfig := index $mediaConfig "responsive_images" | default dict -}}
+{{- $sizes := trim (printf "%v" (index $responsiveConfig "sizes" | default "auto, (max-width: 820px) calc(100vw - 32px), 800px")) " \r\n\t" -}}
+{{- if eq $sizes "" -}}
+  {{- errorf "Build failed: params.media.responsive_images.sizes cannot be empty." -}}
+{{- end -}}
+{{- $maxResponsiveWidth := int (index $responsiveConfig "max_width" | default 1600) -}}
+{{- if le $maxResponsiveWidth 0 -}}
+  {{- errorf "Build failed: params.media.responsive_images.max_width must be a positive integer, got %q." (index $responsiveConfig "max_width") -}}
+{{- end -}}
+{{- $candidateWidths := index $responsiveConfig "widths" | default (slice 768 1200 1600) -}}
+{{- $normalizedCandidateWidths := slice -}}
+{{- range $rawWidth := $candidateWidths -}}
+  {{- $width := int $rawWidth -}}
+  {{- if le $width 0 -}}
+    {{- errorf "Build failed: params.media.responsive_images.widths values must be positive integers, got %q." $rawWidth -}}
+  {{- end -}}
+  {{- $normalizedCandidateWidths = $normalizedCandidateWidths | append $width -}}
+{{- end -}}
+{{- $variantWidths := slice -}}
+{{- $targetMaxWidth := int (math.Min $resource.Width $maxResponsiveWidth) -}}
+
+{{- range $width := sort $normalizedCandidateWidths -}}
+  {{- if and (le $width $resource.Width) (le $width $targetMaxWidth) -}}
+    {{- $variantWidths = $variantWidths | append $width -}}
+  {{- end -}}
+{{- end -}}
+{{- if or (eq (len $variantWidths) 0) (ne (index $variantWidths (sub (len $variantWidths) 1)) $targetMaxWidth) -}}
+  {{- $variantWidths = $variantWidths | append $targetMaxWidth -}}
+{{- end -}}
+{{- $dedupedVariantWidths := slice -}}
+{{- range $width := $variantWidths -}}
+  {{- if not (in $dedupedVariantWidths $width) -}}
+    {{- $dedupedVariantWidths = $dedupedVariantWidths | append $width -}}
+  {{- end -}}
+{{- end -}}
+{{- $variantWidths = $dedupedVariantWidths -}}
+
+{{- $webpSrcset := slice -}}
+{{- range $width := $variantWidths -}}
+  {{- $variant := $resource.Resize (printf "%dx webp q78" $width) -}}
+  {{- $targetPath := path.Join $targetDir (printf "%s-%dw.webp" $stem $width) -}}
+  {{- $copied := $variant | resources.Copy $targetPath | fingerprint -}}
+  {{- $webpSrcset = $webpSrcset | append (printf "%s %dw" $copied.RelPermalink $width) -}}
+{{- end -}}
+
+<a class="md-image-link" href="{{ $src | safeURL }}" target="_blank" rel="noopener">
+  <picture class="md-responsive-image">
+    <source type="image/webp" srcset="{{ delimit $webpSrcset ", " }}" sizes="{{ $sizes }}">
+    <img src="{{ $src | safeURL }}" alt="{{ $alt }}"{{ with $title }} title="{{ . }}"{{ end }} width="{{ $resource.Width }}" height="{{ $resource.Height }}" loading="lazy" decoding="async">
+  </picture>
+</a>

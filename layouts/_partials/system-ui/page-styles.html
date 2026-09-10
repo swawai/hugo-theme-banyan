@@ -1,0 +1,27 @@
+{{ $theme := resources.Get "css/theme.css" }}
+{{ $base := resources.Get "css/base.css" }}
+{{ $icons := resources.Get "css/icons.css" }}
+{{ $pageShell := resources.Get "css/page-shell.css" }}
+{{ $documentMeta := resources.Get "css/document-meta.css" }}
+{{ $collectionItem := resources.Get "css/collection-item.css" }}
+{{ $collectionGrid := resources.Get "css/collection-grid.css" }}
+{{ $collectionTable := resources.Get "css/collection-table.css" }}
+{{ $pathNavigation := resources.Get "css/path-navigation.css" }}
+{{ $updatesPanel := resources.Get "css/updates-panel.css" }}
+{{ $notFound := resources.Get "css/not-found.css" }}
+{{ $parts := slice
+  $theme
+  $base
+  $icons
+  $pageShell
+  $documentMeta
+  $collectionItem
+  $collectionGrid
+  $collectionTable
+  $pathNavigation
+  $updatesPanel
+  $notFound
+}}
+{{ $bundle := $parts | resources.Concat "css/page.css" }}
+{{ $bundle = partial "system-assets/process-css.html" (dict "resource" $bundle) }}
+<link rel="stylesheet" href="{{ $bundle.RelPermalink }}">

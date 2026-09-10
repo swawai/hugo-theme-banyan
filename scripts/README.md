@@ -3,9 +3,9 @@
 This directory is split by script side effect, not by implementation detail.
 
 - `build/`: post-build scripts that may mutate generated output or deployment config. These are production-path scripts and are intentionally invoked by `bun run build`.
-- `checks/`: read-only checks and reports. Scripts here should not write files.
+- `checks/`: checks and reports. They do not mutate production output; contract checks may create isolated fixtures and reports under the consuming site's ignored `temp_workspace/`.
 - `browser-regression/`: browser-driven regression scenarios and local static server helpers.
-- `dev/`: local developer entry points, including temp builds and the Hugo dev server wrapper.
+- `dev/`: local developer helpers for browser-test builds and command guidance. The consuming site's adapter owns the development server.
 - `adapters/`: opt-in deployment or hosting adapters.
 - `external-resources/`: explicit data-preparation scripts that sync declared remote files into the consuming site.
 

@@ -1,0 +1,54 @@
+{{- $ctx := .ctx | default . -}}
+{{- $slotFlags := .slot_flags | default dict -}}
+{{- $breadcrumbModel := .breadcrumb_model | default dict -}}
+{{- $breadcrumbItems := slice -}}
+{{- with index $slotFlags "breadcrumb" -}}
+  {{- $breadcrumbItems = index $breadcrumbModel "schema_items" | default slice -}}
+{{- end -}}
+{{- $directoryItems := slice -}}
+{{- range $breadcrumbItems -}}
+  {{- if ne (index . "current") true -}}
+    {{- $directoryItems = $directoryItems | append . -}}
+  {{- end -}}
+{{- end -}}
+{{- $hasPath := gt (len $directoryItems) 0 -}}
+{{- $taxonomySpecs := partial "feature-browse/taxonomy/configs.html" (dict "ctx" $ctx) -}}
+{{- $hasTaxonomy := false -}}
+{{- range sort $taxonomySpecs "article_weight" "asc" -}}
+  {{- $spec := . -}}
+  {{- $articleMode := printf "%v" (index $spec "article_mode") -}}
+  {{- $values := partial "feature-browse/taxonomy/page-values.html" (dict "page" $ctx "spec" $spec) -}}
+  {{- if and (ne $articleMode "none") (gt (len $values) 0) -}}
+    {{- $hasTaxonomy = true -}}
+    {{- break -}}
+  {{- end -}}
+{{- end -}}
+{{- $hasDates := false -}}
+{{- if $ctx.Date -}}{{- $hasDates = true -}}{{- end -}}
+{{- $externalLinks := partial "feature-document/external-links.html" (dict "ctx" $ctx) -}}
+{{- if or $hasPath $hasTaxonomy $hasDates $externalLinks -}}
+<div class="document-meta">
+  {{- if $hasPath -}}
+  <nav class="document-meta__row document-meta__row--path" aria-label="{{ i18n "article_meta_directory" }}">
+    <span class="document-meta__label">{{ i18n "article_meta_directory" }}</span>
+    {{- range $index, $item := $directoryItems -}}
+      {{- if gt $index 0 -}}<span class="document-meta__separator" aria-hidden="true">/</span>{{- end -}}
+      {{- $itemText := index $item "text" -}}
+      {{- if eq $index 0 -}}
+        {{- $itemText = index $item "title" | default $itemText -}}
+      {{- end -}}
+      {{- partial "system-ui/link.html" (dict
+        "href" (index $item "href")
+        "text" $itemText
+        "title" (index $item "title")
+        "ariaCurrent" (cond (eq (index $item "current") true) "page" "")
+        "prefetchSlot" "nav"
+      ) -}}
+    {{- end -}}
+  </nav>
+  {{- end -}}
+  {{- if $hasTaxonomy -}}{{ partial "feature-document/taxonomy-links.html" (dict "ctx" $ctx) }}{{- end -}}
+  {{- if $hasDates -}}{{ partial "feature-document/dates.html" $ctx }}{{- end -}}
+  {{- $externalLinks | safeHTML -}}
+</div>
+{{- end -}}

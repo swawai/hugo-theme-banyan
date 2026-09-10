@@ -1,0 +1,17 @@
+{{- $pages := .pages | default (slice) -}}
+{{- $seen := dict -}}
+{{- $uniquePages := slice -}}
+{{- range $pages -}}
+  {{- $key := .RelPermalink -}}
+  {{- if not (isset $seen $key) -}}
+    {{- $seen = merge $seen (dict $key true) -}}
+    {{- $uniquePages = $uniquePages | append . -}}
+  {{- end -}}
+{{- end -}}
+{{- $lastmod := time.AsTime "0001-01-01T00:00:00Z" -}}
+{{- range $uniquePages -}}
+  {{- if .Lastmod.After $lastmod -}}
+    {{- $lastmod = .Lastmod -}}
+  {{- end -}}
+{{- end -}}
+{{- return (dict "pages" $uniquePages "count" (len $uniquePages) "lastmod" $lastmod) -}}

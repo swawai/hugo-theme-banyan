@@ -70,8 +70,8 @@ include_pages = []
 mode = "defer"
 
 [params.media.responsive_images]
-# Keep this fallback aligned with the article prose layout in
-# assets/css/article-base.css. The browser uses sizes with srcset and the
+# Keep this fallback aligned with the readable content width in
+# assets/css/prose-base.css. The browser uses sizes with srcset and the
 # device DPR to choose a generated WebP candidate.
 sizes = "auto, (max-width: 820px) calc(100vw - 32px), 800px"
 widths = [768, 1200, 1600]
@@ -93,7 +93,6 @@ mode = "off"
 #   batches run only once per browser session.
 
 [params.prefetch_runtime.env.TT]
-menu = "sw_xf_g"
 nav = "sw_xf_g"
 crumb = "sw_mf_g"
 sort_siblings = "sw_xf_g"
@@ -104,7 +103,6 @@ post = "sw_mf_g"
 ref = "TT"
 
 [params.prefetch_runtime.env.TF]
-menu = "link_mf"
 nav = "link_xf"
 crumb = "link_mf"
 sort_siblings = "link_xf"
@@ -117,7 +115,6 @@ post = "link_mf"
 # keep this off and let the runtime/SW prefetch stack handle warmup.
 mode = "off"
 runtime_coordination = "preempt_runtime_when_supported"
-menu = "prefetch_moderate"
 nav = "prefetch_eager"
 crumb = "prefetch_moderate"
 sort_siblings = "prefetch_eager"
@@ -125,7 +122,7 @@ descendants = "prefetch_moderate"
 post = "prefetch_moderate"
 
 [params.build]
-# Site-wide build version defaults used by SW, fragments, and runtime manifests.
+# Site-wide build version defaults used by the Service Worker and update page.
 version_prefix = "v"
 timestamp_layout = "20060102150405"
 
@@ -138,9 +135,6 @@ mode = "off"
 update_check_interval = 15
 update_visibility_throttle = 3
 offline_notice_path = "offline/"
-
-[params.runtime_i18n]
-fallbacks = { "zh-hk" = "zh-tw", "zh-mo" = "zh-tw" }
 
 [frontmatter]
 lastmod = ["lastmod", ":git", ":default"]

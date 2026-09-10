@@ -1,0 +1,19 @@
+{{ $proseBase := resources.Get "css/prose-base.css" }}
+{{ $proseInline := resources.Get "css/prose-inline.css" }}
+{{ $proseLists := resources.Get "css/prose-lists.css" }}
+{{ $proseQuotes := resources.Get "css/prose-quotes.css" }}
+{{ $proseImages := resources.Get "css/prose-images.css" }}
+{{ $proseCode := resources.Get "css/prose-code.css" }}
+{{ $proseTables := resources.Get "css/prose-tables.css" }}
+{{ $parts := slice
+  $proseBase
+  $proseInline
+  $proseLists
+  $proseQuotes
+  $proseImages
+  $proseCode
+  $proseTables
+}}
+{{ $bundle := $parts | resources.Concat "css/prose.css" }}
+{{ $bundle = partial "system-assets/process-css.html" (dict "resource" $bundle) }}
+<link rel="stylesheet" href="{{ $bundle.RelPermalink }}">

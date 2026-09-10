@@ -1,0 +1,31 @@
+{{- /* Collect dependencies from the sources this page can actually display.
+      Source models are cached; registering on the rendering page is not. */ -}}
+{{- $page := .page -}}
+{{- range .sources -}}
+  {{- $payloads := slice (.current_collection_items | default dict) -}}
+  {{- $items := .tail_items | default slice -}}
+  {{- range .levels | default slice -}}
+    {{- $payloads = $payloads | append (.collection_items | default dict) -}}
+    {{- $items = $items | append (.item | default dict) -}}
+  {{- end -}}
+  {{- range $payloads -}}
+    {{- with .c.icon -}}{{- if not (reflect.IsMap .) -}}{{- $page.Store.SetInMap "used_icons" . true -}}{{- end -}}{{- end -}}
+    {{- $fields := .f | default slice -}}
+    {{- $values := .rv | default slice -}}
+    {{- range $column, $field := $fields -}}
+      {{- if eq $field "icon" -}}
+        {{- range $offset, $value := $values -}}
+          {{- if and (eq (mod $offset (len $fields)) $column) $value (not (reflect.IsMap $value)) -}}
+            {{- $page.Store.SetInMap "used_icons" $value true -}}
+          {{- end -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+  {{- range $items -}}
+    {{- with .icon -}}{{- if not (reflect.IsMap .) -}}{{- $page.Store.SetInMap "used_icons" . true -}}{{- end -}}{{- end -}}
+    {{- range .column_items | default slice -}}
+      {{- with .icon -}}{{- if not (reflect.IsMap .) -}}{{- $page.Store.SetInMap "used_icons" . true -}}{{- end -}}{{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}

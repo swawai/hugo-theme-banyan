@@ -32,8 +32,8 @@ Banyan 现在不再提供 taxonomy 命名或渲染配置的通用兜底。
 - taxonomy 根 bundle 与 term bundle 都必须提供非空 `title`；它承担完整语义标题，并用于 metadata、schema 与 tooltip
 - `linkTitle` 是可选的短标签，只用于导航、breadcrumb、列表和文章页 taxonomy label；未填写时回退到 `title`
 - taxonomy 不再读取 `[banyan_taxonomy].label`、`[banyan_taxonomy].home_label`
-- taxonomy 根 bundle 必须提供 `[banyan_taxonomy]`，并显式填写 `mode`、`show_in_home`、`home_weight`、`article_weight`、`normalize`、`article_mode`
-- 因此，主题把“可复制样板”放在 `exampleSite/content/` 更稳，而不是直接把模板样板放进 `themes/banyan/content/`
+- taxonomy 根 bundle 必须提供 `[banyan_taxonomy]`，并显式填写 `mode`、`article_weight`、`normalize`、`article_mode`
+- 第一列是否显示由根页面的 `root_nav` 决定，顺序来自页面 `weight`；taxonomy 配置不再承担首页入口职责
 
 ## Intent 是什么
 
@@ -99,8 +99,6 @@ linkTitle = "Intent"
 
 [banyan_taxonomy]
 mode = "flat"
-show_in_home = true
-home_weight = 20
 article_weight = 20
 normalize = "lower"
 article_mode = "all"
@@ -118,19 +116,13 @@ linkTitle = "Reference"
 
 其中 `title` 必填；只有在完整标题不适合紧凑界面时，才需要额外填写 `linkTitle`。
 
-## Starter Bundles
+## Site Bundles
 
 Banyan intentionally does not keep `content/intent` or `content/tags` under
 theme live content. Taxonomy root bundles are site information architecture:
 they decide which taxonomy names exist, how those taxonomies render, and which
-terms deserve their own pages.
-
-Use the runnable starter bundles in `exampleSite/content/` as the copy source:
-
-```text
-themes/banyan/exampleSite/content/intent/
-themes/banyan/exampleSite/content/tags/
-```
+terms deserve their own pages. Use the root-bundle contract above as the source
+of truth when creating them.
 
 For a real site, copy only the plural bundle you declared in the site root
 `hugo.toml`:
@@ -169,8 +161,6 @@ title = "UDC"
 
 [banyan_taxonomy]
 mode = "tree"
-show_in_home = true
-home_weight = 40
 article_weight = 40
 normalize = "lower"
 article_mode = "deepest_by_root"
@@ -184,6 +174,6 @@ article_mode = "deepest_by_root"
 当你要新增一个 taxonomy 时，推荐顺序是：
 
 1. 在站点根 `hugo.toml` 的 `[taxonomies]` 中声明它
-2. 复制 `themes/banyan/exampleSite/content/intent/` 或 `themes/banyan/exampleSite/content/tags/` 作为起点，到自己站点的 `content/<plural>/`
+2. 按本文的 taxonomy 根 bundle 示例，在站点中建立 `content/<plural>/_index.<lang>.md`
 3. 在 bundle 的 `_index.<lang>.md` 里调整标题、正文、`[banyan_taxonomy]`
 4. 如果 term 也需要说明文字、图标、局部 CSS/JS，再继续创建 `content/<plural>/<term>/_index.<lang>.md`

@@ -1,0 +1,15 @@
+{{ define "head-extra" }}
+{{ partial "feature-document/styles.html" . }}
+{{ end }}
+
+{{ define "main" }}
+<article class="article">
+  <div class="collection-panel">
+    <h1 class="collection-header">{{ .Title }}</h1>
+    <div class="prose">{{ .Content }}</div>
+  </div>
+</article>
+{{ end }}
+{{ define "body-extra" }}
+{{ partial "system-assets/script.html" (dict "path" "js/preferences/back-links.js") }}
+{{ end }}

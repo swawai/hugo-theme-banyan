@@ -5,11 +5,13 @@ import assert from 'node:assert/strict';
 import * as esbuild from 'esbuild';
 
 const siteRoot = process.cwd();
-const navStateEntry = path.join(siteRoot, 'themes/banyan/assets/js/nav-state.js');
-const breadcrumbItemsEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-items.js');
-const breadcrumbPreviewEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-preview.js');
-const breadcrumbSourceEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-source.js');
-const collectionItemsEntry = path.join(siteRoot, 'themes/banyan/assets/js/collection-items.js');
+const browseRoot = path.join(siteRoot, 'themes/banyan/assets/js/browse');
+const navStateEntry = path.join(browseRoot, 'navigation-state.js');
+const breadcrumbItemsEntry = path.join(browseRoot, 'breadcrumb-items.js');
+const breadcrumbEntry = path.join(browseRoot, 'breadcrumb-entry.js');
+const breadcrumbSourceEntry = path.join(browseRoot, 'breadcrumb-source.js');
+const collectionItemsEntry = path.join(browseRoot, 'collection-items.js');
+const collectionSortEntry = path.join(browseRoot, 'collection-sort.js');
 const tempRoot = path.join(siteRoot, 'temp_workspace', 'check-navigation-state');
 
 const navigationStateStub = `
@@ -21,6 +23,22 @@ export const navigationState = {
   }
 };
 `;
+
+function navigationStateParamsPlugin() {
+    return {
+        name: 'navigation-state-params',
+        setup(build) {
+            build.onResolve({ filter: /^@params$/ }, () => ({
+                path: 'navigation-state-params',
+                namespace: 'navigation-state-params'
+            }));
+            build.onLoad({ filter: /.*/, namespace: 'navigation-state-params' }, () => ({
+                contents: navigationStateStub,
+                loader: 'js'
+            }));
+        }
+    };
+}
 
 async function importBrowserModule(entrypoint, outputName) {
     await fs.mkdir(tempRoot, { recursive: true });
@@ -34,22 +52,25 @@ async function importBrowserModule(entrypoint, outputName) {
         platform: 'browser',
         target: 'es2022',
         format: 'esm',
-        plugins: [{
-            name: 'navigation-state-params',
-            setup(build) {
-                build.onResolve({ filter: /^@params$/ }, () => ({
-                    path: 'navigation-state-params',
-                    namespace: 'navigation-state-params'
-                }));
-                build.onLoad({ filter: /.*/, namespace: 'navigation-state-params' }, () => ({
-                    contents: navigationStateStub,
-                    loader: 'js'
-                }));
-            }
-        }]
+        plugins: [navigationStateParamsPlugin()]
     });
 
     return import(pathToFileURL(outfile).href);
+}
+
+async function readBrowserBundleInputs(entrypoint) {
+    const result = await esbuild.build({
+        entryPoints: [entrypoint],
+        bundle: true,
+        write: false,
+        metafile: true,
+        platform: 'browser',
+        target: 'es2022',
+        format: 'esm',
+        plugins: [navigationStateParamsPlugin()]
+    });
+
+    return Object.keys(result.metafile.inputs).map((input) => input.replace(/\\/g, '/'));
 }
 
 function applySorts(module, inputUrl, tokens, defaultTokens = []) {
@@ -58,7 +79,22 @@ function applySorts(module, inputUrl, tokens, defaultTokens = []) {
     return `${url.pathname}${url.search}${url.hash}`;
 }
 
-const navState = await importBrowserModule(navStateEntry, 'nav-state.js');
+const navState = await importBrowserModule(navStateEntry, 'navigation-state.js');
+
+const collectionSortInputs = await readBrowserBundleInputs(collectionSortEntry);
+const pathRuntimeInputs = [
+    'browse/breadcrumb-column-sort.js',
+    'browse/breadcrumb-items.js',
+    'browse/breadcrumb-source.js',
+    'browse/path-render.js',
+];
+assert.deepEqual(
+    collectionSortInputs.filter((input) => (
+        pathRuntimeInputs.some((pathRuntimeInput) => input.endsWith(`/assets/js/${pathRuntimeInput}`))
+    )),
+    [],
+    'collection sort bundle must not include path navigation runtime modules'
+);
 
 assert.equal(
     applySorts(
@@ -141,7 +177,7 @@ assert.deepEqual(
 
 const breadcrumbSource = await importBrowserModule(breadcrumbSourceEntry, 'breadcrumb-source.js');
 const breadcrumbItems = await importBrowserModule(breadcrumbItemsEntry, 'breadcrumb-items.js');
-const breadcrumbPreview = await importBrowserModule(breadcrumbPreviewEntry, 'breadcrumb-preview.js');
+const breadcrumbPath = await importBrowserModule(breadcrumbEntry, 'breadcrumb-entry.js');
 const collectionItems = await importBrowserModule(collectionItemsEntry, 'collection-items.js');
 
 const compositeRows = [
@@ -254,7 +290,7 @@ window.location.search = '?from=all';
 
 const allCollectionSource = {
     logical_path: '/all/',
-    provider: 'all',
+    provider: 'collection',
     sort_variant: 'all',
     default_sort: 'date-desc',
     label: 'All',
@@ -266,7 +302,7 @@ assert.deepEqual(
     {
         collectionSource: {
             logicalPath: '/all/',
-            provider: 'all',
+            provider: 'collection',
             sortVariant: 'all',
             defaultSort: 'date-desc',
             label: 'All',
@@ -303,7 +339,7 @@ window.location.search = '?from=d/wsl&sorts=name-asc,date-desc';
 assert.equal(
     breadcrumbItems.buildCollectionSortToggleHref({
         logical_path: '/d/wsl/',
-        provider: 'section-d',
+        provider: 'collection',
         sort_variant: 'section',
         default_sort: 'date-desc',
         label: 'WSL',
@@ -315,7 +351,7 @@ assert.equal(
 
 const directoryCollectionSource = {
     logical_path: '/d/',
-    provider: 'section-d',
+    provider: 'collection',
     sort_variant: 'section',
     default_sort: 'date-desc',
     label: 'Directory',
@@ -323,7 +359,7 @@ const directoryCollectionSource = {
 };
 const wslCollectionSource = {
     logical_path: '/d/wsl/',
-    provider: 'section-d',
+    provider: 'collection',
     sort_variant: 'section',
     default_sort: 'date-desc',
     label: 'WSL',
@@ -395,7 +431,7 @@ window.location.href = 'https://example.test/zh/p/example/?from=intent/decide';
 window.location.search = '?from=intent/decide';
 
 assert.deepEqual(
-    breadcrumbPreview.buildPreviewCurrentItem(
+    breadcrumbPath.buildCurrentPathItem(
         {},
         'WSL Toolkit',
         'WSL automation management script',
@@ -410,15 +446,15 @@ assert.deepEqual(
     'entry preview should keep compact visible text and the full title as separate fields'
 );
 
-const previewMenuCurrentItem = breadcrumbPreview.buildPreviewCurrentItem(
+const previewColumnCurrentItem = breadcrumbPath.buildCurrentPathItem(
     {
         currentCollectionSource: {
             logical_path: '/intent/decide/',
-            provider: 'taxonomy',
+            provider: 'collection',
             sort_variant: 'tree',
             default_sort: 'date-desc',
         },
-        currentCollectionItems: {
+        currentCollectionItems: collectionItems.decodeItemsPayload({
             ds: 'date-desc',
             f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
             lp: '/intent/decide/',
@@ -428,7 +464,7 @@ const previewMenuCurrentItem = breadcrumbPreview.buildPreviewCurrentItem(
             ],
             sv: 'tree',
             v: 1,
-        },
+        }),
     },
     'WSL Toolkit',
     'WSL automation management script',
@@ -436,14 +472,14 @@ const previewMenuCurrentItem = breadcrumbPreview.buildPreviewCurrentItem(
 );
 
 assert.equal(
-    previewMenuCurrentItem?.menu?.find((item) => item.current === true)?.title,
+    previewColumnCurrentItem?.column_items?.find((item) => item.current === true)?.title,
     'WSL automation management script',
-    'entry preview should attach the full title to the visible current menu option'
+    'entry preview should attach the full title to the visible current column item'
 );
 
 const sourcePayload = JSON.stringify([{
     logical_path: '/intent/decide/',
-    provider: 'taxonomy',
+    provider: 'collection',
     root_item: {
         href: '/zh/intent/',
         text: 'Intent',
@@ -456,11 +492,23 @@ const sourcePayload = JSON.stringify([{
     }],
     current_collection_source: {
         logical_path: '/intent/decide/',
-        provider: 'taxonomy',
+        provider: 'collection',
         sort_variant: 'tree',
         default_sort: 'date-desc',
         label: 'Decide',
         href: '/zh/intent/decide/'
+    },
+    current_collection_items: {
+        ds: 'date-desc',
+        f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
+        lp: '/intent/decide/',
+        p: 'taxonomy',
+        rv: [
+            'xvenv', 'page', '/zh/p/xvenv/', 'Xvenv', '1', 'Xvenv', '20260626', '6402',
+            'wsl-automng', 'page', '/zh/p/wsl-automng/', 'WSL Toolkit', '1', 'WSL Toolkit', '20260624', '1341',
+        ],
+        sv: 'tree',
+        v: 1
     },
     levels: [{
         item: {
@@ -470,7 +518,7 @@ const sourcePayload = JSON.stringify([{
         },
         collection_source: {
             logical_path: '/intent/',
-            provider: 'taxonomy',
+            provider: 'collection',
             sort_variant: 'tree',
             default_sort: 'date-desc',
             label: 'Intent',
@@ -510,6 +558,14 @@ assert.equal(
     'from values with an entry key tail should not be treated as valid navigation state'
 );
 
+for (const invalidFrom of ['/intent/', '/intent/unknown/', '/tags/decide/', '']) {
+    assert.equal(
+        breadcrumbSource.parseEntrySelection(sources, invalidFrom),
+        null,
+        'root selection must use an exact published source, never infer a root from an unregistered prefix'
+    );
+}
+
 const collectionSourceIndex = breadcrumbSource.parseCollectionSourceIndex(sourcePayload);
 assert.deepEqual(
     breadcrumbSource.pickCollectionSourceByHref(
@@ -518,7 +574,7 @@ assert.deepEqual(
     ),
     {
         logicalPath: '/intent/',
-        provider: 'taxonomy',
+        provider: 'collection',
         sortVariant: 'tree',
         defaultSort: 'date-desc',
         label: 'Intent',
@@ -533,7 +589,7 @@ assert.deepEqual(
     ),
     {
         logicalPath: '/intent/decide/',
-        provider: 'taxonomy',
+        provider: 'collection',
         sortVariant: 'tree',
         defaultSort: 'date-desc',
         label: 'Decide',
@@ -557,7 +613,7 @@ assert.equal(
         },
         {
             logicalPath: '/intent/decide/',
-            provider: 'taxonomy',
+            provider: 'collection',
         },
         {
             sortToken: '',
@@ -570,26 +626,7 @@ assert.equal(
     'entry hrefs should write collection-only from values'
 );
 
-globalThis.fetch = async () => ({
-    ok: true,
-    async json() {
-        return {
-            ds: 'date-desc',
-            f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
-            lp: '/intent/decide/',
-            p: 'taxonomy',
-            rv: [
-                'xvenv', 'page', '/zh/p/xvenv/', 'Xvenv', '1', 'Xvenv', '20260626', '6402',
-                'wsl-automng', 'page', '/zh/p/wsl-automng/', 'WSL Toolkit', '1', 'WSL Toolkit', '20260624', '1341',
-            ],
-            sv: 'tree',
-            v: 1
-        };
-    }
-});
-
-const selectedItem = await breadcrumbItems.buildSelectedBreadcrumbItem(
-    '/__fragments/v-test/zh/',
+const selectedItem = breadcrumbItems.buildSelectedBreadcrumbItem(
     sources[0],
     '/zh/p/wsl-automng/',
     'WSL automation management script'
@@ -607,14 +644,14 @@ assert.equal(
     'selected current item should preserve the full page title without expanding the compact collection payload'
 );
 assert.equal(
-    selectedItem?.menu?.find((item) => item.text === 'WSL Toolkit')?.current,
+    selectedItem?.column_items?.find((item) => item.text === 'WSL Toolkit')?.current,
     true,
-    'current breadcrumb menu item should be highlighted when selected by pathname'
+    'current breadcrumb column item should be highlighted when selected by pathname'
 );
 assert.equal(
-    selectedItem?.menu?.find((item) => item.current === true)?.title,
+    selectedItem?.column_items?.find((item) => item.current === true)?.title,
     'WSL automation management script',
-    'settled entry state should attach the full title to the visible current menu option'
+    'settled entry state should attach the full title to the visible current column item'
 );
 
 console.log('Entry from checks passed.');

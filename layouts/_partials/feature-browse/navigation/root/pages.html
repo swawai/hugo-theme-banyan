@@ -1,0 +1,9 @@
+{{- $ctx := . -}}
+{{- /* Keep structural roots for path ancestry; root.html only displays root_nav: true. */ -}}
+{{- $pages := $ctx.Site.Home.Pages | union (slice $ctx.Site.Home) -}}
+{{- range where $ctx.Site.Pages "Kind" "taxonomy" -}}
+  {{- if and .Parent .Parent.IsHome -}}
+    {{- $pages = $pages | union (slice .) -}}
+  {{- end -}}
+{{- end -}}
+{{- return $pages.ByWeight -}}

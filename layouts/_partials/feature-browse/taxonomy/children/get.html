@@ -1,0 +1,14 @@
+{{- $ctx := .ctx -}}
+{{- if not $ctx -}}
+  {{- errorf "Build failed: feature-browse/taxonomy/children/get.html requires ctx." -}}
+{{- end -}}
+{{- $spec := .spec | default (partial "feature-browse/taxonomy/config.html" (dict "ctx" $ctx "plural" $ctx.Data.Plural)) -}}
+{{- $kind := .kind | default (cond (eq $ctx.Kind "term") "term" "root") -}}
+{{- $specKey := md5 ($spec | jsonify) -}}
+{{- $result := slice -}}
+{{- if eq (index $spec "mode") "tree" -}}
+  {{- $result = partialCached "feature-browse/taxonomy/children/tree.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) $ctx.Site.Language.Lang $ctx.Kind $ctx.RelPermalink (printf "%v" ($ctx.Data.Plural | default "")) (printf "%v" ($ctx.Data.Term | default "")) $kind $specKey -}}
+{{- else -}}
+  {{- $result = partialCached "feature-browse/taxonomy/children/flat.html" (dict "ctx" $ctx "spec" $spec "kind" $kind) $ctx.Site.Language.Lang $ctx.Kind $ctx.RelPermalink (printf "%v" ($ctx.Data.Plural | default "")) (printf "%v" ($ctx.Data.Term | default "")) $kind $specKey -}}
+{{- end -}}
+{{- return $result -}}

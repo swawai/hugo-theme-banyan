@@ -1,0 +1,13 @@
+{{- $page := .page -}}
+{{- $view := "" -}}
+{{- $candidates := slice $page -}}
+{{- range $page.Ancestors -}}
+  {{- $candidates = $candidates | append . -}}
+{{- end -}}
+{{- range $candidates -}}
+  {{- if isset .Params "list" -}}
+    {{- $view = printf "%v" .Params.list -}}
+    {{- break -}}
+  {{- end -}}
+{{- end -}}
+{{- return $view -}}

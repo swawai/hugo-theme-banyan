@@ -6,6 +6,7 @@ import { gzipSync } from 'node:zlib';
 const siteRoot = process.cwd();
 const defaultPublicDir = 'public';
 const defaultTop = 8;
+const maxPageBreadcrumbPayloadBytes = 64 * 1024;
 
 // These guardrails intentionally target minified production output.
 // Run the script without --check when you only want an exploratory report.
@@ -15,25 +16,36 @@ const productionGuardrails = [
     {
         label: 'home',
         relativePath: 'index.html',
-        maxRawBytes: 20_000,
-        maxGzipBytes: 7_000,
+        // The canvas adds about 1 KB of inline positioning before first paint.
+        maxRawBytes: 21_000,
+        // Restoring the cloud/moon theme sprite adds about 180 B gzip.
+        maxGzipBytes: 7_200,
         maxBreadcrumbPayloadBytes: 16,
         maxBreadcrumbSourceCount: 0
     },
     {
         label: 'all',
-        relativePath: 'all/index.html',
-        maxRawBytes: 42_000,
-        maxGzipBytes: 12_000,
+        rootCollectionSlug: 'all',
+        relativePathLabel: '*/all/index.html',
+        // The critical root/path boot modules are bundled inline before first paint.
+        // Keep the shell and each published row bounded independently so normal
+        // content growth does not require recalibrating a fixed total.
+        rawBaseBytes: 28_000,
+        rawPerItemBytes: 1_500,
+        gzipBaseBytes: 10_000,
+        gzipPerItemBytes: 100,
         breadcrumbPayloadBaseBytes: 1_000,
         breadcrumbPayloadPerItemBytes: 220,
         maxBreadcrumbSourceCount: 1
     },
     {
         label: 'products',
-        relativePath: 'products/first-party/index.html',
-        maxRawBytes: 42_000,
-        maxGzipBytes: 12_000,
+        rootCollectionSlug: 'products',
+        relativePathLabel: '*/products/index.html',
+        rawBaseBytes: 28_000,
+        rawPerItemBytes: 1_500,
+        gzipBaseBytes: 8_000,
+        gzipPerItemBytes: 100,
         breadcrumbPayloadBaseBytes: 1_300,
         breadcrumbPayloadPerItemBytes: 220,
         maxBreadcrumbSourceCount: 1
@@ -221,16 +233,36 @@ function extractStartTags(text, tagName) {
     return [...text.matchAll(new RegExp(`<${escapedTagName}\\b[^>]*>`, 'gi'))].map((match) => match[0]);
 }
 
-const breadcrumbPrefetchAnchorClasses = new Set([
-    'breadcrumb-link',
-    'breadcrumb-root-link',
-    'breadcrumb-menu-option'
-]);
+function extractStylesheetHrefs(text) {
+    const hrefs = [];
+    for (const tag of extractStartTags(text, 'link')) {
+        const rel = extractTagAttribute(tag, 'rel').toLowerCase().split(/\s+/).filter(Boolean);
+        if (!rel.includes('stylesheet')) {
+            continue;
+        }
+        const href = extractTagAttribute(tag, 'href').trim();
+        if (href) {
+            hrefs.push(href);
+        }
+    }
+    return hrefs;
+}
 
-function hasBreadcrumbPrefetchAnchorClass(className) {
-    return className
-        .split(/\s+/)
-        .some((classPart) => breadcrumbPrefetchAnchorClasses.has(classPart));
+function hasClassToken(text, token) {
+    const classPattern = /<[A-Za-z][^>]*\bclass\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+))/gi;
+    for (const match of text.matchAll(classPattern)) {
+        const className = match[1] ?? match[2] ?? match[3] ?? '';
+        if (className.split(/\s+/).includes(token)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function normalizeCssAssetFamilyKey(relativePath) {
+    return `${relativePath ?? ''}`
+        .replace(/\.([0-9a-f]{16,})(?=\.css$)/i, '')
+        .replace(/\.min(?=\.css$)/i, '');
 }
 
 function inspectBreadcrumbPrefetchContract(text) {
@@ -238,12 +270,17 @@ function inspectBreadcrumbPrefetchContract(text) {
     let breadcrumbAnchorCount = 0;
     let breadcrumbCrumbAnchorCount = 0;
 
-    for (const tag of extractStartTags(text, 'a')) {
-        const className = extractTagAttribute(tag, 'class');
-        if (!hasBreadcrumbPrefetchAnchorClass(className)) {
+    let depth = 0;
+    for (const [tag] of text.matchAll(/<\/?div\b[^>]*>|<a\b[^>]*>/gi)) {
+        if (/^<\/div/i.test(tag)) {
+            if (depth) depth -= 1;
             continue;
         }
-
+        if (/^<div/i.test(tag)) {
+            if (depth || extractTagAttribute(tag, 'data-slot') === 'breadcrumb') depth += 1;
+            continue;
+        }
+        if (!depth) continue;
         breadcrumbAnchorCount += 1;
         const slot = extractTagAttribute(tag, 'data-prefetch-slot');
         if (slot === 'crumb') {
@@ -252,7 +289,6 @@ function inspectBreadcrumbPrefetchContract(text) {
         }
 
         issues.push({
-            className,
             href: extractTagAttribute(tag, 'href'),
             slot: slot || '<missing>'
         });
@@ -651,6 +687,9 @@ async function inspectHtmlFile(rootDir, absolutePath) {
     ).length;
     const robotsDirective = extractMetaContent(text, 'robots').toLowerCase();
     const jsonLd = inspectJsonLd(text);
+    const stylesheetRefs = extractStylesheetHrefs(text)
+        .map((ref) => normalizeScriptReference(ref, relativePath))
+        .filter(Boolean);
 
     let breadcrumbPayloadBytes = 0;
     let breadcrumbSourceCount = 0;
@@ -701,6 +740,8 @@ async function inspectHtmlFile(rootDir, absolutePath) {
         canonicalHref: extractCanonicalHref(text),
         hasMainBundle: hasMainBundle(text),
         hasPrefetchRuntimeBundle: hasPrefetchRuntimeBundle(text),
+        hasHomeBrand: hasClassToken(text, 'home-brand'),
+        hasProse: hasClassToken(text, 'prose'),
         inlineStyleAttrCount,
         repeatedBreadcrumbCollectionSourceCount,
         breadcrumbPayloadBytes,
@@ -712,6 +753,8 @@ async function inspectHtmlFile(rootDir, absolutePath) {
         ...prefetchStats,
         ...jsonLd,
         externalScriptRefs: extractExternalScriptSrcs(text),
+        stylesheetRefs,
+        stylesheetFamilyKeys: stylesheetRefs.map(normalizeCssAssetFamilyKey),
     };
 }
 
@@ -723,86 +766,86 @@ async function readUtf8IfExists(absolutePath) {
     }
 }
 
-async function collectAssetManifestPaths(rootDir) {
-    const runtimeDir = path.join(rootDir, 'runtime');
-    try {
-        const entries = await fs.readdir(runtimeDir, { withFileTypes: true });
-        return entries
-            .filter((entry) => entry.isFile() && /^asset-manifest\..+\.json$/i.test(entry.name))
-            .map((entry) => path.join(runtimeDir, entry.name));
-    } catch {
-        return [];
+function extractUpdateVersionElements(text) {
+    const elements = [];
+    const pattern = /<time\b(?=[^>]*\bdata-site-update-version(?:\s|=|>))[^>]*>([\s\S]*?)<\/time>/gi;
+    for (const match of text.matchAll(pattern)) {
+        const tag = match[0].slice(0, match[0].indexOf('>') + 1);
+        elements.push({
+            buildVersion: extractTagAttribute(tag, 'title').trim(),
+            buildTimeISO: extractTagAttribute(tag, 'datetime').trim(),
+            buildTime: decodeHtmlAttribute(match[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())
+        });
     }
+    return elements;
 }
 
-async function collectFragmentVersionDirs(rootDir) {
-    const fragmentsDir = path.join(rootDir, '__fragments');
-    try {
-        const entries = await fs.readdir(fragmentsDir, { withFileTypes: true });
-        return entries
-            .filter((entry) => entry.isDirectory())
-            .map((entry) => entry.name)
-            .sort();
-    } catch {
-        return [];
+async function collectLegacyRuntimeDirectories(rootDir) {
+    const legacyDirs = [];
+    for (const relativePath of ['runtime', '__fragments']) {
+        try {
+            if ((await fs.stat(path.join(rootDir, relativePath))).isDirectory()) {
+                legacyDirs.push(relativePath);
+            }
+        } catch (error) {
+            if (error?.code !== 'ENOENT') throw error;
+        }
     }
+    return legacyDirs;
 }
 
 async function inspectBuildVersionContract(rootDir, rows) {
     const issues = [];
     let buildVersion = '';
-    const manifestPaths = await collectAssetManifestPaths(rootDir);
-    const fragmentVersionDirs = await collectFragmentVersionDirs(rootDir);
-
-    if (manifestPaths.length !== 1) {
-        issues.push(`Expected exactly one runtime asset manifest, found ${manifestPaths.length}.`);
-    }
-
-    if (manifestPaths.length > 0) {
-        try {
-            const manifestText = await fs.readFile(manifestPaths[0], 'utf8');
-            const manifest = JSON.parse(manifestText);
-            buildVersion = typeof manifest?.buildVersion === 'string' ? manifest.buildVersion : '';
-            if (!buildVersion) {
-                issues.push('runtime asset manifest is missing buildVersion.');
-            }
-            if (Object.prototype.hasOwnProperty.call(manifest, 'langList')) {
-                issues.push('runtime asset manifest must not expose langList; language navigation is rendered into HTML.');
-            }
-        } catch (error) {
-            issues.push(`Unable to parse runtime asset manifest: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-
-    const inlineFragmentRoots = [];
-    const staticVersionDataAttrs = [];
+    const legacyRuntimeDirs = await collectLegacyRuntimeDirectories(rootDir);
+    const updateVersions = [];
+    const staleRuntimeAttrs = [];
     for (const row of rows) {
         const text = await fs.readFile(row.absolutePath, 'utf8');
-        const bodyTag = text.match(/<body\b[^>]*>/i)?.[0] ?? '';
-        const fragmentRoot = extractTagAttribute(bodyTag, 'data-fragment-root');
-
-        if (fragmentRoot) {
-            inlineFragmentRoots.push(`${row.relativePath}: ${fragmentRoot}`);
+        const elements = extractUpdateVersionElements(text);
+        if (elements.length > 1) {
+            issues.push(`${row.relativePath} contains ${elements.length} update version elements; expected at most one.`);
         }
-
-        if (/\bdata-site-build-version\b/i.test(text)) {
-            staticVersionDataAttrs.push(row.relativePath);
+        updateVersions.push(...elements.map((element) => ({ ...element, relativePath: row.relativePath })));
+        if (/\b(?:data-asset-manifest-url|data-fragment-root|data-site-build-version)\b/i.test(text)) {
+            staleRuntimeAttrs.push(row.relativePath);
         }
     }
 
-    if (inlineFragmentRoots.length > 0) {
-        issues.push(`HTML must not inline versioned data-fragment-root; derive it from runtime asset manifest:\n  ${inlineFragmentRoots.slice(0, 10).join('\n  ')}`);
+    if (legacyRuntimeDirs.length > 0) {
+        issues.push(`Legacy runtime output directories must not be published: ${legacyRuntimeDirs.join(', ')}.`);
     }
-    if (staticVersionDataAttrs.length > 0) {
-        issues.push(`Version menu should not duplicate buildVersion in data-site-build-version:\n  ${staticVersionDataAttrs.slice(0, 10).join('\n  ')}`);
+    if (staleRuntimeAttrs.length > 0) {
+        issues.push(`HTML still exposes removed runtime attributes:\n  ${staleRuntimeAttrs.slice(0, 10).join('\n  ')}`);
     }
+    if (updateVersions.length === 0) {
+        issues.push('No data-site-update-version <time> element was published.');
+    } else {
+        for (const entry of updateVersions) {
+            if (!entry.buildVersion) {
+                issues.push(`${entry.relativePath} update version is missing its build version title.`);
+            }
+            if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(entry.buildTime)) {
+                issues.push(`${entry.relativePath} has invalid update build time ${JSON.stringify(entry.buildTime)}.`);
+            }
+            if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(entry.buildTimeISO)) {
+                issues.push(`${entry.relativePath} has invalid update build datetime ${JSON.stringify(entry.buildTimeISO)}.`);
+            }
+        }
 
-    if (buildVersion) {
-        const unexpectedFragmentDirs = fragmentVersionDirs.filter((entry) => entry !== buildVersion);
-        if (fragmentVersionDirs.length !== 1 || unexpectedFragmentDirs.length > 0) {
-            issues.push(
-                `__fragments must contain exactly the manifest buildVersion directory ${buildVersion}; found ${fragmentVersionDirs.join(', ') || '<none>'}.`
-            );
+        const versions = [...new Set(updateVersions.map((entry) => entry.buildVersion).filter(Boolean))];
+        const displayTimes = [...new Set(updateVersions.map((entry) => entry.buildTime).filter(Boolean))];
+        const isoTimes = [...new Set(updateVersions.map((entry) => entry.buildTimeISO).filter(Boolean))];
+        if (versions.length !== 1) {
+            issues.push(`Update pages must expose one build version, found: ${versions.join(', ') || '<none>'}.`);
+        } else {
+            [buildVersion] = versions;
+        }
+        if (displayTimes.length !== 1) {
+            issues.push(`Update pages must expose one build display time, found: ${displayTimes.join(', ') || '<none>'}.`);
+        }
+        if (isoTimes.length !== 1) {
+            issues.push(`Update pages must expose one build ISO time, found: ${isoTimes.join(', ') || '<none>'}.`);
         }
     }
 
@@ -810,18 +853,18 @@ async function inspectBuildVersionContract(rootDir, rows) {
     if (buildVersion && swText) {
         const swVersions = [...new Set([...swText.matchAll(/\bv\d{14}\b/g)].map((match) => match[0]))].sort();
         const unexpectedSwVersions = swVersions.filter((entry) => entry !== buildVersion);
-        if (!swText.includes('nav-html-') || !swText.includes('asset-versioned-') || !swVersions.includes(buildVersion)) {
-            issues.push(`sw.js does not appear to use manifest buildVersion ${buildVersion}.`);
+        if (!swText.includes('nav-html-') || !swText.includes(buildVersion)) {
+            issues.push(`sw.js does not appear to use update-page buildVersion ${buildVersion}.`);
         }
         if (unexpectedSwVersions.length > 0) {
-            issues.push(`sw.js contains buildVersion values outside manifest buildVersion ${buildVersion}: ${unexpectedSwVersions.join(', ')}.`);
+            issues.push(`sw.js contains buildVersion values outside update-page buildVersion ${buildVersion}: ${unexpectedSwVersions.join(', ')}.`);
         }
     }
 
     return {
         buildVersion,
-        manifestCount: manifestPaths.length,
-        fragmentVersionDirs,
+        updateVersionPageCount: updateVersions.length,
+        legacyRuntimeDirs,
         issues,
     };
 }
@@ -850,6 +893,117 @@ function buildJsDependencyStats(pageRelativePath, externalScriptRefs, jsAssetsBy
     };
 }
 
+function inspectStylesheetContract(rows, cssAssetsByPath) {
+    const issues = [];
+    const pageStyleRefs = new Set();
+    const proseStyleRefs = new Set();
+    const referencedStylesheetRefs = new Set();
+
+    for (const row of rows) {
+        for (const missingRef of row.missingStylesheetRefs || []) {
+            issues.push(`Missing stylesheet asset ${missingRef} referenced by ${row.relativePath}`);
+        }
+        if (row.isRedirect) {
+            if (row.stylesheetRefs.length > 0) {
+                issues.push(`${row.relativePath}: redirect pages must not load stylesheets, got ${row.stylesheetRefs.join(', ')}.`);
+            }
+            continue;
+        }
+        for (const ref of row.stylesheetRefs) {
+            referencedStylesheetRefs.add(ref);
+        }
+
+        const entries = row.stylesheetRefs.map((ref, index) => ({
+            family: row.stylesheetFamilyKeys[index],
+            ref,
+        }));
+        const refsFor = (family) => entries.filter((entry) => entry.family === family);
+        const pageEntries = refsFor('/css/page.css');
+        const proseEntries = refsFor('/css/prose.css');
+        const deprecatedEntries = entries.filter(({ family }) => (
+            family.startsWith('/css/bundle-')
+            || family.startsWith('/css/article-addon.')
+            || family === '/css/article-core.css'
+            || family === '/css/article-rich.css'
+            || family === '/css/updates.css'
+            || family === '/css/updates-panel.css'
+            || family === '/css/not-found.css'
+        ));
+        const deprecatedRefs = new Set(deprecatedEntries.map(({ ref }) => ref));
+        const allowedFamilies = new Set(['/css/page.css']);
+        if (row.hasProse) {
+            allowedFamilies.add('/css/prose.css');
+        }
+        if (row.hasHomeBrand) {
+            allowedFamilies.add('/css/home-brand.css');
+        }
+        const unexpectedEntries = entries.filter(({ family, ref }) => (
+            !deprecatedRefs.has(ref)
+            && !allowedFamilies.has(family)
+            && !(row.hasHomeBrand && family.startsWith('/css/home-brand-scene.'))
+        ));
+
+        if (pageEntries.length !== 1 || entries[0]?.family !== '/css/page.css') {
+            issues.push(`${row.relativePath}: expected one leading page.css stylesheet, got ${row.stylesheetRefs.join(', ') || '<none>'}.`);
+        } else {
+            pageStyleRefs.add(pageEntries[0].ref);
+        }
+        if (deprecatedEntries.length > 0) {
+            issues.push(`${row.relativePath}: deprecated stylesheet variants remain: ${deprecatedEntries.map((entry) => entry.ref).join(', ')}.`);
+        }
+        if (unexpectedEntries.length > 0) {
+            issues.push(`${row.relativePath}: unexpected stylesheet families: ${unexpectedEntries.map((entry) => entry.ref).join(', ')}.`);
+        }
+
+        const expectedProseCount = row.hasProse ? 1 : 0;
+        if (proseEntries.length !== expectedProseCount) {
+            issues.push(`${row.relativePath}: prose=${row.hasProse} requires ${expectedProseCount} prose.css reference, got ${proseEntries.length}.`);
+        }
+        for (const entry of proseEntries) {
+            proseStyleRefs.add(entry.ref);
+        }
+
+        if (row.hasHomeBrand) {
+            const homeBrandCount = refsFor('/css/home-brand.css').length;
+            const sceneCount = entries.filter(({ family }) => family.startsWith('/css/home-brand-scene.')).length;
+            if (entries.length !== 3 || homeBrandCount !== 1 || sceneCount !== 1) {
+                issues.push(`${row.relativePath}: homepage must keep page.css plus one home-brand.css and one scene stylesheet; got ${row.stylesheetRefs.join(', ') || '<none>'}.`);
+            }
+        }
+    }
+
+    const orphanStylesheetAssets = [...cssAssetsByPath]
+        .filter((ref) => !referencedStylesheetRefs.has(ref))
+        .sort();
+    if (orphanStylesheetAssets.length > 0) {
+        issues.push(`CSS assets must be referenced by rendered HTML; found orphan assets: ${orphanStylesheetAssets.join(', ')}.`);
+    }
+
+    if (pageStyleRefs.size !== 1) {
+        issues.push(`All rendered pages must share one page.css URL; found ${[...pageStyleRefs].join(', ') || '<none>'}.`);
+    }
+    if (proseStyleRefs.size !== 1) {
+        issues.push(`All prose pages must share one prose.css URL; found ${[...proseStyleRefs].join(', ') || '<none>'}.`);
+    }
+
+    const prefetchDebugRows = rows.filter((row) => /(^|\/)prefetchdebug\/index\.html$/i.test(row.relativePath));
+    if (prefetchDebugRows.length === 0) {
+        issues.push('Missing prefetchdebug/index.html stylesheet sentinel.');
+    }
+    for (const row of prefetchDebugRows) {
+        if (!row.hasProse || !row.stylesheetFamilyKeys.includes('/css/prose.css')) {
+            issues.push(`${row.relativePath}: template-rendered <pre> blocks must load prose.css.`);
+        }
+    }
+
+    return {
+        issues,
+        pageStyleRefs: [...pageStyleRefs],
+        proseStyleRefs: [...proseStyleRefs],
+        orphanStylesheetAssets,
+    };
+}
+
 function buildIntegrityIssues(rows) {
     const issues = [];
 
@@ -873,7 +1027,7 @@ function buildIntegrityIssues(rows) {
         }
         for (const issue of row.breadcrumbPrefetchIssues || []) {
             issues.push(
-                `Breadcrumb anchor must use data-prefetch-slot="crumb": ${row.relativePath} href=${issue.href || '<empty>'} slot=${issue.slot} class=${issue.className || '<none>'}`
+                `Breadcrumb anchor must use data-prefetch-slot="crumb": ${row.relativePath} href=${issue.href || '<empty>'} slot=${issue.slot}`
             );
         }
         if (row.prefetchParseError) {
@@ -929,38 +1083,78 @@ function buildSeoIntegrityIssues(rows, sitemapLocs) {
     return issues;
 }
 
+function getGuardrailRows(rowsByPath, guardrail) {
+    if (guardrail.relativePath) {
+        const row = rowsByPath.get(guardrail.relativePath);
+        return row ? [row] : [];
+    }
+    if (guardrail.rootCollectionSlug) {
+        return [...rowsByPath.values()]
+            .filter((row) => {
+                const segments = row.relativePath.split('/');
+                return (
+                    segments.length === 2
+                    && segments[0] === guardrail.rootCollectionSlug
+                    && segments[1] === 'index.html'
+                ) || (
+                    segments.length === 3
+                    && segments[0] === row.htmlLang
+                    && segments[1] === guardrail.rootCollectionSlug
+                    && segments[2] === 'index.html'
+                );
+            });
+    }
+    return [];
+}
+
 function buildGuardrailIssues(rowsByPath) {
     const issues = [];
 
+    for (const row of rowsByPath.values()) {
+        if (row.breadcrumbPayloadBytes > maxPageBreadcrumbPayloadBytes) {
+            issues.push(
+                `Page breadcrumb payload exceeded the site-wide limit: ${formatByteMetric(row.breadcrumbPayloadBytes)} > ${formatByteMetric(maxPageBreadcrumbPayloadBytes)} (${row.relativePath}, items=${row.breadcrumbItemCount}, sources=${row.breadcrumbSourceCount})`
+            );
+        }
+    }
+
     for (const guardrail of productionGuardrails) {
-        const row = rowsByPath.get(guardrail.relativePath);
-        if (!row) {
-            issues.push(`Missing sentinel page: ${guardrail.relativePath}`);
+        const matchingRows = getGuardrailRows(rowsByPath, guardrail);
+        if (matchingRows.length === 0) {
+            issues.push(`Missing sentinel page: ${guardrail.relativePath ?? guardrail.relativePathLabel}`);
             continue;
         }
-        if (row.rawBytes > guardrail.maxRawBytes) {
-            issues.push(
-                `${guardrail.label} raw HTML exceeded budget: ${formatByteMetric(row.rawBytes)} > ${formatByteMetric(guardrail.maxRawBytes)} (${guardrail.relativePath})`
-            );
-        }
-        if (row.gzipBytes > guardrail.maxGzipBytes) {
-            issues.push(
-                `${guardrail.label} gzip HTML exceeded budget: ${formatByteMetric(row.gzipBytes)} > ${formatByteMetric(guardrail.maxGzipBytes)} (${guardrail.relativePath})`
-            );
-        }
-        const maxBreadcrumbPayloadBytes = Number.isFinite(guardrail.maxBreadcrumbPayloadBytes)
-            ? guardrail.maxBreadcrumbPayloadBytes
-            : guardrail.breadcrumbPayloadBaseBytes
-                + row.breadcrumbItemCount * guardrail.breadcrumbPayloadPerItemBytes;
-        if (row.breadcrumbPayloadBytes > maxBreadcrumbPayloadBytes) {
-            issues.push(
-                `${guardrail.label} breadcrumb payload exceeded budget: ${formatByteMetric(row.breadcrumbPayloadBytes)} > ${formatByteMetric(maxBreadcrumbPayloadBytes)} (${guardrail.relativePath}, items=${row.breadcrumbItemCount})`
-            );
-        }
-        if (row.breadcrumbSourceCount > guardrail.maxBreadcrumbSourceCount) {
-            issues.push(
-                `${guardrail.label} breadcrumb source count exceeded budget: ${row.breadcrumbSourceCount} > ${guardrail.maxBreadcrumbSourceCount} (${guardrail.relativePath})`
-            );
+        for (const row of matchingRows) {
+            const maxRawBytes = Number.isFinite(guardrail.maxRawBytes)
+                ? guardrail.maxRawBytes
+                : guardrail.rawBaseBytes + row.breadcrumbItemCount * guardrail.rawPerItemBytes;
+            const maxGzipBytes = Number.isFinite(guardrail.maxGzipBytes)
+                ? guardrail.maxGzipBytes
+                : guardrail.gzipBaseBytes + row.breadcrumbItemCount * guardrail.gzipPerItemBytes;
+            if (row.rawBytes > maxRawBytes) {
+                issues.push(
+                    `${guardrail.label} raw HTML exceeded budget: ${formatByteMetric(row.rawBytes)} > ${formatByteMetric(maxRawBytes)} (${row.relativePath}, items=${row.breadcrumbItemCount})`
+                );
+            }
+            if (row.gzipBytes > maxGzipBytes) {
+                issues.push(
+                    `${guardrail.label} gzip HTML exceeded budget: ${formatByteMetric(row.gzipBytes)} > ${formatByteMetric(maxGzipBytes)} (${row.relativePath}, items=${row.breadcrumbItemCount})`
+                );
+            }
+            const maxBreadcrumbPayloadBytes = Number.isFinite(guardrail.maxBreadcrumbPayloadBytes)
+                ? guardrail.maxBreadcrumbPayloadBytes
+                : guardrail.breadcrumbPayloadBaseBytes
+                    + row.breadcrumbItemCount * guardrail.breadcrumbPayloadPerItemBytes;
+            if (row.breadcrumbPayloadBytes > maxBreadcrumbPayloadBytes) {
+                issues.push(
+                    `${guardrail.label} breadcrumb payload exceeded budget: ${formatByteMetric(row.breadcrumbPayloadBytes)} > ${formatByteMetric(maxBreadcrumbPayloadBytes)} (${row.relativePath}, items=${row.breadcrumbItemCount})`
+                );
+            }
+            if (row.breadcrumbSourceCount > guardrail.maxBreadcrumbSourceCount) {
+                issues.push(
+                    `${guardrail.label} breadcrumb source count exceeded budget: ${row.breadcrumbSourceCount} > ${guardrail.maxBreadcrumbSourceCount} (${row.relativePath})`
+                );
+            }
         }
     }
 
@@ -982,6 +1176,7 @@ async function main() {
         throw new Error(`No HTML files found under: ${publicRoot}`);
     }
     const jsPaths = await collectFilesByExtension(publicRoot, '.js');
+    const cssPaths = await collectFilesByExtension(publicRoot, '.css');
     const sitemapContract = await inspectSitemaps(publicRoot);
 
     const rows = [];
@@ -994,6 +1189,9 @@ async function main() {
     }
 
     const jsAssetsByPath = new Map(jsAssets.map((asset) => [asset.relativePath, asset]));
+    const cssAssetsByPath = new Set(cssPaths.map((absolutePath) => normalizeAssetPath(
+        path.relative(publicRoot, absolutePath).split(path.sep).join('/')
+    )));
     const jsAssetsByHash = new Map();
     for (const asset of jsAssets) {
         const existing = jsAssetsByHash.get(asset.contentHash) || [];
@@ -1018,6 +1216,7 @@ async function main() {
     }
 
     for (const row of rows) {
+        row.missingStylesheetRefs = row.stylesheetRefs.filter((ref) => !cssAssetsByPath.has(ref));
         const jsDeps = buildJsDependencyStats(row.relativePath, row.externalScriptRefs, jsAssetsByPath);
         let jsDependencyRawBytes = 0;
         let jsDependencyGzipBytes = 0;
@@ -1043,6 +1242,7 @@ async function main() {
 
     const rowsByPath = new Map(rows.map((row) => [row.relativePath, row]));
     const buildVersionContract = await inspectBuildVersionContract(publicRoot, rows);
+    const stylesheetContract = inspectStylesheetContract(rows, cssAssetsByPath);
     const rawTotal = rows.reduce((sum, row) => sum + row.rawBytes, 0);
     const gzipTotal = rows.reduce((sum, row) => sum + row.gzipBytes, 0);
     const breadcrumbTotal = rows.reduce((sum, row) => sum + row.breadcrumbPayloadBytes, 0);
@@ -1078,8 +1278,8 @@ async function main() {
     console.log(`Mode\t${options.check ? 'report + check' : 'report only'}`);
     console.log(`HTML files\t${rows.length}`);
     console.log(`Build version\t${buildVersionContract.buildVersion || '<missing>'}`);
-    console.log(`Asset manifests\t${buildVersionContract.manifestCount}`);
-    console.log(`Fragment version dirs\t${buildVersionContract.fragmentVersionDirs.join(', ') || '<none>'}`);
+    console.log(`Update version pages\t${buildVersionContract.updateVersionPageCount}`);
+    console.log(`Legacy runtime dirs\t${buildVersionContract.legacyRuntimeDirs.join(', ') || '<none>'}`);
     console.log(`Redirect pages\t${redirectCount}`);
     console.log(`Indexable pages\t${indexableRows.length}`);
     console.log(`Noindex pages\t${noindexRows.length}`);
@@ -1094,6 +1294,7 @@ async function main() {
     console.log(`Raw total\t${rawTotal}\t${formatBytes(rawTotal)}`);
     console.log(`Gzip total\t${gzipTotal}\t${formatBytes(gzipTotal)}`);
     console.log(`Breadcrumb payload total\t${breadcrumbTotal}\t${formatBytes(breadcrumbTotal)}`);
+    console.log(`Breadcrumb payload page limit\t${maxPageBreadcrumbPayloadBytes}\t${formatBytes(maxPageBreadcrumbPayloadBytes)}`);
     console.log(`Breadcrumb prefetch anchors\t${breadcrumbAnchorTotal}`);
     console.log(`Breadcrumb crumb anchors\t${breadcrumbCrumbAnchorTotal}`);
     console.log(`Breadcrumb prefetch issues\t${breadcrumbPrefetchIssueTotal}`);
@@ -1115,6 +1316,9 @@ async function main() {
     console.log(`JS gzip total\t${jsGzipTotal}\t${formatBytes(jsGzipTotal)}`);
     console.log(`Referenced JS assets\t${referencedJsAssets.length}`);
     console.log(`Duplicate JS content groups\t${duplicateContentAssets.length}`);
+    console.log(`CSS assets\t${cssAssetsByPath.size}`);
+    console.log(`Page stylesheet URLs\t${stylesheetContract.pageStyleRefs.join(', ') || '<none>'}`);
+    console.log(`Prose stylesheet URLs\t${stylesheetContract.proseStyleRefs.join(', ') || '<none>'}`);
 
     printRankedRows(
         `\nLargest raw HTML pages (top ${options.top})`,
@@ -1168,7 +1372,7 @@ async function main() {
     printDuplicateSeoGroups('Duplicate meta descriptions within one language', duplicateMetaDescriptions);
 
     printSentinelRows(
-        productionGuardrails.map((guardrail) => rowsByPath.get(guardrail.relativePath))
+        productionGuardrails.flatMap((guardrail) => getGuardrailRows(rowsByPath, guardrail))
     );
 
     const integrityIssues = [
@@ -1178,6 +1382,7 @@ async function main() {
             `Duplicate meta description within ${group.lang}: ${group.paths.join(', ')}`
         )),
         ...buildVersionContract.issues,
+        ...stylesheetContract.issues,
     ];
     const guardrailIssues = options.check ? buildGuardrailIssues(rowsByPath) : [];
 

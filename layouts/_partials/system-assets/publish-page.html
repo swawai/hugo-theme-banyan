@@ -1,0 +1,11 @@
+{{- $resolved := partial "system-assets/resolve-page.html" . -}}
+{{- $result := $resolved -}}
+{{- if index $resolved "resolved" -}}
+  {{- $resource := index $resolved "resource" -}}
+  {{- $targetDir := index $resolved "targetDir" -}}
+  {{- $targetPath := path.Join $targetDir $resource.Name -}}
+  {{- $published := $resource | resources.Copy $targetPath | fingerprint -}}
+  {{- $result = merge $resolved (dict "src" $published.RelPermalink) -}}
+{{- end -}}
+
+{{- return $result -}}

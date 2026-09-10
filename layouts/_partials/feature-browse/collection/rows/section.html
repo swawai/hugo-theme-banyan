@@ -1,0 +1,61 @@
+{{- $page := .page -}}
+{{- if not $page -}}
+  {{- errorf "Build failed: feature-browse/collection/rows/section.html requires page." -}}
+{{- end -}}
+{{- if ne $page.Kind "section" -}}
+  {{- errorf "Build failed: feature-browse/collection/rows/section.html only supports kind=section; current page %q has kind=%q." $page.RelPermalink $page.Kind -}}
+{{- end -}}
+{{- $sectionRows := slice -}}
+{{- range $section := $page.Sections -}}
+  {{- $count := len $section.RegularPagesRecursive -}}
+  {{- $dateValue := $section.Lastmod -}}
+  {{- with first 1 ($section.RegularPagesRecursive.ByLastmod.Reverse) -}}
+    {{- $dateValue = (index . 0).Lastmod -}}
+  {{- end -}}
+  {{- $text := $section.LinkTitle | default $section.Title -}}
+  {{- $sectionRows = $sectionRows | append (dict
+    "node" $section
+    "key" (partial "feature-browse/collection/rows/page-key.html" (dict "ctx" $section))
+    "kind" "section"
+    "href" $section.RelPermalink
+    "schema_href" $section.RelPermalink
+    "title" $section.Title
+    "text" $text
+    "prefetch_kind" "desc"
+    "sort_group" "0"
+    "sort_name" $text
+    "sort_date" (cond $dateValue.IsZero "" ($dateValue.Format "20060102150405"))
+    "date_text" (cond $dateValue.IsZero "—" ($dateValue.Format "2006-01-02"))
+    "sort_count" (printf "%v" $count)
+    "count_text" (printf "%v" $count)
+    "count_unit" ""
+  ) -}}
+{{- end -}}
+{{- $pageRows := slice -}}
+{{- range $child := $page.RegularPages -}}
+  {{- $bytes := len $child.RawContent -}}
+  {{- $kilobytes := div (add $bytes 1023) 1024 -}}
+  {{- $dateValue := $child.Lastmod -}}
+  {{- $text := $child.LinkTitle | default $child.Title -}}
+  {{- $pageRows = $pageRows | append (dict
+    "node" $child
+    "key" (partial "feature-browse/collection/rows/page-key.html" (dict "ctx" $child))
+    "kind" "page"
+    "href" $child.RelPermalink
+    "schema_href" $child.RelPermalink
+    "title" $child.Title
+    "text" $text
+    "prefetch_kind" "post"
+    "sort_group" "1"
+    "sort_name" $text
+    "sort_date" (cond $dateValue.IsZero "" ($dateValue.Format "20060102150405"))
+    "date_text" (cond $dateValue.IsZero "—" ($dateValue.Format "2006-01-02"))
+    "sort_count" (printf "%v" $bytes)
+    "count_text" (printf "%v" $kilobytes)
+    "count_unit" "&thinsp;KB"
+  ) -}}
+{{- end -}}
+{{- $rows := slice -}}
+{{- range sort $pageRows "sort_date" "desc" -}}{{- $rows = $rows | append . -}}{{- end -}}
+{{- range sort $sectionRows "sort_date" "desc" -}}{{- $rows = $rows | append . -}}{{- end -}}
+{{- return $rows -}}

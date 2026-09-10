@@ -1,0 +1,29 @@
+.prose {
+    --code-inline-text: color-mix(in srgb, var(--accent) 55%, var(--fg));
+    --code-inline-bg: color-mix(in srgb, var(--accent) 6%, var(--bg));
+    --code-inline-border: color-mix(in srgb, var(--accent) 22%, #D7D7D7);
+}
+
+[data-theme="dark"] .prose {
+    --code-inline-text: color-mix(in srgb, var(--accent) 68%, var(--fg));
+    --code-inline-bg: color-mix(in srgb, var(--accent) 14%, var(--bg));
+    --code-inline-border: color-mix(in srgb, var(--accent) 36%, #3A3A3A);
+}
+
+.prose :is(del, s) {
+    color: #999;
+    text-decoration: line-through var(--accent);
+}
+
+.prose a {
+    overflow-wrap: anywhere;
+}
+
+.prose code:not(pre code) {
+    padding: 0.065rem 0.33rem 0;
+    font-size: 0.9em;
+    color: var(--code-inline-text);
+    background: var(--code-inline-bg);
+    border: 1px solid var(--code-inline-border);
+    border-radius: 3px;
+}

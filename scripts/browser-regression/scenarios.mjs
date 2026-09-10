@@ -1,17 +1,14 @@
 import path from 'node:path';
 
 import {
-    countUsableVersionMenus,
     fail,
     forceServiceWorkerUpdate,
     getLayoutShiftValue,
     getMainInlineStart,
     getVisibleBreadcrumbColumnCount,
     gotoAndWait,
-    markUsableVersionMenus,
-    markFirstUsableVersionMenu,
+    pollUntil,
     readFirstMainLayout,
-    readFragmentRoot,
     readSecurityPolicyViolations,
     recordFirstMainLayoutScript,
     waitForBreadcrumbSettled,
@@ -19,6 +16,10 @@ import {
     waitForUpdateReady
 } from './helpers.mjs';
 import { relFromSite } from './paths.mjs';
+import { preferenceAndUpdateScenarios } from './preference-and-updates.mjs';
+import { updatesNavigationScenarios } from './updates-navigation.mjs';
+import { canvasScenarios } from './canvas.mjs';
+import { presentationContractScenarios } from './presentation-contracts.mjs';
 
 const WIDE_VIEWPORT = { width: 1600, height: 1100 };
 const BREADCRUMB_FIRST_FRAME_VIEWPORT = { width: 1280, height: 960 };
@@ -29,7 +30,6 @@ const BREADCRUMB_TAGS_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_TAGS_PATH
     || '/zh/tags/tooling/devtools/';
 const BREADCRUMB_TAGS_COLLECTION_HREF = process.env.BANYAN_BROWSER_BREADCRUMB_TAGS_COLLECTION_HREF
     || '/zh/tags/tooling/';
-const RUNTIME_JSON_FETCH_PROBE_KEY = 'banyan:browser-regression:runtime-json-fetches';
 const BREADCRUMB_FIRST_FRAME_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_FIRST_FRAME_PATH
     || '/p/loop-engineering-digital-life-origin/';
 const BREADCRUMB_FIRST_FRAME_FROM = process.env.BANYAN_BROWSER_BREADCRUMB_FIRST_FRAME_FROM
@@ -62,10 +62,10 @@ async function startBreadcrumbContinuityProbe(page, columnIndex = 0) {
             }
 
             const columns = Array.from(document.querySelectorAll(
-                '.slot-row-breadcrumb .grid-list--single'
-            )).filter((column) => column.querySelector('.collection-column-header'));
+                '.path-columns .collection-list'
+            )).filter((column) => column.querySelector('.collection-header--path'));
             const column = columns[targetColumnIndex];
-            const rail = document.querySelector('.slot-row-breadcrumb');
+            const rail = document.querySelector('.path-columns');
             const railStyle = rail ? getComputedStyle(rail) : null;
             const visibleRows = column
                 ? Array.from(column.querySelectorAll('.collection-item-link'))
@@ -158,14 +158,14 @@ async function runBreadcrumbSortInPlace(page, {
     };
 }
 
-function recordFirstBreadcrumbMenuStateScript(targetCollectionHref) {
-    window.__banyanFirstBreadcrumbMenuOrder = null;
+function recordFirstBreadcrumbColumnStateScript(targetCollectionHref) {
+    window.__banyanFirstBreadcrumbColumnOrder = null;
     window.__banyanFirstBreadcrumbHeaderSpacing = null;
 
     const findTarget = () => {
         const targetPath = new URL(targetCollectionHref, window.location.origin).pathname;
         return Array.from(document.querySelectorAll(
-            '.slot-row-breadcrumb [data-breadcrumb-collection-href]'
+            '.path-columns [data-breadcrumb-collection-href]'
         )).find((wrapper) => (
             new URL(wrapper.dataset.breadcrumbCollectionHref, window.location.origin).pathname
                 === targetPath
@@ -175,7 +175,7 @@ function recordFirstBreadcrumbMenuStateScript(targetCollectionHref) {
     const readOrder = () => {
         const target = findTarget();
         return target instanceof HTMLElement
-            ? Array.from(target.querySelectorAll('a.breadcrumb-menu-option'))
+            ? Array.from(target.querySelectorAll('[data-collection-entry]'))
                 .map((option) => (option.textContent || '').trim())
                 .filter(Boolean)
             : [];
@@ -183,7 +183,7 @@ function recordFirstBreadcrumbMenuStateScript(targetCollectionHref) {
 
     const readHeaderSpacing = () => {
         const target = findTarget();
-        const header = target?.querySelector('.collection-column-header');
+        const header = target?.querySelector('.collection-header--path');
         const label = header?.querySelector('.collection-column-label');
         const separator = header?.querySelector('.collection-column-separator');
         const sort = header?.querySelector('.collection-column-sort');
@@ -209,12 +209,12 @@ function recordFirstBreadcrumbMenuStateScript(targetCollectionHref) {
         };
     };
 
-    window.__banyanReadBreadcrumbMenuOrder = readOrder;
+    window.__banyanReadBreadcrumbColumnOrder = readOrder;
     window.__banyanReadBreadcrumbHeaderSpacing = readHeaderSpacing;
     const observer = new MutationObserver(() => {
         const order = readOrder();
-        if (window.__banyanFirstBreadcrumbMenuOrder === null && order.length > 0) {
-            window.__banyanFirstBreadcrumbMenuOrder = order;
+        if (window.__banyanFirstBreadcrumbColumnOrder === null && order.length > 0) {
+            window.__banyanFirstBreadcrumbColumnOrder = order;
         }
 
         const headerSpacing = readHeaderSpacing();
@@ -222,7 +222,7 @@ function recordFirstBreadcrumbMenuStateScript(targetCollectionHref) {
             window.__banyanFirstBreadcrumbHeaderSpacing = headerSpacing;
         }
 
-        if (window.__banyanFirstBreadcrumbMenuOrder !== null
+        if (window.__banyanFirstBreadcrumbColumnOrder !== null
             && window.__banyanFirstBreadcrumbHeaderSpacing !== null) {
             observer.disconnect();
         }
@@ -236,8 +236,8 @@ const GRID_LIST_COLUMN_CASES = [
     { id: 'intent-wide', path: '/zh/intent/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
     { id: 'tags-wide', path: '/zh/tags/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true },
     { id: 'section-medium', path: '/zh/d/', viewport: { width: 1024, height: 960 } },
-    { id: 'section-mobile', path: '/zh/d/', viewport: { width: 390, height: 844 }, containDocument: true },
-    { id: 'products-wide', path: '/zh/products/first-party/', viewport: WIDE_VIEWPORT, product: true }
+    { id: 'section-mobile', path: '/zh/d/', viewport: { width: 390, height: 844 }, horizontalCanvas: true },
+    { id: 'products-wide', path: '/zh/all-products/', viewport: WIDE_VIEWPORT, compareBreadcrumb: true }
 ];
 const DESIGN_AUDIT_VIEWPORTS = [
     {
@@ -265,9 +265,9 @@ const DESIGN_AUDIT_PAGES = [
     },
     {
         id: 'products',
-        path: '/products/first-party/',
+        path: '/all-products/',
         title: 'Products',
-        waitForSelector: '.grid-list'
+        waitForSelector: '.collection-list'
     },
     {
         id: 'article',
@@ -283,136 +283,27 @@ function ensureTwoBuilds(upgradePair) {
     }
 }
 
-async function readExpectedSiteVersionUpdateLabel(page, lang) {
-    return page.evaluate(async (targetLang) => {
-        const normalize = (value) => typeof value === 'string' ? value.toLowerCase() : '';
-        const fallbackPrompt = 'click update';
-        const manifestUrl = document.body?.dataset.assetManifestUrl || '';
-        if (!manifestUrl) return fallbackPrompt;
-
-        const manifestResponse = await fetch(manifestUrl, { credentials: 'same-origin' }).catch(() => null);
-        const manifest = manifestResponse && manifestResponse.ok ? await manifestResponse.json().catch(() => ({})) : {};
-        const i18nMap = manifest && typeof manifest.i18n === 'object' ? manifest.i18n : null;
-        const fallbackMap = manifest && typeof manifest.i18nFallbacks === 'object' ? manifest.i18nFallbacks : null;
-        if (!i18nMap) return fallbackPrompt;
-
-        let current = normalize(targetLang);
-        const visited = new Set();
-        let resolvedUrl = '';
-        while (current && !visited.has(current)) {
-            visited.add(current);
-            if (typeof i18nMap[current] === 'string' && i18nMap[current]) {
-                resolvedUrl = i18nMap[current];
-                break;
-            }
-            current = fallbackMap && typeof fallbackMap[current] === 'string'
-                ? normalize(fallbackMap[current])
-                : '';
-        }
-
-        if (!resolvedUrl) return fallbackPrompt;
-        const i18nResponse = await fetch(resolvedUrl, { credentials: 'same-origin' }).catch(() => null);
-        const messages = i18nResponse && i18nResponse.ok ? await i18nResponse.json().catch(() => ({})) : {};
-        return typeof messages?.site_version_status_click_update === 'string' && messages.site_version_status_click_update
-            ? messages.site_version_status_click_update
-            : fallbackPrompt;
-    }, lang);
-}
-
-async function clickMarkedVersionTrigger(page) {
-    const target = page.locator('[data-browser-regression-target="true"]').first();
-    const trigger = target.locator('[data-site-version-trigger]').first();
-    if (await trigger.count()) {
-        await trigger.click();
-        return;
-    }
-
-    await target.click();
-}
-
-async function waitForVersionDropdown(page) {
-    await page.waitForSelector('[data-site-version-menu].is-open [data-nav-utility-panel]:not([hidden])');
-}
-
-async function readVersionDropdownText(page) {
-    return (await page.locator('[data-site-version-menu] [data-nav-utility-panel]').first().textContent() || '').trim();
-}
-
-async function waitForVersionDropdownText(page, text) {
-    await page.waitForFunction((expected) => {
-        const panel = document.querySelector('[data-site-version-menu].is-open [data-nav-utility-panel]');
-        return Boolean(panel?.textContent?.includes(expected));
-    }, text);
-}
-
-async function readLanguageMenuState(page) {
+async function readLanguageSettingsState(page) {
     return page.evaluate(() => {
-        const root = document.querySelector('[data-nav-utility-kind="language"]');
-        const trigger = root?.querySelector('[data-nav-utility-trigger]');
-        const panel = root?.querySelector('[data-nav-utility-panel]');
-        const options = root
-            ? Array.from(root.querySelectorAll('[data-nav-utility-option]'))
-            : [];
-
-        return {
-            initialized: root?.dataset.navPrimaryInit === 'true',
-            disabled: trigger instanceof HTMLButtonElement ? trigger.disabled : null,
-            languageSuggestionMessage: root?.dataset.languageSuggestionMessage || '',
-            noTranslationMessage: root?.dataset.noTranslationMessage || '',
-            open: root?.classList.contains('is-open') || false,
-            panelHidden: panel instanceof HTMLElement ? panel.hidden : null,
-            options: options.map((option) => ({
-                current: option.getAttribute('aria-current') || '',
-                hasTranslation: option.dataset.hasTrans !== 'false',
-                href: option instanceof HTMLAnchorElement ? option.getAttribute('href') || '' : '',
-                tagName: option.tagName,
-                text: option.textContent?.trim() || '',
-                value: option.dataset.value || ''
-            }))
+        const picker = document.querySelector('[data-language-settings]');
+                return {
+            state: picker?.dataset.languageState || '',
+            listView: picker?.querySelector('[data-list-view]')?.dataset.listView || '',
+            sortable: Boolean(picker?.querySelector('[data-sortable]')),
+            noTranslationMessage: picker?.dataset.languageMissing || '',
+            options: Array.from(picker?.querySelectorAll('[data-language-choice]') || [])
+                .map((option) => ({
+                    current: option.getAttribute('aria-current') || '',
+                    disabled: option.getAttribute('aria-disabled') === 'true',
+                    hasTranslation: option.dataset.hasTrans !== 'false',
+                    href: option.getAttribute('href') || '',
+                    iconText: option.querySelector('.collection-item-icon--text')?.textContent?.trim() || '',
+                    tagName: option.tagName,
+                    text: option.querySelector('.collection-item-title')?.textContent?.trim() || '',
+                    value: option.dataset.languageChoice || ''
+                }))
         };
     });
-}
-
-async function installRuntimeJsonFetchProbe(page) {
-    await page.addInitScript((storageKey) => {
-        const readRecordedFetches = () => {
-            try {
-                const value = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
-                return Array.isArray(value) ? value : [];
-            } catch (error) {
-                return [];
-            }
-        };
-        const nativeFetch = window.fetch;
-        window.__banyanRuntimeJsonFetches = readRecordedFetches();
-        window.fetch = function instrumentedFetch(input, init) {
-            try {
-                const rawUrl = typeof input === 'string'
-                    ? input
-                    : input instanceof URL
-                        ? input.href
-                        : input?.url || '';
-                const url = new URL(rawUrl, window.location.href);
-                if (url.pathname.startsWith('/runtime/') && url.pathname.endsWith('.json')) {
-                    window.__banyanRuntimeJsonFetches.push(url.pathname);
-                    sessionStorage.setItem(storageKey, JSON.stringify(window.__banyanRuntimeJsonFetches));
-                }
-            } catch (error) { }
-
-            return nativeFetch.call(this, input, init);
-        };
-    }, RUNTIME_JSON_FETCH_PROBE_KEY);
-}
-
-async function readRuntimeJsonFetchProbe(page) {
-    return page.evaluate(() => [...(window.__banyanRuntimeJsonFetches || [])]);
-}
-
-async function resetRuntimeJsonFetchProbe(page) {
-    await page.evaluate((storageKey) => {
-        window.__banyanRuntimeJsonFetches = [];
-        sessionStorage.setItem(storageKey, '[]');
-    }, RUNTIME_JSON_FETCH_PROBE_KEY);
 }
 
 async function settleDesignAuditPage(page) {
@@ -435,14 +326,14 @@ async function readDesignAuditMetrics(page, viewportId) {
                 y: box.y
             };
         };
-        const navLabels = Array.from(document.querySelectorAll('.page-topbar a, .page-topbar button'))
+        const navLabels = Array.from(document.querySelectorAll('[data-root-navigation] a'))
             .map((node) => (node.textContent || '').trim())
             .filter(Boolean)
             .slice(0, 16);
         return {
             documentHeight: document.documentElement.scrollHeight,
             hasRailContext: (() => {
-                const node = document.querySelector('.page-rail-context');
+                const node = document.querySelector('[data-root-navigation]');
                 return node instanceof HTMLElement && getComputedStyle(node).display !== 'none';
             })(),
             main: rect('.slot-main'),
@@ -451,11 +342,11 @@ async function readDesignAuditMetrics(page, viewportId) {
             rail: rect('.page-rail'),
             stage: rect('.page-stage'),
             title: document.title,
-            topbar: rect('.page-topbar'),
-            topbarLabels: navLabels,
+            navigation: rect('[data-root-navigation]'),
+            navigationLabels: navLabels,
             viewportId: activeViewportId,
             visibleBreadcrumb: (() => {
-                const node = document.querySelector('.slot-row-breadcrumb');
+                const node = document.querySelector('.path-columns');
                 if (!(node instanceof HTMLElement)) return false;
                 const style = getComputedStyle(node);
                 return style.display !== 'none'
@@ -694,7 +585,7 @@ export const securityScenarios = [
             createConsoleRecorder(page, consoleEntries);
             const url = `${baseUrl}${BREADCRUMB_PRODUCTS_PATH}`;
             const response = await gotoAndWait(page, url);
-            await page.waitForSelector('.slot-row-breadcrumb');
+            await page.waitForSelector('.path-columns');
             await waitForBreadcrumbSettled(page);
 
             return collectSecurityOutcome(page, response, consoleEntries, {
@@ -713,14 +604,12 @@ async function readBreadcrumbPrefetchSlotContract(page) {
             text: (anchor.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 80)
         });
 
-        const breadcrumbAnchors = Array.from(document.querySelectorAll([
-            'a.breadcrumb-link[href]',
-            'a.breadcrumb-root-link[href]',
-            'a.breadcrumb-menu-option[href]'
-        ].join(',')));
-        const slotRowAnchors = Array.from(document.querySelectorAll('.slot-row-breadcrumb a[href]'));
-        const slotRowBreadcrumbMenuOptions = Array.from(document.querySelectorAll(
-            '.slot-row-breadcrumb a.breadcrumb-menu-option[href]'
+        const breadcrumbAnchors = Array.from(document.querySelectorAll(
+            '.slot-breadcrumb [data-collection-entry][href]'
+        ));
+        const slotRowAnchors = Array.from(document.querySelectorAll('.path-columns a[href]'));
+        const slotRowBreadcrumbColumnOptions = Array.from(document.querySelectorAll(
+            '.path-columns [data-collection-entry][href]'
         ));
 
         const breadcrumbInvalidAnchors = breadcrumbAnchors
@@ -729,7 +618,7 @@ async function readBreadcrumbPrefetchSlotContract(page) {
         const slotRowNavAnchors = slotRowAnchors
             .filter((anchor) => anchor.getAttribute('data-prefetch-slot') === 'nav')
             .map(describeAnchor);
-        const slotRowBreadcrumbMenuOptionsWithoutCrumb = slotRowBreadcrumbMenuOptions
+        const slotRowBreadcrumbColumnOptionsWithoutCrumb = slotRowBreadcrumbColumnOptions
             .filter((anchor) => anchor.getAttribute('data-prefetch-slot') !== 'crumb')
             .map(describeAnchor);
 
@@ -740,14 +629,280 @@ async function readBreadcrumbPrefetchSlotContract(page) {
             )).length,
             breadcrumbInvalidAnchors,
             slotRowAnchorCount: slotRowAnchors.length,
-            slotRowBreadcrumbMenuOptionCount: slotRowBreadcrumbMenuOptions.length,
-            slotRowBreadcrumbMenuOptionsWithoutCrumb,
+            slotRowBreadcrumbColumnOptionCount: slotRowBreadcrumbColumnOptions.length,
+            slotRowBreadcrumbColumnOptionsWithoutCrumb,
             slotRowNavAnchors
         };
     });
 }
 
 export const scenarios = [
+    ...presentationContractScenarios,
+    ...canvasScenarios,
+    ...preferenceAndUpdateScenarios,
+    ...updatesNavigationScenarios,
+    {
+        id: 'root-navigation-contract',
+        kind: 'single',
+        title: 'Root Navigation: One Complete List from Real Pages',
+        serviceWorkers: 'block',
+        viewport: WIDE_VIEWPORT,
+        async run({ page, baseUrl }) {
+            const rootPaths = ['all', 'tags', 'all-products', 'products',
+                'language', 'appearance', 'my', 'about', 'updates', 'rss', 'wechat', 'github', 'icp', ''];
+            await gotoAndWait(page, `${baseUrl}/zh/all/`);
+            const staticRoots = await page.evaluate(async (paths) => {
+                const results = [];
+                for (const prefix of ['/', '/zh/', '/zh-tw/']) {
+                    const response = await fetch(prefix + 'all/');
+                    const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+                    const navs = doc.querySelectorAll('[data-root-navigation]');
+                    const nav = navs[0];
+                    results.push({
+                        prefix,
+                        count: navs.length,
+                        expected: paths.map((path) => prefix + (path ? path + '/' : '')),
+                        hrefs: [...doc.querySelectorAll('[data-root-href]')].map((link) => link.dataset.rootHref),
+                        articleLabels: [...doc.querySelectorAll('[data-root-href] .collection-item-title')].slice(0, 4).map(node => node.textContent),
+                        selected: [...doc.querySelectorAll('[data-root-href][aria-current="page"]')]
+                            .map((link) => link.dataset.rootHref),
+                        home: nav?.querySelector(`[data-root-href="${prefix}"]`)?.getAttribute('href'),
+                        homeIcon: nav?.querySelector(`[data-root-href="${prefix}"] .icon--text`)?.textContent,
+                        updatesIcon: nav?.querySelector(`[data-root-href="${prefix}updates/"] .icon--text`)?.textContent,
+                        favicon: doc.querySelector('link[rel="icon"][type="image/svg+xml"]')?.getAttribute('href'),
+                        footerCount: doc.querySelectorAll('footer, .slot-footer').length,
+                        settings: [...doc.querySelectorAll('[data-root-href][data-settings-link]')]
+                            .map((link) => link.dataset.rootHref),
+                        icons: Object.fromEntries(paths.map((path) => [
+                            path,
+                            nav?.querySelector(`[data-root-href="${prefix}${path}/"] use`)?.getAttribute('href') || ''
+                        ])),
+                        rowContentCount: nav?.querySelectorAll('.collection-cell--name > .collection-item-link > .collection-item-title').length,
+                        oldControls: doc.querySelectorAll('[data-nav-utility-kind], [data-site-version-menu], [data-slot="primary_nav"]').length
+                    });
+                }
+                return results;
+            }, rootPaths);
+            for (const state of staticRoots) {
+                const labels = {
+                    '/': ['Articles - All', 'Articles - Categories', 'Products - All', 'Products - Categories'],
+                    '/zh/': ['文章 - 全部', '文章 - 分类', '产品 - 全部', '产品 - 分类'],
+                    '/zh-tw/': ['文章 - 全部', '文章 - 分類', '產品 - 全部', '產品 - 分類']
+                };
+                if (JSON.stringify(state.articleLabels) !== JSON.stringify(labels[state.prefix])) fail('Article and product entries must use the same All/Categories naming and order.', state);
+                if (state.count !== 1 || JSON.stringify(state.hrefs) !== JSON.stringify(state.expected)
+                    || JSON.stringify(state.selected) !== JSON.stringify([state.prefix + 'all/'])
+                    || state.home !== state.prefix || state.rowContentCount !== rootPaths.length || state.homeIcon !== '©' || state.footerCount !== 0 || state.oldControls !== 0
+                    || state.settings.length !== 0
+                    || state.icons.language !== '#icon-language'
+                    || state.icons.appearance !== '#icon-theme'
+                    || state.icons.my !== '#icon-my'
+                    || state.icons.wechat !== '#icon-wechat'
+                    || state.icons.github !== '#icon-github'
+                    || state.icons.rss !== '#icon-rss'
+                    || !state.favicon || state.updatesIcon !== '↻') {
+                    fail('Every locale must SSR one weighted root list with ordinary URLs, declared icons and no settings-link rewriting markers.', state);
+                }
+            }
+            const layouts = [];
+            for (const viewport of [{ width: 390, height: 844 }, { width: 1024, height: 960 }, WIDE_VIEWPORT]) {
+                await page.setViewportSize(viewport);
+                const state = await page.evaluate(() => {
+                    const nav = document.querySelector('[data-root-navigation]');
+                    const links = [...nav.querySelectorAll('[data-root-href]')];
+                    const footer = document.querySelector('.slot-footer');
+                    return {
+                        count: document.querySelectorAll('[data-root-navigation]').length,
+                        links: links.length,
+                        visible: links.every((link) => link.getClientRects().length > 0 && getComputedStyle(link).visibility !== 'hidden'),
+                        navBottom: nav.getBoundingClientRect().bottom,
+                        footerTop: footer?.getClientRects().length ? footer.getBoundingClientRect().top : null
+                    };
+                });
+                if (state.count !== 1 || state.links !== rootPaths.length || !state.visible
+                    || (state.footerTop !== null && state.footerTop < state.navBottom - 1)) {
+                    fail('The complete root list must remain available without overlapping the footer.', { viewport, ...state });
+                }
+                layouts.push({ viewport, ...state });
+            }
+            return { staticRoots, layouts };
+        }
+    },
+    {
+        id: 'root-navigation-entry-ownership',
+        kind: 'single',
+        title: 'Root Selection from Valid Sources and Content Ancestry',
+        serviceWorkers: 'block',
+        viewport: WIDE_VIEWPORT,
+        timeoutMs: 60000,
+        async run({ page, baseUrl }) {
+            const expectedRoots = ['all', 'tags', 'all-products', 'products',
+                'language', 'appearance', 'my', 'about', 'updates', 'rss', 'wechat', 'github', 'icp', ''].map((root) => `/zh/${root ? root + '/' : ''}`);
+            const assertSelection = async (expected) => {
+                await waitForBreadcrumbSettled(page);
+                const state = await page.evaluate(() => ({
+                    roots: [...document.querySelectorAll('[data-root-href]')].map((link) => link.dataset.rootHref),
+                    selected: [...document.querySelectorAll('[data-root-href].is-current')].map((link) => link.dataset.rootHref),
+                    current: [...document.querySelectorAll('[data-root-href][aria-current="page"]')].map((link) => link.dataset.rootHref)
+                }));
+                const selected = expected ? [expected] : [];
+                if (JSON.stringify(state.roots) !== JSON.stringify(expectedRoots)
+                    || JSON.stringify(state.selected) !== JSON.stringify(selected)
+                    || JSON.stringify(state.current) !== JSON.stringify(selected)) {
+                    fail('Selection must change without replacing the complete root list.', { expected, url: page.url(), ...state });
+                }
+                return state;
+            };
+            const directCases = [
+                ['/zh/p/xvenv/', null],
+                ['/zh/p/xvenv/?from=products/not-a-source', null],
+                ['/zh/p/xvenv/?from=product-categories/free', null],
+                ['/zh/p/xvenv/?from=products', null],
+                ['/zh/d/', null],
+                ['/zh/intent/', null],
+                ['/zh/about/', '/zh/about/'],
+                ['/zh/updates/check/', '/zh/updates/'],
+                ['/zh/changelog/', '/zh/updates/'],
+                ['/zh/wechat/', '/zh/wechat/'],
+                ['/zh/github/', '/zh/github/'],
+                ['/zh/rss/', '/zh/rss/'],
+                ['/zh/icp/', '/zh/icp/'],
+                ['/zh/language/?return=%2Fzh%2Fall%2F', '/zh/language/'],
+                ['/zh/appearance/?return=%2Fzh%2Fall%2F', '/zh/appearance/'],
+                ['/zh/my/?return=%2Fzh%2Fall%2F', '/zh/my/'],
+                ['/zh/updates/?return=%2Fzh%2Fall%2F', '/zh/updates/'],
+                ['/zh/', '/zh/']
+            ];
+            for (const [target, root] of directCases) {
+                await gotoAndWait(page, baseUrl + target);
+                await assertSelection(root);
+            }
+
+            const articlePath = '/zh/p/xvenv/';
+            await gotoAndWait(page, baseUrl + articlePath);
+            const sources = await page.evaluate(() => JSON.parse(document.body.dataset.entryBreadcrumbSources || '[]'));
+            const sourceCases = ['all', 'tags', 'intent'].map((root) => sources.find((source) => (
+                source.logical_path === `/${root}/` || source.logical_path.startsWith(`/${root}/`)
+            )));
+            if (sourceCases.some((source) => !source)) fail('The fixture product must expose all, tags and intent sources.', { sources });
+            for (const source of sourceCases) {
+                const target = new URL(articlePath, baseUrl);
+                target.searchParams.set('from', source.logical_path.replace(/^\/|\/$/g, ''));
+                await gotoAndWait(page, target.href);
+                await assertSelection(expectedRoots.includes(source.root_item.href) ? source.root_item.href : null);
+                await page.reload();
+                await assertSelection(expectedRoots.includes(source.root_item.href) ? source.root_item.href : null);
+            }
+            await page.goBack();
+            await assertSelection(sourceCases[1].root_item.href);
+            await page.goForward();
+            await assertSelection(null);
+
+            // Keep source selection usable before external bundles finish loading.
+            await page.addInitScript(() => {
+                window.__banyanRootDomContentLoaded = false;
+                document.addEventListener('DOMContentLoaded', () => { window.__banyanRootDomContentLoaded = true; });
+            });
+            await page.route('**/js/**/*.js', async (route) => {
+                await new Promise((resolve) => setTimeout(resolve, 1200));
+                await route.continue();
+            });
+            const firstPaintCases = [
+                ['/zh/p/xvenv/?from=products/free', '/zh/products/'],
+                ['/zh/p/xvenv/?from=product-categories/free', null],
+                ['/zh/p/xvenv/?from=products', null],
+                ['/zh/p/xvenv/?from=%2Fproducts%2Ffree%2F', '/zh/products/'],
+                ['/zh/p/xvenv/', null],
+                ['/zh/p/xvenv/?from=products/not-a-source', null],
+                ['/zh/p/xvenv/?from=intent/decide', null],
+                ['/zh/language/?return=' + encodeURIComponent('/zh/p/xvenv/?from=products/free'), '/zh/language/']
+            ];
+            const firstPaintStates = [];
+            for (const [target, expectedRoot] of firstPaintCases) {
+                await page.goto(baseUrl + target, { waitUntil: 'commit' });
+                await page.waitForSelector('.slot-main', { state: 'visible' });
+                const firstPaint = await page.evaluate(() => ({
+                    domContentLoaded: window.__banyanRootDomContentLoaded,
+                    selected: [...document.querySelectorAll('[data-root-href].is-current')].map((link) => link.dataset.rootHref),
+                    rootCount: document.querySelectorAll('[data-root-href]').length
+                }));
+                if (firstPaint.domContentLoaded || firstPaint.rootCount !== expectedRoots.length
+                    || JSON.stringify(firstPaint.selected) !== JSON.stringify(expectedRoot ? [expectedRoot] : [])) {
+                    fail('The complete root list and source selection must be correct before deferred scripts load.',
+                        { target, expectedRoot, ...firstPaint });
+                }
+                await page.waitForLoadState('domcontentloaded');
+                await assertSelection(expectedRoot);
+                firstPaintStates.push({ target, ...firstPaint });
+            }
+            await page.unroute('**/js/**/*.js');
+            return { directCases, firstPaintStates, sources: sourceCases.map((source) => source.logical_path) };
+        }
+    },
+    {
+        id: 'root-navigation-hidden-exploration',
+        kind: 'single',
+        title: 'Article Metadata Keeps Hidden Directory and Intent Paths Usable',
+        serviceWorkers: 'block',
+        viewport: { width: 1024, height: 700 },
+        async run({ page, baseUrl, artifactDir }) {
+            const roots = '[data-root-href]';
+            const readPaths = selector => page.locator(selector).evaluateAll(nodes => nodes.map(node => new URL(node.href).pathname));
+            const assertHiddenPath = async () => {
+                const state = { count: await page.locator(roots).count(), selected: await readPaths(`${roots}.is-current`) };
+                if (state.count !== 14 || state.selected.length) fail('Hidden paths preserve the visible root list without a misleading selected entry.', state);
+            };
+            for (const prefix of ['', '/zh', '/zh-tw']) {
+                for (const [root, collection] of [['d', '/d/products/'], ['intent', '/intent/decide/']]) {
+                    const article = `${prefix}/p/xvenv/`;
+                    await gotoAndWait(page, `${baseUrl}${article}?from=all`);
+                    const metadataLink = page.locator(`.slot-meta a[href="${prefix}${collection}"]`);
+                    await metadataLink.click();
+                    await waitForBreadcrumbSettled(page);
+                    if (new URL(page.url()).pathname !== `${prefix}${collection}`) fail('Article metadata must navigate to the real collection.', { url: page.url() });
+                    await assertHiddenPath();
+                    await page.locator('.slot-main [data-sort-field="name"]').click();
+                    await page.waitForURL(url => url.searchParams.get('sort') === 'name-asc');
+                    const collectionUrl = page.url();
+                    const order = await readPaths('.slot-main .collection-item-link');
+                    await page.locator(`.slot-main .collection-item-link[href^="${article}?"]`).click();
+                    await waitForBreadcrumbSettled(page);
+                    const articleUrl = page.url();
+                    const assertArticle = async () => {
+                        await assertHiddenPath();
+                        const column = `.slot-breadcrumb [data-breadcrumb-collection-href="${prefix}${collection}"]`;
+                        const pathOrder = await readPaths(`${column} .collection-item-link`);
+                        const selected = await readPaths(`${column} .collection-item-link.is-current`);
+                        const source = await page.evaluate(logical => JSON.parse(document.body.dataset.entryBreadcrumbSources).find(item => item.logical_path === logical), collection);
+                        if (new URL(page.url()).searchParams.get('from') !== collection.slice(1, -1)
+                            || source?.root_item?.href !== `${prefix}/${root}/`
+                            || JSON.stringify(pathOrder) !== JSON.stringify(order)
+                            || JSON.stringify(selected) !== JSON.stringify([article])) {
+                            fail('Hidden roots retain source ancestry, sorted siblings and the selected article.', { url: page.url(), source: source?.root_item, order, pathOrder, selected });
+                        }
+                    };
+                    await assertArticle();
+                    await page.reload();
+                    await waitForBreadcrumbSettled(page);
+                    await assertArticle();
+                    await page.goBack();
+                    await page.waitForURL(collectionUrl);
+                    await waitForBreadcrumbSettled(page);
+                    await assertHiddenPath();
+                    await page.goForward();
+                    await page.waitForURL(articleUrl);
+                    await waitForBreadcrumbSettled(page);
+                    await assertArticle();
+                    if (prefix === '/zh') await page.screenshot({ path: path.join(artifactDir, `hidden-${root}-article.png`) });
+                }
+            }
+            for (const entry of ['all', 'tags']) {
+                await gotoAndWait(page, `${baseUrl}/zh/${entry}/`);
+                await page.screenshot({ path: path.join(artifactDir, `articles-${entry}.png`) });
+            }
+            return { message: 'All three languages retain metadata links to directory/intent collections, sorting, source columns and selection through reload/back/forward; hidden roots never appear in the first column.' };
+        }
+    },
     {
         id: 'home-shell-smoke',
         kind: 'single',
@@ -765,14 +920,93 @@ export const scenarios = [
             if (!EXPECTED_HOME_TITLE && !title) {
                 fail('Home page title was empty.', { title });
             }
-            const breadcrumbRuntimeCount = await page.locator('script[src*="breadcrumb-runtime"]').count();
+            const breadcrumbRuntimeCount = await page.locator('script[src*="browse/path-entry"]').count();
             if (breadcrumbRuntimeCount !== 0) {
-                fail('Home page should not load breadcrumb-runtime.', { breadcrumbRuntimeCount });
+                fail('Home page should not load the path entry bundle.', { breadcrumbRuntimeCount });
             }
             return {
                 breadcrumbRuntimeCount,
                 title
             };
+        }
+    },
+    {
+        id: 'products-category-entry-lineage',
+        kind: 'single',
+        title: 'Products Category and All Entry Lineage',
+        viewport: WIDE_VIEWPORT,
+        async run({ page, baseUrl }) {
+            const categoriesPath = '/products/';
+            await gotoAndWait(page, `${baseUrl}${categoriesPath}`);
+            const categoryHrefs = await page.locator('.slot-main .collection-item-link').evaluateAll(
+                (links) => links.map((link) => new URL(link.href).pathname)
+            );
+            if (categoryHrefs.length === 0 || new Set(categoryHrefs).size !== categoryHrefs.length
+                || categoryHrefs.some((href) => !href.startsWith(categoriesPath))) {
+                fail('Product category rows must be distinct native terms below their root.', { categoryHrefs });
+            }
+
+            // Discover an existing product so the regression does not depend on a product slug.
+            await gotoAndWait(page, `${baseUrl}/all-products/`);
+            const productLink = page.locator('.slot-main .collection-list--products .collection-item-link').first();
+            const productHref = await productLink.getAttribute('href');
+            if (!productHref) fail('Product lineage verification requires one real product.');
+            const productPath = new URL(productHref, baseUrl).pathname;
+            const sources = await page.evaluate(async (href) => {
+                const response = await fetch(href);
+                const doc = new DOMParser().parseFromString(await response.text(), 'text/html');
+                return JSON.parse(doc.body.dataset.entryBreadcrumbSources || '[]');
+            }, productPath);
+            const categorySource = sources.find((source) => source.provider === 'collection'
+                && source.logical_path.startsWith('/products/'));
+            if (!categorySource) fail('A real product must belong to an authored product category.');
+
+            const results = [];
+            for (const collectionPath of ['/all-products/', categorySource.logical_path]) {
+                await gotoAndWait(page, `${baseUrl}${collectionPath}?sort=price-desc`);
+                const target = page.locator(`.slot-main .collection-list--products .collection-item-link[href^="${productPath}?"]`);
+                await target.click();
+                await page.waitForURL((url) => url.pathname === productPath);
+                await waitForBreadcrumbSettled(page);
+                const assertSelection = async () => {
+                    const state = await page.evaluate(() => ({
+                        from: new URL(location.href).searchParams.get('from'),
+                        root: document.querySelector('[data-root-navigation] [data-root-href].is-current')?.dataset.rootHref,
+                        selected: [...document.querySelectorAll('.slot-breadcrumb .collection-item-link.is-current')]
+                            .map((link) => new URL(link.href).pathname),
+                        categories: [...document.querySelectorAll('.slot-breadcrumb .collection-item-link')]
+                            .map((link) => new URL(link.href).pathname)
+                            .filter((href) => href.startsWith('/products/')),
+                        currentSort: document.querySelector('.slot-breadcrumb .collection-column-sort')?.textContent
+                    }));
+                    const expectedRoot = collectionPath === '/all-products/' ? '/all-products/' : categoriesPath;
+                    if (state.from !== collectionPath.replace(/^\/|\/$/g, '')
+                        || state.root !== expectedRoot
+                        || !state.selected.includes(productPath)
+                        || !state.currentSort?.includes('↓')) {
+                        fail('Opening a product must preserve its source root, selected row and descending sort.', state);
+                    }
+                    if (expectedRoot === categoriesPath
+                        && (JSON.stringify(state.categories) !== JSON.stringify(categoryHrefs)
+                            || !state.selected.includes(collectionPath))) {
+                        fail('Category siblings and selection must survive entry breadcrumb hydration.', state);
+                    }
+                    return state;
+                };
+                results.push(await assertSelection());
+                await page.reload();
+                await waitForBreadcrumbSettled(page);
+                await assertSelection();
+                await page.goBack();
+                await page.waitForURL((url) => url.pathname === collectionPath);
+                if (new URL(page.url()).searchParams.get('sort') !== 'price-desc') {
+                    fail('Back navigation must restore the product list sort.', { url: page.url() });
+                }
+                await page.goForward();
+                await waitForBreadcrumbSettled(page);
+                await assertSelection();
+            }
+            return { productPath, results };
         }
     },
     {
@@ -782,7 +1016,7 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
             await gotoAndWait(page, `${baseUrl}${BREADCRUMB_PRODUCTS_PATH}`);
-            await page.waitForSelector('.slot-row-breadcrumb');
+            await page.waitForSelector('.path-columns');
             await waitForBreadcrumbSettled(page);
             const mainX1 = await getMainInlineStart(page);
             await page.waitForTimeout(800);
@@ -813,7 +1047,7 @@ export const scenarios = [
             const readState = () => page.evaluate((selector) => {
                 const grid = document.querySelector(selector);
                 const rows = Array.from(
-                    grid?.querySelectorAll('.cell-title:not(.header)') || []
+                    grid?.querySelectorAll('.collection-cell--name:not(.collection-cell--header)') || []
                 ).map((head) => ({
                     dateKey: head.getAttribute('data-sort-date') || '',
                     dateText: head.nextElementSibling?.textContent?.trim() || '',
@@ -856,7 +1090,7 @@ export const scenarios = [
                 await page.waitForFunction(({ selector, beforeTitles }) => {
                     const titles = Array.from(
                         document.querySelector(selector)
-                            ?.querySelectorAll('.cell-title:not(.header)') || []
+                            ?.querySelectorAll('.collection-cell--name:not(.collection-cell--header)') || []
                     ).map((head) => (
                         head.querySelector('.collection-item-title')?.textContent?.trim() || ''
                     ));
@@ -885,7 +1119,7 @@ export const scenarios = [
                 await page.waitForFunction(({ selector, expectedTitles }) => {
                     const titles = Array.from(
                         document.querySelector(selector)
-                            ?.querySelectorAll('.cell-title:not(.header)') || []
+                            ?.querySelectorAll('.collection-cell--name:not(.collection-cell--header)') || []
                     ).map((head) => (
                         head.querySelector('.collection-item-title')?.textContent?.trim() || ''
                     ));
@@ -934,7 +1168,7 @@ export const scenarios = [
         async run({ page, baseUrl }) {
             await page.addInitScript(recordFirstMainLayoutScript());
             const readDirectoryMeta = () => page.evaluate(() => {
-                const node = document.querySelector('.post-taxonomy-path');
+                const node = document.querySelector('.document-meta__row--path');
                 return node ? {
                     ariaLabel: node.getAttribute('aria-label'),
                     html: node.innerHTML
@@ -943,7 +1177,7 @@ export const scenarios = [
 
             const defaultUrl = new URL(BREADCRUMB_FIRST_FRAME_PATH, `${baseUrl}/`);
             await gotoAndWait(page, defaultUrl.href);
-            await page.waitForSelector('.slot-row-breadcrumb');
+            await page.waitForSelector('.path-columns');
             await waitForBreadcrumbSettled(page);
             const defaultColumnCount = await getVisibleBreadcrumbColumnCount(page);
             const defaultDirectoryMeta = await readDirectoryMeta();
@@ -951,7 +1185,7 @@ export const scenarios = [
             const transitionUrl = new URL(defaultUrl.href);
             transitionUrl.searchParams.set('from', BREADCRUMB_FIRST_FRAME_FROM);
             await gotoAndWait(page, transitionUrl.href);
-            await page.waitForSelector('.slot-row-breadcrumb');
+            await page.waitForSelector('.path-columns');
 
             const firstLayout = await readFirstMainLayout(page);
             await waitForBreadcrumbSettled(page);
@@ -961,16 +1195,7 @@ export const scenarios = [
             const delta = finalMainInlineStart === null
                 ? null
                 : Math.abs(finalMainInlineStart - firstLayout.mainInlineStart);
-            const matchesWideLayout = await page.evaluate(() => (
-                window.matchMedia('(min-width: 75rem)').matches
-            ));
-
-            if (!matchesWideLayout) {
-                fail('First-frame scenario must exercise the 75rem wide layout.', {
-                    viewport: BREADCRUMB_FIRST_FRAME_VIEWPORT
-                });
-            }
-            if (!firstLayout.previewPending || !firstLayout.runtimePending) {
+            if (!firstLayout.entryPending) {
                 fail('First-frame scenario did not capture a pending from-based breadcrumb.', {
                     firstLayout,
                     transitionUrl: transitionUrl.href
@@ -1022,6 +1247,82 @@ export const scenarios = [
         }
     },
     {
+        id: 'breadcrumb-sort-preview-without-from',
+        kind: 'single',
+        title: 'Breadcrumb Sort Preview Without From',
+        viewport: { width: 1280, height: 960 },
+        async run({ page, baseUrl }) {
+            const readState = () => page.evaluate(() => {
+                const mainGrid = document.querySelector(
+                    '.slot-main [data-sortable="true"][data-sort-variant]'
+                );
+                const pathColumn = Array.from(document.querySelectorAll(
+                    '.path-columns .collection-list'
+                )).find((column) => column.querySelector('.collection-header--path'));
+                const readTitles = (root) => Array.from(
+                    root?.querySelectorAll('.collection-cell--name:not(.collection-cell--header) .collection-item-title') || []
+                ).map((item) => item.textContent?.trim() || '').filter(Boolean);
+
+                return {
+                    from: new URL(window.location.href).searchParams.get('from'),
+                    mainIndicator: mainGrid
+                        ?.querySelector('[data-sort-field="date"] .collection-sort-indicator')
+                        ?.textContent
+                        ?.trim() || '',
+                    mainRows: readTitles(mainGrid),
+                    pathIndicator: pathColumn
+                        ?.querySelector('.collection-sort-indicator')
+                        ?.textContent
+                        ?.trim() || '',
+                    pathRows: readTitles(pathColumn),
+                };
+            });
+
+            const defaultUrl = new URL(BREADCRUMB_COLLECTION_SORT_PATH, `${baseUrl}/`);
+            await gotoAndWait(page, defaultUrl.href);
+            await page.waitForSelector('.slot-breadcrumb .collection-header--path');
+            await waitForBreadcrumbSettled(page);
+            const descending = await readState();
+            if (
+                descending.mainIndicator !== '↓'
+                || descending.pathIndicator !== '↓'
+                || descending.mainRows.length < 2
+                || descending.pathRows.length < 2
+            ) {
+                fail('Preview scenario requires descending main and path collections.', {
+                    descending,
+                    url: page.url(),
+                });
+            }
+
+            const ascendingUrl = new URL(defaultUrl);
+            ascendingUrl.searchParams.set('sort', 'date-asc');
+            ascendingUrl.searchParams.set('sorts', 'date-asc,date-asc');
+            await gotoAndWait(page, ascendingUrl.href);
+            await page.waitForSelector('.slot-breadcrumb .collection-header--path');
+            await waitForBreadcrumbSettled(page);
+            const ascending = await readState();
+
+            if (
+                ascending.from !== null
+                || ascending.mainIndicator !== '↑'
+                || ascending.pathIndicator !== '↑'
+                || JSON.stringify(ascending.mainRows)
+                    !== JSON.stringify(descending.mainRows.slice().reverse())
+                || JSON.stringify(ascending.pathRows)
+                    !== JSON.stringify(descending.pathRows.slice().reverse())
+            ) {
+                fail('Sort preview must hydrate main and path order without a from lineage.', {
+                    ascending,
+                    descending,
+                    url: page.url(),
+                });
+            }
+
+            return { ascending, descending, url: page.url() };
+        }
+    },
+    {
         id: 'breadcrumb-column-sort-toggle',
         kind: 'single',
         title: 'Breadcrumb Column Sort Toggle',
@@ -1030,12 +1331,12 @@ export const scenarios = [
             const url = new URL(BREADCRUMB_COLUMN_SORT_PATH, `${baseUrl}/`);
             url.searchParams.set('from', 'all');
             await gotoAndWait(page, url.href);
-            await page.waitForSelector('.slot-breadcrumb .collection-column-header');
+            await page.waitForSelector('.slot-breadcrumb .collection-header--path');
             await waitForBreadcrumbSettled(page);
 
             const readState = () => page.evaluate(() => {
-                const panel = document.querySelector('.slot-breadcrumb .collection-list--column');
-                const header = panel?.querySelector('.collection-column-header');
+                const panel = document.querySelector('.slot-breadcrumb .collection-list--path-column');
+                const header = panel?.querySelector('.collection-header--path');
                 const toggle = header?.querySelector('[data-collection-sort-toggle="true"]');
                 const rows = Array.from(panel?.querySelectorAll('.collection-item-link') || []);
                 const rowTitles = rows
@@ -1044,7 +1345,7 @@ export const scenarios = [
                 return {
                     field: header?.querySelector('.collection-sort-label')?.textContent?.trim() || '',
                     indicator: header?.querySelector('.collection-sort-indicator')?.textContent?.trim() || '',
-                    iconCount: panel?.querySelectorAll('.collection-item-icon-svg').length || 0,
+                    iconCount: panel?.querySelectorAll('.collection-item-icon svg.icon').length || 0,
                     embeddedSourceCount: document.querySelectorAll(
                         '[data-breadcrumb-collection-source]'
                     ).length,
@@ -1087,7 +1388,7 @@ export const scenarios = [
                     await page.waitForFunction((firstTitle) => {
                         const currentUrl = new URL(window.location.href);
                         const panel = document.querySelector(
-                            '.slot-breadcrumb .collection-list--column'
+                            '.slot-breadcrumb .collection-list--path-column'
                         );
                         const nextFirstTitle = panel
                             ?.querySelector('.collection-item-title')
@@ -1168,8 +1469,8 @@ export const scenarios = [
             initialUrl.searchParams.set('from', 'd/wsl');
 
             const readColumns = () => page.evaluate(() => (
-                Array.from(document.querySelectorAll('.slot-row-breadcrumb .grid-list--single'))
-                    .filter((column) => column.querySelector('.collection-column-header'))
+                Array.from(document.querySelectorAll('.path-columns .collection-list'))
+                    .filter((column) => column.querySelector('.collection-header--path'))
                     .map((column) => ({
                         indicator: column.querySelector('.collection-sort-indicator')?.textContent?.trim() || '',
                         label: column.querySelector('.collection-column-label')?.textContent?.trim() || '',
@@ -1182,7 +1483,7 @@ export const scenarios = [
             ));
             const openInitialState = async () => {
                 await gotoAndWait(page, initialUrl.href);
-                await page.waitForSelector('.slot-row-breadcrumb .collection-column-header');
+                await page.waitForSelector('.path-columns .collection-header--path');
                 await waitForBreadcrumbSettled(page);
                 const columns = await readColumns();
                 if (columns.length !== 2 || columns.some((column) => column.indicator !== '↓')) {
@@ -1196,16 +1497,16 @@ export const scenarios = [
 
             const initialBeforeChild = await openInitialState();
             const childToggle = page.locator(
-                '.slot-row-breadcrumb [data-collection-sort-toggle="true"]'
+                '.path-columns [data-collection-sort-toggle="true"]'
             ).nth(1);
             const childInPlace = await runBreadcrumbSortInPlace(page, {
                 action: async () => {
                     await childToggle.click();
                     await page.waitForFunction((beforeRows) => {
                         const columns = Array.from(document.querySelectorAll(
-                            '.slot-row-breadcrumb .grid-list--single'
+                            '.path-columns .collection-list'
                         )).filter((column) => (
-                            column.querySelector('.collection-column-header')
+                            column.querySelector('.collection-header--path')
                         ));
                         const rows = Array.from(
                             columns[1]?.querySelectorAll('.collection-item-title') || []
@@ -1264,16 +1565,16 @@ export const scenarios = [
 
             const initialBeforeAncestor = await openInitialState();
             const ancestorToggle = page.locator(
-                '.slot-row-breadcrumb [data-collection-sort-toggle="true"]'
+                '.path-columns [data-collection-sort-toggle="true"]'
             ).first();
             const ancestorInPlace = await runBreadcrumbSortInPlace(page, {
                 action: async () => {
                     await ancestorToggle.click();
                     await page.waitForFunction((beforeRows) => {
                         const columns = Array.from(document.querySelectorAll(
-                            '.slot-row-breadcrumb .grid-list--single'
+                            '.path-columns .collection-list'
                         )).filter((column) => (
-                            column.querySelector('.collection-column-header')
+                            column.querySelector('.collection-header--path')
                         ));
                         const rows = Array.from(
                             columns[0]?.querySelectorAll('.collection-item-title') || []
@@ -1353,27 +1654,30 @@ export const scenarios = [
             url.searchParams.set('sorts', 'date-asc');
             await gotoAndWait(page, url.href);
             await page.waitForSelector(
-                '.slot-row-breadcrumb [data-collection-sort-toggle="true"]'
+                '.path-columns [data-collection-sort-toggle="true"]'
             );
             await waitForBreadcrumbSettled(page);
 
             const readState = () => page.evaluate(() => {
                 const column = Array.from(document.querySelectorAll(
-                    '.slot-row-breadcrumb .grid-list--single'
-                )).find((candidate) => candidate.querySelector('.collection-column-header'));
+                    '.path-columns .collection-list'
+                )).find((candidate) => candidate.querySelector('.collection-header--path'));
                 const mainGrid = document.querySelector(
                     '.slot-main [data-sortable="true"][data-sort-variant]'
                 );
                 return {
+                    columnHrefs: Array.from(document.querySelectorAll(
+                        '.path-columns [data-breadcrumb-collection-href]'
+                    )).map((item) => item.getAttribute('data-breadcrumb-collection-href') || ''),
                     columnRows: Array.from(
                         column?.querySelectorAll('.collection-item-title') || []
                     ).map((item) => item.textContent?.trim() || '').filter(Boolean),
                     mainHrefs: Array.from(
-                        mainGrid?.querySelectorAll('.cell-title:not(.header) .collection-item-link')
+                        mainGrid?.querySelectorAll('.collection-cell--name:not(.collection-cell--header) .collection-item-link')
                             || []
                     ).map((item) => item.getAttribute('href') || '').filter(Boolean),
                     mainRows: Array.from(
-                        mainGrid?.querySelectorAll('.cell-title:not(.header) .collection-item-title')
+                        mainGrid?.querySelectorAll('.collection-cell--name:not(.collection-cell--header) .collection-item-title')
                             || []
                     ).map((item) => item.textContent?.trim() || '').filter(Boolean),
                 };
@@ -1383,6 +1687,21 @@ export const scenarios = [
             if (before.columnRows.length < 2 || before.mainRows.length < 2) {
                 fail('Collection isolation scenario requires sortable column and main rows.', {
                     before,
+                    url: page.url(),
+                });
+            }
+            const activeCollectionHref = new URL(BREADCRUMB_COLLECTION_SORT_PATH, url).pathname;
+            const expectedAncestorHref = new URL('../', new URL(activeCollectionHref, url)).pathname;
+            const columnPaths = before.columnHrefs.map((href) => new URL(href, url).pathname);
+            if (
+                columnPaths.length !== 1
+                || columnPaths[0] !== expectedAncestorHref
+                || columnPaths.includes(activeCollectionHref)
+            ) {
+                fail('Collection path must render only its ancestor and keep the active collection in main.', {
+                    activeCollectionHref,
+                    before,
+                    expectedAncestorHref,
                     url: page.url(),
                 });
             }
@@ -1400,14 +1719,14 @@ export const scenarios = [
             const inPlace = await runBreadcrumbSortInPlace(page, {
                 action: async () => {
                     await page.locator(
-                        '.slot-row-breadcrumb [data-collection-sort-toggle="true"]'
+                        '.path-columns [data-collection-sort-toggle="true"]'
                     ).first().click();
                     await page.waitForFunction((beforeRows) => {
                         const currentUrl = new URL(window.location.href);
                         const column = Array.from(document.querySelectorAll(
-                            '.slot-row-breadcrumb .grid-list--single'
+                            '.path-columns .collection-list'
                         )).find((candidate) => (
-                            candidate.querySelector('.collection-column-header')
+                            candidate.querySelector('.collection-header--path')
                         ));
                         const rows = Array.from(
                             column?.querySelectorAll('.collection-item-title') || []
@@ -1490,14 +1809,14 @@ export const scenarios = [
             const url = new URL(BREADCRUMB_WIDE_CANVAS_PATH, `${baseUrl}/`);
             url.searchParams.set('from', BREADCRUMB_WIDE_CANVAS_FROM);
             await gotoAndWait(page, url.href);
-            await page.waitForSelector('.slot-row-breadcrumb');
+            await page.waitForSelector('.path-columns');
             await waitForBreadcrumbSettled(page);
 
             const geometry = await page.evaluate(() => {
-                const breadcrumb = document.querySelector('.slot-row-breadcrumb');
+                const breadcrumb = document.querySelector('.path-columns');
                 const main = document.querySelector('.slot-main');
                 const scrollingElement = document.scrollingElement;
-                const visibleColumns = Array.from(breadcrumb.querySelectorAll('.breadcrumb-item-menu'))
+                const visibleColumns = Array.from(breadcrumb.querySelectorAll('.path-column'))
                     .filter((column) => {
                         const rect = column.getBoundingClientRect();
                         const style = getComputedStyle(column);
@@ -1514,10 +1833,10 @@ export const scenarios = [
                     return probe.getBoundingClientRect().width;
                 };
                 const expectedColumnInline = measureInline('15rem');
-                const columnInline = measureInline('var(--breadcrumb-column-inline)');
-                const gapInline = measureInline('var(--breadcrumb-gap-inline)');
-                const mainInline = measureInline('var(--breadcrumb-main-inline)');
-                const railCurrent = document.querySelector('.page-rail-context .is-current');
+                const columnInline = measureInline('var(--navigation-column-inline)');
+                const gapInline = measureInline('var(--page-shell-gap-inline)');
+                const mainInline = measureInline('var(--main-column-inline)');
+                const railCurrent = document.querySelector('[data-root-navigation] .is-current');
                 const railRect = railCurrent?.getBoundingClientRect();
                 const columnRects = visibleColumns.map((column) => column.getBoundingClientRect());
                 const breadcrumbGaps = columnRects.slice(1).map((rect, index) => (
@@ -1580,7 +1899,7 @@ export const scenarios = [
                 });
             }
             if (geometry.mainInline <= 0 || geometry.mainWidth + 1 < geometry.mainInline) {
-                fail('Wide canvas main track shrank below --breadcrumb-main-inline.', geometry);
+                fail('Wide canvas main track shrank below --main-column-inline.', geometry);
             }
             if (geometry.documentScrollWidth <= geometry.documentClientWidth) {
                 fail('Wide canvas overflow must reach the document scroller.', geometry);
@@ -1606,10 +1925,10 @@ export const scenarios = [
             for (const target of GRID_LIST_COLUMN_CASES) {
                 await page.setViewportSize(target.viewport);
                 await gotoAndWait(page, `${baseUrl}${target.path}`);
-                await page.waitForSelector('.slot-main .grid-list > .cell-title');
+                await page.waitForSelector('.slot-main .collection-list > .collection-cell--name');
                 const geometry = await page.evaluate(() => {
-                    const grid = document.querySelector('.slot-main .grid-list');
-                    const nameCell = grid?.querySelector(':scope > .cell-title');
+                    const grid = document.querySelector('.slot-main .collection-list');
+                    const nameCell = grid?.querySelector(':scope > .collection-cell--name');
                     if (!(grid instanceof HTMLElement) || !(nameCell instanceof HTMLElement)) return null;
 
                     const probe = document.createElement('div');
@@ -1620,22 +1939,21 @@ export const scenarios = [
                         return probe.getBoundingClientRect().width;
                     };
                     const result = {
-                        breadcrumbInline: measure('var(--breadcrumb-column-inline)'),
+                        breadcrumbInline: measure('var(--navigation-column-inline)'),
                         documentClientInline: document.documentElement.clientWidth,
                         documentScrollInline: document.documentElement.scrollWidth,
                         nameInline: nameCell.getBoundingClientRect().width,
-                        navigationInline: measure('var(--navigation-column-inline)'),
-                        productInline: measure('8rem')
+                        navigationInline: measure('var(--navigation-column-inline)')
                     };
                     probe.remove();
                     return result;
                 });
-                const expectedInline = target.product ? geometry?.productInline : geometry?.navigationInline;
+                const expectedInline = geometry?.navigationInline;
                 const invalid = !geometry
                     || expectedInline <= 0
                     || Math.abs(geometry.nameInline - expectedInline) > 1
                     || (target.compareBreadcrumb && Math.abs(geometry.breadcrumbInline - expectedInline) > 1)
-                    || (target.containDocument && geometry.documentScrollInline > geometry.documentClientInline + 1);
+                    || (target.horizontalCanvas && geometry.documentScrollInline <= geometry.documentClientInline);
                 if (invalid) {
                     fail('Grid list name column contract failed.', { ...target, ...geometry, expectedInline });
                 }
@@ -1651,11 +1969,11 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
             await gotoAndWait(page, `${baseUrl}/zh/all/`);
-            await page.waitForSelector('.collection-list--grid .collection-item-link');
-            await page.locator('.collection-list--grid .collection-item-link').first().hover();
+            await page.waitForSelector('.slot-main .collection-list .collection-item-link');
+            await page.locator('.slot-main .collection-list .collection-item-link').first().hover();
             const grid = await page.evaluate(() => {
-                const list = document.querySelector('.collection-list--grid');
-                const header = list?.querySelector('.collection-list-header');
+                const list = document.querySelector('.slot-main .collection-list');
+                const header = list?.querySelector('.collection-header');
                 const headerText = header?.querySelector('a');
                 const link = list?.querySelector('.collection-item-link');
                 const icon = link?.querySelector('.collection-item-icon');
@@ -1692,14 +2010,14 @@ export const scenarios = [
             const articleUrl = new URL(BREADCRUMB_COLUMN_SORT_PATH, `${baseUrl}/`);
             articleUrl.searchParams.set('from', 'all');
             await gotoAndWait(page, articleUrl.href);
-            await page.waitForSelector('.slot-breadcrumb .collection-list--column');
+            await page.waitForSelector('.slot-breadcrumb .collection-list--path-column');
             await waitForBreadcrumbSettled(page);
             await page.locator(
-                '.slot-breadcrumb .collection-list--column .collection-item-link:not(.is-current)'
+                '.slot-breadcrumb .collection-list--path-column .collection-item-link:not(.is-current)'
             ).first().hover();
             const column = await page.evaluate(() => {
-                const list = document.querySelector('.slot-breadcrumb .collection-list--column');
-                const header = list?.querySelector('.collection-column-header');
+                const list = document.querySelector('.slot-breadcrumb .collection-list--path-column');
+                const header = list?.querySelector('.collection-header--path');
                 const headerText = header?.querySelector('.collection-column-label');
                 const link = list?.querySelector('.collection-item-link');
                 const icon = link?.querySelector('.collection-item-icon');
@@ -1721,16 +2039,27 @@ export const scenarios = [
                 const hoverStateStyle = getComputedStyle(hovered, '::before');
                 const currentStyle = getComputedStyle(current);
                 const currentStateStyle = getComputedStyle(current, '::before');
+                const rootCurrent = document.querySelector('[data-root-navigation] [data-root-href].is-current');
+                const rootCurrentStyle = getComputedStyle(rootCurrent);
+                const rootCurrentState = getComputedStyle(rootCurrent, '::before');
                 const separatorStyle = getComputedStyle(list, '::after');
                 const directCells = Array.from(list.children);
                 const headerTrackSize = Number.parseFloat(getComputedStyle(list).gridTemplateRows);
                 return {
                     directCellCount: directCells.length,
-                    directCellsValid: directCells.every((cell) => cell.classList.contains('cell-title')),
+                    directCellsValid: directCells.every((cell) => cell.classList.contains('collection-cell--name')),
                     headerTrackSize,
                     currentLinkBackground: currentStyle.backgroundColor,
                     currentStateBackground: currentStateStyle.backgroundColor,
                     currentStateShadow: currentStateStyle.boxShadow,
+                    rootLinkBackground: rootCurrentStyle.backgroundColor,
+                    rootStateBackground: rootCurrentState.backgroundColor,
+                    rootStateShadow: rootCurrentState.boxShadow,
+                    rootStateRadius: rootCurrentState.borderRadius,
+                    rootBlockSize: rootCurrent.getBoundingClientRect().height,
+                    rootInlineSize: rootCurrent.getBoundingClientRect().width,
+                    columnInlineSize: current.getBoundingClientRect().width,
+                    currentStateRadius: currentStateStyle.borderRadius,
                     headerTextBlockStart: headerTextRect.top,
                     hoverLinkBackground: hoveredStyle.backgroundColor,
                     hoverStateBackground: hoverStateStyle.backgroundColor,
@@ -1744,7 +2073,7 @@ export const scenarios = [
                     separatorBlockStart: list.getBoundingClientRect().top
                         + Number.parseFloat(separatorStyle.top),
                     singleGridContract: list.matches(
-                        '.grid-list.grid-list--single.grid-list--headed.collection-list--column'
+                        '.collection-list.collection-list--headed.collection-list--path-column'
                     )
                 };
             });
@@ -1773,12 +2102,257 @@ export const scenarios = [
                 || grid.stateBackground !== column.hoverStateBackground
                 || grid.stateRadius !== column.hoverStateRadius
                 || column.currentStateBackground === transparent
-                || column.currentStateShadow === 'none';
+                || column.currentStateShadow === 'none'
+                || column.rootLinkBackground !== column.currentLinkBackground
+                || column.rootStateBackground !== column.currentStateBackground
+                || column.rootStateShadow !== column.currentStateShadow
+                || column.rootStateRadius !== column.currentStateRadius
+                || Math.abs(column.rootBlockSize - column.linkBlockSize) > 0.1
+                || Math.abs(column.rootInlineSize - column.columnInlineSize) > 1;
             if (invalid) {
                 fail('Collection list visual alignment contract failed.', { grid, column });
             }
 
             return { grid, column };
+        }
+    },
+    {
+        id: 'collection-interaction-theme-contract',
+        kind: 'single',
+        title: 'Shared Collection Interaction and Theme Contract',
+        viewport: WIDE_VIEWPORT,
+        async run({ page, baseUrl }) {
+            const readState = async (locator) => locator.evaluate(async (element) => {
+                // Flush the transition start, then sample the settled collection-row state.
+                void getComputedStyle(element).color;
+                await Promise.all(element.getAnimations().map((animation) => (
+                    animation.finished.catch(() => {})
+                )));
+                const style = getComputedStyle(element);
+                const stateStyle = getComputedStyle(element, '::before');
+                return {
+                    color: style.color,
+                    stateBackground: stateStyle.backgroundColor,
+                    stateShadow: stateStyle.boxShadow,
+                };
+            });
+            const readHover = async (locator) => {
+                await locator.hover();
+                return readState(locator);
+            };
+            const readFocus = async (locator) => {
+                // Establish keyboard modality before focusing the exact contract target.
+                await page.keyboard.press('Tab');
+                await locator.focus();
+                return locator.evaluate((element) => {
+                    const style = getComputedStyle(element);
+                    const probe = document.createElement('span');
+                    probe.style.color = 'var(--focus-ring)';
+                    document.body.appendChild(probe);
+                    const focusRingColor = getComputedStyle(probe).color;
+                    probe.remove();
+                    return {
+                        focusRingColor,
+                        focusVisible: element.matches(':focus-visible'),
+                        outlineColor: style.outlineColor,
+                        outlineStyle: style.outlineStyle,
+                        outlineWidth: style.outlineWidth,
+                        tagName: element.tagName,
+                    };
+                });
+            };
+            const assertShared = (label, entries) => {
+                const serialized = entries.map((entry) => JSON.stringify(entry));
+                if (new Set(serialized).size !== 1) {
+                    fail(`${label} must be shared by root, path, and choice collections.`, { entries });
+                }
+            };
+            const results = [];
+
+            for (const theme of ['light', 'dark']) {
+                await gotoAndWait(page, `${baseUrl}/zh/appearance/`);
+                await page.locator(`[data-theme-choice="${theme}"]`).click();
+                await page.waitForFunction((expected) => (
+                    document.documentElement.dataset.theme === expected
+                ), theme);
+
+                const colorScheme = await page.evaluate(() => getComputedStyle(document.documentElement).colorScheme);
+                if (colorScheme !== theme) {
+                    fail('The resolved HTML color-scheme must follow data-theme.', { colorScheme, theme });
+                }
+
+                const rootCurrentLocator = page.locator('[data-root-navigation] [data-root-href].is-current');
+                const choiceCurrentLocator = page.locator(`[data-theme-choice="${theme}"].is-current`);
+                const rootCurrent = await readState(rootCurrentLocator);
+                const choiceCurrent = await readState(choiceCurrentLocator);
+                const rootHover = await readHover(page.locator('[data-root-navigation] [data-root-href]:not(.is-current)').first());
+                const choiceHover = await readHover(page.locator('[data-theme-choice]:not(.is-current)').first());
+                const rootFocus = await readFocus(rootCurrentLocator);
+                const choiceFocus = await readFocus(choiceCurrentLocator);
+
+                const articleUrl = new URL(BREADCRUMB_COLUMN_SORT_PATH, `${baseUrl}/`);
+                articleUrl.searchParams.set('from', 'all');
+                await gotoAndWait(page, articleUrl.href);
+                await page.waitForSelector('.slot-breadcrumb .collection-list--path-column');
+                await waitForBreadcrumbSettled(page);
+
+                const pathRootCurrentLocator = page.locator('[data-root-navigation] [data-root-href].is-current');
+                const pathCurrentLocator = page.locator(
+                    '.slot-breadcrumb .collection-list--path-column .collection-item-link.is-current'
+                ).first();
+                const pathRootCurrent = await readState(pathRootCurrentLocator);
+                const pathCurrent = await readState(pathCurrentLocator);
+                const pathHover = await readHover(page.locator(
+                    '.slot-breadcrumb .collection-list--path-column .collection-item-link:not(.is-current)'
+                ).first());
+                const pathFocus = await readFocus(pathCurrentLocator);
+
+                assertShared(`${theme} current state`, [rootCurrent, choiceCurrent, pathRootCurrent, pathCurrent]);
+                assertShared(`${theme} hover state`, [rootHover, choiceHover, pathHover]);
+                assertShared(`${theme} focus state`, [rootFocus, choiceFocus, pathFocus].map((state) => ({
+                    focusRingColor: state.focusRingColor,
+                    focusVisible: state.focusVisible,
+                    outlineColor: state.outlineColor,
+                    outlineStyle: state.outlineStyle,
+                    outlineWidth: state.outlineWidth,
+                })));
+
+                const focusStates = [rootFocus, choiceFocus, pathFocus];
+                if (
+                    rootFocus.tagName !== 'A'
+                    || pathFocus.tagName !== 'A'
+                    || choiceFocus.tagName !== 'BUTTON'
+                    || focusStates.some((state) => (
+                        !state.focusVisible
+                        || state.outlineStyle !== 'dashed'
+                        || state.outlineWidth !== '2px'
+                        || state.outlineColor !== state.focusRingColor
+                    ))
+                ) {
+                    fail('Collection links and buttons must use the explicit 2px dashed focus ring.', {
+                        choiceFocus,
+                        pathFocus,
+                        rootFocus,
+                        theme,
+                    });
+                }
+
+                results.push({
+                    choiceFocus,
+                    colorScheme,
+                    current: rootCurrent,
+                    focus: rootFocus,
+                    hover: rootHover,
+                    pathFocus,
+                    theme,
+                });
+            }
+
+            return { cases: results };
+        }
+    },
+    {
+        id: 'prose-table-chroma-isolation-contract',
+        kind: 'single',
+        title: 'Prose Table and Chroma Line Number Table Isolation Contract',
+        serviceWorkers: 'block',
+        viewport: WIDE_VIEWPORT,
+        async run({ page, baseUrl }) {
+            await gotoAndWait(page, `${baseUrl}/about/`);
+            await page.waitForSelector('.slot-main .prose');
+
+            const state = await page.evaluate(() => {
+                const prose = document.querySelector('.slot-main .prose');
+                if (!(prose instanceof HTMLElement)) return null;
+                const existingLineNumberTableCount = prose.querySelectorAll('table.lntable').length;
+
+                const ordinaryTable = document.createElement('table');
+                ordinaryTable.dataset.proseTableFixture = 'ordinary';
+                ordinaryTable.innerHTML = [
+                    '<thead><tr><th>Kind</th><th>Value</th></tr></thead>',
+                    '<tbody><tr><td>ordinary</td><td>table</td></tr></tbody>'
+                ].join('');
+
+                const highlight = document.createElement('div');
+                highlight.className = 'highlight';
+                highlight.dataset.proseTableFixture = 'chroma';
+                highlight.innerHTML = [
+                    '<div class="chroma">',
+                    '<table class="lntable"><tbody><tr>',
+                    '<td class="lntd"><pre class="chroma"><code><span class="lnt">1</span></code></pre></td>',
+                    '<td class="lntd"><pre class="chroma"><code><span class="line">const value = 1;</span></code></pre></td>',
+                    '</tr></tbody></table>',
+                    '</div>'
+                ].join('');
+                prose.append(ordinaryTable, highlight);
+
+                const chromaTable = highlight.querySelector('table.lntable');
+                const ordinaryCell = ordinaryTable.querySelector('td');
+                const chromaCell = chromaTable?.querySelector('td.lntd');
+                if (!(chromaTable instanceof HTMLTableElement)
+                    || !(ordinaryCell instanceof HTMLTableCellElement)
+                    || !(chromaCell instanceof HTMLTableCellElement)) return null;
+
+                const describe = (element) => {
+                    const style = getComputedStyle(element);
+                    return {
+                        borderCollapse: style.borderCollapse,
+                        borderTopStyle: style.borderTopStyle,
+                        borderTopWidth: style.borderTopWidth,
+                        display: style.display,
+                        fontSize: style.fontSize,
+                        overflowX: style.overflowX,
+                        overflowY: style.overflowY,
+                        paddingBlockStart: style.paddingBlockStart,
+                        paddingInlineStart: style.paddingInlineStart
+                    };
+                };
+
+                return {
+                    existingLineNumberTableCount,
+                    proseFontSize: getComputedStyle(prose).fontSize,
+                    ordinary: {
+                        cell: describe(ordinaryCell),
+                        table: describe(ordinaryTable)
+                    },
+                    chroma: {
+                        cell: describe(chromaCell),
+                        table: describe(chromaTable)
+                    }
+                };
+            });
+
+            const ordinaryValid = state
+                && state.ordinary.table.display === 'block'
+                && state.ordinary.table.overflowX === 'auto'
+                && state.ordinary.table.overflowY === 'hidden'
+                && state.ordinary.table.borderCollapse === 'collapse'
+                && state.ordinary.cell.borderTopStyle === 'solid'
+                && state.ordinary.cell.borderTopWidth !== '0px'
+                && state.ordinary.cell.fontSize !== state.proseFontSize;
+            if (!ordinaryValid) {
+                fail('Ordinary Markdown tables must keep the prose table presentation.', state);
+            }
+
+            const chromaValid = state.chroma.table.display === 'table'
+                && state.chroma.table.overflowX === 'visible'
+                && state.chroma.table.overflowY === 'visible'
+                && state.chroma.table.borderCollapse === 'separate'
+                && state.chroma.table.borderTopStyle === 'none'
+                && state.chroma.table.borderTopWidth === '0px'
+                && state.chroma.cell.borderTopStyle === 'none'
+                && state.chroma.cell.borderTopWidth === '0px'
+                && state.chroma.cell.paddingBlockStart === '0px'
+                && state.chroma.cell.paddingInlineStart === '0px'
+                && state.chroma.cell.fontSize === state.proseFontSize;
+            if (!chromaValid) {
+                fail('Chroma line-number tables must not inherit ordinary prose table layout and cell styles.', state);
+            }
+
+            return {
+                details: state,
+                message: 'Ordinary prose tables remain styled while Chroma line-number tables keep their native table layout.'
+            };
         }
     },
     {
@@ -1788,7 +2362,7 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
             await gotoAndWait(page, `${baseUrl}/d/products/?sort=name-asc`);
-            await page.waitForSelector('.slot-row-breadcrumb');
+            await page.waitForSelector('.path-columns');
             await waitForBreadcrumbSettled(page);
 
             const state = await readBreadcrumbPrefetchSlotContract(page);
@@ -1799,13 +2373,13 @@ export const scenarios = [
                 fail('Breadcrumb anchors must use data-prefetch-slot="crumb".', state);
             }
             if (state.slotRowNavAnchors.length > 0) {
-                fail('slot-row-breadcrumb must not contain nav prefetch anchors.', state);
+                fail('path-columns must not contain nav prefetch anchors.', state);
             }
-            if (state.slotRowBreadcrumbMenuOptionCount === 0) {
-                fail('Sorted breadcrumb page did not expose rebuilt breadcrumb menu options.', state);
+            if (state.slotRowBreadcrumbColumnOptionCount === 0) {
+                fail('Sorted breadcrumb page did not expose rebuilt breadcrumb column items.', state);
             }
-            if (state.slotRowBreadcrumbMenuOptionsWithoutCrumb.length > 0) {
-                fail('Runtime rebuilt breadcrumb menu options must keep data-prefetch-slot="crumb".', state);
+            if (state.slotRowBreadcrumbColumnOptionsWithoutCrumb.length > 0) {
+                fail('Runtime rebuilt breadcrumb column items must keep data-prefetch-slot="crumb".', state);
             }
 
             return state;
@@ -1818,23 +2392,23 @@ export const scenarios = [
         viewport: WIDE_VIEWPORT,
         async run({ page, baseUrl }) {
             await page.addInitScript(
-                recordFirstBreadcrumbMenuStateScript,
+                recordFirstBreadcrumbColumnStateScript,
                 BREADCRUMB_TAGS_COLLECTION_HREF
             );
 
             await gotoAndWait(page, `${baseUrl}${BREADCRUMB_TAGS_PATH}`);
-            await page.waitForSelector('.slot-row-breadcrumb');
+            await page.waitForSelector('.path-columns');
             await waitForBreadcrumbSettled(page);
             const firstAndFinalState = await page.evaluate(() => ({
-                firstOrder: window.__banyanFirstBreadcrumbMenuOrder,
-                finalOrder: window.__banyanReadBreadcrumbMenuOrder?.() || [],
+                firstOrder: window.__banyanFirstBreadcrumbColumnOrder,
+                finalOrder: window.__banyanReadBreadcrumbColumnOrder?.() || [],
                 firstHeaderSpacing: window.__banyanFirstBreadcrumbHeaderSpacing,
                 finalHeaderSpacing: window.__banyanReadBreadcrumbHeaderSpacing?.() || null
             }));
             if (!Array.isArray(firstAndFinalState.firstOrder)
                 || firstAndFinalState.firstOrder.length === 0
                 || firstAndFinalState.finalOrder.length === 0) {
-                fail('Tags breadcrumb scenario did not capture both menu states.', {
+                fail('Tags breadcrumb scenario did not capture both column states.', {
                     path: BREADCRUMB_TAGS_PATH,
                     targetCollectionHref: BREADCRUMB_TAGS_COLLECTION_HREF,
                     ...firstAndFinalState
@@ -1842,7 +2416,7 @@ export const scenarios = [
             }
             if (JSON.stringify(firstAndFinalState.firstOrder)
                 !== JSON.stringify(firstAndFinalState.finalOrder)) {
-                fail('Tags breadcrumb menu reordered after the client runtime settled.', {
+                fail('Tags breadcrumb column reordered after the client runtime settled.', {
                     path: BREADCRUMB_TAGS_PATH,
                     targetCollectionHref: BREADCRUMB_TAGS_COLLECTION_HREF,
                     ...firstAndFinalState
@@ -1896,144 +2470,48 @@ export const scenarios = [
         }
     },
     {
-        id: 'language-menu-runtime-independent',
+        id: 'language-page-static',
         kind: 'single',
-        title: 'Language Menu Without Runtime JSON',
+        title: 'Language Page Uses Static Choices',
+        serviceWorkers: 'block',
         dialogPolicy: 'accept',
         viewport: { width: 1440, height: 960 },
         async run({ page, baseUrl, dialogs }) {
-            await installRuntimeJsonFetchProbe(page);
-
-            const blockedRuntimeRequests = [];
-            await page.route('**/runtime/*.json', async (route) => {
-                blockedRuntimeRequests.push(new URL(route.request().url()).pathname);
-                await route.abort('failed');
-            });
-
-            await gotoAndWait(page, `${baseUrl}/`);
-            await page.waitForSelector('[data-nav-utility-kind="language"][data-nav-primary-init="true"]');
-
-            const initialState = await readLanguageMenuState(page);
-            if (blockedRuntimeRequests.length === 0) {
-                fail('Language runtime-independence scenario did not block any runtime JSON request.');
+            await gotoAndWait(page, baseUrl + '/language/');
+            await page.waitForSelector('[data-language-settings] .is-current');
+            const initialState = await readLanguageSettingsState(page);
+            if (initialState.options.length !== 3
+                || initialState.listView !== 'choice' || initialState.sortable
+                || JSON.stringify(initialState.options.map((option) => option.iconText)) !== JSON.stringify(['EN', '简', '繁'])
+                || initialState.options.some((option) => option.tagName !== 'A' || !option.href || option.disabled)) {
+                fail('Language settings must expose usable static links when runtime JSON is unavailable.', initialState);
             }
-            const initialRuntimeFetches = await readRuntimeJsonFetchProbe(page);
-            if (initialRuntimeFetches.length !== 0) {
-                fail('Language navigation eagerly fetched runtime JSON during initialization.', {
-                    initialRuntimeFetches
-                });
-            }
-            if (
-                initialState.disabled !== false
-                || initialState.options.length === 0
-                || initialState.options.some((option) => option.tagName !== 'A' || !option.href || !option.value)
-            ) {
-                fail('Language menu was not usable from its server-rendered links while runtime JSON was unavailable.', {
-                    blockedRuntimeRequests,
-                    initialState
-                });
-            }
-
-            await page.locator('[data-nav-utility-kind="language"] [data-nav-utility-trigger]').click();
-            await page.waitForSelector(
-                '[data-nav-utility-kind="language"].is-open [data-nav-utility-panel]:not([hidden])'
-            );
-
-            const openState = await readLanguageMenuState(page);
-            if (!openState.open || openState.panelHidden !== false) {
-                fail('Language menu did not open while runtime JSON was unavailable.', {
-                    blockedRuntimeRequests,
-                    initialState,
-                    openState
-                });
-            }
-
-            const targetOption = openState.options.find((option) => option.value === 'zh');
-            if (!targetOption?.href) {
-                fail('Language runtime-independence scenario could not find the expected Chinese link.', {
-                    openState
-                });
-            }
-
-            await page.locator(
-                '[data-nav-utility-kind="language"] [data-nav-utility-option][data-value="zh"]'
-            ).click();
+            const targetOption = initialState.options.find((option) => option.value === 'zh');
+            await page.locator('[data-language-choice="zh"]').click();
             await page.waitForURL((url) => url.pathname === new URL(targetOption.href, baseUrl).pathname);
-
-            const switchedState = await readLanguageMenuState(page);
-            if (
-                !switchedState.options.some(
-                    (option) => option.value === 'zh' && option.current === 'page'
-                )
-            ) {
-                fail('Language menu did not navigate to and mark the selected language.', {
-                    switchedState,
-                    targetOption
-                });
+            await page.waitForSelector('[data-language-settings] .is-current');
+            const switchedState = await readLanguageSettingsState(page);
+            if (!switchedState.options.some((option) => option.value === 'zh' && option.current === 'page')) {
+                fail('Language navigation must mark the selected language.', { switchedState });
             }
 
-            const switchedRuntimeFetches = await readRuntimeJsonFetchProbe(page);
-            if (switchedRuntimeFetches.length !== 0) {
-                fail('Direct language navigation fetched runtime JSON.', {
-                    switchedRuntimeFetches
-                });
-            }
-
-            await resetRuntimeJsonFetchProbe(page);
-            await gotoAndWait(page, `${baseUrl}/prefetchdebug/`);
-            await page.waitForSelector('[data-nav-utility-kind="language"][data-nav-primary-init="true"]');
-
-            const missingTranslationState = await readLanguageMenuState(page);
+            await gotoAndWait(page, baseUrl + '/language/?return=' + encodeURIComponent('/prefetchdebug/'));
+            await page.waitForSelector('[data-language-settings] .is-current');
+            const missingTranslationState = await readLanguageSettingsState(page);
             const missingTarget = missingTranslationState.options.find((option) => option.value === 'zh');
-            const missingPageRuntimeFetches = await readRuntimeJsonFetchProbe(page);
-            if (
-                !missingTranslationState.noTranslationMessage
-                || !missingTranslationState.languageSuggestionMessage
-                || !missingTarget?.href
-                || missingTarget.hasTranslation
-                || missingPageRuntimeFetches.length !== 0
-            ) {
-                fail('Missing-translation page did not expose its complete static language contract.', {
-                    missingTarget,
-                    missingTranslationState,
-                    missingPageRuntimeFetches
-                });
+            if (!missingTranslationState.noTranslationMessage
+                || !missingTarget?.href || !missingTarget.hasTranslation || missingTarget.disabled) {
+                fail('Settings language choices depend on their own translations, not the return page.', missingTranslationState);
             }
-
-            await resetRuntimeJsonFetchProbe(page);
             const dialogCountBeforeMissingSelection = dialogs.length;
-            await page.locator('[data-nav-utility-kind="language"] [data-nav-utility-trigger]').click();
-            await page.locator(
-                '[data-nav-utility-kind="language"] [data-nav-utility-option][data-value="zh"]'
-            ).click();
+            await page.locator('[data-language-choice="zh"]').click();
             await page.waitForURL((url) => url.pathname === new URL(missingTarget.href, baseUrl).pathname);
-
-            const missingRuntimeFetches = await readRuntimeJsonFetchProbe(page);
             const missingDialogs = dialogs.slice(dialogCountBeforeMissingSelection);
-            const acceptedPrompt = missingDialogs[0]?.message || '';
-            if (
-                missingDialogs.length !== 1
-                || !acceptedPrompt.includes(missingTarget.text)
-                || missingRuntimeFetches.length !== 0
-            ) {
-                fail('Missing-translation navigation depended on runtime JSON or lost its localized prompt.', {
-                    acceptedPrompt,
-                    missingDialogs,
-                    missingRuntimeFetches,
-                    missingTarget
-                });
+            if (missingDialogs.length !== 0 || new URL(page.url()).pathname !== '/zh/language/') {
+                fail('Language selection stays in settings without a return-page translation prompt.', { missingDialogs, missingTarget });
             }
-
             return {
-                blockedRuntimeRequests: [...new Set(blockedRuntimeRequests)],
-                initialState,
-                initialRuntimeFetches,
-                missingDialogs,
-                missingTranslationState,
-                missingRuntimeFetches,
-                openState,
-                switchedRuntimeFetches,
-                switchedState
+                initialState, switchedState, missingTranslationState, missingDialogs
             };
         }
     },
@@ -2042,9 +2520,40 @@ export const scenarios = [
         kind: 'single',
         title: 'SW Register Smoke (Home)',
         viewport: { width: 1440, height: 960 },
-        async run({ page, baseUrl }) {
+        async run({ page, context, baseUrl }) {
             await gotoAndWait(page, `${baseUrl}/`);
             await waitForServiceWorkerActive(page);
+            // The first page is warmed by the manager; HTML scanning must cache its CSS/JS too.
+            await pollUntil(() => page.evaluate(async () => {
+                if (!navigator.serviceWorker.controller) return false;
+                const keys = await caches.keys();
+                const navKey = keys.find(key => key.startsWith('nav-html-'));
+                if (!navKey || !keys.includes('asset-fingerprint')) return false;
+                if (!(await (await caches.open(navKey)).match(location.href))) return false;
+                const assetCache = await caches.open('asset-fingerprint');
+                const urls = [...document.querySelectorAll('link[rel="stylesheet"][href], script[src]')]
+                    .map(node => node.href || node.src);
+                return urls.length > 0 && (await Promise.all(urls.map(url => assetCache.match(url)))).every(Boolean);
+            }), { label: 'First navigation and its fingerprinted CSS/JS are cached' });
+            const cachedSw = await page.evaluate(async () => {
+                const keys = await caches.keys();
+                for (const key of keys) {
+                    const requests = await (await caches.open(key)).keys();
+                    if (requests.some(request => new URL(request.url).pathname === '/sw.js')) return key;
+                }
+                return '';
+            });
+            if (cachedSw) fail('sw.js must never enter Cache Storage.', { cachedSw });
+            const swResponse = await context.request.get(`${baseUrl}/sw.js`);
+            if (swResponse.headers()['cache-control'] !== 'no-cache, max-age=0, must-revalidate') {
+                fail('sw.js must revalidate on every request.', { headers: swResponse.headers() });
+            }
+            await context.setOffline(true);
+            const offlineResponse = await page.reload({ waitUntil: 'load' });
+            if (!offlineResponse?.ok() || !offlineResponse.fromServiceWorker()) {
+                fail('The first navigation must remain available offline through the service worker.');
+            }
+            await context.setOffline(false);
             const state = await page.evaluate(async () => {
                 const registration = await navigator.serviceWorker.getRegistration('/');
                 return {
@@ -2060,289 +2569,33 @@ export const scenarios = [
         }
     },
     {
-        id: 'sw-update-language-menu-static',
+        id: 'sw-update-language-page-static',
         kind: 'upgrade',
-        title: 'SW Upgrade Static Language Menu',
+        title: 'Language Links While Site Update Waits',
         viewport: { width: 1440, height: 960 },
         async run({ page, baseUrl, server, upgradePair }) {
             ensureTwoBuilds(upgradePair);
             server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/`);
+            await gotoAndWait(page, baseUrl + '/language/');
+            await page.waitForSelector('[data-language-settings] .is-current');
             await waitForServiceWorkerActive(page);
-
-            const beforeUpdate = await readLanguageMenuState(page);
-            if (
-                beforeUpdate.disabled !== false
-                || beforeUpdate.options.length === 0
-                || beforeUpdate.options.some((option) => option.tagName !== 'A' || !option.href)
-            ) {
-                fail('Pre-upgrade page did not expose a usable server-rendered language menu.', {
-                    beforeUpdate
-                });
+            const beforeUpdate = await readLanguageSettingsState(page);
+            if (beforeUpdate.options.length !== 3
+                || beforeUpdate.options.some((option) => option.tagName !== 'A' || !option.href || option.disabled)) {
+                fail('Language page must expose static language links before an update.', beforeUpdate);
             }
 
             server.setRoot(upgradePair.toDir);
             await forceServiceWorkerUpdate(page);
             await waitForUpdateReady(page);
-
-            const afterUpdateReady = await readLanguageMenuState(page);
-            if (
-                afterUpdateReady.disabled !== false
-                || afterUpdateReady.options.length !== beforeUpdate.options.length
-            ) {
-                fail('Language menu stopped being usable while a new service worker waited for activation.', {
-                    afterUpdateReady,
-                    beforeUpdate
-                });
+            const afterUpdateReady = await readLanguageSettingsState(page);
+            if (JSON.stringify(afterUpdateReady.options) !== JSON.stringify(beforeUpdate.options)) {
+                fail('A waiting worker must not replace or disable the language links.', { beforeUpdate, afterUpdateReady });
             }
-
-            await page.locator('[data-nav-utility-kind="language"] [data-nav-utility-trigger]').click();
-            await page.waitForSelector(
-                '[data-nav-utility-kind="language"].is-open [data-nav-utility-panel]:not([hidden])'
-            );
-            const openState = await readLanguageMenuState(page);
-            if (!openState.open || openState.panelHidden !== false) {
-                fail('Language menu did not open while a new service worker waited for activation.', {
-                    afterUpdateReady,
-                    beforeUpdate,
-                    openState
-                });
-            }
-
-            return {
-                afterUpdateReady,
-                beforeUpdate,
-                openState
-            };
-        }
-    },
-    {
-        id: 'sw-update-version-dropdown',
-        kind: 'upgrade',
-        title: 'SW Upgrade Version Dropdown',
-        viewport: WIDE_VIEWPORT,
-        dialogPolicy: 'dismiss',
-        async run({ page, baseUrl, dialogs, server, upgradePair }) {
-            ensureTwoBuilds(upgradePair);
-            server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/all/`);
-            const fragmentRootBefore = await readFragmentRoot(page);
-            await waitForServiceWorkerActive(page);
-
-            server.setRoot(upgradePair.toDir);
-            await gotoAndWait(page, `${baseUrl}/all/`);
-            await forceServiceWorkerUpdate(page);
-            await waitForUpdateReady(page);
-
-            const usableMenus = await countUsableVersionMenus(page);
-            if (usableMenus < 1) {
-                fail('Update-ready page had no usable version menu.', { usableMenus });
-            }
-
-            await markFirstUsableVersionMenu(page);
-            await clickMarkedVersionTrigger(page);
-            await waitForVersionDropdown(page);
-            await page.waitForTimeout(250);
-
-            if (dialogs.length > 0) {
-                fail('Version menu page should not fall back to dialog when a usable menu exists.', { dialogs });
-            }
-
-            const fragmentRootAfter = await readFragmentRoot(page);
-            return {
-                fragmentRootBefore,
-                fragmentRootAfter,
-                usableMenus,
-                dialogs: dialogs.slice()
-            };
-        }
-    },
-    {
-        id: 'sw-update-home-version-dropdown',
-        kind: 'upgrade',
-        title: 'SW Upgrade Home Version Dropdown',
-        viewport: { width: 1440, height: 960 },
-        dialogPolicy: 'dismiss',
-        async run({ page, baseUrl, dialogs, server, upgradePair }) {
-            ensureTwoBuilds(upgradePair);
-            server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/`);
-            const fragmentRootBefore = await readFragmentRoot(page);
-            await waitForServiceWorkerActive(page);
-
-            server.setRoot(upgradePair.toDir);
-            await gotoAndWait(page, `${baseUrl}/`);
-            await forceServiceWorkerUpdate(page);
-            await waitForUpdateReady(page);
-
-            const usableMenus = await countUsableVersionMenus(page);
-            if (usableMenus !== 1) {
-                fail('Home page should expose exactly one usable version menu.', { usableMenus });
-            }
-
-            await markFirstUsableVersionMenu(page);
-            await clickMarkedVersionTrigger(page);
-            await waitForVersionDropdown(page);
-
-            if (dialogs.length > 0) {
-                fail('Home page should use the version dropdown instead of fallback dialog.', { dialogs });
-            }
-
-            const dropdownText = await readVersionDropdownText(page);
-            const fragmentRootAfter = await readFragmentRoot(page);
-            return {
-                dropdownText,
-                fragmentRootBefore,
-                fragmentRootAfter,
-                usableMenus
-            };
-        }
-    },
-    {
-        id: 'sw-update-version-menu-single-target',
-        kind: 'single',
-        title: 'SW Update Version Menu Single-target',
-        viewport: WIDE_VIEWPORT,
-        dialogPolicy: 'dismiss',
-        async run({ page, baseUrl, dialogs }) {
-            await gotoAndWait(page, `${baseUrl}/intent/explore/`);
-            await page.waitForSelector('[data-site-version-menu]');
-            await waitForServiceWorkerActive(page);
-            const menus = await markUsableVersionMenus(page);
-            if (menus.length !== 1) {
-                fail('Expected exactly one usable version menu on the page.', { menus });
-            }
-
-            await page.evaluate(() => {
-                document.documentElement.setAttribute('data-site-update', 'ready');
-            });
-
-            const clickedMenus = [];
-            for (const menu of menus) {
-                const locator = page.locator(`[data-browser-regression-menu-id="${menu.id}"]`).first();
-                const trigger = locator.locator('[data-site-version-trigger]').first();
-                if (await trigger.count()) {
-                    await trigger.click();
-                } else {
-                    await locator.click();
-                }
-                await waitForVersionDropdown(page);
-
-                const dropdownText = await readVersionDropdownText(page);
-                if (!dropdownText) {
-                    fail('Update dropdown opened without usable text.', { menu, menus, dialogs });
-                }
-                if (dialogs.length > 0) {
-                    fail('Version menu matrix should not fall back to dialog.', { menu, menus, dialogs });
-                }
-
-                clickedMenus.push({
-                    id: menu.id,
-                    text: menu.text,
-                    dropdownText
-                });
-
-                await page.keyboard.press('Escape');
-                await page.waitForSelector('.site-nav-version-menu.is-open', { state: 'detached' }).catch(async () => {
-                    await page.waitForFunction(() => !document.querySelector('.site-nav-version-menu.is-open'));
-                });
-            }
-
-            return {
-                menuCount: menus.length,
-                clickedMenus,
-                dialogs: dialogs.slice()
-            };
-        }
-    },
-    {
-        id: 'sw-update-version-dropdown-zh-hk',
-        kind: 'upgrade',
-        title: 'SW Update Version Dropdown zh-hk -> zh-tw',
-        viewport: { width: 1440, height: 960 },
-        dialogPolicy: 'dismiss',
-        async run({ page, baseUrl, dialogs, server, upgradePair }) {
-            ensureTwoBuilds(upgradePair);
-            server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/`);
-            await waitForServiceWorkerActive(page);
-
-            server.setRoot(upgradePair.toDir);
-            await gotoAndWait(page, `${baseUrl}/`);
-            const expectedDropdownMessage = await readExpectedSiteVersionUpdateLabel(page, 'zh-hk');
-            await page.evaluate(() => {
-                document.documentElement.lang = 'zh-hk';
-            });
-            await forceServiceWorkerUpdate(page);
-            await waitForUpdateReady(page);
-
-            await markFirstUsableVersionMenu(page);
-            await clickMarkedVersionTrigger(page);
-            await waitForVersionDropdown(page);
-            await waitForVersionDropdownText(page, expectedDropdownMessage);
-
-            if (dialogs.length > 0) {
-                fail('zh-hk update flow should use the version dropdown instead of dialog.', { dialogs, expectedDropdownMessage });
-            }
-
-            const actualDropdownText = await readVersionDropdownText(page);
-            if (!actualDropdownText.includes(expectedDropdownMessage)) {
-                fail('zh-hk version dropdown did not resolve to the expected localized copy.', {
-                    actualDropdownText,
-                    dialogs,
-                    expectedDropdownMessage
-                });
-            }
-
-            return {
-                actualDropdownText,
-                expectedDropdownMessage
-            };
-        }
-    },
-    {
-        id: 'sw-update-version-dropdown-zh-mo',
-        kind: 'upgrade',
-        title: 'SW Update Version Dropdown zh-mo -> zh-tw',
-        viewport: { width: 1440, height: 960 },
-        dialogPolicy: 'dismiss',
-        async run({ page, baseUrl, dialogs, server, upgradePair }) {
-            ensureTwoBuilds(upgradePair);
-            server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/`);
-            await waitForServiceWorkerActive(page);
-
-            server.setRoot(upgradePair.toDir);
-            await gotoAndWait(page, `${baseUrl}/`);
-            const expectedDropdownMessage = await readExpectedSiteVersionUpdateLabel(page, 'zh-mo');
-            await page.evaluate(() => {
-                document.documentElement.lang = 'zh-mo';
-            });
-            await forceServiceWorkerUpdate(page);
-            await waitForUpdateReady(page);
-
-            await markFirstUsableVersionMenu(page);
-            await clickMarkedVersionTrigger(page);
-            await waitForVersionDropdown(page);
-            await waitForVersionDropdownText(page, expectedDropdownMessage);
-
-            if (dialogs.length > 0) {
-                fail('zh-mo update flow should use the version dropdown instead of dialog.', { dialogs, expectedDropdownMessage });
-            }
-
-            const actualDropdownText = await readVersionDropdownText(page);
-            if (!actualDropdownText.includes(expectedDropdownMessage)) {
-                fail('zh-mo version dropdown did not resolve to the expected localized copy.', {
-                    actualDropdownText,
-                    dialogs,
-                    expectedDropdownMessage
-                });
-            }
-
-            return {
-                actualDropdownText,
-                expectedDropdownMessage
-            };
+            await page.locator('[data-language-choice="zh"]').click();
+            await page.waitForURL((url) => url.pathname === '/zh/language/');
+            await page.waitForSelector('[data-language-choice="zh"][aria-current="page"]');
+            return { beforeUpdate, afterUpdateReady, target: page.url() };
         }
     }
 ];
