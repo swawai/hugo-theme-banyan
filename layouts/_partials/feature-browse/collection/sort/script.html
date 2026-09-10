@@ -1,5 +1,5 @@
 {{ $buildParams := partialCached "feature-browse/js-build-params.html" site "browse-js-build-params" }}
-{{ $sortJs := resources.Get "js/sortable-grids.js" | js.Build (dict "params" $buildParams) }}
+{{ $sortJs := resources.Get "js/browse/collection-sort.js" | js.Build (dict "params" $buildParams) }}
 {{ if not hugo.IsServer }}{{ $sortJs = $sortJs | minify }}{{ end }}
 {{ $sortJs = $sortJs | fingerprint }}
 <script src="{{ $sortJs.RelPermalink }}" integrity="{{ $sortJs.Data.Integrity }}" defer></script>

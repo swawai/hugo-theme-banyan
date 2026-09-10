@@ -247,20 +247,18 @@ assets/css/
 
 实际从 9 个发布 CSS 收敛为 6 个：page、prose、首页公共样式和三个首页场景。单页最多加载三个，其中普通列表页只加载 page，正文页加载 page＋prose，首页加载 page＋home brand＋对应场景。
 
-### DOM 类名先保持现有契约
+### DOM 类名与行为标记
 
-文件名和 HTML 类名无需逐字相同。`collection-grid.css` 中保留 `.grid-list`，依然容易理解。
+文件名和 HTML 类名无需逐字相同。`.collection-list` 表达列表组件，CSS Grid 只是其实现方式。
 
-这些类还承担真实行为连接：
+呈现与行为已经分开：
 
-- `path-navigation-ui.js` 创建 `.collection-item-*`、`.grid-list`、`.path-column`。
-- `sortable-grids.js` 通过 `.cell-title .collection-item-link` 找条目。
-- `canvas-position.js` 通过 `.collection-item-link` 判断列表进入动作。
-- 更新 UI 找 `.collection-item-title`，主题脚本设置 `.is-current` 与 `data-theme`。
+- `browse/path-render.js` 创建 `.collection-item-*`、`.collection-list`、`.path-column` 等呈现类。
+- `browse/collection-sort.js` 读取 `data-collection-cell`、`data-collection-header` 和 `data-collection-entry`。
+- `browse/canvas-position.js` 通过 `data-collection-entry` 判断列表进入动作。
+- 更新页通过 `data-site-update-action-label` 找操作文字；主题脚本用 `.is-current` 与 `data-theme` 投影当前状态。
 
-因此不在 CSS 整理中附带批量更名 `.article`／`.grid-*`／`.collection-*`，也不全量迁移到 `data-*`。若以后决定变更这层接口，应同时修改 SSR、客户端重绘和行为测试，作为单独的语义迁移。
-
-`.article-meta` 是一个有限例外：检索确认只有样式与 `feature-document/meta.html` 使用，没有 JS 行为查询；它可以与文件一起原子改为 `.document-meta`，不会牵动列表协议。
+视觉类可以随组件样式演进，行为属性则作为 SSR、客户端重绘和测试共用的接口。变更行为属性时必须原子更新这三处，不再依赖 `cell-*` 或 `grid-*` 类名前缀猜测语义。正文元信息也已统一为 `.document-meta`，没有保留 `.article-meta` 别名。
 
 ## 不应随本轮重做的部分
 
@@ -317,10 +315,10 @@ assets/css/
 | --- | --- | --- |
 | `preferences/language-page.js` | 语言页 | 点击已由 Hugo 输出的译文链接、替换当前设置页历史记录 |
 | `preferences/language-return.js` | 全站 main | 返回原页面时消费一次语言选择，兼容 BFCache |
-| `back-links.js` | 语言／外观／我的／检查更新页 | 仅这些页面包含返回控件；语言和更新页直接导入，另两页直接装配 |
+| `preferences/back-links.js` | 语言／外观／我的页面 | 仅这些页面包含返回控件；语言页直接导入，另两页直接装配 |
 | `preferences/theme.js` 与主题首屏初始化 | 全站 | 首屏配色、跟随系统、跨标签页与 BFCache 同步都有跨页需求；小型控件处理不再另建状态协议 |
-| `sw-manager.enable.update.js` | 启用 SW 的页面 | 注册、后台检查、waiting／激活和缓存生命周期 |
-| `updates/page.js`，含 `updates/ui.js` | 检查更新页 | 版本、按钮与本地化状态文案只用于此页 |
+| `pwa/update-engine.js` | 启用 SW 的页面 | 注册、后台检查、waiting／激活和缓存生命周期 |
+| `updates/page.js` | 检查更新页 | 版本、按钮与本地化状态文案只用于此页 |
 | `updates-panel.css` 与返回链接间距 | 公共 page.css | 样式很小，保持稳定公共缓存，不为几条规则新增请求 |
 
 语言列表的名称、图标、href 与选中状态只由 Hugo 输出一次；删除全站重复的 `data-language-context`。返回原内容使用页面已有的标准 hreflang 链接，并核对发布域名；在预览服务器上使用同一路径的本地地址。一次性会话记录 `banyan:language-return` 保持语言代码字符串，供缓存中的旧页面直接读取；可选的 `{code, name}` 单独保存在 `banyan:language-return-label`，只在代码匹配时提供显示名称，两项均在返回或普通导航时消费。记录不含阅读 URL。旧 `return` 参数不再有清理分支，只作为未知参数被忽略。

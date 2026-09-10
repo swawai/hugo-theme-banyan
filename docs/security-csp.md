@@ -35,7 +35,7 @@ Banyan 当前的安全收敛主路径是：
 1. `hugo --gc --cleanDestinationDir --minify`
 2. `themes/banyan/scripts/build/patch-csp.mjs`
 3. `themes/banyan/scripts/build/emit-speculation-rules-headers.mjs`
-4. `themes/banyan/scripts/build/sync-edgeone.mjs`
+4. `themes/banyan/scripts/adapters/edgeone/sync-config.mjs`
 
 也就是说：
 
@@ -50,16 +50,20 @@ Banyan 当前的安全收敛主路径是：
 
 ## 当前剩余的 executable inline script
 
-当前故意保留、并纳入自动 hash 的 executable inline script 只有 3 类：
+当前故意保留、并纳入自动 hash 的 executable inline script 只有 5 个：
 
 - `themes/banyan/assets/js/inline/theme-boot.js`
 - `themes/banyan/assets/js/inline/breadcrumb-pending.js`
 - `themes/banyan/assets/js/inline/breadcrumb-skeleton.js`
+- `themes/banyan/assets/js/inline/root-navigation.js`
+- `themes/banyan/assets/js/inline/canvas-position.js`
 
 保留原因：
 
 - `theme-boot` 用于首帧主题同步，避免明显 theme flash
 - `breadcrumb-pending` / `breadcrumb-skeleton` 用于 wide breadcrumb 首帧占位与过渡稳定
+- `root-navigation` 用于首帧根入口选中状态
+- `canvas-position` 用于导航前保存与首帧恢复横向画幅
 
 原则是：
 
@@ -207,8 +211,20 @@ bun run check:browser:security
 
 如果你想单独验证 secondary speculation header 栈，可运行：
 
-```bash
-bun run build:browser:temp -- speculation-header
+先建立 `temp_workspace/speculation-header.toml`：
+
+```toml
+[params.speculation_rules]
+mode = "header"
+```
+
+然后执行：
+
+```powershell
+node themes/banyan/scripts/build/run-hugo.mjs --gc --cleanDestinationDir --minify --config hugo.toml,temp_workspace/speculation-header.toml --destination temp_workspace/public/speculation-header
+node themes/banyan/scripts/build/patch-csp.mjs temp_workspace/public/speculation-header
+node themes/banyan/scripts/build/emit-speculation-rules-headers.mjs temp_workspace/public/speculation-header
+$env:BANYAN_BROWSER_BUILD_DIR = "temp_workspace/public/speculation-header"
 bun run check:browser:speculation
 ```
 
@@ -225,8 +241,8 @@ bun run check:browser:speculation
 
 当前已覆盖的关键页面：
 
-- 首页：验证 `theme-boot`
-- wide breadcrumb 路径页：验证 `breadcrumb-pending` 与 `breadcrumb-skeleton`
+- 首页：验证 `theme-boot`、`root-navigation` 与 `canvas-position`
+- wide breadcrumb 路径页：验证 `breadcrumb-pending`、`breadcrumb-skeleton` 与全站首帧脚本
 - `all/` 与典型 breadcrumb 路径页：验证 speculation header 栈
 
 如果后续新增 executable inline script，除了更新 `assets/js/inline/` 之外，也应判断：
@@ -260,7 +276,7 @@ bun run check:browser:speculation
 结果是：
 
 - 关键页面确实拿到了 `Content-Security-Policy`
-- 当前 3 类 executable inline script 的 hash 与最终 HTML 一致
+- 当前 5 个 executable inline script 的 hash 与最终 HTML 一致
 - speculation header 页面确实拿到了 `Speculation-Rules`
 - 浏览器未记录策略违规事件
 

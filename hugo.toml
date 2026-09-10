@@ -122,7 +122,7 @@ descendants = "prefetch_moderate"
 post = "prefetch_moderate"
 
 [params.build]
-# Site-wide build version defaults used by SW, fragments, and runtime manifests.
+# Site-wide build version defaults used by the Service Worker and update page.
 version_prefix = "v"
 timestamp_layout = "20060102150405"
 
@@ -135,9 +135,6 @@ mode = "off"
 update_check_interval = 15
 update_visibility_throttle = 3
 offline_notice_path = "offline/"
-
-[params.runtime_i18n]
-fallbacks = { "zh-hk" = "zh-tw", "zh-mo" = "zh-tw" }
 
 [frontmatter]
 lastmod = ["lastmod", ":git", ":default"]

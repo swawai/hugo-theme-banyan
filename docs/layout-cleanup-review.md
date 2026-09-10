@@ -94,7 +94,7 @@ README、taxonomy、列表、slots、发布迁移及导航计划已改为当前�
 
 - 集合页模板 `article-list` 改为 `page-collection`；页面包装移到 `feature-browse/collection/render-page.html`。主题与根站点的三语言声明、cascade、布局识别、测试及文档同步迁移，没有旧模板别名。
 - 原 `article-list.css` 只负责正文 `ul/ol/li`，改为 `prose-lists.css`。区域开关 `slot_sources`／`slotSources` 改为 `slot_flags`／`slotFlags`；三个结构路径生成器删除 `-auto` 后缀；`nav-state.js` 改为 `navigation-state.js`。
-- 可见路径列使用 `path-navigation-ui.js`、`path-navigation.css`、`renderPathColumns()`、`renderPathColumn()` 和 `.path-columns`／`.path-column`。SSR、首帧占位、异步重绘、排序及测试同步更名，主内容宽度改用 `--main-column-inline`。
+- 可见路径列使用 `assets/js/browse/path-render.js`、`path-navigation.css`、`renderPathColumns()`、`renderPathColumn()` 和 `.path-columns`／`.path-column`。SSR、首帧占位、同步呈现、排序及测试使用同一命名，主内容宽度使用 `--main-column-inline`。
 - 行选中状态只保留 `current`。确认 `highlighted`／`selected` 没有生成端后，删除模板与浏览器中的兼容读取和优先级分支；寻找当前行的 `selected_href` 等输入参数仍有独立职责。
 - 更新模板与文案读取集中到 `feature-updates/`，浏览器 UI 位于 `assets/js/updates/`，文案 partial 直接返回标签字典。Service Worker 只调整 UI 模块导入位置，缓存与激活逻辑不变。更新入口测试名称删除旧 `site-entry` 指代。
 - 保留结构路径与 SEO BreadcrumbList 的 `breadcrumb` 名称、公开 `slots.breadcrumb`、`root_nav`、`list` 和 `from / sort / sorts`；`site_update` 继续表达站点更新功能。详细维护约定见 [UI 命名与职责](ui-naming.md)。

@@ -81,17 +81,50 @@ function build(view) {
     const patch = spawnSync(process.execPath, ['themes/banyan/scripts/build/patch-csp.mjs', rel(output)],
         { cwd: root, encoding: 'utf8', windowsHide: true });
     assert.equal(patch.status, 0, patch.stdout + patch.stderr);
+    assert.equal(fs.existsSync(path.join(output, '__fragments')), false, 'collection rows stay in HTML instead of duplicate fragment output');
     return output;
 }
+
+const payloadCache = new Map();
+
+function decodeHtmlAttribute(value) {
+    return value
+        .replace(/&quot;|&#34;/g, '"')
+        .replace(/&#39;/g, '\'')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
+}
+
+function readInlineSources(output, lang, logical) {
+    const languageDir = lang === 'en' ? '' : lang;
+    const logicalParts = decodeURI(logical).split('/').filter(Boolean);
+    const htmlPath = path.join(output, languageDir, ...logicalParts, 'index.html');
+    const html = fs.readFileSync(htmlPath, 'utf8');
+    const match = html.match(/\bdata-entry-breadcrumb-sources=(?:"([^"]*)"|'([^']*)')/i);
+    assert(match, `${logical} publishes data-entry-breadcrumb-sources`);
+    const sources = JSON.parse(decodeHtmlAttribute(match[1] ?? match[2] ?? ''));
+    assert(Array.isArray(sources), `${logical} breadcrumb sources are an array`);
+    return sources;
+}
+
 function payload(output, lang, logical) {
-    const versions = fs.readdirSync(path.join(output, '__fragments'));
-    assert.equal(versions.length, 1);
-    const data = JSON.parse(fs.readFileSync(path.join(output, '__fragments', versions[0], lang, logical, '_items.json'), 'utf8'));
+    const cacheKey = `${output}|${lang}|${logical}`;
+    if (payloadCache.has(cacheKey)) return payloadCache.get(cacheKey);
+
+    const logicalPath = `/${logical.replace(/^\/+|\/+$/g, '')}/`;
+    const source = readInlineSources(output, lang, logical)
+        .find((entry) => entry?.logical_path === logicalPath);
+    assert(source, `${logical} publishes its collection source inline`);
+    const data = source.current_collection_items;
+    assert(data && typeof data === 'object', `${logical} publishes its collection rows inline`);
     const rows = [];
     for (let offset = 0; offset < data.rv.length; offset += data.f.length) {
         rows.push({ ...data.c, ...Object.fromEntries(data.f.map((key, i) => [key, data.rv[offset + i]])) });
     }
-    return { ...data, rows };
+    const result = { ...data, rows };
+    payloadCache.set(cacheKey, result);
+    return result;
 }
 const builds = {};
 const directoryMembers = new Map();

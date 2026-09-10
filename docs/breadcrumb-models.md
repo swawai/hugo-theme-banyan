@@ -30,11 +30,11 @@
 项目自身的 `href` 与提供兄弟条目的 `collection_href` 含义不同。例如“WSL”项目指向 `/d/wsl/`，其兄弟列表来自 `/d/`。`collection_label` 取该所属页面的名称，用于没有排序 provider 的静态列头。
 每个路径项目的 `column_items` 保存该列要显示的兄弟条目；没有兄弟条目时，渲染器只显示项目自身。它是普通列数据，不含展开、隐藏或下拉状态。
 
-可见路径列由 `path-navigation-ui.js`／`path-navigation.css` 实现，使用 `renderPathColumns()` 与 `renderPathColumn()`；结构模型和 SEO BreadcrumbList 仍属于 breadcrumb。行选中状态统一使用 `current`，不再接受 `highlighted` 或 `selected` 别名。完整命名约定见 [UI 命名与职责](ui-naming.md)。
+可见路径列由 `assets/js/browse/path-render.js`／`path-navigation.css` 实现，使用 `renderPathColumns()` 与 `renderPathColumn()`；结构模型和 SEO BreadcrumbList 仍属于 breadcrumb。行选中状态统一使用 `current`，不再接受 `highlighted` 或 `selected` 别名。完整命名约定见 [UI 命名与职责](ui-naming.md)。
 
 `feature-browse/navigation/path/section-items.html` 和 `feature-browse/navigation/path/taxonomy-items.html` 分别查找真实父目录与分类父级，通过 `feature-browse/navigation/path/items-from-rows.html` 把条目转换成统一的 `text`、`href`、`current`、`title`、`kind`、`icon` 字段。调用方已经提供统一行结构，不再另传字段名称。
 
-`feature-browse/navigation/source/page-model.html` 将这些层级映射到集合 provider 与 `_items.json`。所有列表页统一使用 collection 来源，排序字段由 `list` 声明决定。主列表、路径列与来源 JSON 共用 `feature-browse/collection/rows.html`。若浏览器来源已携带 `collection_items`，便省略可由它重建的 `column_items`，避免重复发布兄弟条目。
+`feature-browse/navigation/source/page-model.html` 将这些层级映射到集合 provider 与当前页面内嵌的 source model。所有列表页统一使用 collection 来源，排序字段由 `list` 声明决定。主列表与路径列 source 共用 `feature-browse/collection/rows.html`。浏览器 source 携带当前集合和祖先集合所需的紧凑 `collection_items`，不再发布或请求 `_items.json`。
 
 首页、普通页面和 taxonomy 的模型生成器负责不同的路径来源，最终共用一个列渲染器。`feature-browse/navigation/path/model.html` 直接按 Hugo 页面种类调用相应生成器；模型不返回 `variant` 或 `strategy` 标签，也没有额外的字符串分发层。
 
@@ -49,6 +49,6 @@
 
 文档负责整页横向滚动；入口和路径列固定为 `15rem`，正文取视口可用宽度与 `88ch` 的较小值。表格与代码在正文内局部滚动。DOM 顺序与视觉顺序一致。
 
-`canvas-position.js` 不再主动把新页面的主列移入视野。沿列表在同标签页打开页面时，只向下一文档传递来源、目标与横向视觉坐标；目标页读取后清除记录，来源与目标匹配的新访问才使用，已有列保持位置，新列向右扩展。内联入口位于头部样式之后，在解析到 `#main` 时通过临时 `scroll-margin` 和一次原生 `scrollIntoView` 还原坐标，随后清除临时样式。浏览器自行处理桌面文档滚动与手机视觉视口平移，不另建滚动容器或设备模式。主列宽度与前置骨架须提前确定；已有滚动位置、锚点或加载期间的输入优先。直接访问从画幅起点开始，历史返回、前进和刷新使用原生恢复，排序与异步重绘不重置画幅。
+`browse/canvas-position.js` 实现画幅状态，`inline/canvas-position.js` 负责首帧装配。它们不再主动把新页面的主列移入视野。沿列表在同标签页打开页面时，只向下一文档传递来源、目标与横向视觉坐标；目标页读取后清除记录，来源与目标匹配的新访问才使用，已有列保持位置，新列向右扩展。内联入口位于头部样式之后，在解析到 `#main` 时通过临时 `scroll-margin` 和一次原生 `scrollIntoView` 还原坐标，随后清除临时样式。浏览器自行处理桌面文档滚动与手机视觉视口平移，不另建滚动容器或设备模式。主列宽度与前置骨架须提前确定；已有滚动位置、锚点或加载期间的输入优先。直接访问从画幅起点开始，历史返回、前进和刷新使用原生恢复，同步初始化与列内局部排序重绘不重置画幅。
 
 修改路径排序协议参见 [navigation-state.md](navigation-state.md)。列表与产品声明见 [collection-lists.md](collection-lists.md)。主题状态由外观选择页切换，具体语义颜色集中在 `theme.css`；黑白灰收敛属于后续 6C。历史实施过程见 [入口展平记录](navigation-flattening-plan.md)。

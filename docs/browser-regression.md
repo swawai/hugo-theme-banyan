@@ -114,7 +114,6 @@ Service Worker 的异步查询使用 `pollUntil(() => page.evaluate(async ...))`
 - `breadcrumb-products-wide-stability`
 - `breadcrumb-tags-wide-stability`
 - `sw-home-register`
-- `sw-update-version-menu-single-target`
 - `security-csp-enforce-home`
 - `security-csp-enforce-breadcrumb-wide`
 - `speculation-rules-header-all`
@@ -125,10 +124,11 @@ Service Worker 的异步查询使用 `pollUntil(() => page.evaluate(async ...))`
 
 需要 `temp_workspace/public/` 下至少有两份构建产物：
 
-- `sw-update-version-dropdown`
-- `sw-update-home-version-dropdown`
-- `sw-update-version-dropdown-zh-hk`
-- `sw-update-version-dropdown-zh-mo`
+- `sw-update-entry-home`
+- `sw-update-entry-collection`
+- `sw-update-hidden-control-stays-quiet`
+- `sw-update-check`
+- `sw-update-language-page-static`
 
 upgrade 场景会：
 
@@ -168,7 +168,7 @@ bun run check:browser:public
 
 ```powershell
 bun run build:browser:temp -- sw-upgrade-before
-# 做出你的 SW / fragment / update-flow 改动
+# 做出你的 SW / inline-navigation-data / update-flow 改动
 bun run build:browser:temp -- sw-upgrade-after
 bun run check:browser:upgrade
 ```
@@ -280,11 +280,13 @@ Remove-Item Env:BANYAN_BROWSER_UPGRADE_TO_DIR
 - 首页
 - wide breadcrumb 路径页
 
-原因不是它们“最重要”，而是它们已经覆盖了当前保留的 3 类 executable inline script：
+原因不是它们“最重要”，而是它们已经覆盖了当前保留的 5 个 executable inline script：
 
 - theme boot
 - breadcrumb pending
 - breadcrumb skeleton
+- root navigation
+- canvas position
 
 更完整的 CSP 主线说明见 [security-csp.md](security-csp.md)。
 

@@ -4,16 +4,16 @@
 
 | 实体 | 名称与位置 |
 | --- | --- |
-| 第一列根入口 | `root-navigation.js`、`feature-browse/navigation/root/render.html`；由真实页面的 `root_nav` 声明产生 |
-| 可见路径列 | `path-navigation-ui.js`、`path-navigation.css`；容器 `.path-columns`、单列 `.path-column` |
+| 第一列根入口 | `browse/root-navigation.js`、`feature-browse/navigation/root/render.html`；由真实页面的 `root_nav` 声明产生 |
+| 可见路径列 | `browse/path-render.js`、`path-navigation.css`；容器 `.path-columns`、单列 `.path-column` |
 | 集合页面 | `layouts/page-collection.html`、`feature-browse/collection/render-page.html`；列表内容由 `feature-browse/collection/render.html` 渲染 |
 | 集合条目 | `collection-item.css` 负责条目和状态，`collection-grid.css` 负责 `.collection-list` 公共网格，`collection-table.css` 负责 `--directory`／`--all`／`--products` 列定义 |
 | 文档元信息 | `document-meta.css`；负责 `.document-meta` 内的日期与分类信息，不属于正文组件 |
 | 正文中的有序／无序列表 | `prose-lists.css`；只作用于正文 `ul/ol/li` |
 | 区域开关 | `slot_flags`、`slotFlags`；值是布尔值，不再是 fragment 来源 |
-| 浏览来源与排序状态 | `navigation-state.js`、`navigation-state.contract.js` |
-| 语言和外观偏好 | `preferences/language-page.js` 仅用于选择页；`language-return.js` 与 `theme.js` 负责跨页面行为；静态选项和返回链接在模板输出 |
-| 检查与应用更新 | `updates/page.js` 连接页面与更新引擎，`updates/ui.js` 渲染状态；模板为 `feature-updates/panel.html`、`feature-updates/labels.html` |
+| 浏览来源与排序状态 | `browse/navigation-state.js`、`browse/navigation-state.contract.js` |
+| 语言和外观偏好 | `preferences/language-page.js` 仅用于选择页；`preferences/language-return.js` 与 `preferences/theme.js` 负责跨页面行为；静态选项和返回链接在模板输出 |
+| 检查与应用更新 | `updates/page.js` 连接页面、更新引擎与状态呈现；模板为 `feature-updates/panel.html`、`feature-updates/labels.html` |
 
 ## 内容声明
 
@@ -28,9 +28,9 @@ list: name
 
 ## 路径数据与显示
 
-服务端的 `feature-browse/navigation/path/` 与浏览器端的 `breadcrumb-*.js` 共同处理结构路径、浏览来源及恢复。`system-metadata/seo/breadcrumb.html` 输出 SEO 的 BreadcrumbList；`slots.breadcrumb` 和网址 `from / sort / sorts` 保持既有约定。
+服务端的 `feature-browse/navigation/path/` 与浏览器端的 `browse/path-entry.js`、`browse/path-render.js`、`browse/breadcrumb-*.js` 共同处理结构路径、浏览来源及恢复。`system-metadata/seo/breadcrumb.html` 输出 SEO 的 BreadcrumbList；`slots.breadcrumb` 和网址 `from / sort / sorts` 保持既有约定。
 
-可见路径列通过 `renderPathColumns()` 装配，通过 `renderPathColumn()` 重绘单列。`buildPathColumnItems()` 及其同步版本生成行数据。路径模型中 `column_items` 表示该列的兄弟条目，行的选中状态只使用 `current`；不再读取 `highlighted`、`selected` 别名。输入参数 `selected_href` 等仍明确表示用哪个地址寻找当前行。
+可见路径列通过 `renderPathColumns()` 装配，通过 `renderPathColumn()` 重绘单列。条目模块从页面边界已解码的 payload 生成行数据。路径模型中 `column_items` 表示该列的兄弟条目，行的选中状态只使用 `current`；不再读取 `highlighted`、`selected` 别名。输入参数 `selected_href` 等仍明确表示用哪个地址寻找当前行。
 
 首页、普通页面、分类法分别使用 `model-home`、`model-page`、`model-taxonomy` 生成结构路径；`model.html` 保留按页面类型选择模型的显式分支，不再使用没有对应手动模式的 `-auto` 后缀。
 
@@ -44,7 +44,7 @@ list: name
 
 ## 更新模块
 
-`feature-updates/labels.html` 返回检查更新页提供的文案，`feature-updates/panel.html` 负责 HTML，`assets/css/updates-panel.css` 负责呈现，`assets/js/updates/ui.js` 负责状态与操作绑定。该小型 CSS 源码仍由公共 `page.css` 装配；有实际运行逻辑的 `updates/page.js` 则只由 `page-update-check.html` 加载。页面通过已有 `window.BanyanServiceWorkerManagerRuntime.updates` 的 `subscribe(listener)` 接收 `{status, latencyMs}`，通过 `check()` 检查或应用更新。引擎不导入 UI、查询控件或加载文案；未启用 SW 时页面显示不可用。`site_update` 文案声明和 `data-site-update-*` 操作接口表示站点更新功能，与旧 `/site/` 页面无关。
+`feature-updates/labels.html` 返回检查更新页提供的文案，`feature-updates/panel.html` 负责 HTML，`assets/css/updates-panel.css` 负责呈现，`assets/js/updates/page.js` 负责读取本页静态文案并绑定状态与操作。该小型 CSS 源码仍由公共 `page.css` 装配；页面脚本只由 `page-update-check.html` 加载。页面通过已有 `window.BanyanServiceWorkerManagerRuntime.updates` 的 `subscribe(listener)` 接收 `{status, latencyMs}`，通过 `check()` 检查或应用更新。引擎不导入页面 UI、查询控件或加载文案；未启用 SW 时页面显示不可用。`site_update` 文案声明和 `data-site-update-*` 操作接口表示站点更新功能，与旧 `/site/` 页面无关。
 
 ## 样式类与行为标记
 

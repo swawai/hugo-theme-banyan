@@ -90,7 +90,7 @@ export const canvasScenarios = [
                 });
                 observer.observe(document, { childList: true, subtree: true });
             });
-            await page.route('**/js/*.js', async route => {
+            await page.route('**/js/**/*.js', async route => {
                 await new Promise(resolve => setTimeout(resolve, 500));
                 await route.continue();
             });
@@ -429,7 +429,7 @@ export const canvasScenarios = [
         title: 'Source Columns Reserve Stable Geometry Before Slow Runtime Loads',
         async run({ page, baseUrl }) {
             await page.addInitScript(recordFirstMainLayoutScript());
-            await page.route('**/js/*.js', async route => {
+            await page.route('**/js/**/*.js', async route => {
                 await new Promise(resolve => setTimeout(resolve, 650));
                 await route.continue();
             });
@@ -441,7 +441,7 @@ export const canvasScenarios = [
                 await waitForBreadcrumbSettled(page);
                 await nextPaint(page);
                 const final = await readCanvas(page);
-                assert.ok(first.previewPending && first.runtimePending,
+                assert.ok(first.entryPending,
                     'The first parsed main must be captured before the source runtime settles.');
                 assert.equal(first.breadcrumbColumnCount, final.columns.length);
                 assert.ok(Math.abs(first.mainInlineStart - final.mainDocumentX) <= 1,

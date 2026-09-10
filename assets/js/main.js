@@ -1,4 +1,4 @@
-import { initRootNavigation } from './root-navigation.js';
+import { initRootNavigation } from './browse/root-navigation.js';
 import { initLanguageReturn } from './preferences/language-return.js';
 import { initThemePreference } from './preferences/theme.js';
 
@@ -14,12 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (typeof WeixinJSBridge == "object" && typeof WeixinJSBridge.invoke == "function") {
         handleFontSize();
     } else {
-        if (document.addEventListener) {
-            document.addEventListener("WeixinJSBridgeReady", handleFontSize, false);
-        } else if (document.attachEvent) {
-            document.attachEvent("WeixinJSBridgeReady", handleFontSize);
-            document.attachEvent("onWeixinJSBridgeReady", handleFontSize);
-        }
+        document.addEventListener("WeixinJSBridgeReady", handleFontSize, false);
     }
     function handleFontSize() {
         try {

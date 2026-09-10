@@ -43,7 +43,7 @@
 
 {{- if gt (len $configPayloadByEnv) 0 -}}
   {{- $isServer := hugo.IsServer -}}
-  {{- $runtimeTemplatePath := "js/prefetch.runtime.entry.js.tmpl" -}}
+  {{- $runtimeTemplatePath := "js/prefetch/runtime-entry.js.tmpl" -}}
   {{- $runtimeTemplate := resources.Get $runtimeTemplatePath -}}
   {{- if not $runtimeTemplate -}}
     {{- errorf "Build failed: missing resource %q." $runtimeTemplatePath -}}
@@ -57,7 +57,7 @@
     {{- $featureVariant := delimit $featureLetters "" -}}
     {{- if $hasGlobalGate }}{{- $featureVariant = printf "g%s" $featureVariant -}}{{- end -}}
     {{- $runtimeVariant := $featureVariant -}}
-    {{- $runtimeEntry := $runtimeTemplate | resources.ExecuteAsTemplate (printf "js/prefetch.runtime.%s.entry.js" $runtimeVariant) (dict
+    {{- $runtimeEntry := $runtimeTemplate | resources.ExecuteAsTemplate (printf "js/prefetch/runtime.%s.entry.js" $runtimeVariant) (dict
       "has_global_gate" $hasGlobalGate
       "has_link_module" $hasLinkModule
       "has_interaction_module" $hasInteractionModule

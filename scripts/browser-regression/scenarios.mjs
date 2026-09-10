@@ -30,7 +30,6 @@ const BREADCRUMB_TAGS_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_TAGS_PATH
     || '/zh/tags/tooling/devtools/';
 const BREADCRUMB_TAGS_COLLECTION_HREF = process.env.BANYAN_BROWSER_BREADCRUMB_TAGS_COLLECTION_HREF
     || '/zh/tags/tooling/';
-const RUNTIME_JSON_FETCH_PROBE_KEY = 'banyan:browser-regression:runtime-json-fetches';
 const BREADCRUMB_FIRST_FRAME_PATH = process.env.BANYAN_BROWSER_BREADCRUMB_FIRST_FRAME_PATH
     || '/p/loop-engineering-digital-life-origin/';
 const BREADCRUMB_FIRST_FRAME_FROM = process.env.BANYAN_BROWSER_BREADCRUMB_FIRST_FRAME_FROM
@@ -305,48 +304,6 @@ async function readLanguageSettingsState(page) {
                 }))
         };
     });
-}
-
-async function installRuntimeJsonFetchProbe(page) {
-    await page.addInitScript((storageKey) => {
-        const readRecordedFetches = () => {
-            try {
-                const value = JSON.parse(sessionStorage.getItem(storageKey) || '[]');
-                return Array.isArray(value) ? value : [];
-            } catch (error) {
-                return [];
-            }
-        };
-        const nativeFetch = window.fetch;
-        window.__banyanRuntimeJsonFetches = readRecordedFetches();
-        window.fetch = function instrumentedFetch(input, init) {
-            try {
-                const rawUrl = typeof input === 'string'
-                    ? input
-                    : input instanceof URL
-                        ? input.href
-                        : input?.url || '';
-                const url = new URL(rawUrl, window.location.href);
-                if (url.pathname.startsWith('/runtime/') && url.pathname.endsWith('.json')) {
-                    window.__banyanRuntimeJsonFetches.push(url.pathname);
-                    sessionStorage.setItem(storageKey, JSON.stringify(window.__banyanRuntimeJsonFetches));
-                }
-            } catch (error) { }
-
-            return nativeFetch.call(this, input, init);
-        };
-    }, RUNTIME_JSON_FETCH_PROBE_KEY);
-}
-
-async function readRuntimeJsonFetchProbe(page) {
-    return page.evaluate(() => [...(window.__banyanRuntimeJsonFetches || [])]);
-}
-
-async function resetRuntimeJsonFetchProbe(page) {
-    await page.evaluate((storageKey) => {
-        window.__banyanRuntimeJsonFetches = [];
-        sessionStorage.setItem(storageKey, '[]');
-    }, RUNTIME_JSON_FETCH_PROBE_KEY);
 }
 
 async function settleDesignAuditPage(page) {
@@ -846,7 +803,7 @@ export const scenarios = [
                 window.__banyanRootDomContentLoaded = false;
                 document.addEventListener('DOMContentLoaded', () => { window.__banyanRootDomContentLoaded = true; });
             });
-            await page.route('**/js/*.js', async (route) => {
+            await page.route('**/js/**/*.js', async (route) => {
                 await new Promise((resolve) => setTimeout(resolve, 1200));
                 await route.continue();
             });
@@ -878,7 +835,7 @@ export const scenarios = [
                 await assertSelection(expectedRoot);
                 firstPaintStates.push({ target, ...firstPaint });
             }
-            await page.unroute('**/js/*.js');
+            await page.unroute('**/js/**/*.js');
             return { directCases, firstPaintStates, sources: sourceCases.map((source) => source.logical_path) };
         }
     },
@@ -963,9 +920,9 @@ export const scenarios = [
             if (!EXPECTED_HOME_TITLE && !title) {
                 fail('Home page title was empty.', { title });
             }
-            const breadcrumbRuntimeCount = await page.locator('script[src*="breadcrumb-runtime"]').count();
+            const breadcrumbRuntimeCount = await page.locator('script[src*="browse/path-entry"]').count();
             if (breadcrumbRuntimeCount !== 0) {
-                fail('Home page should not load breadcrumb-runtime.', { breadcrumbRuntimeCount });
+                fail('Home page should not load the path entry bundle.', { breadcrumbRuntimeCount });
             }
             return {
                 breadcrumbRuntimeCount,
@@ -1238,7 +1195,7 @@ export const scenarios = [
             const delta = finalMainInlineStart === null
                 ? null
                 : Math.abs(finalMainInlineStart - firstLayout.mainInlineStart);
-            if (!firstLayout.previewPending || !firstLayout.runtimePending) {
+            if (!firstLayout.entryPending) {
                 fail('First-frame scenario did not capture a pending from-based breadcrumb.', {
                     firstLayout,
                     transitionUrl: transitionUrl.href
@@ -1709,6 +1666,9 @@ export const scenarios = [
                     '.slot-main [data-sortable="true"][data-sort-variant]'
                 );
                 return {
+                    columnHrefs: Array.from(document.querySelectorAll(
+                        '.path-columns [data-breadcrumb-collection-href]'
+                    )).map((item) => item.getAttribute('data-breadcrumb-collection-href') || ''),
                     columnRows: Array.from(
                         column?.querySelectorAll('.collection-item-title') || []
                     ).map((item) => item.textContent?.trim() || '').filter(Boolean),
@@ -1727,6 +1687,21 @@ export const scenarios = [
             if (before.columnRows.length < 2 || before.mainRows.length < 2) {
                 fail('Collection isolation scenario requires sortable column and main rows.', {
                     before,
+                    url: page.url(),
+                });
+            }
+            const activeCollectionHref = new URL(BREADCRUMB_COLLECTION_SORT_PATH, url).pathname;
+            const expectedAncestorHref = new URL('../', new URL(activeCollectionHref, url)).pathname;
+            const columnPaths = before.columnHrefs.map((href) => new URL(href, url).pathname);
+            if (
+                columnPaths.length !== 1
+                || columnPaths[0] !== expectedAncestorHref
+                || columnPaths.includes(activeCollectionHref)
+            ) {
+                fail('Collection path must render only its ancestor and keep the active collection in main.', {
+                    activeCollectionHref,
+                    before,
+                    expectedAncestorHref,
                     url: page.url(),
                 });
             }
@@ -2495,20 +2470,13 @@ export const scenarios = [
         }
     },
     {
-        id: 'language-page-runtime-independent',
+        id: 'language-page-static',
         kind: 'single',
-        title: 'Language Page Without Runtime JSON',
+        title: 'Language Page Uses Static Choices',
         serviceWorkers: 'block',
         dialogPolicy: 'accept',
         viewport: { width: 1440, height: 960 },
         async run({ page, baseUrl, dialogs }) {
-            await installRuntimeJsonFetchProbe(page);
-            const blockedRuntimeRequests = [];
-            await page.route('**/runtime/*.json', async (route) => {
-                blockedRuntimeRequests.push(new URL(route.request().url()).pathname);
-                await route.abort('failed');
-            });
-
             await gotoAndWait(page, baseUrl + '/language/');
             await page.waitForSelector('[data-language-settings] .is-current');
             const initialState = await readLanguageSettingsState(page);
@@ -2527,7 +2495,6 @@ export const scenarios = [
                 fail('Language navigation must mark the selected language.', { switchedState });
             }
 
-            await resetRuntimeJsonFetchProbe(page);
             await gotoAndWait(page, baseUrl + '/language/?return=' + encodeURIComponent('/prefetchdebug/'));
             await page.waitForSelector('[data-language-settings] .is-current');
             const missingTranslationState = await readLanguageSettingsState(page);
@@ -2544,8 +2511,6 @@ export const scenarios = [
                 fail('Language selection stays in settings without a return-page translation prompt.', { missingDialogs, missingTarget });
             }
             return {
-                blockedRuntimeRequests: [...new Set(blockedRuntimeRequests)],
-                runtimeFetches: await readRuntimeJsonFetchProbe(page),
                 initialState, switchedState, missingTranslationState, missingDialogs
             };
         }

@@ -40,8 +40,7 @@ try {
     var canSortCollectionBreadcrumb = html.dataset.canSortCollectionBreadcrumb === "true";
 
     if (segments.length > 0) {
-        html.setAttribute("data-entry-breadcrumb-preview-pending", "true");
-        html.setAttribute("data-entry-breadcrumb-runtime-pending", "true");
+        html.setAttribute("data-entry-breadcrumb-pending", "true");
         return;
     }
 

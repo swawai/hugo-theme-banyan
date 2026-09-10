@@ -1,7 +1,9 @@
 {{ $labels := partial "feature-updates/labels.html" (dict "ctx" .) }}
 {{ $buildVersion := partial "system-build/version.html" . }}
-<div class="updates-panel" data-site-update-panel>
-  <p>{{ $labels.current_version }}: <span data-site-update-version title="{{ $buildVersion }}">{{ partial "system-build/time-display.html" . | default $buildVersion }}</span></p>
+{{ $buildTime := partial "system-build/time-display.html" . | default $buildVersion }}
+{{ $buildTimeISO := partial "system-build/time-iso.html" . }}
+<div class="updates-panel" data-site-update-panel data-site-update-copy='{{ $labels | jsonify }}'>
+  <p>{{ $labels.current_version }}: <time data-site-update-version title="{{ $buildVersion }}" datetime="{{ $buildTimeISO }}">{{ $buildTime }}</time></p>
   <div class="collection-list">
     {{ if eq (lower (.Site.Params.service_worker.mode | default "off")) "enable" }}
     <span class="collection-cell collection-cell--name" data-collection-cell="name">

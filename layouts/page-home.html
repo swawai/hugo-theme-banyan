@@ -60,9 +60,9 @@
 {{ end }}
 
 {{ define "body-extra" }}
-{{- $homeBrandScript := resources.Get "js/home-brand.js" -}}
+{{- $homeBrandScript := resources.Get "js/pages/home.js" -}}
 {{- if not $homeBrandScript -}}
-{{- errorf "Build failed: missing resource %q." "assets/js/home-brand.js" -}}
+{{- errorf "Build failed: missing resource %q." "assets/js/pages/home.js" -}}
 {{- else -}}
 {{- if not hugo.IsServer -}}{{- $homeBrandScript = $homeBrandScript | minify -}}{{- end -}}
 {{- $homeBrandScript = $homeBrandScript | fingerprint -}}

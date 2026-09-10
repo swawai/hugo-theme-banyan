@@ -46,6 +46,8 @@ bun run build:browser:temp
 bun run check:browser:speculation:latest-temp
 ```
 
+正式配置为 `off` 时，这组命令验证“无 header、无 inline 规则、无孤儿规则文件”。要验证 header 路径，先用仅把 `params.speculation_rules.mode` 覆盖为 `header` 的临时配置构建；完整命令见 [security-csp.md](security-csp.md)。
+
 ## 3. SW 升级链路改动
 
 适用：
@@ -53,14 +55,14 @@ bun run check:browser:speculation:latest-temp
 - `sw.js`
 - 更新状态与手动检查
 - 激活失败恢复
-- fragment root 切换
+- 页面内嵌导航数据与更新页面数据交付
 - SW 版本升级行为
 
 命令：
 
 ```powershell
 bun run build:browser:temp -- sw-upgrade-before
-# 做改动
+# 做出 SW 或更新流程改动
 bun run build:browser:temp -- sw-upgrade-after
 bun run check:browser:upgrade
 ```

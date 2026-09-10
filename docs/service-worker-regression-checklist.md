@@ -27,21 +27,23 @@
 
 ## 当前关键文件
 
-- `themes/banyan/assets/js/sw.enable.js.tmpl`
-- `themes/banyan/assets/js/sw-manager.enable.runtime.js`
-- `themes/banyan/assets/js/sw-manager.enable.update.js`
-- `themes/banyan/assets/js/updates/ui.js`
+- `themes/banyan/assets/js/pwa/worker-enable.js.tmpl`
+- `themes/banyan/assets/js/pwa/manager-entry.js.tmpl`
+- `themes/banyan/assets/js/pwa/manager-runtime.js`
+- `themes/banyan/assets/js/pwa/update-engine.js`
+- `themes/banyan/assets/js/pwa/cache-names.js`
 - `themes/banyan/assets/js/updates/page.js`
-- `themes/banyan/assets/js/sw-manager.disable.js`
-- `themes/banyan/assets/js/runtime-manifest.js`
+- `themes/banyan/assets/js/pwa/worker-disable.js`
+- `themes/banyan/assets/js/pwa/manager-disable.js`
+- `themes/banyan/layouts/_partials/feature-updates/panel.html`
 - `themes/banyan/layouts/baseof.html`
 
 ## 当前实现的关键约定
 
 ### SW enable 模式
 
-- `sw.js` 由 `sw.enable.js.tmpl` 生成
-- 浏览器侧 manager 由 `sw-manager.enable.entry.js.tmpl` 打包进入 `sw-manager.enable.bundle.*.js`
+- `sw.js` 由 `pwa/worker-enable.js.tmpl` 生成
+- 浏览器侧 manager 由 `pwa/manager-entry.js.tmpl` 打包进入稳定的发布名 `sw-manager.enable.bundle.*.js`
 - registration 使用：
   - `scope: /`
   - `updateViaCache: 'none'`
@@ -49,7 +51,7 @@
 ### 更新提示界面
 
 - 检查更新子页面 `/updates/check/` 使用 `data-site-update-panel` 显示版本、检查按钮和状态；共用更新引擎
-- 只有检查页加载 `updates/page.js` 和 UI 文案逻辑。全站引擎通过 `BanyanServiceWorkerManagerRuntime.updates.subscribe()` 提供状态，页面用 `check()` 请求检查／应用；引擎不再导入 UI
+- 只有检查页加载 `updates/page.js`。全站引擎通过 `BanyanServiceWorkerManagerRuntime.updates.subscribe()` 提供状态，页面用 `check()` 请求检查／应用；引擎不导入 UI
 - 普通页面没有 `html[data-site-update]` 镜像状态；测试通过 `registration.waiting` 判断待更新，检查页通过 `data-site-update-state` 验证显示
 - 更新目录 `/updates/` 使用名称列表显示两个真实子项，第一列没有 `data-site-update-link` 或专用更新标记
 - 第一列通过普通更新入口进入名称列表，再进入检查更新页；点击入口不会检查或应用更新
@@ -60,11 +62,12 @@
   - 检查页按钮检查更新，ready 时显示“立即更新”并负责应用更新；目录和路径列不承担更新动作
   - 已有 waiting worker 时用户主动刷新页面，继续沿用现有应用更新逻辑
 
-### 语言文案
+### 页面文案与版本
 
-- 版本界面文案的事实源为 `content/updates/check/index*.md` 的 `site_update.labels`，由同一 partial 提供给静态界面和 runtime JSON；不再定义弹窗文案
-- 语言 fallback 依赖 `runtime/asset-manifest.json` 内的 `i18nFallbacks`
-- 只有更新页 UI 使用 `runtime-manifest.js` 获取版本与文案；语言选项和返回独立使用页面内静态译文关系，不依赖 runtime JSON
+- 版本界面文案的事实源为 `content/updates/check/index*.md` 的 `site_update.labels`，由 `feature-updates/panel.html` 同时输出初始界面和 `data-site-update-copy`
+- 构建版本、显示时间和 ISO 时间由 Hugo 直接写入检查页的 `time[data-site-update-version]`
+- `updates/page.js` 同步读取本页数据，只响应更新引擎状态；不请求 runtime manifest 或语言 JSON
+- 每种 Hugo 语言由自己的检查页内容负责。没有对应静态页面的语言代码，不在浏览器端伪造 fallback
 
 ### 激活失败恢复
 
@@ -138,8 +141,8 @@ bun run build:browser:temp -- sw-upgrade-after
 预期：
 
 - 存在当前 build 对应的 `nav-html-*`
-- 存在当前 build 对应的 `asset-versioned-*`
 - 存在 `asset-fingerprint`
+- 仅当站点自定义了非指纹 versioned asset 路由时，才会建立 `asset-versioned-*`
 - 首次导航会预缓存当前 HTML 引用的样式与脚本资源
 - 导航使用 cache-first + versioned，带 hash 资源使用 cache-first + fingerprinted；`sw.js` 不进入缓存
 - `/sw.js` 响应为 `Cache-Control: no-cache, max-age=0, must-revalidate`
@@ -165,7 +168,7 @@ bun run build:browser:temp -- sw-upgrade-after
 
 - 新 worker 被发现
 - `registration.waiting` 最终出现
-- 页面进入 `data-site-update="ready"`
+- 检查页的 `[data-site-update-panel]` 进入 `data-site-update-state="ready"`
 
 失败信号：
 
@@ -235,7 +238,7 @@ bun run build:browser:temp -- sw-upgrade-after
 - 浏览器触发 `controllerchange`
 - 页面刷新一次
 - 刷新后使用的是新 active worker
-- `data-site-update="ready"` 被清掉
+- 检查页的 `data-site-update-state` 不再是 `ready`
 
 失败信号：
 
@@ -273,7 +276,7 @@ bun run build:browser:temp -- sw-upgrade-after
 
 ## 语言与文案 checks
 
-### 8. runtime i18n 文案加载
+### 8. 检查页静态文案
 
 建议语言：
 
@@ -288,38 +291,28 @@ bun run build:browser:temp -- sw-upgrade-after
 
 预期：
 
-- 状态和按钮文案来自对应语言的 runtime i18n
-- 版本界面的字段来自检查页 `site_update.labels`
+- 状态和按钮文案来自当前语言检查页的 `site_update.labels`
+- `time[data-site-update-version]` 的 `title`、`datetime` 和文本分别是构建版本、ISO 时间和显示时间
+- 页面不请求 `/runtime/*.json` 或 `/__fragments/*`
 
 失败信号：
 
-- 某语言退回英文但其实有本地化资源
+- 某个已发布语言显示了另一语言的文案
 - 版本界面没有读到检查页文案
-
-### 9. fallback 语言链
-
-重点语言：
-
-- `zh-hk`
-- `zh-mo`
-
-操作：
-
-1. 让页面语言环境命中 `zh-hk` 或 `zh-mo`
-2. 在检查页触发更新状态变化
-
-预期：
-
-- 会按 `runtime/asset-manifest.json` 的 `i18nFallbacks` 落到 `zh-tw`
-
-失败信号：
-
-- 仍然退回英文
-- 检查页更新状态仍使用英文，未解析 runtime i18n 的回退关系
 
 ## 关闭模式 checks
 
-### 10. disable 模式清理
+### 9. disable 模式清理
+
+自动回归使用一份 enable 产物和一份 disable 产物，并显式传入：
+
+```powershell
+$env:BANYAN_BROWSER_UPGRADE_FROM_DIR = 'temp_workspace/public/<enable-build>'
+$env:BANYAN_BROWSER_UPGRADE_TO_DIR = 'temp_workspace/public/<disable-build>'
+bun run check:browser:sw-disable
+```
+
+disable 构建还应将 `params.prefetch_runtime.mode` 设为 `off`，避免配置继续声明依赖 Service Worker 的预取 transport。
 
 操作：
 
@@ -332,6 +325,7 @@ bun run build:browser:temp -- sw-upgrade-after
 - root scope registration 被注销
 - 受管缓存被清理
 - 页面不再重新注册 enable worker
+- 与 Banyan 无关的 Cache Storage 桶保持不变
 
 失败信号：
 
@@ -341,14 +335,13 @@ bun run build:browser:temp -- sw-upgrade-after
 
 ## 建议的最小回归矩阵
 
-如果不想每次都全测，至少覆盖这 6 组：
+如果不想每次都全测，至少覆盖这 5 组：
 
 1. 首页首次访问
 2. 首页与集合页面出现 waiting 后，通过第一列「更新」进入更新目录，再打开检查页应用更新（`sw-update-entry-home`、`sw-update-entry-collection`）
-3. `zh-hk` 与 `zh-mo` 的入口状态文案 fallback（`sw-update-entry-zh-hk`、`sw-update-entry-zh-mo`）
+3. 三种真实语言检查页的静态文案、版本时间和零 runtime JSON 请求
 4. 隐藏检查按钮后仍不弹窗，重复检查继续保留 waiting（`sw-update-hidden-control-stays-quiet`）
-5. 检查更新页离线重试、检查新版本、激活刷新及旧导航缓存清理（`sw-update-check`）
-6. 新版本 waiting 时，语言设置页仍然可以使用
+5. 检查更新页离线重试、检查新版本、激活刷新及旧导航缓存清理（`sw-update-check`），同时确认 waiting 时语言设置页仍可使用
 
 运行升级回归时，显式设置 `BANYAN_BROWSER_UPGRADE_FROM_DIR` 和 `BANYAN_BROWSER_UPGRADE_TO_DIR`，指向两个完整构建；此矩阵需要两份都包含展平后的第一列和系统页。不要让自动选择误用临时结构探针的产物。
 
@@ -359,7 +352,7 @@ bun run build:browser:temp -- sw-upgrade-after
 优先怀疑：
 
 1. 新 worker 根本没进入 `waiting`
-2. `data-site-update="ready"` 没被设置
+2. 检查页的 `[data-site-update-panel][data-site-update-state="ready"]` 没有出现
 3. 是否已经进入检查更新页；普通页面不显示提示
 4. 检查页的 `data-site-update-state` 或状态文字未更新
 
@@ -367,9 +360,9 @@ bun run build:browser:temp -- sw-upgrade-after
 
 优先怀疑：
 
-1. `runtime/asset-manifest.json` 的 `i18n` / `i18nFallbacks`
-2. `runtime-manifest.js`
-3. 当前页 `document.documentElement.lang`
+1. 当前语言的 `content/updates/check/index*.md` 是否声明完整 `site_update.labels`
+2. `feature-updates/panel.html` 是否把同一 labels 写入 `data-site-update-copy`
+3. `updates/page.js` 是否只读取当前面板的数据
 
 ### 点击更新后卡住
 
@@ -384,7 +377,7 @@ bun run build:browser:temp -- sw-upgrade-after
 
 优先怀疑：
 
-1. `sw-manager.disable.js`
+1. `pwa/manager-disable.js`
 2. root scope registration 是否被正确识别
 3. managed caches 名称前缀是否与 enable 模式一致
 
@@ -401,7 +394,7 @@ bun run build:browser:temp -- sw-upgrade-after
 
 ### disable 模式是 destructive 的
 
-`sw-manager.disable.js` 会：
+`pwa/manager-disable.js` 会：
 
 - `unregister`
 - `clearManagedCaches`

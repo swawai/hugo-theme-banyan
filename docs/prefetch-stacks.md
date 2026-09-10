@@ -83,6 +83,26 @@ runtime stack 继续保留短码 mode，因为这套短码表达的是它自己�
 - `s / m / x` 对应 conservative / moderate / eager
 - `_g` 表示基于 `sessionStorage` 的全局一次性 gate
 
+### 运行时策略的单一事实源
+
+runtime bundle 与 `/prefetchdebug` 共用两层很小的模块：
+
+- `assets/js/prefetch/policy.js`
+  负责环境键、环境别名、mode 解析、URL 归一化、slot 协调、跨 slot 去重与动作分组
+- `assets/js/prefetch/browser.js`
+  负责读取页面 JSON、检测浏览器能力和收集可预热的链接候选
+
+两者因此不会各自解释一遍 `link_sf`、`sw_mf_g` 或 `preempt_runtime_when_supported`。`prefetchdebug` 展示的原始动作和过滤动作，就是 runtime 使用的同一规划函数的结果。
+
+共享边界只到“输入事实与动作计划”。以下行为仍留在各自入口附近：
+
+- runtime bundle 的 link/SW transport、全局 gate 与交互监听
+- debug 页面的 Service Worker 观测、response header 回读与面板渲染
+
+这样既维持 Hugo `ExecuteAsTemplate` 对 runtime transport/交互模块的构建期裁剪，也避免把运行与诊断塞进一个带 mode 分支的通用控制器。
+
+`bun run check:prefetch` 独立验证环境键、别名与 mode 解析、URL 归一化、spec slot 接管及跨 slot 去重契约。
+
 ## Speculation Stack
 
 配置入口：

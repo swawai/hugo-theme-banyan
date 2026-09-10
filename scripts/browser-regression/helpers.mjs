@@ -60,8 +60,7 @@ export function recordFirstMainLayoutScript() {
             window.__banyanFirstMainLayout = {
                 breadcrumbColumnCount: visibleBreadcrumbColumns.length,
                 mainInlineStart: main.getBoundingClientRect().x + window.scrollX,
-                previewPending: root.getAttribute('data-entry-breadcrumb-preview-pending') === 'true',
-                runtimePending: root.getAttribute('data-entry-breadcrumb-runtime-pending') === 'true'
+                entryPending: root.getAttribute('data-entry-breadcrumb-pending') === 'true'
             };
             observer?.disconnect();
             return true;
@@ -101,8 +100,7 @@ export async function gotoAndWait(page, url) {
 export async function waitForBreadcrumbSettled(page, timeoutMs = 8000) {
     await page.waitForFunction(() => {
         const root = document.documentElement;
-        return !root.hasAttribute('data-entry-breadcrumb-preview-pending')
-            && !root.hasAttribute('data-entry-breadcrumb-runtime-pending')
+        return !root.hasAttribute('data-entry-breadcrumb-pending')
             && !root.hasAttribute('data-breadcrumb-sort-pending');
     }, { timeout: timeoutMs });
 }
@@ -134,27 +132,6 @@ export async function readFirstMainLayout(page, timeoutMs = 8000) {
     }, { timeout: timeoutMs });
 
     return page.evaluate(() => ({ ...window.__banyanFirstMainLayout }));
-}
-
-export async function readFragmentRoot(page) {
-    return page.evaluate(async () => {
-        const inlineRoot = document.body?.dataset.fragmentRoot || '';
-        if (inlineRoot) return inlineRoot;
-
-        const manifestUrl = document.body?.dataset.assetManifestUrl || '';
-        const lang = document.documentElement?.lang || '';
-        if (!manifestUrl || !lang) return '';
-
-        try {
-            const response = await fetch(manifestUrl, { credentials: 'same-origin' });
-            if (!response || !response.ok) return '';
-            const manifest = await response.json();
-            const buildVersion = typeof manifest?.buildVersion === 'string' ? manifest.buildVersion : '';
-            return buildVersion ? `/__fragments/${buildVersion}/${lang}/` : '';
-        } catch {
-            return '';
-        }
-    });
 }
 
 export async function readSecurityPolicyViolations(page) {

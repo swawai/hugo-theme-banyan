@@ -33,6 +33,12 @@
   {{- if not (index $includedKeys $sourceKey) -}}
     {{- continue -}}
   {{- end -}}
+  {{- $currentCollectionSourceRaw := index $source "current_collection_source" | default dict -}}
+  {{- $currentCollectionItems := index $source "current_collection_items" | default dict -}}
+  {{- $currentItemsPath := trim (printf "%v" (index $currentCollectionItems "lp" | default "")) " \r\n\t" -}}
+  {{- if or (eq (len $currentCollectionSourceRaw) 0) (eq (len $currentCollectionItems) 0) (ne $currentItemsPath $logicalPath) -}}
+    {{- errorf "Build failed: browser navigation source %q requires matching current collection data; payload path is %q." $logicalPath $currentItemsPath -}}
+  {{- end -}}
 
   {{- /* 浏览器首帧只需要 breadcrumb source 的最小骨架。
         横向列首帧稳定依赖：
@@ -45,6 +51,13 @@
     {{- if gt (len $item) 0 -}}
       {{- $collectionSource := index $level "collection_source" | default dict -}}
       {{- $collectionItems := index $level "collection_items" | default dict -}}
+      {{- if gt (len $collectionSource) 0 -}}
+        {{- $levelPath := trim (printf "%v" (index $collectionSource "logical_path" | default "")) " \r\n\t" -}}
+        {{- $levelItemsPath := trim (printf "%v" (index $collectionItems "lp" | default "")) " \r\n\t" -}}
+        {{- if or (eq (len $collectionItems) 0) (eq $levelPath "") (ne $levelItemsPath $levelPath) -}}
+          {{- errorf "Build failed: browser navigation level %q requires matching collection data; payload path is %q." $levelPath $levelItemsPath -}}
+        {{- end -}}
+      {{- end -}}
       {{- $slimItem := $item -}}
       {{- if and (gt (len $collectionSource) 0) (gt (len $collectionItems) 0) -}}
         {{- $rebuiltItem := dict -}}
@@ -79,10 +92,10 @@
     "root_item" (index $source "root_item")
     "tail_items" $tailItems
     "levels" $levels
-    "current_collection_items" (index $source "current_collection_items")
+    "current_collection_items" $currentCollectionItems
   -}}
   {{- $currentCollectionSource := partial "feature-browse/collection/source-browser.html" (dict
-    "source" (index $source "current_collection_source" | default dict)
+    "source" $currentCollectionSourceRaw
   ) -}}
   {{- if gt (len $currentCollectionSource) 0 -}}
     {{- $browserSource = merge $browserSource (dict "current_collection_source" $currentCollectionSource) -}}

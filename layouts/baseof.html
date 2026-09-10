@@ -8,8 +8,6 @@
 {{- partialCached "entry-baseof/audit-content-icons.html" . "audit-content-icons" -}}
 {{- $primarySite := index (sort hugo.Sites "Language.Weight") 0 -}}
 {{- $buildVersion := partial "system-build/version.html" $primarySite.Home -}}
-{{- $buildTimeISO := partial "system-build/time-iso.html" $primarySite.Home -}}
-{{- $buildTimeDisplay := partial "system-build/time-display.html" $primarySite.Home -}}
 {{- $cachePolicy := partial "system-delivery/cache-policy/model.html" (dict
   "sw_config" $swConfig
 ) -}}
@@ -36,13 +34,9 @@
 {{- /* Root selection consumes the same valid sources even when path columns are hidden. */ -}}
 {{- $navigationSources := partial "feature-browse/navigation/source/context.html" (dict "ctx" .) -}}
 {{- $pageCollectionSource := index $navigationSources "page_collection_source" -}}
-{{- $navigationSourceModels := index $navigationSources "source_models" -}}
 {{- $browserNavigationSources := index $navigationSources "browser_sources" -}}
 {{- $collectionSourcesByHref := index $navigationSources "collection_sources_by_href" -}}
 {{- partial "feature-browse/navigation/source/register-icons.html" (dict "page" . "sources" $browserNavigationSources) -}}
-{{- if .IsHome -}}
-    {{- partialCached "feature-browse/navigation/source/publish-fragments.html" (dict "language" .Language.Lang "sources" $navigationSourceModels "build_version" $buildVersion) .Language.Lang $buildVersion -}}
-{{- end -}}
 {{- if and .IsHome $primarySite (eq .Site.Language.Lang $primarySite.Language.Lang) -}}
     {{- partial "system-delivery/deployment/publish.html" (dict
       "routes" $cachePolicyRoutes
@@ -78,12 +72,6 @@
 {{- errorf "Build failed: missing resource %q." "site/pwa/manifest.webmanifest.tmpl" -}}
         {{- end -}}
     {{- end -}}
-    {{- $assetManifest := partial "entry-baseof/runtime-manifest.html" (dict
-      "ctx" .
-      "build_time" $buildTimeDisplay
-      "build_time_iso" $buildTimeISO
-      "build_version" $buildVersion
-    ) -}}
     <meta charset="utf-8">
     {{- with $faviconSvg }}
     <link rel="icon" href="{{ .RelPermalink }}" type="image/svg+xml" fetchpriority="low">
@@ -94,7 +82,6 @@
     {{- if and $manifest (eq $webAppManifestMode "link") }}
     <link rel="manifest" href="{{ $manifest.RelPermalink }}" fetchpriority="low">
     {{- end }}
-    <link rel="preload" href="{{ $assetManifest.RelPermalink }}" as="fetch" type="application/json" crossorigin="anonymous" fetchpriority="low">
     <title>{{ partial "system-metadata/seo/browser-title.html" . }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="wap-font-scale" content="no">
@@ -130,7 +117,7 @@
     {{- $js = $js | fingerprint -}}
     <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
     {{- if $hasBreadcrumbCapability -}}
-        {{- $breadcrumbRuntime := resources.Get "js/breadcrumb-runtime.js" | js.Build (dict "params" $jsBuildParams) -}}
+        {{- $breadcrumbRuntime := resources.Get "js/browse/path-entry.js" | js.Build (dict "params" $jsBuildParams) -}}
         {{- if not hugo.IsServer -}}{{- $breadcrumbRuntime = $breadcrumbRuntime | minify -}}{{- end -}}
         {{- $breadcrumbRuntime = $breadcrumbRuntime | fingerprint -}}
     <script src="{{ $breadcrumbRuntime.RelPermalink }}" integrity="{{ $breadcrumbRuntime.Data.Integrity }}" defer></script>
@@ -148,7 +135,7 @@
     <link rel="manifest" href="{{ $manifest.RelPermalink }}" fetchpriority="low">
     {{- end }}
 </head>
-<body data-language-return-missing="{{ i18n "language_return_missing" }}" data-asset-manifest-url="{{ $assetManifest.RelPermalink }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $browserNavigationSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}"{{ if or $hasBreadcrumbCapability $hasSortableCollection }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }} data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}">
+<body data-language-return-missing="{{ i18n "language_return_missing" }}" data-site-root="{{ .Site.Home.RelPermalink }}" data-entry-breadcrumb-sources="{{ $browserNavigationSources | jsonify }}" data-page-collection-source="{{ $pageCollectionSource | jsonify }}"{{ if or $hasBreadcrumbCapability $hasSortableCollection }} data-collection-sort-copy="{{ partial "feature-browse/collection/sort/copy.html" . | jsonify }}"{{ end }} data-current-page-text="{{ (.LinkTitle | default .Title) | htmlEscape }}" data-current-page-title="{{ .Title | htmlEscape }}">
     {{- if and .IsPage (not .Params.slug) -}}
 {{- errorf "Build failed: page %q (title: %q) is missing the slug field." .File.Path .Title -}}
     {{- end -}}

@@ -1,0 +1,208 @@
+import { normalizeCollectionSource } from './collection-source.js';
+import { decodeItemsPayload } from './collection-items.js';
+import { normalizeFromPath, normalizePathname } from './navigation-state.js';
+import { normalizeIcon } from './icon-value.js';
+
+function normalizeLinkItem(item) {
+    if (!item || typeof item !== 'object') {
+        return null;
+    }
+
+    const text = typeof item.text === 'string' ? item.text.trim() : '';
+    const href = typeof item.href === 'string' ? item.href.trim() : '';
+    if (!text || !href) {
+        return null;
+    }
+
+    const normalized = { text, href };
+    if (typeof item.title === 'string' && item.title.trim() !== '') {
+        normalized.title = item.title.trim();
+    }
+    if (typeof item.current === 'boolean') {
+        normalized.current = item.current;
+    }
+    const icon = normalizeIcon(item.icon);
+    if (icon) normalized.icon = icon;
+    for (const field of ['kind', 'collection_href', 'collection_label']) {
+        if (typeof item[field] === 'string' && item[field].trim() !== '') {
+            normalized[field] = item[field].trim();
+        }
+    }
+    if (Array.isArray(item.column_items)) {
+        const columnItems = item.column_items.map(normalizeLinkItem).filter(Boolean);
+        if (columnItems.length > 0) {
+            normalized.column_items = columnItems;
+        }
+    }
+
+    return normalized;
+}
+
+export function parseEntryBreadcrumbSources(rawValue) {
+    try {
+        const parsed = JSON.parse(rawValue);
+        if (!Array.isArray(parsed)) {
+            return [];
+        }
+
+        return parsed
+            .map((source) => {
+                if (!source || typeof source !== 'object') {
+                    return null;
+                }
+
+                const logicalPath = normalizeFromPath(source.logical_path || source.logicalPath || '');
+                const rootItem = normalizeLinkItem(source.root_item || source.rootItem);
+                if (!logicalPath || !rootItem) {
+                    return null;
+                }
+
+                const tailItemsRaw = Array.isArray(source.tail_items || source.tailItems)
+                    ? (source.tail_items || source.tailItems)
+                    : [];
+                const levelsRaw = Array.isArray(source.levels) ? source.levels : [];
+
+                return {
+                    provider: typeof source.provider === 'string' ? source.provider.trim().toLowerCase() : '',
+                    logicalPath,
+                    rootItem,
+                    tailItems: tailItemsRaw.map(normalizeLinkItem).filter(Boolean),
+                    levels: levelsRaw
+                        .map((level) => {
+                            if (!level || typeof level !== 'object') {
+                                return null;
+                            }
+
+                            const item = normalizeLinkItem(level.item);
+                            if (!item) {
+                                return null;
+                            }
+
+                            const normalized = { item };
+                            const collectionSource = normalizeCollectionSource(
+                                level.collection_source || level.collectionSource
+                            );
+                            if (collectionSource) {
+                                normalized.collectionSource = collectionSource;
+                            }
+
+                            const collectionItems = decodeItemsPayload(
+                                level.collection_items || level.collectionItems
+                            );
+                            if (collectionItems) {
+                                normalized.collectionItems = collectionItems;
+                            }
+
+                            return normalized;
+                        })
+                        .filter(Boolean),
+                    currentCollectionSource: normalizeCollectionSource(
+                        source.current_collection_source || source.currentCollectionSource
+                    ),
+                    currentCollectionItems: decodeItemsPayload(
+                        source.current_collection_items || source.currentCollectionItems
+                    ),
+                };
+            })
+            .filter(Boolean);
+    } catch (error) {
+        return [];
+    }
+}
+
+export function readEntryBreadcrumbSources() {
+    return parseEntryBreadcrumbSources(document.body?.dataset.entryBreadcrumbSources || '');
+}
+
+export function parseEntrySelection(sources, fromPath) {
+    const normalized = normalizeFromPath(fromPath);
+    if (!normalized || !Array.isArray(sources) || sources.length === 0) {
+        return null;
+    }
+
+    const source = sources.find((item) => normalizeFromPath(item?.logical_path || item?.logicalPath || '') === normalized) || null;
+    return source ? { source } : null;
+}
+
+export function pickSourceByLogicalPath(sources, logicalPath) {
+    const normalized = normalizeFromPath(logicalPath);
+    if (!normalized || !Array.isArray(sources)) {
+        return null;
+    }
+
+    for (let index = 0; index < sources.length; index += 1) {
+        const source = sources[index];
+        if (source?.logicalPath === normalized) {
+            return source;
+        }
+    }
+
+    return null;
+}
+
+function normalizeCollectionHref(href) {
+    const rawHref = typeof href === 'string' ? href.trim() : '';
+    if (!rawHref) {
+        return '';
+    }
+
+    try {
+        return normalizePathname(new URL(rawHref, window.location.origin).pathname);
+    } catch (error) {
+        return '';
+    }
+}
+
+function addCollectionSourceToIndex(index, source, payload = null) {
+    const collectionSource = normalizeCollectionSource(source);
+    const hrefKey = normalizeCollectionHref(collectionSource?.href || '');
+    if (hrefKey) {
+        index.set(hrefKey, {
+            source: collectionSource,
+            payload: payload && typeof payload === 'object' ? payload : null,
+        });
+    }
+}
+
+function createCollectionSourceIndex(sources) {
+    const index = new Map();
+
+    (Array.isArray(sources) ? sources : []).forEach((source) => {
+        addCollectionSourceToIndex(
+            index,
+            source?.current_collection_source || source?.currentCollectionSource,
+            source?.current_collection_items || source?.currentCollectionItems
+        );
+        (Array.isArray(source?.levels) ? source.levels : []).forEach((level) => {
+            addCollectionSourceToIndex(
+                index,
+                level?.collection_source || level?.collectionSource,
+                level?.collection_items || level?.collectionItems
+            );
+        });
+    });
+
+    return index;
+}
+
+export function parseCollectionSourceIndex(rawValue) {
+    return createCollectionSourceIndex(parseEntryBreadcrumbSources(rawValue));
+}
+
+export function pickCollectionSourceByHref(index, href) {
+    if (!(index instanceof Map)) {
+        return null;
+    }
+
+    const hrefKey = normalizeCollectionHref(href);
+    return hrefKey ? index.get(hrefKey)?.source || null : null;
+}
+
+export function pickCollectionItemsByHref(index, href) {
+    if (!(index instanceof Map)) {
+        return null;
+    }
+
+    const hrefKey = normalizeCollectionHref(href);
+    return hrefKey ? index.get(hrefKey)?.payload || null : null;
+}

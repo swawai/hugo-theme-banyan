@@ -5,12 +5,13 @@ import assert from 'node:assert/strict';
 import * as esbuild from 'esbuild';
 
 const siteRoot = process.cwd();
-const navStateEntry = path.join(siteRoot, 'themes/banyan/assets/js/navigation-state.js');
-const breadcrumbItemsEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-items.js');
-const breadcrumbPreviewEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-preview.js');
-const breadcrumbSourceEntry = path.join(siteRoot, 'themes/banyan/assets/js/breadcrumb-source.js');
-const collectionItemsEntry = path.join(siteRoot, 'themes/banyan/assets/js/collection-items.js');
-const sortableGridsEntry = path.join(siteRoot, 'themes/banyan/assets/js/sortable-grids.js');
+const browseRoot = path.join(siteRoot, 'themes/banyan/assets/js/browse');
+const navStateEntry = path.join(browseRoot, 'navigation-state.js');
+const breadcrumbItemsEntry = path.join(browseRoot, 'breadcrumb-items.js');
+const breadcrumbEntry = path.join(browseRoot, 'breadcrumb-entry.js');
+const breadcrumbSourceEntry = path.join(browseRoot, 'breadcrumb-source.js');
+const collectionItemsEntry = path.join(browseRoot, 'collection-items.js');
+const collectionSortEntry = path.join(browseRoot, 'collection-sort.js');
 const tempRoot = path.join(siteRoot, 'temp_workspace', 'check-navigation-state');
 
 const navigationStateStub = `
@@ -80,20 +81,19 @@ function applySorts(module, inputUrl, tokens, defaultTokens = []) {
 
 const navState = await importBrowserModule(navStateEntry, 'navigation-state.js');
 
-const sortableGridInputs = await readBrowserBundleInputs(sortableGridsEntry);
+const collectionSortInputs = await readBrowserBundleInputs(collectionSortEntry);
 const pathRuntimeInputs = [
-    'breadcrumb-column-sort.js',
-    'breadcrumb-items.js',
-    'breadcrumb-source.js',
-    'path-navigation-ui.js',
-    'runtime-manifest.js',
+    'browse/breadcrumb-column-sort.js',
+    'browse/breadcrumb-items.js',
+    'browse/breadcrumb-source.js',
+    'browse/path-render.js',
 ];
 assert.deepEqual(
-    sortableGridInputs.filter((input) => (
+    collectionSortInputs.filter((input) => (
         pathRuntimeInputs.some((pathRuntimeInput) => input.endsWith(`/assets/js/${pathRuntimeInput}`))
     )),
     [],
-    'sortable grid bundle must not include path navigation runtime modules'
+    'collection sort bundle must not include path navigation runtime modules'
 );
 
 assert.equal(
@@ -177,7 +177,7 @@ assert.deepEqual(
 
 const breadcrumbSource = await importBrowserModule(breadcrumbSourceEntry, 'breadcrumb-source.js');
 const breadcrumbItems = await importBrowserModule(breadcrumbItemsEntry, 'breadcrumb-items.js');
-const breadcrumbPreview = await importBrowserModule(breadcrumbPreviewEntry, 'breadcrumb-preview.js');
+const breadcrumbPath = await importBrowserModule(breadcrumbEntry, 'breadcrumb-entry.js');
 const collectionItems = await importBrowserModule(collectionItemsEntry, 'collection-items.js');
 
 const compositeRows = [
@@ -431,7 +431,7 @@ window.location.href = 'https://example.test/zh/p/example/?from=intent/decide';
 window.location.search = '?from=intent/decide';
 
 assert.deepEqual(
-    breadcrumbPreview.buildPreviewCurrentItem(
+    breadcrumbPath.buildCurrentPathItem(
         {},
         'WSL Toolkit',
         'WSL automation management script',
@@ -446,7 +446,7 @@ assert.deepEqual(
     'entry preview should keep compact visible text and the full title as separate fields'
 );
 
-const previewColumnCurrentItem = breadcrumbPreview.buildPreviewCurrentItem(
+const previewColumnCurrentItem = breadcrumbPath.buildCurrentPathItem(
     {
         currentCollectionSource: {
             logical_path: '/intent/decide/',
@@ -454,7 +454,7 @@ const previewColumnCurrentItem = breadcrumbPreview.buildPreviewCurrentItem(
             sort_variant: 'tree',
             default_sort: 'date-desc',
         },
-        currentCollectionItems: {
+        currentCollectionItems: collectionItems.decodeItemsPayload({
             ds: 'date-desc',
             f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
             lp: '/intent/decide/',
@@ -464,7 +464,7 @@ const previewColumnCurrentItem = breadcrumbPreview.buildPreviewCurrentItem(
             ],
             sv: 'tree',
             v: 1,
-        },
+        }),
     },
     'WSL Toolkit',
     'WSL automation management script',
@@ -497,6 +497,18 @@ const sourcePayload = JSON.stringify([{
         default_sort: 'date-desc',
         label: 'Decide',
         href: '/zh/intent/decide/'
+    },
+    current_collection_items: {
+        ds: 'date-desc',
+        f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
+        lp: '/intent/decide/',
+        p: 'taxonomy',
+        rv: [
+            'xvenv', 'page', '/zh/p/xvenv/', 'Xvenv', '1', 'Xvenv', '20260626', '6402',
+            'wsl-automng', 'page', '/zh/p/wsl-automng/', 'WSL Toolkit', '1', 'WSL Toolkit', '20260624', '1341',
+        ],
+        sv: 'tree',
+        v: 1
     },
     levels: [{
         item: {
@@ -614,26 +626,7 @@ assert.equal(
     'entry hrefs should write collection-only from values'
 );
 
-globalThis.fetch = async () => ({
-    ok: true,
-    async json() {
-        return {
-            ds: 'date-desc',
-            f: ['key', 'kind', 'href', 'text', 'sort_group', 'sort_name', 'sort_date', 'sort_count'],
-            lp: '/intent/decide/',
-            p: 'taxonomy',
-            rv: [
-                'xvenv', 'page', '/zh/p/xvenv/', 'Xvenv', '1', 'Xvenv', '20260626', '6402',
-                'wsl-automng', 'page', '/zh/p/wsl-automng/', 'WSL Toolkit', '1', 'WSL Toolkit', '20260624', '1341',
-            ],
-            sv: 'tree',
-            v: 1
-        };
-    }
-});
-
-const selectedItem = await breadcrumbItems.buildSelectedBreadcrumbItem(
-    '/__fragments/v-test/zh/',
+const selectedItem = breadcrumbItems.buildSelectedBreadcrumbItem(
     sources[0],
     '/zh/p/wsl-automng/',
     'WSL automation management script'

@@ -47,7 +47,7 @@ list: products
 
 ## 名称列表与公共样式
 
-`list: name` 是完整的集合列表，默认按名称升序，点击名称列头切换升／降序，不按目录和文章分组。它使用与其他集合列表相同的成员、图标继承、`from`、路径列及历史恢复；来源 JSON 只携带名称列表需要的字段，不输出更新时间、计数或价格。普通目录列出直接子项，分类页列出分类成员，汇总页仍显式声明 `aggregate`，不因为换成单列而改变收录范围。
+`list: name` 是完整的集合列表，默认按名称升序，点击名称列头切换升／降序，不按目录和文章分组。它使用与其他集合列表相同的成员、图标继承、`from`、路径列及历史恢复；页面内嵌 source payload 只携带名称列表需要的字段，不输出更新时间、计数或价格。普通目录列出直接子项，分类页列出分类成员，汇总页仍显式声明 `aggregate`，不因为换成单列而改变收录范围。
 
 例如将已有 WSL 目录改成名称列表，只需在 `content/d/wsl/_index.zh.md` 增加 `list: name`。新建独立目录时可声明：
 
@@ -124,7 +124,7 @@ list_icon_file: product
 
 `aggregate` 只提供集合成员，不参与默认图标继承；`/all-products/` 与 `/products/` 是兄弟入口，所以各自声明一次。普通文章只允许 `icon`；目录、分类及主题支持的列表布局可以声明子项默认值，包括以 `index.md` 实现的 `/all/`。误把 `list_icon_*` 配在普通文章上，或填写未定义的图标名称，构建会报错并指出页面和字段。第一列将首页自身与直属入口一起渲染，使用首页的目录默认值或条目自身的 `icon`。根项目 `content/_index*.md` 声明 `linkTitle: "2026 Swaw"`、`icon: { text: "©" }`、`weight: 110`；访问首页只选中首页，其他页面仍按真实入口或有效来源选中。旧版权页脚、顶部重复首页链接及 `slots.footer` 已移除。
 
-图标值由 `system-ui/icon/resolve.html` 校验，`system-ui/icon/page-value.html` 在读取页面声明时解析并发布图片，`system-ui/icon/render.html` 接收解析后的值统一输出文字、SVG 或图片。浏览器用 `icon-value.js` 保留同样的值结构，JSON 编解码不得把对象转成字符串。默认值实现集中在 `system-ui/list/icon-defaults.html`（解析列表默认值）和 `system-ui/list/item-icon.html`（自身声明优先）。`feature-browse/collection/rows.html` 为每行写入最终 `icon`，主表、来源 JSON 和路径列共用；站点列表、第一列及首页快捷列表也调用相同规则。`feature-browse/navigation/source/register-icons.html` 只为命名 SVG 收集依赖，文字、图片不加入 sprite。浏览器选择／排序逻辑和现有列表数据协议不变。
+图标值由 `system-ui/icon/resolve.html` 校验，`system-ui/icon/page-value.html` 在读取页面声明时解析并发布图片，`system-ui/icon/render.html` 接收解析后的值统一输出文字、SVG 或图片。浏览器用 `assets/js/browse/icon-value.js` 保留同样的值结构，JSON 编解码不得把对象转成字符串。默认值实现集中在 `system-ui/list/icon-defaults.html`（解析列表默认值）和 `system-ui/list/item-icon.html`（自身声明优先）。`feature-browse/collection/rows.html` 为每行写入最终 `icon`，主表、页面内嵌 source payload 和路径列共用；站点列表、第一列及首页快捷列表也调用相同规则。`feature-browse/navigation/source/register-icons.html` 只为命名 SVG 收集依赖，文字、图片不加入 sprite。浏览器选择／排序逻辑和现有列表数据协议不变。
 
 ## 怎样声明选择列表
 
@@ -175,7 +175,7 @@ weight: 30
 
 ## 来源与旧链接
 
-主表、路径列和来源 JSON 共用 `feature-browse/collection/rows.html`；一个列表页只注册一次 `collection` 来源。目录／分类关系适配分别在 `feature-browse/collection/rows/section.html`、`feature-browse/collection/rows/taxonomy.html`，展示在 `feature-browse/collection/render.html`。排序字段由 `feature-browse/collection/config.html` 解析 `list` 后给出，浏览器不按路径或 provider 猜表格种类。
+主表和页面内嵌的路径来源共用 `feature-browse/collection/rows.html`；一个列表页只注册一次 `collection` 来源。目录／分类关系适配分别在 `feature-browse/collection/rows/section.html`、`feature-browse/collection/rows/taxonomy.html`，展示在 `feature-browse/collection/render.html`。排序字段由 `feature-browse/collection/config.html` 解析 `list` 后给出，浏览器不按路径或 provider 猜表格种类。
 
 名称比较由 Hugo 执行一次，生成 `sort_name` 数值名次，显示文字仍保留在 `text`。这样首帧、主表与路径列使用同一名称顺序，不因浏览器语言或 ICU 实现不同而换位。更新时间降序中时间相同的条目也使用名称降序；升序相反。实现依据见 [Hugo 的稳定排序实现](https://github.com/gohugoio/hugo/blob/v0.157.0/tpl/collections/sort.go)。
 
@@ -185,6 +185,6 @@ weight: 30
 
 ## 验证
 
-路径数据文件由各语言首页发布，直接使用当前语言来源模型的 `current_collection_items`，不在默认语言首页重新构建所有语言的数据。这样页面内嵌数据与后续请求的 `_items.json` 完全相同，避免中文主表使用中文排序、路径列却使用默认语言排序。浏览器回归 `updates-name-list` 覆盖三语言名称列表、两个真实子项、进入后的选中和排序、刷新／历史恢复，同时验证关于、微信、GitHub、RSS 等普通根入口及其实际内容。升级回归从首页／文章列表经过更新目录进入检查页，验证离线／重试、新版本应用后保留更新路径列、清理旧导航缓存。
+路径来源直接内嵌在各语言页面，使用当前语言模型的 `current_collection_items` 和祖先层 `collection_items`。浏览器在页面边界一次解码，不再发布或请求 `_items.json`，因此主表与路径列天然使用同一份语言和排序事实。浏览器回归 `updates-name-list` 覆盖三语言名称列表、两个真实子项、进入后的选中和排序、刷新／历史恢复，同时验证关于、微信、GitHub、RSS 等普通根入口及其实际内容。升级回归从首页／文章列表经过更新目录进入检查页，验证离线／重试、新版本应用后保留更新路径列、清理旧导航缓存。
 
 在根项目执行 `node themes/banyan/scripts/checks/check-collections.mjs`。它只向 `temp_workspace/` 写临时内容覆盖层，基于根内容构建 directory／all／products／name 四种样式，验证三语言成员不变、继承／覆盖、自动分类、显式空分类、去重、未分类排除、缺失价格及文章进入后的路径顺序。name 用例同时覆盖目录、子目录继承、分类、聚合入口，检查首帧仅名称列、名称升降序、进入文章后的路径列、刷新及历史恢复。时间用例覆盖发布日期与更新时间不同、只填更新时间、默认日期来源、完全无时间、目录／平面与树形分类汇总，以及升降序进入文章后的路径顺序。图标用例覆盖两种默认值独立继承、局部与自身覆盖、汇总入口独立性、首帧菜单、来源专用 SVG、刷新及前进后退，并确认非法声明使构建失败。原有浏览器回归继续覆盖画幅、首帧、排序、系统返回和历史导航。

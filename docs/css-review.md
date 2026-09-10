@@ -41,7 +41,7 @@
 ## 6B 结构补充实施结果（当前）
 
 - `assets/css/` 保持扁平，共 19 个源码文件。元素默认样式、skip link 和 reduced-motion 归入 `base.css`，图标显示归入 `icons.css`；不再保留宽泛且很小的 `core-a11y.css`、`core-motion.css`。
-- 列表源码收敛为 `collection-item.css`、`collection-grid.css`、`collection-table.css`：分别负责条目状态、公共网格和多列表格。服务端、浏览器重绘与测试继续使用 `.grid-list`、`.grid-directory`、`.grid-all`、`.grid-products`，没有为了文件整理改动 DOM 协议。
+- 列表源码收敛为 `collection-item.css`、`collection-grid.css`、`collection-table.css`：分别负责条目状态、公共网格和多列表格。服务端、浏览器重绘与测试共用 `.collection-list` 及其 `--directory`、`--all`、`--products` 变体；行为通过明确的 `data-collection-*` 属性连接，不再借类名前缀推断。
 - 元信息由 `document-meta.css` 独立负责。正文使用 `prose-base.css`、`prose-inline.css`、`prose-lists.css`、`prose-quotes.css`、`prose-images.css`、`prose-code.css`、`prose-tables.css`；普通表格选择器明确排除 Chroma 行号表，避免正文表格规则穿透代码组件。
 - 七个正文源码固定合并成一个 `prose.css`，只由真正输出 `.prose` 的入口加载；不再扫描正文标签决定 core／rich 组合，也不要求模板生成代码块的页面手动拼两个包。
 - `baseof.html` 直接加载公共 `page.css`，不再提供所有页面重复继承的默认样式 block。`updates-panel.css`、`not-found.css` 保留靠近功能的源码归属，但一并进入 `page.css`，删除两个微型发布入口。

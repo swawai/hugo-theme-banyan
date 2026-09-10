@@ -8,7 +8,7 @@
 {{- if and (ne $swMode "off") (not $isOfflinePage) -}}
   {{- /* 源文件命名约定：含模板语法的资源用 .tmpl，纯 JS 用 .js。 */ -}}
   {{- if eq $swMode "enable" -}}
-    {{- $swScriptTemplatePath := "js/sw.enable.js.tmpl" -}}
+    {{- $swScriptTemplatePath := "js/pwa/worker-enable.js.tmpl" -}}
     {{- $swScriptTemplate := resources.Get $swScriptTemplatePath -}}
     {{- $swUrl := "sw.js" | relURL -}}
     {{- if not $swScriptTemplate -}}
@@ -27,7 +27,7 @@
       ) -}}
       {{- $publishSw := $swScript.RelPermalink -}}
     {{- end -}}
-    {{- $swManagerEntryPath := "js/sw-manager.enable.entry.js.tmpl" -}}
+    {{- $swManagerEntryPath := "js/pwa/manager-entry.js.tmpl" -}}
     {{- $swManagerEntryTemplate := resources.Get $swManagerEntryPath -}}
     {{- if not $swManagerEntryTemplate -}}
       {{- errorf "Build failed: missing resource %q." $swManagerEntryPath -}}
@@ -52,20 +52,28 @@
 <script src="{{ $swManager.RelPermalink }}" defer></script>
     {{- end -}}
   {{- else -}}
-    {{- $swScriptPath := "js/sw.disable.js" -}}
+    {{- $swScriptPath := "js/pwa/worker-disable.js" -}}
     {{- $swScriptSource := resources.Get $swScriptPath -}}
     {{- if not $swScriptSource -}}
       {{- errorf "Build failed: missing resource %q." $swScriptPath -}}
     {{- else -}}
-      {{- $swScript := $swScriptSource | resources.Copy "sw.js" -}}
+      {{- $swScript := $swScriptSource | js.Build (dict
+        "targetPath" "sw.js"
+        "minify" (not hugo.IsServer)
+      ) -}}
       {{- $publishSw := $swScript.RelPermalink -}}
     {{- end -}}
-    {{- $swManagerPath := "js/sw-manager.disable.js" -}}
+    {{- $swManagerPath := "js/pwa/manager-disable.js" -}}
     {{- $swManagerSource := resources.Get $swManagerPath -}}
     {{- if not $swManagerSource -}}
       {{- errorf "Build failed: missing resource %q." $swManagerPath -}}
     {{- else -}}
-      {{- $swManager := $swManagerSource | fingerprint -}}
+      {{- $swManagerTargetPath := cond hugo.IsServer "js/sw-manager.disable.bundle.js" "js/sw-manager.disable.bundle.min.js" -}}
+      {{- $swManagerBuilt := $swManagerSource | js.Build (dict
+        "targetPath" $swManagerTargetPath
+        "minify" (not hugo.IsServer)
+      ) -}}
+      {{- $swManager := $swManagerBuilt | fingerprint -}}
 <script src="{{ $swManager.RelPermalink }}" integrity="{{ $swManager.Data.Integrity }}" defer></script>
     {{- end -}}
   {{- end -}}

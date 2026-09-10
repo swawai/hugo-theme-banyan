@@ -25,7 +25,9 @@ const productionGuardrails = [
     {
         label: 'all',
         relativePath: 'all/index.html',
-        maxRawBytes: 42_000,
+        // The critical root/path boot modules are bundled inline before first paint.
+        // Keep a narrow fixed allowance here; row payload growth is guarded below.
+        maxRawBytes: 43_000,
         maxGzipBytes: 12_000,
         breadcrumbPayloadBaseBytes: 1_000,
         breadcrumbPayloadPerItemBytes: 220,
@@ -756,94 +758,86 @@ async function readUtf8IfExists(absolutePath) {
     }
 }
 
-async function collectAssetManifestPaths(rootDir) {
-    const runtimeDir = path.join(rootDir, 'runtime');
-    try {
-        const entries = await fs.readdir(runtimeDir, { withFileTypes: true });
-        return entries
-            .filter((entry) => entry.isFile() && /^asset-manifest\..+\.json$/i.test(entry.name))
-            .map((entry) => path.join(runtimeDir, entry.name));
-    } catch {
-        return [];
+function extractUpdateVersionElements(text) {
+    const elements = [];
+    const pattern = /<time\b(?=[^>]*\bdata-site-update-version(?:\s|=|>))[^>]*>([\s\S]*?)<\/time>/gi;
+    for (const match of text.matchAll(pattern)) {
+        const tag = match[0].slice(0, match[0].indexOf('>') + 1);
+        elements.push({
+            buildVersion: extractTagAttribute(tag, 'title').trim(),
+            buildTimeISO: extractTagAttribute(tag, 'datetime').trim(),
+            buildTime: decodeHtmlAttribute(match[1].replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim())
+        });
     }
+    return elements;
 }
 
-async function collectFragmentVersionDirs(rootDir) {
-    const fragmentsDir = path.join(rootDir, '__fragments');
-    try {
-        const entries = await fs.readdir(fragmentsDir, { withFileTypes: true });
-        return entries
-            .filter((entry) => entry.isDirectory())
-            .map((entry) => entry.name)
-            .sort();
-    } catch {
-        return [];
+async function collectLegacyRuntimeDirectories(rootDir) {
+    const legacyDirs = [];
+    for (const relativePath of ['runtime', '__fragments']) {
+        try {
+            if ((await fs.stat(path.join(rootDir, relativePath))).isDirectory()) {
+                legacyDirs.push(relativePath);
+            }
+        } catch (error) {
+            if (error?.code !== 'ENOENT') throw error;
+        }
     }
+    return legacyDirs;
 }
 
 async function inspectBuildVersionContract(rootDir, rows) {
     const issues = [];
     let buildVersion = '';
-    const manifestPaths = await collectAssetManifestPaths(rootDir);
-    const fragmentVersionDirs = await collectFragmentVersionDirs(rootDir);
-
-    if (manifestPaths.length !== 1) {
-        issues.push(`Expected exactly one runtime asset manifest, found ${manifestPaths.length}.`);
-    }
-
-    if (manifestPaths.length > 0) {
-        try {
-            const manifestText = await fs.readFile(manifestPaths[0], 'utf8');
-            const manifest = JSON.parse(manifestText);
-            buildVersion = typeof manifest?.buildVersion === 'string' ? manifest.buildVersion : '';
-            const buildTime = typeof manifest?.buildTime === 'string' ? manifest.buildTime : '';
-            const buildTimeISO = typeof manifest?.buildTimeISO === 'string' ? manifest.buildTimeISO : '';
-            if (!buildVersion) {
-                issues.push('runtime asset manifest is missing buildVersion.');
-            }
-            if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(buildTime)) {
-                issues.push(`runtime asset manifest has invalid buildTime ${JSON.stringify(buildTime)}.`);
-            }
-            if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(buildTimeISO)) {
-                issues.push(`runtime asset manifest has invalid buildTimeISO ${JSON.stringify(buildTimeISO)}.`);
-            }
-            if (Object.prototype.hasOwnProperty.call(manifest, 'langList')) {
-                issues.push('runtime asset manifest must not expose langList; language navigation is rendered into HTML.');
-            }
-        } catch (error) {
-            issues.push(`Unable to parse runtime asset manifest: ${error instanceof Error ? error.message : String(error)}`);
-        }
-    }
-
-    const inlineFragmentRoots = [];
-    const staticVersionDataAttrs = [];
+    const legacyRuntimeDirs = await collectLegacyRuntimeDirectories(rootDir);
+    const updateVersions = [];
+    const staleRuntimeAttrs = [];
     for (const row of rows) {
         const text = await fs.readFile(row.absolutePath, 'utf8');
-        const bodyTag = text.match(/<body\b[^>]*>/i)?.[0] ?? '';
-        const fragmentRoot = extractTagAttribute(bodyTag, 'data-fragment-root');
-
-        if (fragmentRoot) {
-            inlineFragmentRoots.push(`${row.relativePath}: ${fragmentRoot}`);
+        const elements = extractUpdateVersionElements(text);
+        if (elements.length > 1) {
+            issues.push(`${row.relativePath} contains ${elements.length} update version elements; expected at most one.`);
         }
-
-        if (/\bdata-site-build-version\b/i.test(text)) {
-            staticVersionDataAttrs.push(row.relativePath);
+        updateVersions.push(...elements.map((element) => ({ ...element, relativePath: row.relativePath })));
+        if (/\b(?:data-asset-manifest-url|data-fragment-root|data-site-build-version)\b/i.test(text)) {
+            staleRuntimeAttrs.push(row.relativePath);
         }
     }
 
-    if (inlineFragmentRoots.length > 0) {
-        issues.push(`HTML must not inline versioned data-fragment-root; derive it from runtime asset manifest:\n  ${inlineFragmentRoots.slice(0, 10).join('\n  ')}`);
+    if (legacyRuntimeDirs.length > 0) {
+        issues.push(`Legacy runtime output directories must not be published: ${legacyRuntimeDirs.join(', ')}.`);
     }
-    if (staticVersionDataAttrs.length > 0) {
-        issues.push(`Update UI should not duplicate buildVersion in data-site-build-version:\n  ${staticVersionDataAttrs.slice(0, 10).join('\n  ')}`);
+    if (staleRuntimeAttrs.length > 0) {
+        issues.push(`HTML still exposes removed runtime attributes:\n  ${staleRuntimeAttrs.slice(0, 10).join('\n  ')}`);
     }
+    if (updateVersions.length === 0) {
+        issues.push('No data-site-update-version <time> element was published.');
+    } else {
+        for (const entry of updateVersions) {
+            if (!entry.buildVersion) {
+                issues.push(`${entry.relativePath} update version is missing its build version title.`);
+            }
+            if (!/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/.test(entry.buildTime)) {
+                issues.push(`${entry.relativePath} has invalid update build time ${JSON.stringify(entry.buildTime)}.`);
+            }
+            if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(entry.buildTimeISO)) {
+                issues.push(`${entry.relativePath} has invalid update build datetime ${JSON.stringify(entry.buildTimeISO)}.`);
+            }
+        }
 
-    if (buildVersion) {
-        const unexpectedFragmentDirs = fragmentVersionDirs.filter((entry) => entry !== buildVersion);
-        if (fragmentVersionDirs.length !== 1 || unexpectedFragmentDirs.length > 0) {
-            issues.push(
-                `__fragments must contain exactly the manifest buildVersion directory ${buildVersion}; found ${fragmentVersionDirs.join(', ') || '<none>'}.`
-            );
+        const versions = [...new Set(updateVersions.map((entry) => entry.buildVersion).filter(Boolean))];
+        const displayTimes = [...new Set(updateVersions.map((entry) => entry.buildTime).filter(Boolean))];
+        const isoTimes = [...new Set(updateVersions.map((entry) => entry.buildTimeISO).filter(Boolean))];
+        if (versions.length !== 1) {
+            issues.push(`Update pages must expose one build version, found: ${versions.join(', ') || '<none>'}.`);
+        } else {
+            [buildVersion] = versions;
+        }
+        if (displayTimes.length !== 1) {
+            issues.push(`Update pages must expose one build display time, found: ${displayTimes.join(', ') || '<none>'}.`);
+        }
+        if (isoTimes.length !== 1) {
+            issues.push(`Update pages must expose one build ISO time, found: ${isoTimes.join(', ') || '<none>'}.`);
         }
     }
 
@@ -851,18 +845,18 @@ async function inspectBuildVersionContract(rootDir, rows) {
     if (buildVersion && swText) {
         const swVersions = [...new Set([...swText.matchAll(/\bv\d{14}\b/g)].map((match) => match[0]))].sort();
         const unexpectedSwVersions = swVersions.filter((entry) => entry !== buildVersion);
-        if (!swText.includes('nav-html-') || !swText.includes('asset-versioned-') || !swVersions.includes(buildVersion)) {
-            issues.push(`sw.js does not appear to use manifest buildVersion ${buildVersion}.`);
+        if (!swText.includes('nav-html-') || !swText.includes(buildVersion)) {
+            issues.push(`sw.js does not appear to use update-page buildVersion ${buildVersion}.`);
         }
         if (unexpectedSwVersions.length > 0) {
-            issues.push(`sw.js contains buildVersion values outside manifest buildVersion ${buildVersion}: ${unexpectedSwVersions.join(', ')}.`);
+            issues.push(`sw.js contains buildVersion values outside update-page buildVersion ${buildVersion}: ${unexpectedSwVersions.join(', ')}.`);
         }
     }
 
     return {
         buildVersion,
-        manifestCount: manifestPaths.length,
-        fragmentVersionDirs,
+        updateVersionPageCount: updateVersions.length,
+        legacyRuntimeDirs,
         issues,
     };
 }
@@ -1236,8 +1230,8 @@ async function main() {
     console.log(`Mode\t${options.check ? 'report + check' : 'report only'}`);
     console.log(`HTML files\t${rows.length}`);
     console.log(`Build version\t${buildVersionContract.buildVersion || '<missing>'}`);
-    console.log(`Asset manifests\t${buildVersionContract.manifestCount}`);
-    console.log(`Fragment version dirs\t${buildVersionContract.fragmentVersionDirs.join(', ') || '<none>'}`);
+    console.log(`Update version pages\t${buildVersionContract.updateVersionPageCount}`);
+    console.log(`Legacy runtime dirs\t${buildVersionContract.legacyRuntimeDirs.join(', ') || '<none>'}`);
     console.log(`Redirect pages\t${redirectCount}`);
     console.log(`Indexable pages\t${indexableRows.length}`);
     console.log(`Noindex pages\t${noindexRows.length}`);

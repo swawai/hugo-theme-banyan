@@ -99,9 +99,9 @@ function findSource(sources, logicalPath) {
 function start() {
 try {
     var html = document.documentElement;
-    var previewPending = html.getAttribute("data-entry-breadcrumb-preview-pending") === "true";
+    var entryPending = html.getAttribute("data-entry-breadcrumb-pending") === "true";
     var sortPending = html.getAttribute("data-breadcrumb-sort-pending") === "true";
-    if (!previewPending && !sortPending) {
+    if (!entryPending && !sortPending) {
         return;
     }
 
@@ -124,7 +124,7 @@ try {
     var params = new URLSearchParams(window.location.search);
     var placeholderCount = 0;
 
-    if (previewPending) {
+    if (entryPending) {
         var entrySource = findSource(entryBreadcrumbSources, readFirst(params, entryLineageKeys) || "");
         if (entrySource) {
             placeholderCount = countTrailItems(entrySource);

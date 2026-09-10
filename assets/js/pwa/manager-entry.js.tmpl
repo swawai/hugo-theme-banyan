@@ -1,0 +1,11 @@
+import { createServiceWorkerManagerRuntime } from './manager-runtime.js';
+import { startEnableMode } from './update-engine.js';
+
+const runtime = createServiceWorkerManagerRuntime({
+    swUrl: {{ printf "%q" .sw_url }},
+    swScope: '/',
+    updateCheckInterval: {{ mul .check_interval 60000 }},
+    updateVisibilityThrottle: {{ mul .visibility_throttle 60000 }}
+});
+
+runtime.updates = startEnableMode(runtime);

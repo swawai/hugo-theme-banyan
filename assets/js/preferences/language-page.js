@@ -1,4 +1,4 @@
-import '../back-links.js';
+import './back-links.js';
 import { RETURN_LANGUAGE_KEY, RETURN_LANGUAGE_LABEL_KEY, languageMessage } from './language-state.js';
 
 const picker = document.querySelector('[data-language-settings]');

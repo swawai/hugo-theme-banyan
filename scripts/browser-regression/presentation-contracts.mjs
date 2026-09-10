@@ -86,10 +86,10 @@ export const presentationContractScenarios = [
             const cases = [
                 ['/zh/', []], ['/zh/all/', []], ['/zh/about/', []], ['/zh/updates/', []],
                 ['/zh/language/', ['/js/preferences/language-page.']],
-                ['/zh/appearance/', ['/js/back-links.']], ['/zh/my/', ['/js/back-links.']],
+                ['/zh/appearance/', ['/js/preferences/back-links.']], ['/zh/my/', ['/js/preferences/back-links.']],
                 ['/zh/updates/check/', ['/js/updates/page.']]
             ];
-            const controllers = ['/js/preferences/language-page.', '/js/back-links.', '/js/updates/page.'];
+            const controllers = ['/js/preferences/language-page.', '/js/preferences/back-links.', '/js/updates/page.'];
             for (const [route, expected] of cases) {
                 await gotoAndWait(page, baseUrl + route);
                 const scripts = await page.evaluate(() => [...document.scripts].filter(script => script.src).map(script => new URL(script.src).pathname));

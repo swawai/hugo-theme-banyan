@@ -57,31 +57,6 @@ export const updatesNavigationScenarios = [
             return { message: 'Ordinary pages remain quiet; the updates entry opens its controls, whose action applies and reloads.' };
         }
     })),
-    ...['zh-hk', 'zh-mo'].map(lang => ({
-        id: `sw-update-entry-${lang}`,
-        kind: 'upgrade',
-        title: `Check Updates Uses Traditional Chinese for ${lang}`,
-        dialogPolicy: 'dismiss',
-        async run({ page, baseUrl, server, upgradePair, dialogs }) {
-            requireUpgradePair(upgradePair);
-            server.setRoot(upgradePair.fromDir);
-            await gotoAndWait(page, `${baseUrl}/updates/check/`);
-            await waitForServiceWorkerActive(page);
-            const expected = await page.evaluate(async () => {
-                const manifest = await (await fetch(document.body.dataset.assetManifestUrl)).json();
-                const messages = await (await fetch(manifest.i18n['zh-tw'])).json();
-                return messages.site_version_status_ready;
-            });
-            assert.ok(expected, 'The Traditional Chinese status is defined in the runtime i18n resource.');
-            await page.evaluate(value => { document.documentElement.lang = value; }, lang);
-            server.setRoot(upgradePair.toDir);
-            await forceServiceWorkerUpdate(page);
-            await waitForUpdateReady(page);
-            await page.waitForFunction(value => document.querySelector('[data-site-update-status]')?.textContent.includes(value), expected);
-            assert.equal(dialogs.length, 0);
-            return { message: `${lang} resolves to the Traditional Chinese site update notice.`, details: { expected } };
-        }
-    })),
     {
         id: 'sw-update-hidden-control-stays-quiet',
         kind: 'upgrade',
